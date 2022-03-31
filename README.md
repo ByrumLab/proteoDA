@@ -37,9 +37,9 @@ library(proteomicsDIA)
 
 
 # call our only function
-useless_function("It doesn't matter what aregument you supply")
+useless_function("It doesn't matter what argument you supply")
 
-# Get help on how to use uselss_function:
+# Get help on how to use useless_function:
 ?useless_function
 ```
 
@@ -80,7 +80,7 @@ meantime here are some resources that might be helpful:
     and instead use GUIs. RStudio has a minimal one, explained in the
     first link above. Initially, I mostly used
     [GitKraken](https://www.gitkraken.com/git-client), which is free
-    with a student license and has some nicer touches (better diff
+    with a student license and has some nice touches (better diff
     viewing, better branch visualization). Lately, I’ve just been using
     the Git functionality in [Visual Studio
     Code](https://code.visualstudio.com/), which also has some nice
@@ -88,3 +88,19 @@ meantime here are some resources that might be helpful:
 
 Once we’re all set up and comfortable with Git, we’ll need to figure out
 how to manage workflows. That might be a topic for another day.
+
+### Misc ideas
+
+-   Add a changelog.md file, to textually track/explain changes (with
+    version #s).
+
+-   Functions to make project directories with standard formats? See
+    rstantools::rstan_create_package() and usethis::create_project() as
+    inspiration. Could have a function that initializes a new RStudio
+    project (one for each analysis project), with a pre-defined folder
+    structure, preloaded template workflow scripts, etc. Might ease
+    things for running projects and generating outputs for both end
+    users and for us.
+
+-   Check out code coverage and CI tools, to automate testing. Some
+    options in usethis.
