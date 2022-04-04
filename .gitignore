@@ -1,3 +1,10 @@
+# Genral R stuff to ignore
 .Rproj.user
 .Rhistory
+
+
+
+# Data, results, and other files during package testing
 for_testing
+Kinter_DIA_022521_Samples_Report_BQ.csv
+logs/*

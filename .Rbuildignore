@@ -5,3 +5,7 @@
 ^bin$
 ^data-raw$
 ^for_testing$
+^logs/*$
+^\\*BQ\.csv$
+^notes\.md$
+^tmp\.R$
