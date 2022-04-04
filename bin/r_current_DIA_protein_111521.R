@@ -2,7 +2,7 @@
 # create project directory in /home/uams/analysis/PI_DATE
 #### in TERMINAL !!!!!!!!!!!!!!!!!
 
-gsutil -m cp -r gs://uams-output/project_info_2021/Gao_102021_TMT/Analysis/ . 
+gsutil -m cp -r gs://uams-output/project_info_2021/Gao_102021_TMT/Analysis/ .
 
 
 setwd("/home/uams/analysis/PI_DATE")
@@ -26,7 +26,7 @@ ext <- extract_data(file=pro.file, pipe="DIA", enrich="protein")
 
 
 ## META DATA
-meta <- make_targets(file=meta.file, sampleIDs=colnames(ext$data), 
+meta <- make_targets(file=meta.file, sampleIDs=colnames(ext$data),
                      pipe="DIA", enrich="protein")
 
 
@@ -54,7 +54,7 @@ norm.methods ## available methods
 norm.method = "vsn"
 
 ## MAKE QC REPORT
-make_qc_report(normList=norm$normList, norm.method=norm.method, 
+make_qc_report(normList=norm$normList, norm.method=norm.method,
                groups=norm$targets$group, batch=NULL,
                sampleLabels=NULL, box.inset=-0.3, vio.inset=-0.3, pca.inset=-0.3,
                legend=FALSE,enrich="protein",dir=NULL,save=TRUE)
@@ -66,21 +66,21 @@ des$designformula
 ## CONTRASTS
 contrasts <- make_contrasts(file=contrast.file, design=des$design);contrasts
 
-## select certain contrasts for a complex design!!!!!!!!!! run multiple different comparisons. 
+## select certain contrasts for a complex design!!!!!!!!!! run multiple different comparisons.
 ############ Special change for multiple contrasts listed in same file
 # contrasts_full <- read.csv("contrasts.csv", header=FALSE)
-#    sink(file="contrast1.csv") 
+#    sink(file="contrast1.csv")
 #     cat(contrasts_full[1,1])
 #    sink()
-# 
+#
 #    sink(file="contrast2.csv")  # gender comparison
 #     cat(contrasts_full[2,1])
 #    sink()
-# 
+#
 #    sink(file="contrast3.csv")  # group2 = separate groups by gender
 #     cat(contrasts_full[3:6,1], sep ="\n")
 #    sink()
-# 
+#
 # ## CONTRASTS
 # contrast.file = "/home/uams/analysis/Kaul_100621/contrast1.csv"
 # contrasts <- make_contrasts(file=contrast.file, design=des$design);contrasts
@@ -108,8 +108,8 @@ lim <- run_limma_analysis(data        = norm$normList[[norm.method]],
 ## FORMATTED LIMMA RESULTS
 wb<-openxlsx::createWorkbook()
 ## add protein results worksheet
-add_limma_results(wb=wb, statList=lim$statList, annot=lim$annot,data=lim$data, norm.method=norm.method, 
-                  min.pval=lim$param$Value$min.pval, min.lfc=lim$param$Value$min.lfc, 
+add_limma_results(wb=wb, statList=lim$statList, annot=lim$annot,data=lim$data, norm.method=norm.method,
+                  min.pval=lim$param$Value$min.pval, min.lfc=lim$param$Value$min.lfc,
                   pipe=lim$param$Value$pipe, enrich=lim$param$Value$enrich)
 
 filename<-paste0(lim$param$Value$ilab,"_Results.xlsx");filename
@@ -121,7 +121,7 @@ saveWorkbook(wb=wb,file=file.path("./protein_analysis",filename), overwrite=TRUE
 # sitting in /home/uams/analysis/PI_DATE
 cp /home/uams/prot_fs/projects/Kaul_100621/Kaul_100621.sdia /home/uams/analysis/Kaul_100621/protein_analysis
 
-# must be sitting in the directory with the "protein_analysis" folder visible 
+# must be sitting in the directory with the "protein_analysis" folder visible
 # Ctrl+Alt+enter to send to terminal
 python /home/uams/zip/createZip.py Kaul 100621
 
@@ -130,7 +130,7 @@ gsutil -m cp Kaul_100621.zip gs://uams-enduser
 
 # copy everything to uams-output
 # from working directory
-gsutil -m cp -r /home/uams/analysis/Kaul_100621/ gs://uams-output/project_info_2021/Kaul_100621_DIA/Analysis 
+gsutil -m cp -r /home/uams/analysis/Kaul_100621/ gs://uams-output/project_info_2021/Kaul_100621_DIA/Analysis
 
 
 
