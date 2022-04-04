@@ -3,3 +3,5 @@
 ^README\.Rmd$
 ^LICENSE\.md$
 ^bin$
+^data-raw$
+^for_testing$
