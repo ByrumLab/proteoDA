@@ -1,14 +1,18 @@
 Package: proteomicsDIA
 Title: UAMS Internal Proteomics Package
 Version: 0.0.0.9000
-Authors@R: person("Timothy", "Thurman", , "tthurman@uams.edu", role = c("aut", "cre"))
+Authors@R: 
+    person("Timothy", "Thurman", , "tthurman@uams.edu", role = c("aut", "cre"))
 Description: Functions for performing DIA proteomics analysis.
 License: MIT + file LICENSE
-Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
+Imports:
+    stringr,
+    tools
+Depends: 
+    R (>= 2.10)
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
-Depends: 
-    R (>= 2.10)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2

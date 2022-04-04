@@ -1,4 +1,37 @@
 
+#' Loading Maxquant data
+#'
+#' A function to extract and load MaxQuant data. Works across multiple
+#' data types (DIA, TMT, etc.), and does slightly different things for each one.
+#' The \code{extract_data} function is the main function, and it calls a number
+#' of other subfunctions to process and prepare the data. See the links to
+#' subfunctions for more info.
+#'
+#'
+#' Subfunctions (DIA): \code{\link{import_data}}, \code{\link{remove_contaminants}},
+#' \code{\link{extract_protein_data}}, \code{\link{make_log}}.
+#'
+#' @param file The file of Maxquant data to be imported. Format and filetype
+#' vary depending on the type of data to be analyzed.
+#' @param sampleIDs A list of sampleIDs to analyze. Default is NULL, in which
+#' case all sample IDs are analyzed. These are determined from column names.
+#' @param min.prob Minimum probability, for use in local probability filter of
+#' phosphoTMT data. Unused for other pipelines. Defauly is 0.75.
+#' @param pipe Which analysis pipeline are you running? Options are "DIA", "TMT",
+#' "phosphoTMT", and "LF". Output varies slightly based on the pupeline you
+#' choose.
+#' @param enrich Another aspect of pipeline? Options are "protein" and "phospho".
+#' Seems semi-redundant?: DIA, TMT, and LF seem to always be "protein" in the
+#' code. PhosphoTMT can be either protein or phospho, though that seems to vary
+#' across subfunctions a little?
+#'
+#' @return A list. Items in list vary depending on pipeline used.
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
 extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
                          pipe=c("DIA","TMT","phosphoTMT","LF"),
                          enrich=c("protein","phospho")){
@@ -39,7 +72,7 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     ## irrelevant columns, columns 2-3 (visible,star) are removed from
     ## the sample report
     if(colnames(diaData)[1] != "id"){ colnames(diaData)[1] <-"id" }
-    remove  <- colnames(diaData) %in% c("Visible", "Star");remove
+    remove  <- colnames(diaData) %in% c("Visible", "Star")
     diaData <- diaData[, remove==FALSE]
 
 
@@ -51,10 +84,9 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     ## replace 'Missing Value' with zeros, remove comma's, convert
     ## data in each column to numeric values
     diaData[,][diaData[,]=="Missing Value"] <- "0"
-    replaceCommas  <- function(x){ x <- as.numeric(gsub("\\,", "", x)) }
     replaceNumbers <- colnames(diaData) %in% reqCols
-    replaceColums  <- colnames(diaData)[replaceNumbers==FALSE];replaceColums
-    for(i in replaceColums){ diaData[,i] <- replaceCommas(diaData[,i]) }
+    replaceColums  <- colnames(diaData)[replaceNumbers==FALSE]
+    for(i in replaceColums){ diaData[,i] <- remove_commas(diaData[,i]) }
 
 
     ## SAVE BIG QUERY INPUT FILE
@@ -68,13 +100,13 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     bqData[,][bqData[,]==""]    <- 0
 
     ## if column names begin with a number append X to the start of each name.
-    testColumNumber <-substr(colnames(bqData),1,1);testColumNumber
+    testColumNumber <-substr(colnames(bqData),1,1)
     if(length(grep("[[:digit:]]",testColumNumber)) > 0){
       colnames(bqData) <- paste0("X",colnames(bqData))
     }
-    bn   <- basename(file);bn
-    bn   <- gsub("Samples Report of ","",bn);bn
-    ilab <- gsub(paste0(".",tools::file_ext(bn)),"",bn);ilab
+    bn   <- basename(file)
+    bn   <- gsub("Samples Report of ","",bn)
+    ilab <- gsub(paste0(".",tools::file_ext(bn)),"",bn)
     ## save DIA Big Query Input File
     filename <- paste0(ilab,"_Samples_Report_BQ.csv")
     utils::write.csv(bqData, file.path(".",filename), row.names=FALSE)
@@ -244,6 +276,19 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
 
 
 
+#' Import MaxQuant data
+#'
+#' First subfunction called by \code{\link{extract_data}}. Reads in the tabular
+#' data and does some checks for required columns.
+#'
+#' @inheritParams extract_data
+#'
+#' @return A list. Items in list vary depending on the pipeline used.
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
 
 
 import_data <-function(file, pipe, enrich) {
@@ -370,6 +415,23 @@ import_data <-function(file, pipe, enrich) {
 
 
 
+#' Remove protein contaminant rows
+#'
+#' The second subfunction called by \code{\link{extract_data}}. Removes
+#' contaminant rows from the data.
+#'
+#' @inheritParams extract_data
+#'
+#' @return A list of data with contaminants removed, with three elements:
+#' (1) The filtered data frame, (2) the number of contaminant rows, and (3)
+#' the number of rows retained.
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
+
 remove_contaminants <- function(data, pipe, enrich){
 
   ## vector of required contaminant column names based on
@@ -386,9 +448,9 @@ remove_contaminants <- function(data, pipe, enrich){
 
   if(pipe=="DIA"){
 
-    no_rows <- nrow(data);no_rows
-    data <- data[!grepl("DECOY", data[, contamColums]),];nrow(data)
-    data <- data[!grepl("Group of", data[, contamColums]),];nrow(data)
+    no_rows <- nrow(data)
+    data <- data[!grepl("DECOY", data[, contamColums]),]
+    data <- data[!grepl("Group of", data[, contamColums]),]
 
     no_contam  <- no_rows - nrow(data)
     no_qfilter <- nrow(data)
@@ -424,6 +486,24 @@ remove_contaminants <- function(data, pipe, enrich){
 }
 
 
+#' Extract protein data
+#'
+#' Third subfunction called by \code{\link{extract_data}}. Processes the raw
+#' protein annotation strings to extract standard gene names,
+#' accession numbers, and Ids.
+#'
+#' @param data Data from which to extract protein data. In the
+#' \code{\link{extract_data}} function, this is \code{qfilterData$data}: I think this
+#' is the dataframe of proteins with contaminants removed.
+#' @inheritParams extract_data
+#' @return A list. Items in list vary depending on the pipeline used.
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
+
+
 extract_protein_data <- function(data, sampleIDs=NULL, pipe, enrich){
 
   ## extract protein data and annotation from DIA experiment
@@ -446,7 +526,7 @@ extract_protein_data <- function(data, sampleIDs=NULL, pipe, enrich){
 
     ## extract gene name, gene symbol, and uniprot id info. from the Fasta.header
     ## append to qfilterData add unique protein ID (proKey = uniprot_GN_id
-    data$Accession.Number <- gsub("(.+?)(\\ .*)","\\1",stringr::str_extract(data$Protein.Name,"(?<=\\|)[^\\|]+(?=\\ )"))
+    data$Accession.Number <- gsub("(.+?)(\\ .*)","\\1", stringr::str_extract(data$Protein.Name,"(?<=\\|)[^\\|]+(?=\\ )"))
     data$UniprotID    <- stringr::str_extract(data$Protein.Name, "(?<=\\|)[^\\|]+(?=\\|)")
     data$Gene_name    <- stringr::str_extract(data$Protein.Name, "(?<=GN\\=)[^\\|]+(?= PE\\=)")
     data$Description  <- stringr::str_extract(data$Protein.Name, "(?<= )[^\\|]+(?= OS\\=)")
@@ -465,8 +545,7 @@ extract_protein_data <- function(data, sampleIDs=NULL, pipe, enrich){
     ## replace 'Missing Value' with zeros, remove comma's, convert data in each column
     ## to numeric values
     rawData[,][rawData[,]=="Missing Value"] <- 0
-    replaceCommas <- function(x){ x<-as.numeric(gsub("\\,", "", x)) }
-    for(i in 1:ncol(rawData)){ rawData[,i] <- replaceCommas(rawData[,i]) }
+    for(i in 1:ncol(rawData)){ rawData[,i] <- remove_commas(rawData[,i]) }
 
     no_samples   <- ncol(rawData)
     no_extracted <- nrow(rawData)
@@ -538,14 +617,33 @@ extract_protein_data <- function(data, sampleIDs=NULL, pipe, enrich){
 }
 
 
+#' Make a log file
+#'
+#' Fourth subfunction called by \code{\link{extract_data}}. Used to write out
+#' some logs during the data extraction process. Might want to rethink how this works.
+#'
+#' @param param The param object within the \code{\link{extract_data}} function
+#' body. Slightly unclear what the requirements for this are.
+#' @param stats The stats object within the \code{\link{extract_data}} function
+#' body. Slightly unclear what the requirements for this are.
+#' @param title A title for the printed parameter block. Default is "".
+#' @param save TRUE/FALSE: should the parameters be save dot a text file?
+#' @return A list, with the param and stats objects. If SAVE = TRUE, has side
+#' effect of creating log files.
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
+
 
 make_log <- function(param, stats, title="", save=TRUE){
 
   param<-data.frame(t(as.data.frame(t(param))))
-  colnames(param)<-"";param
+  colnames(param)<-""
 
   stats<-data.frame(t(as.data.frame(t(stats))))
-  colnames(stats)<-"";stats
+  colnames(stats)<-""
 
   if(save==TRUE){
 
@@ -589,7 +687,6 @@ make_log <- function(param, stats, title="", save=TRUE){
 }
 
 
-
 local_prob_filter <- function(data, min.prob, pipe, enrich){
 
   no_rows  <- nrow(data)
@@ -611,6 +708,26 @@ local_prob_filter <- function(data, min.prob, pipe, enrich){
 
 }
 
+
+
+
+#' Extract sample IDs
+#'
+#' A subfunction called by \code{\link{extract_protein_data}}. Honestly, not 100%
+#' sure what it is doing: can't tell if it is just getting the sample IDs from
+#' column names, or whether it is subsetting dataframes down to just the columns
+#' of sample data/intensities, and removing the metadata columns.
+#' I think its the first one.
+#'
+#' @param colNames A list of column names.
+#' @inheritParams extract_data
+#' @return A list, with a single slot. I think a vector of sample IDs.
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
+
 extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
 
   ## the first 11 columns of DIA sample reports contain
@@ -625,9 +742,9 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
     if(!is.null(sampleIDs)){
 
       IDs<-sampleIDs
-      keep<-colNames%in%IDs;keep;table(keep)
+      keep<-colNames%in%IDs
       sampleIDs<-colNames[keep==TRUE]
-      stopifnot(length(sampleIDs)==length(IDs));sampleIDs
+      stopifnot(length(sampleIDs)==length(IDs))
       if(identical(sampleIDs, character(0))){
         stop(paste0("\nsampleIDs could not be identified based on input\n
                            sampleIDs='", paste(IDs,collapse=","),"\nsampleIDs==character(0)"))
@@ -636,13 +753,13 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
 
     if(is.null(sampleIDs)){
       ## columns containing sampleIDs should end with .mzML extension.
-      keep <- grep("mzML", colNames);keep
-      sampleIDs <- colNames[keep];sampleIDs
+      keep <- grep("mzML", colNames)
+      sampleIDs <- colNames[keep]
 
       ## if any annotation/contaminant column names are still included in list
       ## sampleIDs remove them.
-      remove    <- sampleIDs %in% unique(diaAnnotationColums,diaContamColums);remove
-      sampleIDs <- sampleIDs[remove==FALSE];sampleIDs
+      remove    <- sampleIDs %in% unique(diaAnnotationColums,diaContamColums)
+      sampleIDs <- sampleIDs[remove==FALSE]
 
     } ## NULL
 
@@ -659,9 +776,9 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
 
       IDs<-sampleIDs
       pattern="NULL"
-      keep<-colNames%in%IDs;keep;table(keep)
+      keep<-colNames%in%IDs
       sampleIDs<-colNames[keep==TRUE]
-      stopifnot(length(sampleIDs)==length(IDs));sampleIDs
+      stopifnot(length(sampleIDs)==length(IDs))
       if(identical(sampleIDs, character(0))){
         stop(paste0("\nsampleIDs could not be identified based on input\n
                            sampleIDs='", paste(IDs,collapse=","),"\nsampleIDs==character(0)"))
@@ -672,7 +789,7 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
 
       pattern="iBAQ."
       sampleIDs <- grep(pattern, colNames, value=TRUE)
-      sampleIDs <- sampleIDs[-grep("iBAQ.peptides",sampleIDs)];sampleIDs
+      sampleIDs <- sampleIDs[-grep("iBAQ.peptides",sampleIDs)]
 
       if(identical(sampleIDs, character(0))){
         stop(paste0("\nsampleIDs could not be identified based on pattern='",pattern,
@@ -696,9 +813,9 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
         pattern="NULL"
         IDs<-sampleIDs
 
-        keep<-colNames%in%IDs;keep;table(keep)
+        keep<-colNames%in%IDs
         sampleIDs<-colNames[keep==TRUE]
-        stopifnot(length(sampleIDs)==length(IDs));sampleIDs
+        stopifnot(length(sampleIDs)==length(IDs))
         if(identical(sampleIDs, character(0))){
           stop(paste0("\nsampleIDs could not be identified based on input\n
                            sampleIDs='", paste(IDs,collapse=","),"\nsampleIDs==character(0)"))
@@ -726,7 +843,7 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
         ## "Reporter.intensity.corrected.X"
         if(identical(sampleIDs, character(0))){
           pattern = "Reporter\\.intensity\\.corrected\\.[[:digit:]]+"
-          sampleIDs = grep(pattern, colNames, value=TRUE);sampleIDs
+          sampleIDs = grep(pattern, colNames, value=TRUE)
           cat("sampleIDs identified using generic pattern.")
         }
 
@@ -743,10 +860,10 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
 
         pattern="NULL"
         IDs<-sampleIDs
-        keep<-colNames%in%IDs;keep;table(keep)
+        keep<-colNames%in%IDs
 
         classIDs  <- colNames[keep==TRUE]
-        stopifnot(length(classIDs)==length(IDs));classIDs
+        stopifnot(length(classIDs)==length(IDs))
         classNums <- gsub("^.*_{3}","",classIDs) ## keep everything after ____ (class number)
         sampleIDs <- gsub("_{3}.*","",classIDs)  ## keep everything before ____ (should match targets)
 
@@ -784,7 +901,7 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
         ## "Reporter.intensity.corrected.X"
         if(identical(classIDs, character(0))){
           pattern   <- "Reporter\\.intensity\\.corrected\\.*[[:digit:]].*\\_{3}[[:digit:]]$"
-          classIDs  <- grep(pattern, colNames, value = TRUE);classIDs
+          classIDs  <- grep(pattern, colNames, value = TRUE)
           classNums <- gsub("^.*_{3}","", classIDs) ## keep everything after ____
           sampleIDs <- unique(gsub("_{3}.*","",classIDs)) ## keep everything before ____
           cat("classIDs identified using generic pattern.")
