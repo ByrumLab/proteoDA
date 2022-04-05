@@ -13,7 +13,7 @@ extract_sampleIDs(colNames, sampleIDs = NULL, pipe, enrich)
 case all sample IDs are analyzed. These are determined from column names.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pupeline you
+"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
 choose.}
 
 \item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
@@ -25,11 +25,15 @@ across subfunctions a little?}
 A list, with a single slot. I think a vector of sample IDs.
 }
 \description{
-A subfunction called by \code{\link{extract_protein_data}}. Honestly, not 100\%
-sure what it is doing: can't tell if it is just getting the sample IDs from
-column names, or whether it is subsetting dataframes down to just the columns
-of sample data/intensities, and removing the metadata columns.
-I think its the first one.
+A subfunction called by \code{\link{extract_protein_data}}. For DIA, Sort of does two
+different things. In the "default" case, with sampleIDs=NULL, it takes in a
+vector of column names (in our pipeline, these are the column names from
+\code{qfilterData$data}, which is the "data" slot of the result
+of the \code{\link{remove_contaminants}} output and is a data frame
+of both protein and intensity data). Then, it extracts sample names from those
+column names. If a vector of sampleIDs are supplied, it checks to see if those
+IDs are present in the column names. If so, it returns them. If not, gives an
+error.
 }
 \examples{
 # No examples yet

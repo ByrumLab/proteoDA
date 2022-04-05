@@ -5,7 +5,9 @@
 #' data types (DIA, TMT, etc.), and does slightly different things for each one.
 #' The \code{extract_data} function is the main function, and it calls a number
 #' of other subfunctions to process and prepare the data. See the links to
-#' subfunctions for more info.
+#' subfunctions for more info. Returns a list of data from maxquant, along with
+#' some stats and other info. Also has some side effects: creates a BigQuery
+#' report and some log files.
 #'
 #'
 #' Subfunctions (DIA): \code{\link{import_data}}, \code{\link{remove_contaminants}},
@@ -16,17 +18,33 @@
 #' @param sampleIDs A list of sampleIDs to analyze. Default is NULL, in which
 #' case all sample IDs are analyzed. These are determined from column names.
 #' @param min.prob Minimum probability, for use in local probability filter of
-#' phosphoTMT data. Unused for other pipelines. Defauly is 0.75.
+#' phosphoTMT data. Unused for other pipelines. Default is 0.75.
 #' @param pipe Which analysis pipeline are you running? Options are "DIA", "TMT",
-#' "phosphoTMT", and "LF". Output varies slightly based on the pupeline you
+#' "phosphoTMT", and "LF". Output varies slightly based on the pipeline you
 #' choose.
 #' @param enrich Another aspect of pipeline? Options are "protein" and "phospho".
 #' Seems semi-redundant?: DIA, TMT, and LF seem to always be "protein" in the
 #' code. PhosphoTMT can be either protein or phospho, though that seems to vary
 #' across subfunctions a little?
 #'
-#' @return A list. Items in list vary depending on pipeline used.
-#'
+#' @return A list of extracted data. The structure of the list depends on the
+#' pipeline and enrichment used. For DIA/protein, a list with 5 elements:
+#' \enumerate{
+#'   \item "data", a dataframe with N rows and M cols, where N is proteins and M is
+#' individual sample intensities. Rownames in this data frame give a protein ID,
+#' in the form of UniprotID_Gene_name_id. These
+#' proteins have been partially filtered: contaminants removed.
+#'   \item "annot". a dataframe with N rows and X cols, where N is proteins and the X
+#' cols are various proetin annotation data. Rownames in this data frame give a protein ID,
+#' in the form of UniprotID_Gene_name_id.
+#'   \item "param", a dataframe with 1 column giving the value of some of the
+#' parameters used to call the function, but also other info it parses from the
+#' file. Rownames give the info on what each value is.
+#'  \item  "stats", a named list of statistics on sample #, contaminants
+#' removed, etc.
+#'  \item a character vector of the ilab variable (also listed in the
+#' param dataframe).
+#' }
 #' @export
 #'
 #' @examples
@@ -283,7 +301,17 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
 #'
 #' @inheritParams extract_data
 #'
-#' @return A list. Items in list vary depending on the pipeline used.
+#' @return A list. Items in list vary depending on the pipeline used. For
+#' DIA/protein, a list with 3 slots:
+#' \enumerate{
+#'  \item "data": a data frame, where each row is a (raw) protein, the first
+#' few columns are protein ID data, and the last columns are the individual
+#' sample intensities (as character vectors).
+#' \item "no_input", a named integer listing the total number of raw proteins (ie,
+#' the number of rows of the data slot)
+#' \item a character vector of the required columns for this pipeline/enrichment
+#' combination.
+#' }
 #'
 #' @export
 #'
@@ -414,17 +442,26 @@ import_data <-function(file, pipe, enrich) {
 }
 
 
-
 #' Remove protein contaminant rows
 #'
 #' The second subfunction called by \code{\link{extract_data}}. Removes
 #' contaminant rows from the data.
 #'
+#' @param data Raw Maxquant intensity data, from which contaminants need to be
+#' removed. Within the \code{\link{extract_data}} function, this is "diaData",
+#' which is the data object from the \code{\link{import_data}} function that has
+#' gone through additional processing within the body of the
+#' \code{\link{extract_data}} function
 #' @inheritParams extract_data
 #'
 #' @return A list of data with contaminants removed, with three elements:
-#' (1) The filtered data frame, (2) the number of contaminant rows, and (3)
-#' the number of rows retained.
+#' \enumerate{
+#'   \item "data", a data frame with the contaminants removed. Rows are
+#' proteins, columns include both protein info and individual intensities.
+#'   \item "no_contam", an integer giving the number of contaminant rows removed
+#'   \item "no_qfilter", an integer giving the number of retained rows
+#' (ie, nrow() of the "data" slot).
+#' }
 #'
 #' @export
 #'
@@ -493,10 +530,36 @@ remove_contaminants <- function(data, pipe, enrich){
 #' accession numbers, and Ids.
 #'
 #' @param data Data from which to extract protein data. In the
-#' \code{\link{extract_data}} function, this is \code{qfilterData$data}: I think this
-#' is the dataframe of proteins with contaminants removed.
+#' \code{\link{extract_data}} function, this is \code{qfilterData$data}, which
+#' is the "data" slot of the result of the \code{\link{remove_contaminants}}
+#' output: the data frame of both protein and intensity data.
 #' @inheritParams extract_data
-#' @return A list. Items in list vary depending on the pipeline used.
+#' @return A list. Items in list vary depending on the pipeline used. For
+#' DIA/protein, a list with 9 slots:
+#' \enumerate{
+#'   \item "rawData": A dataframe, where each row is a proetin and each column
+#' is a sample. Not actually raw, I think(?): at this point in the pipeline,
+#' contaminants have been removed. Rownames in this data frame give a protein ID,
+#' in the form of UniprotID_Gene_name_id.
+#'   \item "rawAnnot"-A dataframe, where each row is a protein and the columns
+#' are further protein annotation information. Rownames in this data frame give
+#' a protein ID, in the form of UniprotID_Gene_name_id.
+#'   \item "sampleIDs"- A vector of the sample IDs for the data. Seems like the
+#' column names from the rawData slot. Redundant?
+#'   \item "annotColumns"- The column names of the "rawAnnot" slot. Redundant?
+#'   \item "no_samples"- The number of samples.
+#' Currently seems redundant: just ncol() of rawData slot. Maybe useful if we
+#' moved back to merging annotation and sample data?
+#'   \item "no_extracted"- The number of proteins (nrow() of rawData slot).
+#' Redundant?
+#'   \item "pipe"- The pipeline argument used.
+#'   \item "enrich"- The enrich argument used.
+#'   \item "pattern"- Unclear what this is at the moment. Comes from the
+#' results of the \code{\link{extract_sampleIDs}} function. For DIA data, though,
+#' there is no "pattern" slot in the result list from
+#' \code{\link{extract_sampleIDs}}. For TMT and other data, seems to be the the
+#' regex pattern that was used for getting sample IDs from columns?
+#' }
 #'
 #' @export
 #'
@@ -628,6 +691,7 @@ extract_protein_data <- function(data, sampleIDs=NULL, pipe, enrich){
 #' body. Slightly unclear what the requirements for this are.
 #' @param title A title for the printed parameter block. Default is "".
 #' @param save TRUE/FALSE: should the parameters be save dot a text file?
+#'
 #' @return A list, with the param and stats objects. If SAVE = TRUE, has side
 #' effect of creating log files.
 #'
@@ -686,7 +750,8 @@ make_log <- function(param, stats, title="", save=TRUE){
 
 }
 
-
+###### NEED TO DOCUMENT AT SOME POINT
+###### NOT USED FOR DIA, THOUGH
 local_prob_filter <- function(data, min.prob, pipe, enrich){
 
   no_rows  <- nrow(data)
@@ -713,11 +778,15 @@ local_prob_filter <- function(data, min.prob, pipe, enrich){
 
 #' Extract sample IDs
 #'
-#' A subfunction called by \code{\link{extract_protein_data}}. Honestly, not 100%
-#' sure what it is doing: can't tell if it is just getting the sample IDs from
-#' column names, or whether it is subsetting dataframes down to just the columns
-#' of sample data/intensities, and removing the metadata columns.
-#' I think its the first one.
+#' A subfunction called by \code{\link{extract_protein_data}}. For DIA, Sort of does two
+#' different things. In the "default" case, with sampleIDs=NULL, it takes in a
+#' vector of column names (in our pipeline, these are the column names from
+#' \code{qfilterData$data}, which is the "data" slot of the result
+#' of the \code{\link{remove_contaminants}} output and is a data frame
+#' of both protein and intensity data). Then, it extracts sample names from those
+#' column names. If a vector of sampleIDs are supplied, it checks to see if those
+#' IDs are present in the column names. If so, it returns them. If not, gives an
+#' error.
 #'
 #' @param colNames A list of column names.
 #' @inheritParams extract_data

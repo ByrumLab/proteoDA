@@ -8,14 +8,15 @@ extract_protein_data(data, sampleIDs = NULL, pipe, enrich)
 }
 \arguments{
 \item{data}{Data from which to extract protein data. In the
-\code{\link{extract_data}} function, this is \code{qfilterData$data}: I think this
-is the dataframe of proteins with contaminants removed.}
+\code{\link{extract_data}} function, this is \code{qfilterData$data}, which
+is the "data" slot of the result of the \code{\link{remove_contaminants}}
+output: the data frame of both protein and intensity data.}
 
 \item{sampleIDs}{A list of sampleIDs to analyze. Default is NULL, in which
 case all sample IDs are analyzed. These are determined from column names.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pupeline you
+"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
 choose.}
 
 \item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
@@ -24,7 +25,32 @@ code. PhosphoTMT can be either protein or phospho, though that seems to vary
 across subfunctions a little?}
 }
 \value{
-A list. Items in list vary depending on the pipeline used.
+A list. Items in list vary depending on the pipeline used. For
+DIA/protein, a list with 9 slots:
+\enumerate{
+\item "rawData": A dataframe, where each row is a proetin and each column
+is a sample. Not actually raw, I think(?): at this point in the pipeline,
+contaminants have been removed. Rownames in this data frame give a protein ID,
+in the form of UniprotID_Gene_name_id.
+\item "rawAnnot"-A dataframe, where each row is a protein and the columns
+are further protein annotation information. Rownames in this data frame give
+a protein ID, in the form of UniprotID_Gene_name_id.
+\item "sampleIDs"- A vector of the sample IDs for the data. Seems like the
+column names from the rawData slot. Redundant?
+\item "annotColumns"- The column names of the "rawAnnot" slot. Redundant?
+\item "no_samples"- The number of samples.
+Currently seems redundant: just ncol() of rawData slot. Maybe useful if we
+moved back to merging annotation and sample data?
+\item "no_extracted"- The number of proteins (nrow() of rawData slot).
+Redundant?
+\item "pipe"- The pipeline argument used.
+\item "enrich"- The enrich argument used.
+\item "pattern"- Unclear what this is at the moment. Comes from the
+results of the \code{\link{extract_sampleIDs}} function. For DIA data, though,
+there is no "pattern" slot in the result list from
+\code{\link{extract_sampleIDs}}. For TMT and other data, seems to be the the
+regex pattern that was used for getting sample IDs from columns?
+}
 }
 \description{
 Third subfunction called by \code{\link{extract_data}}. Processes the raw

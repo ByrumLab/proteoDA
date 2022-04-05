@@ -7,8 +7,14 @@
 remove_contaminants(data, pipe, enrich)
 }
 \arguments{
+\item{data}{Raw Maxquant intensity data, from which contaminants need to be
+removed. Within the \code{\link{extract_data}} function, this is "diaData",
+which is the data object from the \code{\link{import_data}} function that has
+gone through additional processing within the body of the
+\code{\link{extract_data}} function}
+
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pupeline you
+"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
 choose.}
 
 \item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
@@ -18,8 +24,13 @@ across subfunctions a little?}
 }
 \value{
 A list of data with contaminants removed, with three elements:
-(1) The filtered data frame, (2) the number of contaminant rows, and (3)
-the number of rows retained.
+\enumerate{
+\item "data", a data frame with the contaminants removed. Rows are
+proteins, columns include both protein info and individual intensities.
+\item "no_contam", an integer giving the number of contaminant rows removed
+\item "no_qfilter", an integer giving the number of retained rows
+(ie, nrow() of the "data" slot).
+}
 }
 \description{
 The second subfunction called by \code{\link{extract_data}}. Removes

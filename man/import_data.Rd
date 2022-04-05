@@ -11,7 +11,7 @@ import_data(file, pipe, enrich)
 vary depending on the type of data to be analyzed.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pupeline you
+"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
 choose.}
 
 \item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
@@ -20,7 +20,17 @@ code. PhosphoTMT can be either protein or phospho, though that seems to vary
 across subfunctions a little?}
 }
 \value{
-A list. Items in list vary depending on the pipeline used.
+A list. Items in list vary depending on the pipeline used. For
+DIA/protein, a list with 3 slots:
+\enumerate{
+\item "data": a data frame, where each row is a (raw) protein, the first
+few columns are protein ID data, and the last columns are the individual
+sample intensities (as character vectors).
+\item "no_input", a named integer listing the total number of raw proteins (ie,
+the number of rows of the data slot)
+\item a character vector of the required columns for this pipeline/enrichment
+combination.
+}
 }
 \description{
 First subfunction called by \code{\link{extract_data}}. Reads in the tabular

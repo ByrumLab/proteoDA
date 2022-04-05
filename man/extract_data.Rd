@@ -20,10 +20,10 @@ vary depending on the type of data to be analyzed.}
 case all sample IDs are analyzed. These are determined from column names.}
 
 \item{min.prob}{Minimum probability, for use in local probability filter of
-phosphoTMT data. Unused for other pipelines. Defauly is 0.75.}
+phosphoTMT data. Unused for other pipelines. Default is 0.75.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pupeline you
+"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
 choose.}
 
 \item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
@@ -32,14 +32,33 @@ code. PhosphoTMT can be either protein or phospho, though that seems to vary
 across subfunctions a little?}
 }
 \value{
-A list. Items in list vary depending on pipeline used.
+A list of extracted data. The structure of the list depends on the
+pipeline and enrichment used. For DIA/protein, a list with 5 elements:
+\enumerate{
+\item "data", a dataframe with N rows and M cols, where N is proteins and M is
+individual sample intensities. Rownames in this data frame give a protein ID,
+in the form of UniprotID_Gene_name_id. These
+proteins have been partially filtered: contaminants removed.
+\item "annot". a dataframe with N rows and X cols, where N is proteins and the X
+cols are various proetin annotation data. Rownames in this data frame give a protein ID,
+in the form of UniprotID_Gene_name_id.
+\item "param", a dataframe with 1 column giving the value of some of the
+parameters used to call the function, but also other info it parses from the
+file. Rownames give the info on what each value is.
+\item  "stats", a named list of statistics on sample #, contaminants
+removed, etc.
+\item a character vector of the ilab variable (also listed in the
+param dataframe).
+}
 }
 \description{
 A function to extract and load MaxQuant data. Works across multiple
 data types (DIA, TMT, etc.), and does slightly different things for each one.
 The \code{extract_data} function is the main function, and it calls a number
 of other subfunctions to process and prepare the data. See the links to
-subfunctions for more info.
+subfunctions for more info. Returns a list of data from maxquant, along with
+some stats and other info. Also has some side effects: creates a BigQuery
+report and some log files.
 }
 \details{
 Subfunctions (DIA): \code{\link{import_data}}, \code{\link{remove_contaminants}},

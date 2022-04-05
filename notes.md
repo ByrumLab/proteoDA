@@ -21,3 +21,21 @@ Working from the Kintler DIA data, have already run into an issue with the data 
 #### 2022-04-04
 
 Working through documentation and very minor code editing (e.g., removing extra print object declarations for printing behind semicolons) of extract_data subfunctions for DIA data. 
+
+#### 2022-04-05
+
+One architecture thing I'm noticing that doesn't seem ideal: the annotation and individual intensity data get split up into separate data frames, with the protein ID data in the intensity data getting put into the rownames. Looks like these get checked again in the future to make sure they still match up and order hasn't changed for some reason: the first steps of the run_limma_analysis function do this. But, maybe better to just not break these apart in the first place? I guess some of that will depend on what happens down the line: not sure if some operations later on need to operate on just the matrix of sample data without the protein annotation, making it somewhat easier if these are split. In any case, looks like down the line it is just a check: there isn't currently any code to fix this is it isn't true. 
+
+Related to that, a lot of information seems to get put into rownames, instead of into a column. Need to double-check if there's some performance or particular reason for that, but my personal preference would be to put that into back in columns, so that it can be accessed in the normal way ($, [], etc) instead of having to use rownames(). My intuition is that we shouldn't really use rownames at all: just use a normal named character column. That also provides more detail: the column name will provide more info (hopefully) about what the value actually is: e.g., exactly what type of name or protein ID it is. 
+
+More architecture ideas: I think the current overall idea, with high-level wrapper functions that call a bunch of subfunctions, is the right idea in general. Right now, though, this is a little tough to reason about, as the high-level functions both (1) call subfunctions, and (2) do other data processing steps just within them. I think reasoning about the control flow of information through the function would be easier if the toplevel wrapper was really just that, and if the processing steps that are currently done in the function body were moved into subfunctions. This would also (hopefully) make customization and debugging easier: if you ran into a bug running the wrapper function, you could run each of the subfunctions in turn, but wouldn't need to worry about any extra code. 
+
+Another general code issue I'm finding: too-short, nondescriptive names. The output list structures also seem redundant. Often, some of the slots in the output list are just summaries of info in other parts of the list: e.g., the number of proteins is in one slot, but you could also get that just by looking at the number of rows in the protein data frame. Not sure how I feel about this redundancy: could sometimes be helpful when the list structures are unclear: these elements are better named than some of the other ones. 
+
+Another general issue to think about: how and whether to separate pipelines. As it stands now, most functions have a few if statement blocks to switch between the different tasks for each pipeline. Not sure the best way to architect this overall. For the user-facing function, nice to just have one function and put in pipeline as an argument. All the if statements are a little tough, though. 
+
+I do (possibly) like the idea of using lists with some slots for pipe and enrichment, such that it becomes a sort of weak type to deal with multiple dispatch and making it easier to pass the pipe and enrichment options down through all the subfunctions. 
+
+
+
+
