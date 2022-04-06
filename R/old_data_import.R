@@ -50,25 +50,32 @@
 #' @examples
 #' # No examples yet
 #'
-extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
-                         pipe=c("DIA","TMT","phosphoTMT","LF"),
-                         enrich=c("protein","phospho")){
+extract_data <- function(file = NULL,
+                         sampleIDs = NULL,
+                         min.prob = 0.75,
+                         pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+                         enrich = c("protein", "phospho")) {
 
   ## if no file is input by user the open file dialog box is
   ## called to allow the user to navigate to and select the file.
-  if(is.null(file)){ file=file.choose() }
+  if (is.null(file)) {
+    file <- file.choose()
+  }
+
+  cli::cli_rule()
 
   ## input parameters are added to param variable
   param <- stats <- list()
-  param[["file"]]      <- file
-  param[["pipe"]]      <- pipe
-  param[["enrich"]]    <- enrich
-  param[["sampleIDs"]] <- ifelse(is.null(sampleIDs),"NULL", paste(sampleIDs,collapse=", "))
-  param[["min.prob"]]  <- ifelse(enrich=="protein", "NULL",min.prob)
+  param[["file"]] <- file
+  param[["pipe"]] <- pipe
+  param[["enrich"]] <- enrich
+  param[["sampleIDs"]] <- ifelse(is.null(sampleIDs), "NULL", paste(sampleIDs, collapse = ", "))
+  param[["min.prob"]] <- ifelse(enrich == "protein", "NULL", min.prob)
 
 
   ## DIA PROTEIN
-  if(pipe=="DIA" & enrich=="protein"){
+  if (pipe == "DIA" & enrich == "protein") {
+
 
     ## CREATE QUALITY CONTROL OUTPUT DIRECTORY
     # if(!dir.exists("protein_analysis/01_quality_control")){
@@ -79,7 +86,7 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     ## IMPORT DATA
     ## the first 10 lines are skipped and last line removed. column 1 (.X)
     ## is renamed "id"
-    DIADATA <- import_data(file=file, pipe=pipe, enrich=enrich)
+    DIADATA <- import_data(file = file, pipe = pipe, enrich = enrich)
     diaData <- DIADATA$data
     reqCols <- DIADATA$reqCols
 
@@ -89,9 +96,11 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     ## REMOVE IRRELEVANT COLUMNS
     ## irrelevant columns, columns 2-3 (visible,star) are removed from
     ## the sample report
-    if(colnames(diaData)[1] != "id"){ colnames(diaData)[1] <-"id" }
-    remove  <- colnames(diaData) %in% c("Visible", "Star")
-    diaData <- diaData[, remove==FALSE]
+    if (colnames(diaData)[1] != "id") {
+      colnames(diaData)[1] <- "id"
+    }
+    remove <- colnames(diaData) %in% c("Visible", "Star")
+    diaData <- diaData[, remove == FALSE]
 
 
     ## REPLACE MISSING VALUES WITH ZERO
@@ -101,10 +110,12 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     ## if the protein does not have detectable expression.
     ## replace 'Missing Value' with zeros, remove comma's, convert
     ## data in each column to numeric values
-    diaData[,][diaData[,]=="Missing Value"] <- "0"
+    diaData[, ][diaData[, ] == "Missing Value"] <- "0"
     replaceNumbers <- colnames(diaData) %in% reqCols
-    replaceColums  <- colnames(diaData)[replaceNumbers==FALSE]
-    for(i in replaceColums){ diaData[,i] <- remove_commas(diaData[,i]) }
+    replaceColums <- colnames(diaData)[replaceNumbers == FALSE]
+    for (i in replaceColums) {
+      diaData[, i] <- remove_commas(diaData[, i])
+    }
 
 
     ## SAVE BIG QUERY INPUT FILE
@@ -114,52 +125,54 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     ## with zeros. If column names begin with a number add X to
     ## beginning of column name. change file name to ilab_Samples_Report_BQ.csv
     bqData <- data.frame(diaData)
-    bqData[,][is.na(bqData[,])] <- 0
-    bqData[,][bqData[,]==""]    <- 0
+    bqData[, ][is.na(bqData[, ])] <- 0
+    bqData[, ][bqData[, ] == ""] <- 0
 
     ## if column names begin with a number append X to the start of each name.
-    testColumNumber <-substr(colnames(bqData),1,1)
-    if(length(grep("[[:digit:]]",testColumNumber)) > 0){
-      colnames(bqData) <- paste0("X",colnames(bqData))
+    testColumNumber <- substr(colnames(bqData), 1, 1)
+    if (length(grep("[[:digit:]]", testColumNumber)) > 0) {
+      colnames(bqData) <- paste0("X", colnames(bqData))
     }
-    bn   <- basename(file)
-    bn   <- gsub("Samples Report of ","",bn)
-    ilab <- gsub(paste0(".",tools::file_ext(bn)),"",bn)
+    bn <- basename(file)
+    bn <- gsub("Samples Report of ", "", bn)
+    ilab <- gsub(paste0(".", tools::file_ext(bn)), "", bn)
     ## save DIA Big Query Input File
-    filename <- paste0(ilab,"_Samples_Report_BQ.csv")
-    utils::write.csv(bqData, file.path(".",filename), row.names=FALSE)
-    print(paste("Big Querry Samples Report (",filename,
-                ") saved to project directory. Success!!"))
+    filename <- paste0(ilab, "_Samples_Report_BQ.csv")
+    utils::write.csv(bqData, file.path(".", filename), row.names = FALSE)
+
+    cli::cli_inform("BigQuery samples report saved to {.file {filename}}")
     param[["ilab"]] <- ilab
 
 
     ## REMOVE CONTAMINANTS
-    qfilterData <- remove_contaminants(data=diaData, pipe=pipe, enrich=enrich)
+    qfilterData <- remove_contaminants(data = diaData, pipe = pipe, enrich = enrich)
     stats[["no_contam_removed"]] <- qfilterData$no_contam
 
     ## EXTRACT PROTEIN DATA
-    extProt <- extract_protein_data(data=qfilterData$data, sampleIDs=sampleIDs,
-                                    pipe=pipe, enrich=enrich)
+    extProt <- extract_protein_data(
+      data = qfilterData$data, sampleIDs = sampleIDs,
+      pipe = pipe, enrich = enrich
+    )
 
     stats[["total_input_samples"]] <- extProt$no_samples
-    stats[["no_extracted_rows"]]   <- extProt$no_extracted
+    stats[["no_extracted_rows"]] <- extProt$no_extracted
 
     ## SAVE PARAM/STATS TO LOG FILE
-    logs <- make_log(param=param, stats=stats, title="EXTRACTED DATA",save=TRUE)
+    logs <- make_log(param = param, stats = stats, title = "EXTRACTED DATA", save = TRUE)
 
     ## return a list of data.frame containing the extracted quality
     ## filtered intensity data, corresponding extracted annotation,
     ## stats, and input parameters
-    data2 <- list(data=extProt$rawData, annot=extProt$rawAnnot,
-                  param=logs$param, stats=logs$stats[c(3,1,2,4),], ilab=ilab)
+    data2 <- list(
+      data = extProt$rawData, annot = extProt$rawAnnot,
+      param = logs$param, stats = logs$stats[c(3, 1, 2, 4), ], ilab = ilab
+    )
     return(data2)
-
-
   } ## DIA PROTEIN
 
 
   ## TMT PROTEIN
-  if((pipe=="TMT" | pipe=="LF") & enrich=="protein"){
+  if ((pipe == "TMT" | pipe == "LF") & enrich == "protein") {
 
     ## CREATE QUALITY CONTROL OUTPUT DIRECTORY
     # if(!dir.exists("protein_analysis/01_quality_control")){
@@ -168,78 +181,84 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     # }
 
     ## IMPORT DATA
-    maxQuant <- import_data(file=file, pipe=pipe, enrich=enrich)
+    maxQuant <- import_data(file = file, pipe = pipe, enrich = enrich)
     stats[["total_input_rows"]] <- maxQuant$no_input
 
     ## REMOVE CONTAMINANTS
-    qfilterData <- remove_contaminants(data=maxQuant$data, pipe=pipe, enrich=enrich)
+    qfilterData <- remove_contaminants(data = maxQuant$data, pipe = pipe, enrich = enrich)
     stats[["no_contam_removed"]] <- qfilterData$no_contam
 
 
     ## EXTRACT PROTEIN DATA AND ANNOTATION
-    extProt <- extract_protein_data(data=qfilterData$data, sampleIDs=sampleIDs,
-                                    pipe=pipe, enrich=enrich)
-
-    stats[["total_input_samples"]] <- extProt$no_samples
-    stats[["no_extracted_rows"]]   <- extProt$no_extracted
-    param[["pattern"]] <- extProt$pattern
-
-    ## SAVE PARAM/STATS TO LOG FILE
-    logs <- make_log(param=param, stats=stats, title="EXTRACTED DATA",save=TRUE)
-
-    ## return a list of data.frame containing the extracted quality
-    ## filtered intensity data, corresponding extracted annotation,
-    ## stats, and input parameters
-    data2 <- list(data=extProt$rawData, annot=extProt$rawAnnot,
-                  param=logs$param,stats=logs$stats)
-    return(data2)
-
-  } ## TMT PROTEIN
-
-
-  ## phosphoTMT PROTEIN
-  if(pipe=="phosphoTMT" & enrich=="protein"){
-
-    ## CREATE QUALITY CONTROL OUTPUT DIRECTORY
-    # if(!dir.exists("protein_analysis/01_quality_control")){
-    #    dir.create("protein_analysis/01_quality_control", recursive=TRUE)
-    #    print("quality control directory created...")
-    # }
-
-    ## IMPORT DATA
-    maxQuant <- import_data(file=file, pipe=pipe, enrich=enrich)
-    stats[["total_input_rows"]] <- maxQuant$no_input
-
-
-    ## REMOVE CONTAMINANTS
-    qfilterData <- remove_contaminants(data=maxQuant$data, pipe=pipe, enrich=enrich)
-    stats[["no_contam_removed"]] <- qfilterData$no_contam
-
-
-    ## EXTRACT PROTEIN DATA
-    extProt <- extract_protein_data(data=qfilterData$data, sampleIDs=sampleIDs,
-                                    pipe=pipe, enrich=enrich)
+    extProt <- extract_protein_data(
+      data = qfilterData$data, sampleIDs = sampleIDs,
+      pipe = pipe, enrich = enrich
+    )
 
     stats[["total_input_samples"]] <- extProt$no_samples
     stats[["no_extracted_rows"]] <- extProt$no_extracted
     param[["pattern"]] <- extProt$pattern
 
     ## SAVE PARAM/STATS TO LOG FILE
-    logs <- make_log(param=param, stats=stats, title="EXTRACTED DATA",save=TRUE)
+    logs <- make_log(param = param, stats = stats, title = "EXTRACTED DATA", save = TRUE)
+
+    ## return a list of data.frame containing the extracted quality
+    ## filtered intensity data, corresponding extracted annotation,
+    ## stats, and input parameters
+    data2 <- list(
+      data = extProt$rawData, annot = extProt$rawAnnot,
+      param = logs$param, stats = logs$stats
+    )
+    return(data2)
+  } ## TMT PROTEIN
+
+
+  ## phosphoTMT PROTEIN
+  if (pipe == "phosphoTMT" & enrich == "protein") {
+
+    ## CREATE QUALITY CONTROL OUTPUT DIRECTORY
+    # if(!dir.exists("protein_analysis/01_quality_control")){
+    #    dir.create("protein_analysis/01_quality_control", recursive=TRUE)
+    #    print("quality control directory created...")
+    # }
+
+    ## IMPORT DATA
+    maxQuant <- import_data(file = file, pipe = pipe, enrich = enrich)
+    stats[["total_input_rows"]] <- maxQuant$no_input
+
+
+    ## REMOVE CONTAMINANTS
+    qfilterData <- remove_contaminants(data = maxQuant$data, pipe = pipe, enrich = enrich)
+    stats[["no_contam_removed"]] <- qfilterData$no_contam
+
+
+    ## EXTRACT PROTEIN DATA
+    extProt <- extract_protein_data(
+      data = qfilterData$data, sampleIDs = sampleIDs,
+      pipe = pipe, enrich = enrich
+    )
+
+    stats[["total_input_samples"]] <- extProt$no_samples
+    stats[["no_extracted_rows"]] <- extProt$no_extracted
+    param[["pattern"]] <- extProt$pattern
+
+    ## SAVE PARAM/STATS TO LOG FILE
+    logs <- make_log(param = param, stats = stats, title = "EXTRACTED DATA", save = TRUE)
 
 
     ## return a list of data.frame containing the extracted quality
     ## filtered intensity data, corresponding extracted annotation,
     ## stats, and input parameters
-    data2 <- list(data=extProt$rawData, annot=extProt$rawAnnot,
-                  param=logs$param, stats=logs$stats[c(3,1,2,4),])
+    data2 <- list(
+      data = extProt$rawData, annot = extProt$rawAnnot,
+      param = logs$param, stats = logs$stats[c(3, 1, 2, 4), ]
+    )
     return(data2)
-
   } ## phosphoTMT PROTEIN
 
 
   ## phosphoTMT PHOSPHO
-  if(pipe=="phosphoTMT" & enrich=="phospho"){
+  if (pipe == "phosphoTMT" & enrich == "phospho") {
 
     ## CREATE QUALITY CONTROL OUTPUT DIRECTORY
     # if(!dir.exists("phospho_analysis/01_quality_control")){
@@ -248,28 +267,32 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     # }
 
     ## IMPORT DATA
-    maxQuant <- import_data(file=file, pipe=pipe, enrich=enrich)
+    maxQuant <- import_data(file = file, pipe = pipe, enrich = enrich)
     stats[["total_input_rows"]] <- maxQuant$no_input
 
     ## REMOVE CONTAMINANTS
-    qfilterData <- remove_contaminants(data=maxQuant$data, pipe=pipe, enrich=enrich)
+    qfilterData <- remove_contaminants(data = maxQuant$data, pipe = pipe, enrich = enrich)
     stats[["no_contam_removed"]] <- qfilterData$no_contam
 
     ## LOCAL PROBABILITY FILTER
-    qfilterData <- local_prob_filter(data=qfilterData$data, min.prob=min.prob,
-                                     pipe=pipe, enrich=enrich)
+    qfilterData <- local_prob_filter(
+      data = qfilterData$data, min.prob = min.prob,
+      pipe = pipe, enrich = enrich
+    )
     param[["min.prob"]] <- qfilterData$min.prob
     stats[["no_localprob_removed"]] <- qfilterData$no_localprob_removed
 
     ## EXTRACT PHOSPHO DATA
-    extPhos <- extract_phospho_data(data=qfilterData$data, sampleIDs=sampleIDs,
-                                    pipe=pipe, enrich=enrich)
+    extPhos <- extract_phospho_data(
+      data = qfilterData$data, sampleIDs = sampleIDs,
+      pipe = pipe, enrich = enrich
+    )
     stats[["total_input_samples"]] <- extPhos$classList$class_1$no_class_samples
     stats[["no_extracted_rows"]] <- extPhos$classList$class_1$no_class_phospho
     param[["pattern"]] <- extPhos$classList$class_1$idList$pattern
 
     ## SAVE PARAM/STATS TO LOG FILE
-    logs <- make_log(param=param, stats=stats, title="EXTRACTED DATA",save=TRUE)
+    logs <- make_log(param = param, stats = stats, title = "EXTRACTED DATA", save = TRUE)
 
 
     ## return a list of data.frame containing the extracted quality
@@ -278,18 +301,16 @@ extract_data <- function(file=NULL, sampleIDs=NULL, min.prob=0.75,
     ## classList corresponds to data/annotation for each phosphopeptide
     ## class e.g. class___1, class___2, class___3
 
-    data2 <- list(data=extPhos$classList$class_1$rawData,   ## class 1 data
-                  annot=extPhos$classList$class_1$rawAnnot, ## class 1 annot
-                  classList=extPhos$classList, ## class_1$data/annot, class_2$data/annot etc.
-                  sampleIDs=extPhos$classList$class_1$idList$sampleIDs,
-                  pattern=extPhos$classList$class_1$idList$pattern,
-                  param=logs$param,stats=logs$stats[c(4,1,2,3,5), ])
+    data2 <- list(
+      data = extPhos$classList$class_1$rawData, ## class 1 data
+      annot = extPhos$classList$class_1$rawAnnot, ## class 1 annot
+      classList = extPhos$classList, ## class_1$data/annot, class_2$data/annot etc.
+      sampleIDs = extPhos$classList$class_1$idList$sampleIDs,
+      pattern = extPhos$classList$class_1$idList$pattern,
+      param = logs$param, stats = logs$stats[c(4, 1, 2, 3, 5), ]
+    )
     return(data2)
-
-
   } ## phosphoTMT PHOSPHO
-
-
 }
 
 
@@ -379,19 +400,18 @@ import_data <-function(file, pipe, enrich) {
     ## sampleIDs columns and extract targets info. later.
     if(all(reqCols %in% colnames(data))==TRUE){
 
-      print(paste(pipe, enrich, "file imported. Success!!"))
-      print(paste("the file contains",no_input, enrich, "entries"));cat("\n")
+      cli::cli_inform("{pipe} {enrich} file {.file {file}} imported")
+      cli::cli_inform("Input file contains {no_input} {enrich} entries")
 
       data2<-list(data=data, no_input=no_input, reqCols=reqCols)
       return(data2)
 
-    } else { stop(paste0("Error! The input file may be missing one or more",
-                         "required annotation/contamination \ncolumns or ",
-                         "id not import properly. \n\nFor DIA experiments ",
-                         "the input sample report file should include the following",
-                         "column names:\n", paste(reqCols, collapse="', '"), "\n",
-                         " The annotation/sample data should also begin in row 11 ",
-                         " of the report."))
+    } else {
+      missing_cols <- reqCols[which(reqCols %notin% colnames(data))]
+      cli::cli_abort(c("Problem with columns in input file.",
+                     "x" = "Required column(s) not present in {.file {file}}",
+                     "x" = "Missing columns: {missing_cols}"))
+
     }
   } ## DIA IMPORT
 
@@ -416,8 +436,8 @@ import_data <-function(file, pipe, enrich) {
     if(all(reqCols %in% colnames(data))==TRUE){
       if(all(!duplicated(data$id) & is.integer(data$id))){
 
-        print(paste(pipe, enrich, "file imported. Success!!"))
-        print(paste("the file contains",no_input, enrich, "entries"));cat("\n")
+        cli::cli_inform("{pipe} {enrich} file {.file {file}} imported")
+        cli::cli_inform("Input file contains {no_input} {enrich} entries")
 
         data2 <- list(data=data, no_input=no_input)
         return(data2)
@@ -492,8 +512,8 @@ remove_contaminants <- function(data, pipe, enrich){
     no_contam  <- no_rows - nrow(data)
     no_qfilter <- nrow(data)
 
-    print(paste(no_contam, "contaminants removed. Success!!"))
-    print(paste(no_qfilter, pipe, enrich, "entries retained ..."))
+    cli::cli_inform("{no_contam} contaminantes removed")
+    cli::cli_inform("{no_qfilter} {pipe} {enrich} entries retained")
 
     data2 <- list(data=data, no_contam=no_contam, no_qfilter=no_qfilter)
     return(data2)
@@ -613,9 +633,12 @@ extract_protein_data <- function(data, sampleIDs=NULL, pipe, enrich){
     no_samples   <- ncol(rawData)
     no_extracted <- nrow(rawData)
 
-    print(paste("intensity data for", no_extracted,
-                pipe, enrich, "entries and ",no_samples, "samples extracted.",
-                "Success!!"));cat("\n")
+    cli::cli_inform(c("Intensity data for {no_extracted} {pipe} {enrich} entries and {no_samples} samples extracted"))
+    cli::cli_rule()
+    cli::cli_inform(c("v" = "Success!!"))
+    # print(paste("intensity data for", no_extracted,
+    #             pipe, enrich, "entries and ",no_samples, "samples extracted.",
+    #             "Success!!"));cat("\n")
 
     data2 <- list(rawData=rawData, rawAnnot=rawAnnot, sampleIDs=sampleIDs,
                   annotColums=annotColums, no_samples=no_samples,
@@ -810,30 +833,31 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
 
     if(!is.null(sampleIDs)){
 
-      IDs<-sampleIDs
-      keep<-colNames%in%IDs
-      sampleIDs<-colNames[keep==TRUE]
-      stopifnot(length(sampleIDs)==length(IDs))
-      if(identical(sampleIDs, character(0))){
-        stop(paste0("\nsampleIDs could not be identified based on input\n
-                           sampleIDs='", paste(IDs,collapse=","),"\nsampleIDs==character(0)"))
+      keep<-colNames%in%sampleIDs
+      sampleIDs_out<-colNames[keep==TRUE]
+      if(identical(sampleIDs_out, character(0))){
+        cli::cli_abort(c("Provided sampleIds not found in column names of input",
+                         "x" = "sampleIDs: {.arg {sampleIDs}}",
+                         "x" = "Column names: {.arg {colNames}}"))
+      stopifnot(length(sampleIDs_out)==length(IDs))
+
       }
     } ## NOT NULL
 
     if(is.null(sampleIDs)){
       ## columns containing sampleIDs should end with .mzML extension.
       keep <- grep("mzML", colNames)
-      sampleIDs <- colNames[keep]
+      sampleIDs_out <- colNames[keep]
 
       ## if any annotation/contaminant column names are still included in list
       ## sampleIDs remove them.
-      remove    <- sampleIDs %in% unique(diaAnnotationColums,diaContamColums)
-      sampleIDs <- sampleIDs[remove==FALSE]
+      remove    <- sampleIDs_out %in% unique(diaAnnotationColums,diaContamColums)
+      sampleIDs_out <- sampleIDs_out[remove==FALSE]
 
     } ## NULL
 
 
-    data2 <- list(sampleIDs=sampleIDs)
+    data2 <- list(sampleIDs=sampleIDs_out)
     return(data2)
 
   } ## DIA
@@ -1009,7 +1033,7 @@ extract_phospho_data <- function(data, sampleIDs=NULL, pipe, enrich){
     data$UniprotID   <- stringr::str_extract(data$Fasta.headers, "(?<=\\|)[^\\|]+(?=\\|)")
     data$Gene_name   <- stringr::str_extract(data$Fasta.headers, "(?<=GN\\=)[^\\|]+(?= PE\\=)")
     data$Description <- stringr::str_extract(data$Fasta.headers, "(?<= )[^\\|]+(?= OS\\=)")
-    data$Flanking    <- gsub("\\;.*$", "", data$Sequence.window) %>% str_sub(9,23) %>% paste0("-p")
+    data$Flanking    <- gsub("\\;.*$", "", data$Sequence.window) %>% stringr::str_sub(9,23) %>% paste0("-p")
 
     ## get protein group ID (id col. proteinGroups) and site position for
     ## the first protein entry i.e. corresponds to Majority.protein.ID
@@ -1046,9 +1070,7 @@ extract_phospho_data <- function(data, sampleIDs=NULL, pipe, enrich){
     no_samples   <- ncol(rawData)
     no_extracted <- nrow(rawData)
 
-    print(paste("intensity data for", no_extracted,pipe, enrich,
-                "entries and", no_samples, "samples extracted. Success!!"))
-    cat("\n")
+    cli::cli_inform(c("Intensity data for {no_extracted} {pipe} {enrich} entries and {no_samples} samples extracted."))
 
     ## EXTRACT CLASS DATA
     classList <- vector("list", max(IDs$classNums))

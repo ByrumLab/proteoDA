@@ -6,6 +6,8 @@ Authors@R:
 Description: Functions for performing DIA proteomics analysis.
 License: MIT + file LICENSE
 Imports:
+    cli,
+    magrittr,
     stringr,
     tools
 Depends: 
