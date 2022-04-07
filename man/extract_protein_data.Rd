@@ -17,7 +17,7 @@ extract_protein_data(
 is the "data" slot of the result of the \code{\link{remove_contaminants}}
 output: the data frame of both protein and intensity data.}
 
-\item{sampleIDs}{A list of sampleIDs to analyze. Default is NULL, in which
+\item{sampleIDs}{Optional: a list of sampleIDs to analyze. Default is NULL, in which
 case all sample IDs are analyzed. These are determined from column names.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",

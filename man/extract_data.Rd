@@ -6,21 +6,16 @@
 \usage{
 extract_data(
   file = NULL,
-  sampleIDs = NULL,
-  min.prob = 0.75,
   pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
-  enrich = c("protein", "phospho")
+  enrich = c("protein", "phospho"),
+  sampleIDs = NULL,
+  min.prob = 0.75
 )
 }
 \arguments{
 \item{file}{The file of Maxquant data to be imported. Format and filetype
-vary depending on the type of data to be analyzed.}
-
-\item{sampleIDs}{A list of sampleIDs to analyze. Default is NULL, in which
-case all sample IDs are analyzed. These are determined from column names.}
-
-\item{min.prob}{Minimum probability, for use in local probability filter of
-phosphoTMT data. Unused for other pipelines. Default is 0.75.}
+vary depending on the type of data to be analyzed. If not supplied, R will
+ask you to pic a file form the file browser.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
 "phosphoTMT", and "LF". Output varies slightly based on the pipeline you
@@ -30,6 +25,12 @@ choose.}
 Seems semi-redundant?: DIA, TMT, and LF seem to always be "protein" in the
 code. PhosphoTMT can be either protein or phospho, though that seems to vary
 across subfunctions a little?}
+
+\item{sampleIDs}{Optional: a list of sampleIDs to analyze. Default is NULL, in which
+case all sample IDs are analyzed. These are determined from column names.}
+
+\item{min.prob}{Optional: the minimum probability, for use in local probability filter of
+phosphoTMT data. Unused for other pipelines. Default is 0.75.}
 }
 \value{
 A list of extracted data. The structure of the list depends on the
@@ -40,7 +41,7 @@ individual sample intensities. Rownames in this data frame give a protein ID,
 in the form of UniprotID_Gene_name_id. These
 proteins have been partially filtered: contaminants removed.
 \item "annot". a dataframe with N rows and X cols, where N is proteins and the X
-cols are various proetin annotation data. Rownames in this data frame give a protein ID,
+cols are various protein annotation data. Rownames in this data frame give a protein ID,
 in the form of UniprotID_Gene_name_id.
 \item "param", a dataframe with 1 column giving the value of some of the
 parameters used to call the function, but also other info it parses from the

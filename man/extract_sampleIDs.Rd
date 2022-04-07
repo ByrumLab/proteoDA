@@ -14,7 +14,7 @@ extract_sampleIDs(
 \arguments{
 \item{colNames}{A list of column names.}
 
-\item{sampleIDs}{A list of sampleIDs to analyze. Default is NULL, in which
+\item{sampleIDs}{Optional: a list of sampleIDs to analyze. Default is NULL, in which
 case all sample IDs are analyzed. These are determined from column names.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
