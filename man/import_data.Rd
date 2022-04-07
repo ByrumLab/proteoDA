@@ -4,7 +4,11 @@
 \alias{import_data}
 \title{Import MaxQuant data}
 \usage{
-import_data(file, pipe, enrich)
+import_data(
+  file,
+  pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+  enrich = c("protein", "phospho")
+)
 }
 \arguments{
 \item{file}{The file of Maxquant data to be imported. Format and filetype

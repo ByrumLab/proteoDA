@@ -4,7 +4,12 @@
 \alias{extract_sampleIDs}
 \title{Extract sample IDs}
 \usage{
-extract_sampleIDs(colNames, sampleIDs = NULL, pipe, enrich)
+extract_sampleIDs(
+  colNames,
+  sampleIDs = NULL,
+  pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+  enrich = c("protein", "phospho")
+)
 }
 \arguments{
 \item{colNames}{A list of column names.}

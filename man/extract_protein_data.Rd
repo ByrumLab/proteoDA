@@ -4,7 +4,12 @@
 \alias{extract_protein_data}
 \title{Extract protein data}
 \usage{
-extract_protein_data(data, sampleIDs = NULL, pipe, enrich)
+extract_protein_data(
+  data,
+  sampleIDs = NULL,
+  pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+  enrich = c("protein", "phospho")
+)
 }
 \arguments{
 \item{data}{Data from which to extract protein data. In the

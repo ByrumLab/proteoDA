@@ -1,0 +1,13 @@
+Scaffold DIA 2.2.1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Kinter_DIA_022521.sdia,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Summarization hierarchy: {},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+   Comparison Level: MS Sample,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+   Biological Replicate Level: MS Sample,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+   Technical Replicate Level: MS Sample,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+The data below is summarized at the level of (MS Sample),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Statistical test: None,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,Exclusive Intensity (Unnormalized),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+#,Visible,Star,bad name,Accession Number,Molecular Weight,Identified Peptide Count,Protein Group Score,Quantitative Value,Exclusivity,Kinter_120720_DIA_Pool_1.mzML,Kinter_120720_DIA_Pool_2.mzML,Kinter_120720_DIA_Pool_3.mzML,Kinter_120720_DIA_Q11_1D.mzML,Kinter_120720_DIA_Q11_2D.mzML,Kinter_120720_DIA_Q11_3D.mzML,Kinter_120720_DIA_Q11_3D_20210220114346.mzML,Kinter_120720_DIA_Q12_1D.mzML,Kinter_120720_DIA_Q12_2D.mzML,Kinter_120720_DIA_Q12_3D.mzML,Kinter_120720_DIA_Q12_3D_20210220125525.mzML,Kinter_120720_DIA_Q13_1D.mzML,Kinter_120720_DIA_Q13_2D.mzML,Kinter_120720_DIA_Q13_3D.mzML,Kinter_120720_DIA_Q13_3D_20210220140656.mzML,Kinter_120720_DIA_Q14_1D.mzML,Kinter_120720_DIA_Q14_2D.mzML,Kinter_120720_DIA_Q14_3D.mzML,Kinter_120720_DIA_Q15_1D.mzML,Kinter_120720_DIA_Q15_2D.mzML,Kinter_120720_DIA_Q15_3D.mzML,Kinter_120720_DIA_R71_1D.mzML,Kinter_120720_DIA_R71_2D.mzML,Kinter_120720_DIA_R71_3D.mzML,Kinter_120720_DIA_R72_1D.mzML,Kinter_120720_DIA_R72_2D.mzML,Kinter_120720_DIA_R72_3D.mzML,Kinter_120720_DIA_R73_1D.mzML,Kinter_120720_DIA_R73_2D.mzML,Kinter_120720_DIA_R73_3D.mzML,Kinter_120720_DIA_R74_1D.mzML,Kinter_120720_DIA_R74_2D.mzML,Kinter_120720_DIA_R74_3D.mzML,Kinter_120720_DIA_R75_1D.mzML,Kinter_120720_DIA_R75_2D.mzML,Kinter_120720_DIA_R75_3D.mzML
+1,true,Empty,sp|Q2TPA8|HSDL2_MOUSE Hydroxysteroid dehydrogenase-like protein 2 OS=Mus musculus OX=10090 GN=Hsdl2 PE=1 SV=1,sp|Q2TPA8|HSDL2_MOUSE,54 kDa,20,0.999986203300068,,,254690400,247648100,214075200,326889100,280238600,252713800,390065000,181509200,165053800,90150860,122730600,209966100,202538700,125166900,135280200,171417300,174482000,117623900,186927500,201030900,138798700,403608100,411950700,371308200,309142000,317669200,277670100,252464200,264546200,218659000,293633700,280778800,253573200,325105900,314037600,282687300
+END OF FILE,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

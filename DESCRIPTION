@@ -8,6 +8,7 @@ License: MIT + file LICENSE
 Imports:
     cli,
     magrittr,
+    rlang,
     stringr,
     tools
 Depends: 

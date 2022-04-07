@@ -56,6 +56,11 @@ extract_data <- function(file = NULL,
                          pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
                          enrich = c("protein", "phospho")) {
 
+  # Check args
+  rlang::arg_match(pipe)
+  rlang::arg_match(enrich)
+
+
   ## if no file is input by user the open file dialog box is
   ## called to allow the user to navigate to and select the file.
   if (is.null(file)) {
@@ -340,16 +345,29 @@ extract_data <- function(file = NULL,
 #' # No examples yet
 
 
-import_data <-function(file, pipe, enrich) {
+import_data <-function(file,
+                       pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+                       enrich = c("protein", "phospho")) {
 
-  ## check that file exists in specified location
-  ## and is csv/tsv/txt
-  file <-gsub("\\./","",file);file
-  file.dir <- dirname(file);file.dir
-  file <- file.path(file.dir, match.arg(basename(file), list.files(file.dir),
-                                        several.ok=FALSE));file
-  filext <- tools::file_ext(file);filext
-  filext <- match.arg(filext, c("csv","txt","tsv"),several.ok=FALSE)
+  # Check args
+  rlang::arg_match(pipe)
+  rlang::arg_match(enrich)
+
+
+  ## check that the file is a csv, tsv, or text file
+  filext <- tools::file_ext(file)
+  if (filext %notin% c("csv","txt","tsv")) {
+    cli::cli_abort(c("Problem with input file",
+                     "x" = "Input file must end in {.file .csv}, {.file .tsv}, or {.file .txt}"))
+  }
+
+  ## check that file exists
+  if (!file.exists(file)) {
+    cli::cli_abort(c("Cannot find file.",
+                     "x" = "{.file {file}} does not exist",
+                     "i" = "Did you specify the filepath correctly?"))
+  }
+
   if(filext=="txt" | filext=="tsv"){ sep="\t" }
   if(filext=="csv"){ sep=","}
 
@@ -360,7 +378,7 @@ import_data <-function(file, pipe, enrich) {
   ## rules. Values for each variable are listed at the top of the
   ## functions.R file.
   if(all(pipe=="DIA" & enrich=="protein")){
-    reqCols<-c(diaAnnotationColums,diaContamColums)
+    reqCols<-unique(c(diaAnnotationColums,diaContamColums))
   }
   if(all(pipe=="TMT" & enrich=="protein")){
     reqCols<-c(tmtAnnotationColums, tmtContamColums)
@@ -388,7 +406,7 @@ import_data <-function(file, pipe, enrich) {
     ## special characters, spaces, are converted to periods.
     data <- utils::read.csv(file=file, sep=sep, stringsAsFactors=FALSE,
                             header=TRUE, check.names=TRUE, skip=10)
-    if(data[nrow(data),1]=="END OF FILE"){ data <- data[-nrow(data),] };data[nrow(data),1]
+    if(data[nrow(data),1]=="END OF FILE"){ data <- data[-nrow(data),] }
 
     ## name of column 1 is changed to 'id'
     if(colnames(data)[1]=="X."){ colnames(data)[1] <- "id" }
@@ -410,7 +428,7 @@ import_data <-function(file, pipe, enrich) {
       missing_cols <- reqCols[which(reqCols %notin% colnames(data))]
       cli::cli_abort(c("Problem with columns in input file.",
                      "x" = "Required column(s) not present in {.file {file}}",
-                     "x" = "Missing columns: {missing_cols}"))
+                     "x" = "Missing column{?s}: {missing_cols}"))
 
     }
   } ## DIA IMPORT
@@ -489,7 +507,14 @@ import_data <-function(file, pipe, enrich) {
 #' # No examples yet
 #'
 
-remove_contaminants <- function(data, pipe, enrich){
+remove_contaminants <- function(data,
+                                pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+                                enrich = c("protein", "phospho")) {
+
+  # Check args
+  rlang::arg_match(pipe)
+  rlang::arg_match(enrich)
+
 
   ## vector of required contaminant column names based on
   ## analysis pipeline and type of enrichment. these columns
@@ -587,7 +612,14 @@ remove_contaminants <- function(data, pipe, enrich){
 #' # No examples yet
 
 
-extract_protein_data <- function(data, sampleIDs=NULL, pipe, enrich){
+extract_protein_data <- function(data,
+                                 sampleIDs=NULL,
+                                 pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+                                 enrich = c("protein", "phospho")) {
+
+  # Check args
+  rlang::arg_match(pipe)
+  rlang::arg_match(enrich)
 
   ## extract protein data and annotation from DIA experiment
   if(all(pipe=="DIA" & enrich=="protein")){ ## DIA/PROTEIN
@@ -775,7 +807,14 @@ make_log <- function(param, stats, title="", save=TRUE){
 
 ###### NEED TO DOCUMENT AT SOME POINT
 ###### NOT USED FOR DIA, THOUGH
-local_prob_filter <- function(data, min.prob, pipe, enrich){
+local_prob_filter <- function(data,
+                              min.prob,
+                              pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+                              enrich = c("protein", "phospho")) {
+
+  # Check args
+  rlang::arg_match(pipe)
+  rlang::arg_match(enrich)
 
   no_rows  <- nrow(data)
   min.prob <- ifelse(is.numeric(min.prob),min.prob,0.75)
@@ -820,7 +859,14 @@ local_prob_filter <- function(data, min.prob, pipe, enrich){
 #' @examples
 #' # No examples yet
 
-extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
+extract_sampleIDs <- function(colNames,
+                              sampleIDs=NULL,
+                              pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+                              enrich = c("protein", "phospho")) {
+
+  # Check args
+  rlang::arg_match(pipe)
+  rlang::arg_match(enrich)
 
   ## the first 11 columns of DIA sample reports contain
   ## 2 col. of junk & 9 annotation info. sample data should
@@ -829,19 +875,28 @@ extract_sampleIDs <- function(colNames, sampleIDs=NULL, pipe, enrich){
   ## experimental samples.
   ## NOTE: the 2 columns of the file are removed when the file
   ## is imported. Thus samples will start in column 10.
-  if(pipe=="DIA" & enrich=="protein"){
+  if (pipe == "DIA" & enrich == "protein") {
 
-    if(!is.null(sampleIDs)){
+    if (!is.null(sampleIDs)) {
 
+      # Maybe re-write this section so we don't have to do a separate check for the case when 0 are found?
       keep<-colNames%in%sampleIDs
       sampleIDs_out<-colNames[keep==TRUE]
-      if(identical(sampleIDs_out, character(0))){
-        cli::cli_abort(c("Provided sampleIds not found in column names of input",
-                         "x" = "sampleIDs: {.arg {sampleIDs}}",
-                         "x" = "Column names: {.arg {colNames}}"))
-      stopifnot(length(sampleIDs_out)==length(IDs))
 
+      # If None of the sampleIDs are found
+      if (identical(sampleIDs_out, character(0))) {
+        cli::cli_abort(c("Provided sampleId{?s} not found in column names of input file {cli::qty(sampleIDs)}",
+                         "x" = "missing sampleID{?s}: {.arg {sampleIDs}}"))
       }
+
+      # If only some are found
+      if (!all(sampleIDs %in% sampleIDs_out)) {
+        missing <- sampleIDs[sampleIDs %notin% sampleIDs_out]
+
+        cli::cli_abort(c("Provided sampleID{?s} not found in column names of input file {cli::qty(missing)}",
+                         "x" = "missing sampleID{?s}: {.arg {missing}}"))
+      }
+
     } ## NOT NULL
 
     if(is.null(sampleIDs)){

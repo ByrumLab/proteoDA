@@ -4,7 +4,11 @@
 \alias{remove_contaminants}
 \title{Remove protein contaminant rows}
 \usage{
-remove_contaminants(data, pipe, enrich)
+remove_contaminants(
+  data,
+  pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+  enrich = c("protein", "phospho")
+)
 }
 \arguments{
 \item{data}{Raw Maxquant intensity data, from which contaminants need to be
