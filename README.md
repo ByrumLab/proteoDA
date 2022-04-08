@@ -138,15 +138,16 @@ extraction functions, but I think I might hold off on that for now. If
 we do any changing of the code structure, we may have to re-write the
 tests as well. Maybe better to just do it once.
 
-| Function           | Code | Document | Test |
-|--------------------|------|----------|------|
-| extract_data       |      |          |      |
-| make_targets       |      |          |      |
-| subset_targets     |      |          |      |
-| process_data       |      |          |      |
-| make_norm_report   |      |          |      |
-| make_qc_report     |      |          |      |
-| make_design        |      |          |      |
-| make_contrasts     |      |          |      |
-| run_limma_analysis |      |          |      |
-| add_limma_results  |      |          |      |
+Function \| Code \| Document \| Test \|  
+—————— \| ————— – \| —————— \| —————— \|  
+extract_data \| :heavy_check_mark: \| :heavy_check_mark: \|
+:heavy_check_mark: \|  
+make_targets \| :heavy_check_mark: \| :heavy_check_mark: \| :x: \|  
+subset_targets \| :x: \| :x: \| :x: \|  
+process_data \| :x: \| :x: \| :x: \|  
+make_norm_report \| :x: \| :x: \| :x: \|  
+make_qc_report \| :x: \| :x: \| :x: \|  
+make_design \| :x: \| :x: \| :x: \|  
+make_contrasts \| :x: \| :x: \| :x: \|  
+run_limma_analysis \| :x: \| :x: \| :x: \|  
+add_limma_results \| :x: \| :x: \| :x: \|
