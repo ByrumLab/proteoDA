@@ -1,16 +1,10 @@
 
-# Need to be clearer about differences in behavior
-# without supplying a metadata file, just assembles a smaller file that
-# can't actually be used for other stuff. Should warn in that case
-
-
-
 #' Make a targets file
 #'
-#' Creates a dataframe of "targets". When a metadata file is supplied, this
-#' target dataframe includes data on the experimental groups and can be used for
-#' further analysis. Without the metadata file, the target dataframe only
-#' includes sample data extracted from
+#' Creates a dataframe of "targets". Output depends on whether a metadata file
+#' is supplied, and whether the metadata and targets can be matched successfully
+#' (see Value, below). Calls two subfunctions: \code{\link{import_meta}} and
+#' \code{\link{get_dia_sample_number}}.
 #'
 #' @param sampleIDs A character vector of sample IDs, from which the targets
 #'   file is constructed. In the DIA pipeline, these are the column names of the
@@ -19,9 +13,16 @@
 #'   "Pool" samples must include the regex pattern \code{[P/p]ool_[[:digit:]]} in
 #'   the column name, and samples must contain the regex pattern
 #'   \code{[S/s]ample_[[:digit:]]} in the column name.
-#' @inheritParams extract_data
+#' @param pipe Which analysis pipeline are you running? Options are "DIA", "TMT",
+#'   "phosphoTMT". Output varies slightly based on the pipeline you
+#'   choose.
+#' @param enrich Another aspect of pipeline? Options are "protein" and "phospho".
+#'   Seems semi-redundant?: DIA, TMT, and LF seem to always be "protein" in the
+#'   code. PhosphoTMT can be either protein or phospho, though that seems to vary
+#'   across subfunctions a little?
 #' @param file Optional: a metadata file, giving info on the samples. Required
 #'   format and columns for metadata file vary by pipeline.
+#'   Need to document somewhere.
 #'
 #' @return It depends:
 #'   \itemize{
@@ -41,7 +42,7 @@
 #'
 #' @examples
 #' # No examples yet
-make_targets <- function(file=NULL,
+make_targets <- function(file = NULL,
                          sampleIDs,
                          pipe = c("DIA", "TMT", "phosphoTMT"),
                          enrich = c("protein", "phospho")) {
@@ -74,7 +75,9 @@ make_targets <- function(file=NULL,
       ## if the extracted sample numbers and metadata sample numbers match.
       ## create basic targets info. and combine with metadata. save targets
       ## to csv file and return combined metadata data.frame.
-      if (all(number %in% metadata$number)) { # change the check here to actual matching?? still returns true if number < metadata$number
+      if (all(number %in% metadata$number)) {
+        # TODO change the check here to actual matching?? still returns true if number < metadata$number, which
+        # necessitates the stopifnot check below.
 
         ## create basic targets info.
         targets <- data.frame(sampleIDs = sampleIDs,
@@ -87,7 +90,7 @@ make_targets <- function(file=NULL,
         ## use sample number info. to sort targets info. so that it is in the same order
         ## as the meta data file. combine targets and metadata into a single data.frame
         m <- match(metadata$number, number)
-        stopifnot(number[m] == metadata$number) # MORE INFORMATIVE MESSAGE HERE
+        stopifnot(number[m] == metadata$number) # TODO MORE INFORMATIVE MESSAGE HERE
         targets <- targets[m, ]
         remove  <- colnames(metadata) %in% colnames(targets)
         targets <- cbind(targets, metadata[,remove==FALSE])
@@ -137,11 +140,13 @@ make_targets <- function(file=NULL,
     ## this combined key is used to match the combined batch/tag/channel info.
     ## in the metadata file.remember the batch column refers to TMT batch number
     ## in the metadata file.
-    if(pipe=="TMT" | pipe=="phosphoTMT"){ ## TMT/phosphoTMT
+    if (pipe == "TMT" | pipe == "phosphoTMT") { ## TMT/phosphoTMT
 
       ## import meta data file. set row names as batch.channel key
-      metadata <- import_meta(file=file, sampleIDs=sampleIDs, pipe=pipe)
-      rownames(metadata) <- paste(metadata$batch, metadata$tag,sep=".")
+      metadata <- import_meta(file = file,
+                              sampleIDs = sampleIDs,
+                              pipe = pipe)
+      rownames(metadata) <- paste(metadata$batch, metadata$tag, sep = ".")
 
       ## list of TMT tags and TMT batches in metadata file
       unq_tags    <- unique(metadata$tag)   ## list of unique TMT tags
@@ -149,34 +154,33 @@ make_targets <- function(file=NULL,
       no_unq_tags <- length(unq_tags)    ## no of unique TMT tags
       no_unq_bats <- length(unq_bats)    ## no of unique batches
       ## stop if each batch does not contain same no samples
-      stopifnot(length(sampleIDs)==no_unq_tags * no_unq_bats)
+      stopifnot(length(sampleIDs) == no_unq_tags * no_unq_bats)
 
       ## use no. unique tags to determine type of TMT kit used in experiment.
-      if(all(no_unq_tags==6  & all(unq_tags %in% TMT6plex))){ plex  <- TMT6plex }
-      if(all(no_unq_tags==10 & all(unq_tags %in% TMT10plex))){ plex <- TMT10plex }
-      if(all(no_unq_tags==11 & all(unq_tags %in% TMT11plex))){ plex <- TMT11plex }
-      if(all(no_unq_tags==16 & all(unq_tags %in% TMT16plex))){ plex <- TMT16plex }
-      if(no_unq_tags %in% c(6,10,11,16)==FALSE){
+      # TODO?: switch to ifelse statements?
+      if (all(no_unq_tags==6  & all(unq_tags %in% TMT6plex)))  {plex <- TMT6plex}
+      if (all(no_unq_tags==10 & all(unq_tags %in% TMT10plex))) {plex <- TMT10plex}
+      if (all(no_unq_tags==11 & all(unq_tags %in% TMT11plex))) {plex <- TMT11plex}
+      if (all(no_unq_tags==16 & all(unq_tags %in% TMT16plex))) {plex <- TMT16plex}
+      if (no_unq_tags %notin% c(6,10,11,16)) {
         return(message("Error! TMTplex could not be determined."))
-      }; plex
+      }
 
       ## use TMT tags to add channel index number to metadata
       ## create named vector
       ## combine each TMT batch with the known TMT tag list
       ## e.g. (1.126, 1.130C, 2.126,2.130C) like metadata rownames)
       ## add channel column to metadata
-      metadata$channel <- rep(NA,nrow(metadata))
-      for(i in base::seq_along(plex)){
-        m <- metadata$tag %in% plex[i]
-        metadata$channel[m==TRUE] <-names(plex)[i]
+      metadata$channel <- rep(NA, nrow(metadata))
+      for (i in seq_along(plex)) {
+        m <- metadata$tag %in% plex[i] # TODO == ?
+        metadata$channel[m == TRUE] <-names(plex)[i] #TODO Just m, not m == TRUE?
       }
-      if(any(is.na(metadata$channel))==TRUE){
+      if (any(is.na(metadata$channel))) {
         stop(paste("Error! adding channel index to metadata failed.",
                    "NAs in channel column remain:",
                    paste(metadata$channel,collapse=", ")))
       }
-
-
 
       ##--------------------------
       ##    PROCESS SAMPLEIDS
@@ -184,12 +188,14 @@ make_targets <- function(file=NULL,
       print("processing sampleIDs ...")
 
       ## extract channel index number from sampleIDs
-      channel <- gsub("Reporter\\.intensity\\.corrected\\.","",sampleIDs); channel
-      channel <- as.numeric(sub("\\..*","",channel))
+      channel <- gsub("Reporter\\.intensity\\.corrected\\.", "", sampleIDs)
+      channel <- as.numeric(sub("\\..*", "", channel))
 
 
       ## GET BATCH NUMBERS
-      b <- get_tmt_batches(sampleIDs=sampleIDs, pipe=pipe, enrich=enrich)
+      b <- get_tmt_batches(sampleIDs = sampleIDs,
+                           pipe = pipe,
+                           enrich = enrich)
       print(paste0("batch info. for ", length(unique(b)), " TMT batches created. Success!!"))
 
       ## unique TMT tags and TMT batches extracted from sampleIDs
@@ -198,36 +204,41 @@ make_targets <- function(file=NULL,
       no_unq_idx  <- length(unq_idx) ## no of unique TMT tags
       no_unq_b    <- length(unq_b)     ## no of unique batches
       ## stop if each batch does not contain same no samples
-      stopifnot(length(sampleIDs)==no_unq_idx * no_unq_b)
+      stopifnot(length(sampleIDs) == no_unq_idx * no_unq_b) # TODO more informative error message
 
       ## use no. unique tags to determine type of TMT kit used in experiment.
-      if(all(no_unq_idx==6  & all(unq_idx %in% names(TMT6plex)))){  plex2  <- TMT6plex }
-      if(all(no_unq_idx==10 & all(unq_idx %in% names(TMT10plex)))){ plex2 <- TMT10plex }
-      if(all(no_unq_idx==11 & all(unq_idx %in% names(TMT11plex)))){ plex2 <- TMT11plex }
-      if(all(no_unq_idx==16 & all(unq_idx %in% names(TMT16plex)))){ plex2 <- TMT16plex }
-      if(no_unq_idx %in% c(6,10,11,16)==FALSE){
+      # TODO: switch to ifelse?
+      if (all(no_unq_idx == 6  & all(unq_idx %in% names(TMT6plex))))  {plex2 <- TMT6plex}
+      if (all(no_unq_idx == 10 & all(unq_idx %in% names(TMT10plex)))) {plex2 <- TMT10plex}
+      if (all(no_unq_idx == 11 & all(unq_idx %in% names(TMT11plex)))) {plex2 <- TMT11plex}
+      if (all(no_unq_idx == 16 & all(unq_idx %in% names(TMT16plex)))) {plex2 <- TMT16plex}
+      if (no_unq_idx %in% c(6,10,11,16) == FALSE) {
         return(stop(paste("Error! TMTplex tags could not be determined from channel",
-                          "index extracted from sampleIDs. :("))) }
-      plex2
+                          "index extracted from sampleIDs. :(")))
+        }
 
       ## channel indexes from sampleIDs used to obtain TMT tag info.
       tag <- plex2[names(plex2)[channel]]
 
       ## basic targets info. created setting rownames as batch.tag (1.131C)
       ## https://stackoverflow.com/questions/23534066/cbind-warnings-row-names-were-found-from-a-short-variable-and-have-been-discar
-      targets <- data.frame(sampleIDs=sampleIDs, batch=b, tag=tag, channel=channel,
-                            pipe=rep(pipe,length(sampleIDs)),
-                            enrichment=rep(enrich, length(sampleIDs)), row.names=NULL)
+      targets <- data.frame(sampleIDs = sampleIDs,
+                            batch = b,
+                            tag = tag,
+                            channel = channel,
+                            pipe = rep(pipe,length(sampleIDs)),
+                            enrichment = rep(enrich, length(sampleIDs)),
+                            row.names=NULL) #TODO? addign rownames here, if we're gonna use them
       rownames(targets) <- paste(targets$batch,targets$tag,sep=".")(targets)
 
 
       ## TMT COMBINED
-      if(all(rownames(targets) %in% rownames(metadata))){
+      if (all(rownames(targets) %in% rownames(metadata))) {
         ## merge metadata with targets information removing duplicate columns in targets
         targets <- targets[rownames(metadata), ]
-        remove  <- colnames(targets) %in% colnames(metadata)(remove)
-        targets2<-as.data.frame(targets[,remove==FALSE])
-        colnames(targets2)<-colnames(targets)[remove==FALSE]
+        remove  <- colnames(targets) %in% colnames(metadata)(remove) # TODO? Not sure whats going on here?? Is this allowed
+        targets2<-as.data.frame(targets[, remove == FALSE])
+        colnames(targets2)<-colnames(targets)[remove == FALSE]
         targets <- cbind(metadata,targets2)(targets)
         stopifnot(targets$channel==metadata$channel)
         rownames(targets) <- targets$sampleIDs(targets)
@@ -267,11 +278,7 @@ make_targets <- function(file=NULL,
     } ## TMT/PHOSPHOTMT
 
 
-  } ## NOT NULL
-
-
-  ## NO METADATA FILE
-  if (is.null(file)) {
+  } else {
 
     ## DIA (NO META DATA FILE)
     if (pipe == "DIA") { ## DIA NULL
@@ -356,7 +363,7 @@ make_targets <- function(file=NULL,
 #'   "Pool" samples must include the regex pattern \code{[P/p]ool_[[:digit:]]} in
 #'   the column name, and samples must contain the regex pattern
 #'   \code{[S/s]ample_[[:digit:]]} in the column name.
-#' @inheritParams extract_data
+#' @inheritParams make_targets
 #'
 #' @return A dataframe of the imported metadata.
 #' @export
@@ -478,16 +485,16 @@ get_tmt_batches <- function(sampleIDs,
   rlang::arg_match(enrich)
 
   ## remove Reporter.intensity.corrected.XX text from sampleIDs
-  pattern <- gsub("Reporter\\.intensity\\.corrected\\.[[:digit:]]+","",sampleIDs)
+  pattern <- gsub("Reporter\\.intensity\\.corrected\\.[[:digit:]]+", "", sampleIDs)
 
   ## determine if remaining experiment info. text contains a number
   ## if a number is present we assume this refers to different batches
-  hasNumber <- grep("[[:digit:]]",pattern)
+  hasNumber <- grep("[[:digit:]]", pattern)
 
   ## if experiment info. part of sampleID contains a number
   ## then isolate number by removing periods, underscores, and letters
   ## from the text
-  if(all(length(hasNumber)==length(sampleIDs))==TRUE){
+  if (all(length(hasNumber) == length(sampleIDs))) {
 
     b <- gsub("\\.","",pattern)   ## removes period
     b <- gsub("_","",b)         ## removes underscore
@@ -496,24 +503,29 @@ get_tmt_batches <- function(sampleIDs,
 
     ## check that b is now a number and free of other
     ## characters and symbols by checking against a vector of 1:100
-    if(all(b %in% 1:100)){ b <- as.numeric(b) } else {
+    if (all(b %in% 1:100)) {
+      b <- as.numeric(b)
+      } else {
       stop(paste("b is either not a number or is a number > 100. :(",
-                 "unique batch values include:",paste(unique(b),collapse=", "))) }
-  }
+                 "unique batch values include:", paste(unique(b), collapse=", ")))
+      }
+  } else {
+    ## if experiment text does not contain a number then use unique
+    ## values of the text to assign batches assuming that the first
+    ## unique value corresponds to experiment 1
+    b=pattern
+    for (i in 1:length(unique(b))) {
+      b[b %in% unique(b)[i]] <- i
+    }
 
-  ## if experiment text does not contain a number then use unique
-  ## values of the text to assign batches assuming that the first
-  ## unique value corresponds to experiment 1
-  if(all(length(hasNumber)==length(sampleIDs))==FALSE){
-    b=pattern;b
-    for(i in 1:length(unique(b))){ b[b %in% unique(b)[i]] <- i };b
-    if(all(b %in% 1:100)){ b <- as.numeric(b);b } else {
+    if (all(b %in% 1:100)) {
+      b <- as.numeric(b)
+      } else {
       stop(paste("b is either not a number or is a number > 100. :(",
-                 "unique batch values include:",paste(unique(b),collapse=", "))) }
+                 "unique batch values include:", paste(unique(b), collapse=", ")))
+        }
   }
   cat("\n");print(b);cat("\n");print(unique(b))
 
   return(b)
-
-
 }

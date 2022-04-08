@@ -18,7 +18,7 @@ the column name, and samples must contain the regex pattern
 \code{[S/s]ample_[[:digit:]]} in the column name.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
+"phosphoTMT". Output varies slightly based on the pipeline you
 choose.}
 }
 \value{

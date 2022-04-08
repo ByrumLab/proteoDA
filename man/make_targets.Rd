@@ -13,7 +13,8 @@ make_targets(
 }
 \arguments{
 \item{file}{Optional: a metadata file, giving info on the samples. Required
-format and columns for metadata file vary by pipeline.}
+format and columns for metadata file vary by pipeline.
+Need to document somewhere.}
 
 \item{sampleIDs}{A character vector of sample IDs, from which the targets
 file is constructed. In the DIA pipeline, these are the column names of the
@@ -24,7 +25,7 @@ the column name, and samples must contain the regex pattern
 \code{[S/s]ample_[[:digit:]]} in the column name.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
+"phosphoTMT". Output varies slightly based on the pipeline you
 choose.}
 
 \item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
@@ -48,10 +49,10 @@ incomplete targets dataframe, and does not create a targets.csv file.
 }
 }
 \description{
-Creates a dataframe of "targets". When a metadata file is supplied, this
-target dataframe includes data on the experimental groups and can be used for
-further analysis. Without the metadata file, the target dataframe only
-includes sample data extracted from
+Creates a dataframe of "targets". Output depends on whether a metadata file
+is supplied, and whether the metadata and targets can be matched successfully
+(see Value, below). Calls two subfunctions: \code{\link{import_meta}} and
+\code{\link{get_dia_sample_number}}.
 }
 \examples{
 # No examples yet

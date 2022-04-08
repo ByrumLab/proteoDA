@@ -13,7 +13,7 @@ import_data(
 \arguments{
 \item{file}{The file of Maxquant data to be imported. Format and filetype
 vary depending on the type of data to be analyzed. If not supplied, R will
-ask you to pic a file form the file browser.}
+ask you to pick a file from the file browser.}
 
 \item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
 "phosphoTMT", and "LF". Output varies slightly based on the pipeline you

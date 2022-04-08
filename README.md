@@ -28,19 +28,32 @@ devtools::install_github("ByrumLab/proteomicsDIA",
 
 ## Example
 
-At the start, `proteomicsDIA` only has one function:
-`uselsss_function()`:
+The package is getting developed in pipeline order, adding each of the
+functions and subfunctions needed for the various steps in the example
+workflows (see the progress tracker below). The goal is to get all the
+current functionality into the R package before we start adding new
+features or making changes.
 
 ``` r
 # Load the proteomicsDIA package
 library(proteomicsDIA)
 
+# Extract Maxquant data
+extracted_data <- extract_data("path/to/Samples Report of from Maxquant.csv",
+                               pipe = "DIA",
+                               enrich = "protein")
 
-# call our only function
-useless_function("It doesn't matter what argument you supply")
+# make targets
+targets <- make_targets(file = "path/to/metdata.csv",
+                        sampleIDs = colnames(extracted_data$data),
+                        pipe = "DIA",
+                        enrich = "protein")
 
-# Get help on how to use useless_function:
-?useless_function
+# Functions are documented, check them out:
+?extract_data
+?make_targets
+
+# If you see any typos or things that aren't clear, let me know!
 ```
 
 ## Contributing to package development
@@ -91,16 +104,49 @@ how to manage workflows. That might be a topic for another day.
 
 ### Misc ideas
 
+See the GitHub issue tracker for other ideas
+
 -   Add a changelog.md file, to textually track/explain changes (with
     version #s).
 
--   Functions to make project directories with standard formats? See
-    rstantools::rstan_create_package() and usethis::create_project() as
-    inspiration. Could have a function that initializes a new RStudio
-    project (one for each analysis project), with a pre-defined folder
-    structure, preloaded template workflow scripts, etc. Might ease
-    things for running projects and generating outputs for both end
-    users and for us.
-
 -   Check out code coverage and CI tools, to automate testing. Some
-    options in usethis.
+    options in usethis. Might want to wait to do much testing until
+    after we decide on whether we want to do much re-writing and
+    reformatting of the code.
+
+### Progress tracker
+
+I’m working my way through the “top-level” functions in the example DIA
+workflow sent by Charity. I’m not doing much on the TMT, LF, or
+phosphoTMT side of things, though I have done a little code restyling
+for those sometimes.
+
+On the code side, I’ve been doing relatively little. I’ve been doing
+some restyling of the code for clarity, and reduced redundancy. I’ve
+dropped TODOs through the code to mark ideas for re-doing of code. The
+main thing I’ve done is to rework print statements and error messages
+(using the `cli` R package) to make these better formatted and more
+informative.
+
+On the documentation side, I’m just trying to get some initial
+documentation for each main function and all its subfunctions, linking
+them together. The goal is to explain all the inputs and outputs to get
+a better idea of how they fit together.
+
+On the test side, I started writing some unit tests for the data
+extraction functions, but I think I might hold off on that for now. If
+we do any changing of the code structure, we may have to re-write the
+tests as well. Maybe better to just do it once.
+
+| Function           | Code | Document | Test |
+|--------------------|------|----------|------|
+| extract_data       |      |          |      |
+| make_targets       |      |          |      |
+| subset_targets     |      |          |      |
+| process_data       |      |          |      |
+| make_norm_report   |      |          |      |
+| make_qc_report     |      |          |      |
+| make_design        |      |          |      |
+| make_contrasts     |      |          |      |
+| run_limma_analysis |      |          |      |
+| add_limma_results  |      |          |      |
