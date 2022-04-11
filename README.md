@@ -49,9 +49,15 @@ targets <- make_targets(file = "path/to/metdata.csv",
                         pipe = "DIA",
                         enrich = "protein")
 
+# Subset targets
+sub <- subset_targets(targets = targets, 
+                      filter_column = "group",
+                      rm.vals = "Pool")
+
 # Functions are documented, check them out:
 ?extract_data
 ?make_targets
+?subset_targets
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -142,7 +148,7 @@ tests as well. Maybe better to just do it once.
 |----------------------|--------------------|--------------------|--------------------|
 | `extract_data`       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | `make_targets`       | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `subset_targets`     | :x:                | :x:                | :x:                |
+| `subset_targets`     | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `process_data`       | :x:                | :x:                | :x:                |
 | `make_norm_report`   | :x:                | :x:                | :x:                |
 | `make_qc_report`     | :x:                | :x:                | :x:                |
