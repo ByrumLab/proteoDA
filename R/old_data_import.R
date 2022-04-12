@@ -427,7 +427,7 @@ import_data <-function(file,
       return(data2)
 
     } else {
-      missing_cols <- reqCols[which(reqCols %notin% colnames(data))]
+      missing_cols <- reqCols[reqCols %notin% colnames(data)]
       cli::cli_abort(c("Problem with columns in input file.",
                      "x" = "Required column(s) not present in {.file {file}}",
                      "x" = "Missing column{?s}: {missing_cols}"))
