@@ -44,11 +44,11 @@ normalize_data <- function(data, targets) {
   # }
 
   if (any(rownames(targets) %notin% colnames(data))) {
-    missing_targets <- rowname(targets)[rowname(targets) %notin% colnames(data)]
+    missing_targets <- rownames(targets)[rownames(targets) %notin% colnames(data)]
 
     cli::cli_abort(c("Some targets are not present in input data.",
                      "x" = "Missing target{?s}: {missing_targets}",
-                     "i" = "Check {.code colnames({data})"))
+                     "i" = "Check {.code colnames(data)}"))
 
   }
 
@@ -76,6 +76,8 @@ normalize_data <- function(data, targets) {
   # package
   normList <- vector("list", length(norm.methods))
   names(normList) <- norm.methods
+
+  cli::cli_inform("Starting normaliztion")
 
   ## apply normalization methods using functions listed above.
   ## NOTE: most of the normalizations use log2(intensity) as input except
@@ -118,7 +120,7 @@ normalize_data <- function(data, targets) {
 #'     \code{\link[NormalyzerDE:performGlobalRLRNormalization]{NormalyzerDE::performGlobalRLRNormalization}}
 #'     function.
 #'   \item giNorm- Global intensity normalization, using the
-#'     \code{\link[NormalyzerDE::globalIntensityNormalization]{NormalyzerDE::globalIntensityNormalization}}
+#'     \code{\link[NormalyzerDE:globalIntensityNormalization]{NormalyzerDE::globalIntensityNormalization}}
 #'     function.
 #' }
 #'
@@ -156,7 +158,7 @@ medianNorm <- function(logDat) {
   # Find medians of each sample
   # Divide by median
   # Multiply by mean of medians
-  sampleMed <- apply(logDat, 2, median, na.rm = TRUE)
+  sampleMed <- apply(logDat, 2, stats::median, na.rm = TRUE)
   meanMed <- mean(sampleMed, na.rm = TRUE)
   out <- t(t(logDat) / sampleMed)
   out <- out * meanMed

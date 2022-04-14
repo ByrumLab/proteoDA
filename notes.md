@@ -37,5 +37,9 @@ Another general issue to think about: how and whether to separate pipelines. As 
 I do (possibly) like the idea of using lists with some slots for pipe and enrichment, such that it becomes a sort of weak type to deal with multiple dispatch and making it easier to pass the pipe and enrichment options down through all the subfunctions. 
 
 
+#### 2022-04-14
 
+A re-architecture idea: disentangle and clarify the tasks of the first few functions in the pipeline. Right now, they all step on each other in unclear ways. Extract_data does data extraction, but also does some processing (e.g., remove contaminants, which removes rows from the data file). subset_targets filters out samples from the targets file. Then, process_data does both data filtering (removes rows from data) and sample filtering (removes columns from data), while taking on normalization as well. 
+
+I think I would rework things. An import data function, that pulls in the Maxquant data but does little else. A simple function that imports the metadata as a dataframe. Then, a function that processes the metadata into a targets file (where you have the option to remove samples if you want). Then, a function that takes in the Maxquant data and the targets dataframe or file and does all the cross-checking against each other, sample filtering, validation, etc. Then, a row/protein filtering step. Then, a normalization step. Still need to think on this more (not as sure about the combination step stuff). But I do think some conceptual separation of all these early functions would be helpful. 
 

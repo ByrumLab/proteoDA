@@ -54,10 +54,18 @@ sub <- subset_targets(targets = targets,
                       filter_column = "group",
                       rm.vals = "Pool")
 
+# Process data
+norm <- process_data(data = extracted_data$data,
+                     targets = sub_higgs$targets,
+                     min.reps = 5,
+                     min.grps = 3)
+
+
 # Functions are documented, check them out:
 ?extract_data
 ?make_targets
 ?subset_targets
+?process_data
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -149,7 +157,7 @@ tests as well. Maybe better to just do it once.
 | `extract_data`       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | `make_targets`       | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `subset_targets`     | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `process_data`       | :x:                | :x:                | :x:                |
+| `process_data`       | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_norm_report`   | :x:                | :x:                | :x:                |
 | `make_qc_report`     | :x:                | :x:                | :x:                |
 | `make_design`        | :x:                | :x:                | :x:                |

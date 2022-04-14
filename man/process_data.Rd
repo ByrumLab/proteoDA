@@ -4,22 +4,31 @@
 \alias{process_data}
 \title{Process raw protein data}
 \usage{
-process_data(data, targets, group_col = "group", min.reps = 3, min.grps = 1)
+process_data(
+  data,
+  targets,
+  min.reps = NULL,
+  min.grps = NULL,
+  group_col = "group"
+)
 }
 \arguments{
 \item{data}{Raw data to be processed. In the pipeline, this is generally the
 "data" slot of the list output by \code{\link{extract_data}}.}
 
 \item{targets}{An inputs target dataframe. In the pipeline, this is generally
-the subsetted targets data frame (that is, with pool or other non-desired
+the subsetted targets data frame (that is, with pools or other non-desired
 samples removed).}
+
+\item{min.reps}{For filtering, the minimum number of samples within a group
+that need to have non-zero intensity for a given protein/peptide for that
+peptide to be considered as quantified within a group.}
+
+\item{min.grps}{For filtering, the minimum number of groups that must have at
+least min.reps non-zero samples for a given protein/peptide to be retained.}
 
 \item{group_col}{Optional. The name of the column in the targets dataframe which
 lists the experimental group names. Default is "group"}
-
-\item{min.reps}{Optional. NEED TO FIGURE OUT}
-
-\item{min.grps}{Optional. NEED TO FIGURE OUT}
 }
 \value{
 A list with five elements:
@@ -30,7 +39,7 @@ gives the normalized intensity data
 \item "targets" - A dataframe of targets. Should be nearly the same as
 the targets dataframe that was input, possibly with new rownames.
 \item "filt"- The output of the \code{\link{filter_data}} function: a list
-of length 5 containing filtered data and other stats.
+of length 6 containing filtered data and other stats.
 See \code{\link{filter_data}}.
 \item "param"- A dataframe giving the parameters and arguments used for
 data processing
@@ -39,12 +48,20 @@ filtering.
 }
 }
 \description{
-A wrapper function, which calls some fubfunctions to filter and normalize
-raw data. First, calls \code{\link{filter_data}}, which does some filtering
-that I do not understand yet. Then, calls \code{\link{normalize_data}}, which
+A wrapper function, which calls some subfunctions to filter and normalize
+raw data. First, calls \code{\link{filter_data}}, which (1) removes samples
+(columns) that are not present in the targets file, and (2) removes proteins
+(rows) that do have the minimum number of samples with non-zero intensities
+in the minumum number of groups. Then, calls \code{\link{normalize_data}}, which
 runs multiple normalization methods on the the filtered data, so that later
-you can pick the best normalization method. Also calls \code{\link{make_logs}}
+you can pick the best normalization method. Also calls \code{\link{make_log}}
 to make some log files.
+}
+\details{
+For filtering, data rows (proteins/peptides) are only retained if they have
+non-zero intensities in at least min.reps samples and in at least min.grps
+groups. E.g., with min.reps = 2 and min.groups = 1, a protein must be quantified
+in two samples within one group to be retained.
 }
 \examples{
 # No examples yet

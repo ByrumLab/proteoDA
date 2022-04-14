@@ -58,7 +58,7 @@ function.
 \code{\link[NormalyzerDE:performGlobalRLRNormalization]{NormalyzerDE::performGlobalRLRNormalization}}
 function.
 \item giNorm- Global intensity normalization, using the
-\code{\link[NormalyzerDE::globalIntensityNormalization]{NormalyzerDE::globalIntensityNormalization}}
+\code{\link[NormalyzerDE:globalIntensityNormalization]{NormalyzerDE::globalIntensityNormalization}}
 function.
 }
 }

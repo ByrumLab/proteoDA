@@ -757,7 +757,6 @@ extract_protein_data <- function(data,
 #' @examples
 #' # No examples yet
 
-
 make_log <- function(param, stats, title="", save=TRUE){
 
   param<-data.frame(t(as.data.frame(t(param))))

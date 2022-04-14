@@ -9,3 +9,5 @@
 ^\\*BQ\.csv$
 ^notes\.md$
 ^tmp\.R$
+^\\*\_BQ\.csv$
+^targets\.csv$
