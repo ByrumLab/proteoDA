@@ -152,15 +152,15 @@ extraction functions, but I think I might hold off on that for now. If
 we do any changing of the code structure, we may have to re-write the
 tests as well. Maybe better to just do it once.
 
-| Function             | Code               | Document           | Test               |
-|----------------------|--------------------|--------------------|--------------------|
-| `extract_data`       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| `make_targets`       | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `subset_targets`     | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `process_data`       | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_norm_report`   | :x:                | :x:                | :x:                |
-| `make_qc_report`     | :x:                | :x:                | :x:                |
-| `make_design`        | :x:                | :x:                | :x:                |
-| `make_contrasts`     | :x:                | :x:                | :x:                |
-| `run_limma_analysis` | :x:                | :x:                | :x:                |
-| `add_limma_results`  | :x:                | :x:                | :x:                |
+| Function                 | Code               | Document           | Test               |
+|--------------------------|--------------------|--------------------|--------------------|
+| `extract_data`           | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| `make_targets`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `subset_targets`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `process_data`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `make_proteinorm_report` | :x:                | :x:                | :x:                |
+| `make_qc_report`         | :x:                | :x:                | :x:                |
+| `make_design`            | :x:                | :x:                | :x:                |
+| `make_contrasts`         | :x:                | :x:                | :x:                |
+| `run_limma_analysis`     | :x:                | :x:                | :x:                |
+| `add_limma_results`      | :x:                | :x:                | :x:                |

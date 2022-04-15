@@ -10,3 +10,5 @@ Kinter_DIA_022521_Samples_Report_BQ.csv
 logs/*
 *_BQ.csv
 targets.csv
+
+protein_analysis/
