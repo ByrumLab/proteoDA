@@ -2,9 +2,9 @@
 ##------------------------------
 ##  PLOT RIGHT MARGIN
 ##------------------------------
-right_margin <- function(x){
-  maxchar <- max(nchar(as.character(x)))+10;#print(maxchar)
-  right=maxchar/5;right
+right_margin <- function(x) {
+  maxchar <- max(nchar(as.character(x))) + 10
+  right <- maxchar/5
   return(right)
 }
 
@@ -12,9 +12,9 @@ right_margin <- function(x){
 ##------------------------------
 ##  PLOT LEFT MARGIN
 ##------------------------------
-left_margin <- function(x){
-  maxchar <- max(nchar(as.character(x)))+30;#print(maxchar)
-  left=maxchar/5;left
+left_margin <- function(x) {
+  maxchar <- max(nchar(as.character(x))) + 30
+  left <- maxchar/5
   return(left)
 }
 
@@ -23,213 +23,40 @@ left_margin <- function(x){
 ##  PLOT HEIGHT
 ##------------------------------
 plot_height <- function(x){
-  len<-length(x);len ## no samples
-  height=(600/20)*length(x);#print(height)
-  height<-ifelse(height>1000,1000,height)
+  height <- (600/20)*length(x)
+  height <- ifelse(height > 1000, 1000, height)
   return(height)
-
 }
+
+
+
+## RESTYLED UP TO HERE
 
 
 ##------------------------------
 ##  [01] findDensityCutoff
 ##------------------------------
+
+## NOT SURE THIS FUNCTION GETS USED ANYWHERE?
+
 ## Finds upper limit of the histogram so each box contains at least cutoffPercent of the data
-findDensityCutoff <- function(longdat, cutoffPercent=0.001) {
+findDensityCutoff <- function(longdat, cutoffPercent = 0.001) {
   densityCutoff <- 0
-  newDensityCutoff <- max(longdat, na.rm=TRUE)
+  newDensityCutoff <- max(longdat, na.rm = TRUE)
   totalNum <- length(longdat)
   while(newDensityCutoff != densityCutoff) {
     densityCutoff <- newDensityCutoff
-    breakSeq <- seq(max(min(longdat, na.rm=TRUE), 0), densityCutoff,
-                    by=(densityCutoff - max(min(longdat, na.rm=TRUE), 0)) / 30)
-    freqs <- hist(longdat[longdat < densityCutoff], breaks=breakSeq, plot=FALSE)
-    newDensityCutoff <- freqs$breaks[which((freqs$counts / totalNum) < cutoffPercent)[1]+1]
+    breakSeq <- seq(from = max(min(longdat, na.rm = TRUE), 0),
+                    to = densityCutoff,
+                    by = (densityCutoff - max(min(longdat, na.rm=TRUE), 0)) / 30)
+    freqs <- hist(longdat[longdat < densityCutoff], breaks = breakSeq, plot = FALSE)
+    newDensityCutoff <- freqs$breaks[which((freqs$counts / totalNum) < cutoffPercent)[1] + 1]
   }
   return(densityCutoff)
 
-} ## FINDDENSITYCUTOFF
+}
 
 
-##------------------------------
-##  [02] PCV
-##------------------------------
-PCV <- function(data, groups){
-  PCV=NULL
-  for(group in unique(groups)){
-    tempData=as.matrix(data[,groups %in% group])
-    CVs=genefilter::rowSds(tempData, na.rm=FALSE) /
-      rowMeans(tempData, na.rm=FALSE)
-    PCV[group]=mean(CVs, na.rm=T)
-  }
-  return(PCV)
-
-} ## PCV
-
-
-##------------------------------
-##  [03] PMAD
-##------------------------------
-PMAD <- function(data, groups){
-  PMAD=NULL
-  for(group in unique(groups)){
-    tempData=as.matrix(data[, groups %in% group])
-    MAD=matrixStats::rowMads(tempData, na.rm=FALSE)
-    PMAD[group]=mean(MAD, na.rm=T)
-  }
-  return(PMAD)
-
-} ## PMAD
-
-
-##------------------------------
-##  [04] PEV
-##------------------------------
-PEV <- function(data, groups){
-  PEV=NULL
-  for(group in unique(groups)){
-    tempData=as.matrix(data[,groups %in% group])
-
-    rowNonNACnt=rowSums(!is.na(tempData)) - 1
-    EV=rowNonNACnt * matrixStats::rowVars(tempData, na.rm=FALSE)
-    PEV[group]=sum(EV, na.rm=TRUE)/sum(rowNonNACnt, na.rm=TRUE)
-  }
-  return(PEV)
-
-} ## PEV
-
-
-##------------------------------
-##  [05] COR
-##------------------------------
-COR <- function(data, groups){
-  COR=NULL
-  for(group in unique(groups)){
-    corGroup=NULL
-    tempData=as.matrix(data[,groups %in% group])
-    if(ncol(tempData)==1){ corGroup <- 1}
-    if(ncol(tempData) > 1){
-      corVals=stats::cor(tempData, use="pairwise.complete.obs", method="pearson")
-      for (index in seq_len(ncol(corVals) - 1)) {
-        corGroup <- c(corGroup, corVals[index, -(seq_len(index)), drop="FALSE"])
-      }}
-    COR[[group]]=corGroup
-  }
-  return(COR)
-} ## COR
-
-
-##------------------------------
-##  [06] plotPCV
-##------------------------------
-plotPCV <- function(normList, groups, batch=NULL, dir=".", save=FALSE){
-
-  groups<-make_factor(as.character(groups));groups
-  if(is.null(batch)){ batch <- c(rep("1",ncol(normList[[1]]))) }
-  batch<-make_factor(as.character(batch),prefix=NULL)
-
-  if(save==TRUE){ if(!dir.exists(dir)){dir.create(dir,recursive=TRUE)} }
-  if(save==TRUE){png(filename=file.path(dir,"PCVplot.png"), units="px",
-                     width=650, height=650, pointsize=15)}
-
-  par(mar=c(8,6,4,3))
-  plotData=base::lapply(normList, function(x) PCV(x, groups))
-  boxplot(plotData, main="PCV", las=2, col=binfcolors[1:length(normList)],
-          boxlwd=1, yaxt="n", xaxt="n", cex.main=1.5)
-  axis(2,cex.axis=1.2, las=2)
-  axis(side=1, at=base::seq_along(names(normList)), labels=names(normList), cex.axis=1.3, las=2)
-  mtext(side=2, text="Pooled Coefficient of Variation", line=4.5, cex=ifelse(save==TRUE, 1.2,0.9))
-  points(rep(base::seq_along(normList), each=length(plotData[[1]])), unlist(plotData), pch="*", cex=1)
-  if(save==TRUE){dev.off()}
-
-  return(invisible(plotData))
-
-
-} ## PLOTPCV
-
-
-##------------------------------
-##  [07] plotPMAD
-##------------------------------
-plotPMAD <- function(normList, groups, batch=NULL, dir=".", save=FALSE){
-
-  if(is.null(batch)){ batch <- c(rep("1",ncol(normList[[1]]))) }
-
-  if(save==TRUE){ if(!dir.exists(dir)){dir.create(dir,recursive=TRUE)} }
-  if(save==TRUE){png(filename=file.path(dir, "PMADplot.png"), units="px",
-                     width=650, height=650, pointsize=15)}
-
-  par(mar=c(8,6,4,3))
-  plotData=base::lapply(normList, function(x) PMAD(x, groups))
-  boxplot(plotData, main="PMAD", las=2, col=binfcolors[1:length(normList)], boxlwd=1,
-          yaxt="n", xaxt="n", cex.main=1.5)
-  axis(2,cex.axis=1.2, las=2)
-  axis(side=1, at=base::seq_along(names(normList)), labels=names(normList), cex.axis=1.3, las=2)
-  mtext(side=2, text="Median Absolute Deviation", line=4.5, cex=ifelse(save==TRUE, 1.2,0.9))
-  points(rep(base::seq_along(normList), each=length(plotData[[1]])), unlist(plotData), pch="*", cex=1)
-
-  if(save==TRUE){dev.off()}
-
-  return(invisible(plotData))
-
-
-} ## PLOTPMAD
-
-
-##------------------------------
-##  [08] plotPEV
-##------------------------------
-plotPEV <- function(normList, groups, batch=NULL, dir=".", save=FALSE){
-
-  groups<-make_factor(as.character(groups));groups
-  if(is.null(batch)){ batch <- c(rep("1",ncol(normList[[1]]))) }
-  batch<-make_factor(as.character(batch),prefix=NULL)
-
-  if(save==TRUE){ if(!dir.exists(dir)){dir.create(dir,recursive=TRUE)} }
-  if(save==TRUE){png(filename=file.path(dir,"PEVplot.png"), units="px",
-                     width=650, height=650, pointsize=15)}
-  par(mar=c(8,6,4,3))
-  plotData=base::lapply(normList, function(x) PEV(x, groups))
-  boxplot(plotData, main="PEV", las=2, col=binfcolors[1:length(normList)], boxlwd=1,
-          yaxt="n", xaxt="n", cex.main=1.5)
-  axis(2,cex.axis=1.2, las=2)
-  axis(side=1, at=base::seq_along(names(normList)), labels=names(normList), cex.axis=1.3, las=2)
-  mtext(side=2, text="Pooled Estimate of Variance", line=4.5, cex=ifelse(save==TRUE, 1.2,0.9))
-  points(rep(base::seq_along(normList), each=length(plotData[[1]])), unlist(plotData), pch="*", cex=1)
-  if(save==TRUE){dev.off()}
-
-  return(invisible(plotData))
-
-} ## PLOTPEV
-
-
-##-----------------------------
-##  [09] plotCOR
-##-----------------------------
-plotCOR <- function(normList, groups, batch=NULL, dir=".", save=FALSE){
-
-  groups<-make_factor(as.character(groups));groups
-  if(is.null(batch)){ batch <- c(rep("1",ncol(normList[[1]]))) }
-  batch<-make_factor(as.character(batch),prefix=NULL)
-
-  if(save==TRUE){ if(!dir.exists(dir)){dir.create(dir,recursive=TRUE)} }
-  if(save==TRUE){png(filename=file.path(dir, "CORplot.png"), units="px",
-                     width=650, height=650, pointsize=15)}
-
-  par(mar=c(8,6,4,3))
-  plotData=base::lapply(normList, function(x) unlist(COR(x, groups)))
-  boxplot(plotData, main="Cor", las=2, col=binfcolors[1:length(normList)],
-          boxlwd=1, yaxt="n", xaxt="n", cex.main=1.5)
-  axis(side=2,cex.axis=1.2, las=2)
-  axis(side=1, at=base::seq_along(names(normList)), labels=names(normList), cex.axis=1.3, las=2)
-  mtext(side=2, text="Intragroup Correlation", line=4.5, cex=ifelse(save==TRUE,1.2, 0.9))
-  points(rep(base::seq_along(normList), each=length(plotData[[1]])), unlist(plotData), pch="*", cex=1)
-  if(save==TRUE){dev.off()}
-
-  return(invisible(plotData))
-
-
-} ## PLOTCOR
 
 
 ##------------------------------
