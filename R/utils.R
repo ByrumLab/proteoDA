@@ -56,3 +56,26 @@ make_factor <- function(x, prefix = "X") {
   x <- factor(x, levels = ordered(unique(x)))
   return(x)
 }
+
+
+
+
+make_new_filename <- function(x,dir="."){
+  kk=0
+  # library(xfun,quietly=TRUE)
+  filelist<-c(list.files(path=dir));filelist
+  ext <- tools::file_ext(x);ext
+  xx=x;xx
+  success=FALSE
+  while(success==FALSE){
+    kk=kk+1
+    # xx=sub("_[^_]+$", "", xx);xx# run the function again
+    xx <- paste0(gsub(paste0(".",ext),"",xx),"_",kk,".",ext);xx
+    success=(file.path(dir,xx)%in%file.path(dir,filelist)==FALSE);success
+    if(success==FALSE){
+      xx=sub("_[^_]+$", "", xx);xx# run the function again
+      xx=x
+    };xx
+  };xx
+  if(success==TRUE){return(xx)}
+}
