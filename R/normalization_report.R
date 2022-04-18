@@ -2,120 +2,104 @@ make_proteinorm_report <- function(normList,
                                    groups = NULL,
                                    batch = NULL,
                                    sampleLabels = NULL,
-                                   legend = TRUE,
-                                   enrich = c("protein", "phospho"),
+                                   enrich = c("protein", "phospho"), #TODO: only used for making dir name...
+                                   save = TRUE, # seems like default should be TRUE, not false
                                    dir = NULL,
                                    file = NULL,
-                                   save = FALSE,
-                                   keep.png = FALSE) {
+                                   keep.png = FALSE,
+                                   legend = TRUE) {
 
-  enrich <- match.arg(enrich,
-                      choices = c("protein", "phospho"),
-                      several.ok = FALSE)
 
+  cli::cli_rule()
+
+  #################################
+  ## Check args and set defaults ##
+  #################################
+  enrich <- rlang::arg_match(enrich)
+
+  # Sort out some defaults if arguments are not supplied
+  # Inform/alert user for groups, as this is semi-serious
+  if (is.null(groups)) {
+    groups <- rep("group", ncol(normList[[1]]))
+    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples/columns in {.arg normList} as one group."))
+
+  }
+  # Set default dir if not provided
+  if (is.null(dir)) {
+    out_dir <- file.path(paste0(enrich, "_analysis"), "01_quality_control")
+    if (save) { # but only print alert if we're saving
+      cli::cli_inform(cli::col_yellow("{.arg dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
+    }
+  } else {
+    out_dir <- dir
+  }
+  # Set default report name if not provided
+  if (is.null(file)) {
+    file <- "proteiNorm_Report.pdf"
+    if (save) { # but only print alert if we're saving
+      cli::cli_inform(cli::col_yellow("{.arg file} argument is empty. Saving report to: {.path {out_dir}/{file}}"))
+    }
+  }
+
+  # Set defaults silently for sampleLabels, expected to just grab them
+  # from the normList
   if (is.null(sampleLabels)) {
     sampleLabels <- colnames(normList[[1]])
   }
 
-  if (is.null(groups)) {
-    groups <- rep("group", ncol(normList[[1]]))
-  }
-
+  # This code doesn't seem to matter:
+  # so far in testing, works the same when commented or uncommented?
   groups <- make_factor(x = as.character(groups))
-
   if (!is.null(batch)) {
     batch <- make_factor(as.character(batch))
   }
 
-  if (!save) {
-    keep.png<-FALSE
-    dir <- "."
+
+  ###########################
+  ## If save, set up files ##
+  ###########################
+  if (save) {
+    # Make directory if it doesn't exist
+    if (!dir.exists(out_dir)) {
+      dir.create(out_dir, recursive = T)
+    }
+
+    # Check that the filename is a pdf
+    if (tools::file_ext(file) != "pdf") {
+      cli::cli_abort(c("Invalid filename for report",
+                       "X" = "{.arg file} must end in {.path .pdf}, not {.path {tools::file_ext(file)}}"))
+    }
+
+    # Check if filename already exists, remake it if so
+    if (file.exists(file.path(out_dir, file))) {
+      new_file <- make_new_filename(x = file, dir = out_dir)
+      cli::cli_inform("{.path {file}} already exists. Renaming as {.path {new_file}} instead.")
+      file <- new_file
+    }
+
+    # Notify user of where tmp png files will be
+    cli::cli_inform("Temporarily saving {.path .png} files in {.path {out_dir}}")
   }
 
 
-  ## CREATE QC OUTPUT DIRECTORY
-  ## if use enrich type to create QC output directory
-  if (save == TRUE) {
-
-    if (is.null(dir)) {
-      if (enrich == "protein") {
-        dir <- file.path("protein_analysis", "01_quality_control")
-      }
-      if (enrich == "phospho") {
-        dir <- file.path("phospho_analysis", "01_quality_control")
-      }
-    }
-
-    if (!is.null(dir)) {
-      if (!dir.exists(dir)) {
-        dir.create(dir, recursive = TRUE)
-      }
-    }
 
 
-    print(paste("QC output directory:", dir))
+  ####################
+  ## Make the plots ##
+  ####################
 
-    ## FILENAME DEFINED
-    if (!is.null(file)) {
-      if (tools::file_ext(file) != "pdf") {
-        stop("\nError! Invalid output file type...\nincorrect: file = '",file,"'",
-             "\ncorrect:   file = 'proteiNorm_Report.pdf'")
-      }
-
-      pngdir = gsub(".pdf", "", file)
-
-      if (file.exists(file.path(dir, file))) {
-        file <- make_new_filename(x = file, dir = dir)
-        no <- sub(".pdf", "", sub(".*_", "", file))
-        pngdir <- gsub(".pdf", "", file)
-      }
-      if (!file.exists(file.path(dir, file))) {
-        pngdir = gsub(".pdf", "", file)
-      }
-
-    } ## FILE NOT NULL
-
-    ## FILENAME NULL
-    if (is.null(file)) {
-      file <-"proteiNorm_Report.pdf"
-      no <- ""
-
-      if (file.exists(file.path(dir, file))) {
-        file <- make_new_filename(x = file, dir = dir)
-        no <- sub(".pdf", "", sub(".*_", "", file))
-        pngdir <- gsub(".pdf", "", file)
-      }
-      if (!file.exists(file.path(dir, file))) {
-        pngdir <- gsub(".pdf", "", file)
-      }
-    }  ## FILE NULL
-
-    print(paste("QC output directory:", dir))
-    print(paste("QC report file: ", file))
-    print(paste("png directory: ", pngdir))
-
-  } ## SAVE ==TRUE
-
-
-  ## CREATE PLOTS
-
+  # Boxplots of metrics
   metrics_to_boxplot <- c("PCV", "PMAD", "PEV", "COR")
   boxplot_plotting_res <- lapply(X = metrics_to_boxplot,
          FUN = proteinormMetricBoxplot,
          normList = normList,
          groups = groups,
          batch = batch,
-         dir = dir,
+         dir = out_dir,
          save = save)
   names(boxplot_plotting_res) <- stringr::str_to_lower(metrics_to_boxplot)
 
-  ## Heatmap(s)
-  nahm   <- plotNaHM(normList = normList,
-                     groups = groups,
-                     batch = batch,
-                     sampleLabels = sampleLabels,
-                     dir = dir,
-                     save = save)
+  # Log ratio plots
   lograt <- plotLogRatio(normList = normList,
                          groups = groups,
                          batch = batch,
@@ -123,96 +107,104 @@ make_proteinorm_report <- function(normList,
                          zoom=FALSE,
                          legend = TRUE,
                          inset = 0.02,
-                         dir = dir,
+                         dir = out_dir,
                          save = save)
-  plotLogRatio(normList = normList,
-               groups = groups,
-               batch = batch,
-               sampleLabels = sampleLabels,
-               zoom = TRUE,
-               legend = TRUE,
-               inset = 0.02,
-               dir = dir,
-               save = save)
-
+  lograt2 <- plotLogRatio(normList = normList,
+                          groups = groups,
+                          batch = batch,
+                          sampleLabels = sampleLabels,
+                          zoom = TRUE,
+                          legend = TRUE,
+                          inset = 0.02,
+                          dir = out_dir,
+                          save = save)
+  # Intensity
   totint <- plotTotInten(normList = normList,
                          groups = groups,
                          batch = batch,
                          sampleLabels = sampleLabels,
-                         dir = dir,
+                         dir = out_dir,
                          save = save)
-  if (!save) {
-    ComplexHeatmap::draw(nahm$hm_batch)
-    ComplexHeatmap::draw(nahm$hm_clust)
-    ComplexHeatmap::draw(nahm$hm_group)
-    }
 
-  data2 <- c(boxplot_plotting_res,
-             list(cor = cor,
-                  lograt = lograt,
-                  nahm = nahm,
-                  totint = totint))
-  if (save) {
-    data2 <-  c(boxplot_plotting_res,
-                list(cor = cor,
-                     lograt = lograt,
-                     nahm = nahm,
-                     totint = totint,
-                     dir = dir,
-                     file = file))
-    }
+  ## Heatmap(s)
+  nahm   <- plotNaHM(normList = normList,
+                     groups = groups,
+                     batch = batch,
+                     sampleLabels = sampleLabels,
+                     dir = out_dir,
+                     save = save)
 
-  ##  SAVE PROTEINORM REPORT PDF
+
+  ###########################
+  ## If save, make report  ##
+  ## and deal with .pngs   ##
+  ###########################
   if (save) {
-    pdf(file.path(dir,file),
+
+    cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
+
+    pdf(file.path(out_dir,file),
         paper = "USr",
         pagecentre = TRUE,
         pointsize = 10,
         width = 12,
         height = 8)
-
-    files <- c("PCVplot.png", "PMADplot.png", "PEVplot.png", "CORplot.png", "Log2RatioPlot.png",
+    # TODO: clean this up to work variably depending on which PNGs are produced?
+    png_names <- c("PCVplot.png", "PMADplot.png", "PEVplot.png", "CORplot.png", "Log2RatioPlot.png",
                "Log2RatioPlot-zoom.png", "NaHMplot.png", "NaHMplot_clust.png", "NaHMplot_group.png",
                "NaHMplot_batch.png", "TotIntenPlot.png")
-    pnglist <- paste0(paste0(file.path(dir), "/"), files)
-    thePlots <- lapply(1:length(pnglist), function(i) {grid::rasterGrob(png::readPNG(pnglist[i], native=F))})
+    png_paths <- paste0(paste0(file.path(out_dir), "/"), png_names)
 
+    # Grab the plots
+    thePlots <- lapply(1:length(png_paths), function(i) {grid::rasterGrob(png::readPNG(png_paths[i], native=F))})
+
+    # Assemble on PDF
+
+    # Make the first page, with the 6 main plots on one page
     do.call(gridExtra::grid.arrange, c(thePlots[1:6], ncol=3))
-    do.call(gridExtra::grid.arrange, c(thePlots[1], ncol=1))
-    do.call(gridExtra::grid.arrange, c(thePlots[2], ncol=1))
-    do.call(gridExtra::grid.arrange, c(thePlots[3], ncol=1))
-    do.call(gridExtra::grid.arrange, c(thePlots[4], ncol=1))
-    do.call(gridExtra::grid.arrange, c(thePlots[5], ncol=1))
-    do.call(gridExtra::grid.arrange, c(thePlots[7], ncol=1))
-    do.call(gridExtra::grid.arrange, c(thePlots[8], ncol=1))
-    do.call(gridExtra::grid.arrange, c(thePlots[9], ncol=1))
-    do.call(gridExtra::grid.arrange, c(thePlots[10], ncol=1))
-    do.call(gridExtra::grid.arrange, c(thePlots[11], ncol=1))
+    # Then, put all plots onto individual pages
+    for (i in seq_along(thePlots)) {
+      do.call(gridExtra::grid.arrange, c(thePlots[i], ncol=1))
+    }
 
+    # Close device
     dev.off()
 
-    ## REMOVE PNG FILES
-    if (!keep.png) {
-      unlink(pnglist)
-      print(file.path(dir,file))
-      print("png files removed...")
-    } ## remove png files.
-
-    ## KEEP PNG FILES
-    if (keep.png) {
-      if (!dir.exists(file.path(dir, pngdir))) {
-        dir.create(file.path(dir, pngdir), recursive = TRUE)
+    # Deal with the .png files
+    if (!keep.png) { # Delete
+      unlink(png_paths)
+      cli::cli_inform("Temporary {.path .png} files removed from {.path {out_dir}} ")
+    } else { # Move to a new png directory
+      # Setup dir name
+      pngdir <- gsub(".pdf", "_pngs", file)
+      # Create if it doesn't exist
+      if (!dir.exists(file.path(out_dir, pngdir))) {
+        dir.create(file.path(out_dir, pngdir), recursive = TRUE)
       }
-      lapply(files, function(x) {
-        file.copy(from = file.path(dir, x), to = file.path(dir, pngdir, x))
-        file.remove(file.path(dir, x))
+      # Move files
+      lapply(png_paths, function(x) {
+        file.copy(from = x, to = file.path(out_dir, pngdir, basename(x)))
+        file.remove(x)
       })
-      print(paste("png files moved to :", file.path(dir, pngdir)))
-    } ## KEEP
 
-  } ## SAVE == TRUE
+      cli::cli_inform("{.path .png} files saved to {.path {file.path(out_dir, pngdir)}}")
+    }
 
-  return(invisible(data2))
+  }
+
+  # Return data from the reports invisibly.
+  # TODO: reconsider whether we return anything at all?
+  output_data <-  c(boxplot_plotting_res,
+                    list(cor = cor,
+                         lograt = lograt,
+                         nahm = nahm,
+                         totint = totint,
+                         dir = out_dir,
+                         file = file))
+  cli::cli_rule()
+  cli::cli_inform(c("v" = "Success"))
+
+  return(invisible(output_data))
 }
 
 
@@ -228,7 +220,7 @@ proteinormMetricBoxplot <- function(normList,
                                     save = FALSE) {
 
   # check args
-  rlang::arg_match(metric)
+  metric <- rlang::arg_match(metric)
 
   if (is.null(batch)) {
     batch <- c(rep("1", ncol(normList[[1]])))
@@ -236,7 +228,7 @@ proteinormMetricBoxplot <- function(normList,
 
   # coerce group and batch to factor???
   # Not sure we need to do this
-  # these are either (1) alredy a factor,
+  # these are either (1) already a factor,
   # and/or (2) the functions of make use of these don't require them to be factors?
   #groups <- make_factor(as.character(groups))
   #batch <- make_factor(as.character(batch), prefix = NULL)

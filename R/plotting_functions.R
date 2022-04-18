@@ -29,135 +29,136 @@ plot_height <- function(x){
 }
 
 
-
-## RESTYLED UP TO HERE
-
-
 ##------------------------------
-##  [01] findDensityCutoff
+##  [10] densityLog2Ratio
 ##------------------------------
+densityLog2Ratio <- function(normList,
+                             groups,
+                             zoom = FALSE,
+                             legend = TRUE,
+                             inset = -0.2) {
 
-## NOT SURE THIS FUNCTION GETS USED ANYWHERE?
+  log2Ratio <- NULL
+  groupList <- sort(unique(groups))
 
-## Finds upper limit of the histogram so each box contains at least cutoffPercent of the data
-findDensityCutoff <- function(longdat, cutoffPercent = 0.001) {
-  densityCutoff <- 0
-  newDensityCutoff <- max(longdat, na.rm = TRUE)
-  totalNum <- length(longdat)
-  while(newDensityCutoff != densityCutoff) {
-    densityCutoff <- newDensityCutoff
-    breakSeq <- seq(from = max(min(longdat, na.rm = TRUE), 0),
-                    to = densityCutoff,
-                    by = (densityCutoff - max(min(longdat, na.rm=TRUE), 0)) / 30)
-    freqs <- hist(longdat[longdat < densityCutoff], breaks = breakSeq, plot = FALSE)
-    newDensityCutoff <- freqs$breaks[which((freqs$counts / totalNum) < cutoffPercent)[1] + 1]
+  for (method in names(normList)) {
+    for (g1 in 1:(length(groupList) - 1)) {
+      for (g2 in (g1 + 1):length(groupList)) {
+        log2Ratio[[method]] <- c(log2Ratio[[method]],
+                                 rowMeans(as.data.frame(normList[[method]][,groups == groupList[g1]]), na.rm = T) - rowMeans(as.data.frame(normList[[method]][, groups == groupList[g2]]), na.rm = T))
+      }
+    }
   }
-  return(densityCutoff)
+
+  maxY=max(unlist(base::lapply(log2Ratio, FUN=function(x) max(density(x, na.rm=T)$y))));maxY
+  minY=0
+
+  if (!zoom) {
+    minX <- 0.5 * min(unlist(min(density(log2Ratio[["vsn"]], na.rm = T)$x)))
+    maxX <- 0.5 * max(unlist(max(density(log2Ratio[["vsn"]], na.rm = T)$x)))
+  } else {
+    minX <- -0.3
+    maxX <- 0.3
+    maxY <- maxY + (0.2*maxY)
+    minY <- maxY - (0.5*maxY)
+  }
+
+  if (legend) {
+    par(mar=c(5,5,4,3))
+  } else {
+    par(mar=c(5,5,3,4))
+  }
+
+  plot(NA, las = 1,
+       xlim = c(minX, maxX),
+       ylim = c(minY, maxY),
+       xlab = "Log2 ratio",
+       ylab = "Density",
+       main = "Log2-ratio",
+       cex.main = 1.5,
+       cex.axis = 1.2,
+       cex.lab = 1.3)
+  abline(v = 0, lwd = 2, lty = 3, col = "grey")
+
+  densityList <- list()
+  for (method in names(normList)) {
+    lines(density(log2Ratio[[method]], na.rm = T),
+          col = binfcolors[which(names(log2Ratio) %in% method)],
+          lwd = 3)
+
+    densityList[[method]] <- density(log2Ratio[[method]], na.rm = T)
+  }
+  if (legend) {
+    legend("topright",
+           inset = c(inset, 0),
+           names(log2Ratio),
+           bty = "n",
+           xpd = TRUE,
+           box.col = "transparent",
+           box.lwd = 0,
+           bg = "transparent",
+           border = "transparent",
+           col = "transparent",
+           pch = 22,
+           pt.bg = binfcolors[1:length(log2Ratio)],
+           pt.cex = 1.5,
+           cex = 1,
+           horiz = FALSE,
+           ncol = 1)
+  }
+
+  return(invisible(densityList))
 
 }
 
 
 
-
-##------------------------------
-##  [10] densityLog2Ratio
-##------------------------------
-densityLog2Ratio <- function(normList, groups, zoom=FALSE, legend=TRUE, inset=-0.2){
-
-  log2Ratio=NULL
-  groupList=sort(unique(groups));groupList
-  for(method in names(normList)){
-    for(g1 in 1:(length(groupList)-1)){
-      for(g2 in (g1+1):length(groupList)){
-        log2Ratio[[method]]=c(log2Ratio[[method]],
-                              rowMeans(as.data.frame(normList[[method]][,groups==groupList[g1]]), na.rm=T) -
-                                rowMeans(as.data.frame(normList[[method]][,groups == groupList[g2]]), na.rm=T))
-      }}}
-
-  ## minX=min(unlist(base::lapply(log2Ratio, FUN=function(x) min(density(x, na.rm=T)$x))))
-  ## maxX=max(unlist(base::lapply(log2Ratio, FUN=function(x) max(density(x, na.rm=T)$x))))
-  maxY=max(unlist(base::lapply(log2Ratio, FUN=function(x) max(density(x, na.rm=T)$y))));maxY
-  minY=0
-
-  if(zoom==FALSE){
-    minX=0.5 * min(unlist(min(density(log2Ratio[["vsn"]], na.rm=T)$x)))
-    maxX=0.5 * max(unlist(max(density(log2Ratio[["vsn"]], na.rm=T)$x)))
-    maxY=maxY
-    minY=minY
-  }
-  if(zoom==TRUE){
-    minX=-0.3
-    maxX=0.3
-    maxY=maxY + (0.2*maxY)
-    minY=maxY - (0.5*maxY)
-  }
-
-  if(legend==TRUE){par(mar=c(5,5,4,3))}
-  if(legend==FALSE){par(mar=c(5,5,3,4))}
-  plot(NA, las=1, xlim=c(minX, maxX), ylim=c(minY,maxY), xlab="Log2 ratio", ylab="Density",
-       main="Log2-ratio", cex.main=1.5, cex.axis=1.2, cex.lab=1.3)
-  abline(v=0, lwd=2,lty=3, col="grey")
-
-  densityList<-list()
-  for(method in names(normList)){
-    lines(density(log2Ratio[[method]], na.rm=T),
-          ## col=grDevices::rainbow(length(log2Ratio))[which(names(log2Ratio) %in% method)],
-          col=binfcolors[which(names(log2Ratio) %in% method)],
-          ## lty=ifelse(which(names(log2Ratio) %in% method) %% 2 == 0, 2, 1),
-          lwd=3)
-
-    densityList[[method]] <- density(log2Ratio[[method]],na.rm=T)
-
-    # den=density(log2Ratio[[method]],na.rm=T)
-    # keep=den$y>=max(den$y)/2 ## points above half-height ==TRUE
-    # half.y<-den$y[keep==TRUE] ## yvalues forming above half height
-    # half.x<-den$x[keep==TRUE] ## x-values forming above half height
-
-    # lf<-grep(min(half.x),half.x);lf
-    # lower<-c(half.x[lf],half.y[lf]);lower ## left
-    # rt <-grep(max(half.x),half.x);rt
-    # upper<-c(half.x[rt],half.y[rt]);upper ## right
-    # tp <- grep(max(half.y),half.y)
-    # center=c(half.x[tp],half.y[tp]);center
-    # width=upper[1]-lower[1] ## distance across x at half height (width at half height)
-    # print(paste0("meth = ",method,"      width = ",round(width,2),
-    #              "      max.y = ",round(center[2],2),"      max.x = ",round(center[1],2)))
-  }
-  if(legend==TRUE){
-    legend("topright", inset=c(inset, 0), names(log2Ratio), bty="n", xpd=TRUE,
-           box.col="transparent", box.lwd=0, bg="transparent", border="transparent",
-           col="transparent", pch=22, pt.bg=binfcolors[1:length(log2Ratio)],
-           pt.cex=1.5, cex=1, horiz=FALSE, ncol=1)
-  }
-
-  return(invisible(densityList))
-
-} ## DENSITYLOG2RATIO
-
-
 ##------------------------------
 ##  [11] plotLogRatio
 ##------------------------------
-plotLogRatio <- function(normList, groups, batch=NULL, sampleLabels=NULL,
-                         zoom=FALSE, legend=TRUE, inset=0.02, dir=".", save=FALSE){
+plotLogRatio <- function(normList,
+                         groups,
+                         batch = NULL,
+                         sampleLabels = NULL,
+                         zoom = FALSE,
+                         legend = TRUE,
+                         inset = 0.02,
+                         dir = ".",
+                         save = FALSE) {
 
-  groups<-make_factor(as.character(groups));groups
-  if(is.null(batch)){ batch <- c(rep("1",ncol(normList[[1]]))) };batch
-  batch<-make_factor(as.character(batch),prefix=NULL)
-  if(is.null(sampleLabels)){ sampleLabels <- colnames(normList[[1]]) };sampleLabels
+  groups <- make_factor(as.character(groups))
 
-  if(save==TRUE){ if(!dir.exists(dir)){dir.create(dir,recursive=TRUE)} }
-  if(save==TRUE){
-    filename <- file.path(dir, paste0("Log2RatioPlot",ifelse(zoom==T,"-zoom.png",".png")));filename
-    png(filename=filename, units="px", width=650, height=650,pointsize=15)
+  if (is.null(batch)) {
+    batch <- c(rep("1", ncol(normList[[1]])))
   }
+  batch <- make_factor(as.character(batch), prefix = NULL)
+
+
+  if (is.null(sampleLabels)) {
+    sampleLabels <- colnames(normList[[1]])
+  }
+
+
+  if (save) {
+    if (!dir.exists(dir)) {
+      dir.create(dir, recursive=TRUE)
+    }
+    filename <- file.path(dir, paste0("Log2RatioPlot", ifelse(zoom,"-zoom.png", ".png")))
+    png(filename = filename,
+        units = "px",
+        width = 650,
+        height = 650,
+        pointsize = 15)
+  }
+
   den <- densityLog2Ratio(normList, groups, zoom, legend, inset)
-  if(save==TRUE){dev.off()}
+  if (save) dev.off()
 
   return(invisible(den))
 
-} ## PLOTLOGRATIO
+}
 
+### RESTYLED TO HERE
 
 ##------------------------------
 ##  [12] plotInten
@@ -172,9 +173,9 @@ plotTotInten <- function(normList, groups, batch=NULL, sampleLabels=NULL,dir="."
 
   ## < 100 samples
   if(length(groups) < 100){
-    width=round(0.0871*length(groups)^2 + 24.375*length(groups) + 473.02,0);print(width)
+    width=round(0.0871*length(groups)^2 + 24.375*length(groups) + 473.02,0)
     height=800
-    ncols=3;print(ncols)
+    ncols=3
     par(oma=c(2, 1, 1, 1),mar=c(8,5,5,2))
   }
 
@@ -206,7 +207,7 @@ plotTotInten <- function(normList, groups, batch=NULL, sampleLabels=NULL,dir="."
     # abline(h=max(colSums(normList[[i]], na.rm=T)), lty=2)
   }
   names(barList)<-names(normList)
-  if(save==T){dev.off()}
+  if (save) dev.off()
 
   return(invisible(barList))
 
@@ -360,25 +361,25 @@ plotNaHM <- function(normList, groups, batch=NULL, sampleLabels=NULL, dir=".", s
   if(save==TRUE){png(filename=file.path(dir, "NaHMplot.png"), units="in",
                      width=width, height=8, res=100,pointsize=8)}
   miss <- heatmapMissing(data=normList[["log2"]], groups=groups, batch=batch, sampleLabels=sampleLabels,legend=TRUE)
-  if(save==TRUE){dev.off()}
+  if (save) dev.off()
 
   if(save==TRUE){png(filename=file.path(dir, "NaHMplot_clust.png"), units="in",
                      width=width2, height=8, res=100,pointsize=8)}
   hm_clust = heatmapClustered(missing=miss, groups, batch, groupCol, batchCol, sampleLabels, legend=TRUE)
   ComplexHeatmap::draw(hm_clust)
-  dev.off()
+  if (save) dev.off()
 
   if(save==TRUE){png(filename=file.path(dir, "NaHMplot_group.png"),
                      units="in", width=width2, height=8, res=100,pointsize=8)}
   hm_group = heatmapGroup(missing=miss, groups, batch, groupCol, batchCol, sampleLabels, legend=T)
   ComplexHeatmap::draw(hm_group)
-  dev.off()
+  if (save) dev.off()
 
   if(save==TRUE){png(filename=file.path(dir, "NaHMplot_batch.png"),
                      units="in", width=width2, height=8, res=100, pointsize=8)}
   hm_batch = heatmapBatch(missing=miss, groups, batch, groupCol, batchCol, sampleLabels, legend=T)
   ComplexHeatmap::draw(hm_batch)
-  dev.off()
+  if (save) dev.off()
 
   data2 <- list(missing=miss, hm_clust=hm_clust,hm_group=hm_group,hm_batch=hm_batch)
   return(invisible(data2))
@@ -386,6 +387,12 @@ plotNaHM <- function(normList, groups, batch=NULL, sampleLabels=NULL, dir=".", s
 
 } ## PLOTNAHM
 
+
+
+
+####################################
+## QC REPORT FUNCTIONS BELOW????? ##
+####################################
 
 ##------------------------------
 ##  [18] plotCorHM
@@ -448,7 +455,7 @@ plotCorHM <- function(data, groups, batch=NULL, sampleLabels=NULL, dir=".",save=
   )
   par(mar=c(10,10,10,10))
   ComplexHeatmap::draw(hm_corr, heatmap_legend_side="top",ht_gap=grid::unit(2, "cm"))
-  if(save==TRUE){dev.off()}
+  if (save) dev.off()
 
   return(invisible(cor_mat))
 
@@ -491,7 +498,7 @@ plotBoxplot <- function(data, groups=NULL, sampleLabels=NULL, title=NULL, legend
            box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg=colorGroup2(groups),
            col=colorGroup2(groups), pt.cex=1.2, pt.lwd=0, inset=0.02, horiz=F,ncol=1)
   }
-  if(save==TRUE){dev.off()}
+  if (save) dev.off()
 
   return(invisible(box))
 
@@ -543,7 +550,7 @@ plotViolin <- function(data, groups=NULL, sampleLabels=NULL, title=NULL, legend=
            box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg=colorGroup2(groups),
            col=colorGroup2(groups), pt.cex=1.2, pt.lwd=0, inset=0.02, horiz=F,ncol=1)
   }
-  if(save==TRUE){dev.off()}
+  if (save) dev.off()
 
   return(invisible(vio))
 
@@ -639,7 +646,7 @@ plotPCA <- function(data, groups=NULL, sampleLabels=NULL, title=NULL, top=500, s
            box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg=colorGroup2(groups),
            col=colorGroup2(groups), pt.cex=1.2, pt.lwd=0, inset=0.02, horiz=F,ncol=1)
   }
-  if(save==TRUE){ dev.off() }
+  if (save) dev.off()
   # par(op)
 
   data2 <- list(pca=pca, dat=data)
@@ -715,7 +722,7 @@ plotDendrogram <- function(data, groups=NULL, sampleLabels=NULL, top=500, stdize
   }
   par(mar=c(5, 4, 4, 2) + 0.1)
 
-  if(save==TRUE){ dev.off() }
+  if (save) dev.off()
 
   data2<- list(hc=hc, d=d, dat=data, clust.meth=clust.meth, clust.metric=clust.metric, stdize=stdize, top=top)
 
