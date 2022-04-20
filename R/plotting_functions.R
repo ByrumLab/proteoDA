@@ -30,189 +30,84 @@ plot_height <- function(x){
 
 
 ##------------------------------
-##  [10] densityLog2Ratio
+##  [12] plotInten
 ##------------------------------
-densityLog2Ratio <- function(normList,
-                             groups,
-                             zoom = FALSE,
-                             legend = TRUE,
-                             inset = -0.2) {
-
-  log2Ratio <- NULL
-  groupList <- sort(unique(groups))
-
-  for (method in names(normList)) {
-    for (g1 in 1:(length(groupList) - 1)) {
-      for (g2 in (g1 + 1):length(groupList)) {
-        log2Ratio[[method]] <- c(log2Ratio[[method]],
-                                 rowMeans(as.data.frame(normList[[method]][,groups == groupList[g1]]), na.rm = T) - rowMeans(as.data.frame(normList[[method]][, groups == groupList[g2]]), na.rm = T))
-      }
-    }
-  }
-
-  maxY=max(unlist(base::lapply(log2Ratio, FUN=function(x) max(density(x, na.rm=T)$y))));maxY
-  minY=0
-
-  if (!zoom) {
-    minX <- 0.5 * min(unlist(min(density(log2Ratio[["vsn"]], na.rm = T)$x)))
-    maxX <- 0.5 * max(unlist(max(density(log2Ratio[["vsn"]], na.rm = T)$x)))
-  } else {
-    minX <- -0.3
-    maxX <- 0.3
-    maxY <- maxY + (0.2*maxY)
-    minY <- maxY - (0.5*maxY)
-  }
-
-  if (legend) {
-    par(mar=c(5,5,4,3))
-  } else {
-    par(mar=c(5,5,3,4))
-  }
-
-  plot(NA, las = 1,
-       xlim = c(minX, maxX),
-       ylim = c(minY, maxY),
-       xlab = "Log2 ratio",
-       ylab = "Density",
-       main = "Log2-ratio",
-       cex.main = 1.5,
-       cex.axis = 1.2,
-       cex.lab = 1.3)
-  abline(v = 0, lwd = 2, lty = 3, col = "grey")
-
-  densityList <- list()
-  for (method in names(normList)) {
-    lines(density(log2Ratio[[method]], na.rm = T),
-          col = binfcolors[which(names(log2Ratio) %in% method)],
-          lwd = 3)
-
-    densityList[[method]] <- density(log2Ratio[[method]], na.rm = T)
-  }
-  if (legend) {
-    legend("topright",
-           inset = c(inset, 0),
-           names(log2Ratio),
-           bty = "n",
-           xpd = TRUE,
-           box.col = "transparent",
-           box.lwd = 0,
-           bg = "transparent",
-           border = "transparent",
-           col = "transparent",
-           pch = 22,
-           pt.bg = binfcolors[1:length(log2Ratio)],
-           pt.cex = 1.5,
-           cex = 1,
-           horiz = FALSE,
-           ncol = 1)
-  }
-
-  return(invisible(densityList))
-
-}
-
-
-
-##------------------------------
-##  [11] plotLogRatio
-##------------------------------
-plotLogRatio <- function(normList,
+plotTotInten <- function(normList,
                          groups,
                          batch = NULL,
                          sampleLabels = NULL,
-                         zoom = FALSE,
-                         legend = TRUE,
-                         inset = 0.02,
                          dir = ".",
                          save = FALSE) {
 
-  groups <- make_factor(as.character(groups))
 
+  groups < -make_factor(groups)
   if (is.null(batch)) {
-    batch <- c(rep("1", ncol(normList[[1]])))
+    batch <- c(rep("1",ncol(normList[[1]])))
   }
   batch <- make_factor(as.character(batch), prefix = NULL)
-
-
   if (is.null(sampleLabels)) {
     sampleLabels <- colnames(normList[[1]])
+  }
+
+  ## < 100 samples
+  if (length(groups) < 100) {
+    width <- round(0.0871*length(groups)^2 + 24.375*length(groups) + 473.02, 0)
+    height <- 800
+    ncols <- 3
+    par(oma = c(2, 1, 1, 1),
+        mar = c(8, 5, 5, 2))
+  }
+
+  ## >= 100 samples
+  if (length(groups) >= 100) {
+    width <- round(0.0035*length(groups)^2 + 10.035*length(groups) + 146.15, 0)
+    height <- 2400
+    ncols <- 1
+    par(oma = c(1, 5, 5, 5),
+        mar = c(8, 2, 2, 2))
   }
 
 
   if (save) {
     if (!dir.exists(dir)) {
-      dir.create(dir, recursive=TRUE)
+      dir.create(dir, recursive = TRUE)
     }
-    filename <- file.path(dir, paste0("Log2RatioPlot", ifelse(zoom,"-zoom.png", ".png")))
-    png(filename = filename,
+    png(filename = file.path(dir, "TotIntenPlot.png"),
         units = "px",
-        width = 650,
-        height = 650,
+        width = width,
+        height = height,
         pointsize = 15)
   }
 
-  den <- densityLog2Ratio(normList, groups, zoom, legend, inset)
-  if (save) dev.off()
-
-  return(invisible(den))
-
-}
-
-### RESTYLED TO HERE
-
-##------------------------------
-##  [12] plotInten
-##------------------------------
-plotTotInten <- function(normList, groups, batch=NULL, sampleLabels=NULL,dir=".", save=FALSE){
 
 
-  groups<-make_factor(groups);groups
-  if(is.null(batch)){ batch <- c(rep("1",ncol(normList[[1]]))) };batch
-  batch<-make_factor(as.character(batch),prefix=NULL)
-  if(is.null(sampleLabels)){ sampleLabels <- colnames(normList[[1]]) };sampleLabels
-
-  ## < 100 samples
-  if(length(groups) < 100){
-    width=round(0.0871*length(groups)^2 + 24.375*length(groups) + 473.02,0)
-    height=800
-    ncols=3
-    par(oma=c(2, 1, 1, 1),mar=c(8,5,5,2))
-  }
-
-  ## >= 100 samples
-  if(length(groups) >= 100){
-    width=round(0.0035*length(groups)^2 + 10.035*length(groups) + 146.15,0);print(width)
-    height=2400
-    ncols=1
-    par(oma=c(1,5,5,5),mar=c(8,2,2,2)) ## 100
-  }
-
-
-  if(save==TRUE){ if(!dir.exists(dir)){dir.create(dir,recursive=TRUE)} }
-  if(save==TRUE){png(filename=file.path(dir,"TotIntenPlot.png"), units="px",
-                     width=width, height=height, pointsize=15)}
-
-  layout(matrix(1:9, ncol=ncols, byrow=TRUE))
-  barList<-NULL
-  for(i in names(normList)){
-    barList[[i]] <- colSums(normList[[i]],na.rm = T)
+  layout(matrix(1:9, ncol = ncols, byrow = TRUE))
+  barList <- NULL
+  for (i in names(normList)) {
+    barList[[i]] <- colSums(normList[[i]], na.rm = T)
     barplot(barList[[i]],
-            # colSums(normList[[i]], na.rm=T),
-            main="", las=2, yaxt="n",
-            cex.main=1.5, cex.lab=1.2,
-            col=colorGroup2(groups)[groups], names.arg=sampleLabels)
-    title(main=i, font.main=1, cex.main=1.5, line=2)
-    axis(side=2, cex.axis=1.2, las=2)
-    if(i == "VSN") mtext(side=2, text="Total Intensity", line=6, cex=1.5)
-    # abline(h=max(colSums(normList[[i]], na.rm=T)), lty=2)
+            main = "",
+            las = 2,
+            yaxt = "n",
+            cex.main = 1.5,
+            cex.lab = 1.2,
+            col = colorGroup2(groups)[groups],
+            names.arg = sampleLabels)
+    title(main = i, font.main = 1, cex.main = 1.5, line = 2)
+    axis(side = 2, cex.axis = 1.2, las = 2)
+    if (i == "VSN") {
+      mtext(side = 2, text = "Total Intensity", line = 6, cex = 1.5)
+    }
   }
-  names(barList)<-names(normList)
+  names(barList) <- names(normList)
   if (save) dev.off()
 
   return(invisible(barList))
 
-} ## PLOTTOTINTEN
+}
 
+
+### RESTYLED TO HERE
 
 ##------------------------------
 ##  [13] heatmapClustered

@@ -36,7 +36,7 @@ remove_commas <- function(x){ x<-as.numeric(gsub("\\,", "", x)) }
 #' in front of the number by default, or can supply your own prefix to use
 #' instead.
 #'
-#' @param x Input vctor to be converted to a factor
+#' @param x Input vector to be converted to a factor
 #' @param prefix Optional: a prefix to put in front of numbers when
 #'   converting to a factor. Default is "X"
 #'
@@ -59,23 +59,66 @@ make_factor <- function(x, prefix = "X") {
 
 
 
-
-make_new_filename <- function(x,dir="."){
-  kk=0
-  # library(xfun,quietly=TRUE)
-  filelist<-c(list.files(path=dir));filelist
-  ext <- tools::file_ext(x);ext
-  xx=x;xx
-  success=FALSE
-  while(success==FALSE){
-    kk=kk+1
-    # xx=sub("_[^_]+$", "", xx);xx# run the function again
-    xx <- paste0(gsub(paste0(".",ext),"",xx),"_",kk,".",ext);xx
-    success=(file.path(dir,xx)%in%file.path(dir,filelist)==FALSE);success
-    if(success==FALSE){
-      xx=sub("_[^_]+$", "", xx);xx# run the function again
-      xx=x
-    };xx
-  };xx
-  if(success==TRUE){return(xx)}
+#' All pairwise differences of a vector
+#'
+#' Taken from \url{https://stackoverflow.com/questions/48445003/compute-all-pairwise-differences-of-elements-in-a-vector},
+#' uses a nice R matrix algebra trick, taking the outer product of the vectors
+#' (in this case, the difference instead of the product). Then, just return the
+#' lower triangle, so we don't double-count pw comparisons
+#'
+#' @param vector
+#'
+#' @return A vector of all pairwise differences between the elements in the vector
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
+all_pw_diffs <- function(vector) {
+  all_diffs <- outer(vector, vector, "-")
+  all_diffs[lower.tri(all_diffs)]
 }
+
+
+
+#' Make new filename to avoid overwriting
+#'
+#' Takes in a filename and a directory for a file that already exists. Tries to
+#' make a new filename by adding "_01" between the filename and extension, and
+#' continues to do so, increasing the number, until it finds a filename that does
+#' not yet exist. Returns that filename.
+#'
+#' @param x Non-unique filename we're trying to replace.
+#' @param dir directory of the file we're trying to create
+#'
+#' @return A new, unique filename
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
+make_new_filename <- function(x, dir) {
+  # Parse input filename and get current file list
+  ext <- tools::file_ext(x)
+  base_name <- stringr::str_remove(x, paste0(".", ext))
+  current_files <- list.files(path=dir)
+
+  # Loop setup
+  attempt <- 0
+  success <- FALSE
+  # Start looping
+  while (!success) {
+    if (attempt >= 50) {
+      cli::cli_abort("Could not create new unique filename to replace {.path {x}} after {.val {attempt}} tries. ")
+    }
+    attempt <- attempt + 1
+
+    suffix <- stringr::str_pad(as.character(attempt), width = 2, side = "left", pad = "0")
+    new_name <- paste0(base_name, "_", suffix, ".", ext)
+    success <- new_name %notin% current_files
+  }
+
+  new_name
+}
+

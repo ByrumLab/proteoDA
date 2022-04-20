@@ -3,7 +3,7 @@ make_proteinorm_report <- function(normList,
                                    batch = NULL,
                                    sampleLabels = NULL,
                                    enrich = c("protein", "phospho"), #TODO: only used for making dir name...
-                                   save = TRUE, # seems like default should be TRUE, not false
+                                   save = TRUE,
                                    dir = NULL,
                                    file = NULL,
                                    keep.png = FALSE,
@@ -100,24 +100,22 @@ make_proteinorm_report <- function(normList,
   names(boxplot_plotting_res) <- stringr::str_to_lower(metrics_to_boxplot)
 
   # Log ratio plots
-  lograt <- plotLogRatio(normList = normList,
-                         groups = groups,
-                         batch = batch,
-                         sampleLabels = sampleLabels,
-                         zoom=FALSE,
-                         legend = TRUE,
-                         inset = 0.02,
-                         dir = out_dir,
-                         save = save)
-  lograt2 <- plotLogRatio(normList = normList,
-                          groups = groups,
-                          batch = batch,
-                          sampleLabels = sampleLabels,
-                          zoom = TRUE,
-                          legend = TRUE,
-                          inset = 0.02,
-                          dir = out_dir,
-                          save = save)
+  lograt <- plotLogRatioDensity(normList = normList,
+                                groups = groups,
+                                batch = batch,
+                                zoom=FALSE,
+                                legend = TRUE,
+                                inset = 0.02,
+                                dir = out_dir,
+                                save = save)
+  lograt2 <- plotLogRatioDensity(normList = normList,
+                                 groups = groups,
+                                 batch = batch,
+                                 zoom = TRUE,
+                                 legend = TRUE,
+                                 inset = 0.02,
+                                 dir = out_dir,
+                                 save = save)
   # Intensity
   totint <- plotTotInten(normList = normList,
                          groups = groups,
@@ -303,4 +301,118 @@ proteinormMetricBoxplot <- function(normList,
   if (save) dev.off()
 
   return(invisible(plotData))
+}
+
+
+
+##------------------------------
+##  [11] plotLogRatio
+##------------------------------
+plotLogRatioDensity <- function(normList,
+                                groups,
+                                batch = NULL,
+                                zoom = FALSE,
+                                legend = TRUE,
+                                inset = 0.02,
+                                dir = ".",
+                                save = FALSE) {
+
+  # Prep args
+  # Again, not sure we need to coerce to factor here
+  groups <- make_factor(as.character(groups))
+
+
+  if (is.null(batch)) {
+    batch <- c(rep("1", ncol(normList[[1]])))
+  }
+  batch <- make_factor(as.character(batch), prefix = NULL)
+
+  # Calculate the log2ratios for each element of the Normlist
+  plotData <- lapply(normList, FUN = log2ratio, groups = groups)
+
+  # Set up plotting area limits
+  maxY <- max(unlist(base::lapply(plotData, FUN=function(x) max(density(x, na.rm = T)$y))))
+  minY=0
+
+  if (zoom) {
+    minX <- -0.3
+    maxX <- 0.3
+    maxY <- maxY + (0.2*maxY)
+    minY <- maxY - (0.5*maxY)
+  } else {
+    minX <- 0.5 * min(unlist(min(density(plotData[["vsn"]], na.rm = T)$x)))
+    maxX <- 0.5 * max(unlist(max(density(plotData[["vsn"]], na.rm = T)$x)))
+  }
+
+  # Collect current par() options that we're going to change,
+  # and set them back on exit
+  old_mar <- par()$mar
+  on.exit(par(mar = old_mar), add = TRUE)
+  if (legend) {
+    par(mar=c(5,5,4,3))
+  } else {
+    par(mar=c(5,5,3,4))
+  }
+
+  # If saving, set up dir and filename
+  if (save) {
+    if (!dir.exists(dir)) {
+      dir.create(dir, recursive = TRUE)
+    }
+    filename <- file.path(dir, paste0("Log2RatioPlot", ifelse(zoom,"-zoom.png", ".png")))
+    png(filename = filename,
+        units = "px",
+        width = 650,
+        height = 650,
+        pointsize = 15)
+    # Close the device if there's an error below before we're done plotting
+    on.exit(dev.off(), add = TRUE)
+  }
+
+  # Initialize empty plot
+  plot(NA, las = 1,
+       xlim = c(minX, maxX),
+       ylim = c(minY, maxY),
+       xlab = "Log2 ratio",
+       ylab = "Density",
+       main = "Log2-ratio",
+       cex.main = 1.5,
+       cex.axis = 1.2,
+       cex.lab = 1.3)
+  abline(v = 0, lwd = 2, lty = 3, col = "grey")
+
+  # Plot each density line
+  densityList <- list()
+  for (method in names(normList)) {
+    lines(density(plotData[[method]], na.rm = T),
+          col = binfcolors[which(names(plotData) %in% method)],
+          lwd = 3)
+
+    densityList[[method]] <- density(plotData[[method]], na.rm = T)
+  }
+
+  # Plot legend if including
+  if (legend) {
+    legend("topright",
+           inset = c(inset, 0),
+           names(plotData),
+           bty = "n",
+           xpd = TRUE,
+           box.col = "transparent",
+           box.lwd = 0,
+           bg = "transparent",
+           border = "transparent",
+           col = "transparent",
+           pch = 22,
+           pt.bg = binfcolors[1:length(plotData)],
+           pt.cex = 1.5,
+           cex = 1,
+           horiz = FALSE,
+           ncol = 1)
+  }
+
+  if (save) dev.off()
+
+  return(invisible(densityList))
+
 }
