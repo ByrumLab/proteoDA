@@ -7,7 +7,7 @@ make_proteinorm_report <- function(normList,
                                    dir = NULL,
                                    file = NULL,
                                    keep.png = FALSE,
-                                   legend = TRUE) {
+                                   showAllProteins = FALSE) {
 
 
   cli::cli_rule()
@@ -125,12 +125,13 @@ make_proteinorm_report <- function(normList,
                          save = save)
 
   ## Heatmap(s)
-  nahm   <- plotNaHM(normList = normList,
-                     groups = groups,
-                     batch = batch,
-                     sampleLabels = sampleLabels,
-                     dir = out_dir,
-                     save = save)
+  nahm   <- plotHeatmapsForReport(data = normList[[1]],
+                                  groups = groups,
+                                  batch = batch,
+                                  sampleLabels = sampleLabels,
+                                  showAllProteins = showAllProteins,
+                                  dir = out_dir,
+                                  save = save)
 
 
   ###########################
@@ -222,16 +223,6 @@ proteinormMetricBoxplot <- function(normList,
     batch <- c(rep("1", ncol(normList[[1]])))
   }
 
-  # Upon exiting the function, close any open graphics devices
-  # Need to possibly be a little careful with this:
-  # The idea is that, if there's an error, we want
-  # to close the graphics device that has been created
-  # within this function. This function closes all graphics devices
-  # including any from higher up in the stack.
-  # There probably shouldn't be any higher up in the stack, but I think
-  # at the moment this is not true for the normalization report code.
-  on.exit(graphics.off(), add = TRUE)
-
   # coerce group and batch to factor???
   # Not sure we need to do this
   # these are either (1) already a factor,
@@ -263,10 +254,12 @@ proteinormMetricBoxplot <- function(normList,
         pointsize = 15)
   }
 
+
   # Collect current par() options that we're going to change,
   # and set them back on exit
   old_mar <- par()$mar
   on.exit(par(mar = old_mar), add = TRUE)
+  on.exit(dev.off(), add = TRUE)
 
   # Get plot data by applying our metric function across
   # the input normlist
@@ -303,15 +296,12 @@ proteinormMetricBoxplot <- function(normList,
          pch = "*",
          cex = 1)
 
-  # If saving, close the device
-  if (save) dev.off()
-
   return(invisible(plotData))
 }
 
 
 
-### UPdated plotting of log Ratio density
+### Updated plotting of log Ratio density
 plotLogRatioDensity <- function(normList,
                                 groups,
                                 batch = NULL,
@@ -320,7 +310,6 @@ plotLogRatioDensity <- function(normList,
                                 inset = 0.02,
                                 dir = ".",
                                 save = FALSE) {
-
   # Prep args
   # Again, not sure we need to coerce to factor here
   groups <- make_factor(as.character(groups))
@@ -331,8 +320,6 @@ plotLogRatioDensity <- function(normList,
   }
   batch <- make_factor(as.character(batch), prefix = NULL)
 
-  # Close any graphics devices if there's an error below before we're done plotting
-  on.exit(graphics.off(), add = TRUE)
 
   # Calculate the log2ratios for each element of the Normlist
   plotData <- lapply(normList, FUN = log2ratio, groups = groups)
@@ -351,17 +338,8 @@ plotLogRatioDensity <- function(normList,
     maxX <- 0.5 * max(unlist(max(density(plotData[["vsn"]], na.rm = T)$x)))
   }
 
-  # Collect current par() options that we're going to change,
-  # and set them back on exit
-  old_mar <- par()$mar
-  on.exit(par(mar = old_mar), add = TRUE)
-  if (legend) {
-    par(mar=c(5,5,4,3))
-  } else {
-    par(mar=c(5,5,3,4))
-  }
-
   # If saving, set up dir and filename
+  # and open png
   if (save) {
     if (!dir.exists(dir)) {
       dir.create(dir, recursive = TRUE)
@@ -374,6 +352,23 @@ plotLogRatioDensity <- function(normList,
         pointsize = 15)
   }
 
+  # Collect current par() options that we're going to change,
+  # and set them back on exit
+  ### FOR REASON THAT ARE SEMI-UNCLEAR TO ME,
+  ### ALL THIS PAR STUFF HAS FO COME AFTER THE PNG MAKING.
+  ### PAR WIL MAKE A NEW GRAPHICS DEVICE IF THERE ISN"T ALREADY ONE OPEN
+  ### SO, WHEN IT IS IN FRONT, IT OPENS A GRAPHICS DEVICE.
+  ### THEN, PNG OPENS ANOTHER GRAPHICS DEVICE. AND CLOSING ON EXIT
+  ### WILL ONLY CLOSE ONE OF THEM.
+  old_mar <- par()$mar
+  on.exit(par(mar = old_mar), add = TRUE)
+  on.exit(dev.off(), add = TRUE)
+
+  if (legend) {
+    par(mar=c(5,5,4,3))
+  } else {
+    par(mar=c(5,5,3,4))
+  }
   # Initialize empty plot
   plot(NA, las = 1,
        xlim = c(minX, maxX),
@@ -385,6 +380,7 @@ plotLogRatioDensity <- function(normList,
        cex.axis = 1.2,
        cex.lab = 1.3)
   abline(v = 0, lwd = 2, lty = 3, col = "grey")
+
 
   # Plot each density line
   densityList <- list()
@@ -415,9 +411,6 @@ plotLogRatioDensity <- function(normList,
            horiz = FALSE,
            ncol = 1)
   }
-
-  if (save) dev.off()
-
   return(invisible(densityList))
 
 }
@@ -443,30 +436,17 @@ plotTotInten <- function(normList,
     sampleLabels <- colnames(normList[[1]])
   }
 
-  # Collect current par() options that we're going to change,
-  # and set them back on exit
-  old_mar <- par()$mar
-  old_oma <- par()$oma
-  on.exit(par(mar = old_mar), add = TRUE)
-  on.exit(par(oma = old_oma), add = TRUE)
-
-  # Close any graphics devices if there's an error below before we're done plotting
-  on.exit(graphics.off(), add = TRUE)
-
   # Set up plotting area, variably by number of samples
-    if (length(groups) < 100) {
+  if (length(groups) < 100) {
     width <- round(0.0871*length(groups)^2 + 24.375*length(groups) + 473.02, 0)
     height <- 800
     ncols <- 3
-    par(oma = c(2, 1, 1, 1),
-        mar = c(8, 5, 5, 2))
-    } else {
-      width <- round(0.0035*length(groups)^2 + 10.035*length(groups) + 146.15, 0)
-      height <- 2400
-      ncols <- 1
-      par(oma = c(1, 5, 5, 5),
-          mar = c(8, 2, 2, 2))
+  } else {
+    width <- round(0.0035*length(groups)^2 + 10.035*length(groups) + 146.15, 0)
+    height <- 2400
+    ncols <- 1
   }
+
 
   # If saving, set up files
   if (save) {
@@ -480,6 +460,24 @@ plotTotInten <- function(normList,
         pointsize = 15)
   }
 
+
+  # Collect current par() options that we're going to change,
+  # and set them back on exit
+  old_mar <- par()$mar
+  old_oma <- par()$oma
+  on.exit(par(mar = old_mar), add = TRUE)
+  on.exit(par(oma = old_oma), add = TRUE)
+  on.exit(dev.off(), add = TRUE)
+
+  # Set up plotting parameters
+  # Have to do this twice, can't have the pars above the png making
+  if (length(groups) < 100) {
+    par(oma = c(2, 1, 1, 1),
+        mar = c(8, 5, 5, 2))
+  } else {
+    par(oma = c(1, 5, 5, 5),
+        mar = c(8, 2, 2, 2))
+  }
 
   # Make a plot for each element of normList
   layout(matrix(1:9, ncol = ncols, byrow = TRUE))
@@ -501,8 +499,270 @@ plotTotInten <- function(normList,
     }
   }
   names(barList) <- names(normList)
-  if (save) dev.off()
 
   return(invisible(barList))
 }
+
+
+### New generic heatmap function
+missingValueHeatmap <- function(missing,
+                                groups,
+                                batch = NULL,
+                                column_sort = c("cluster", "group", "batch"),
+                                groupColors,
+                                batchColors,
+                                sampleLabels = NULL,
+                                legend = FALSE) {
+  # Check args
+  column_sort <- rlang::arg_match(column_sort)
+
+  # Deal with batch and sample names if null
+  if (is.null(batch)) {
+    batch <- c(rep("1", ncol(missing)))
+  }
+
+  if (is.null(sampleLabels)) {
+    sampleLabels <- colnames(missing)
+  }
+
+  # Set up the column ordering for the different options
+  if (column_sort == "cluster") {
+    # If clustering just order things as they are
+    cluster <- T
+    order <- seq_along(groups)
+    title <- "Cluster"
+  } else if (column_sort == "group") {
+    # If ordering by group, sort by group then batch
+    cluster <- F
+    order <- order(groups, batch)
+    title <- "Sorted By Group"
+  } else if (column_sort == "batch") {
+    # If ordering by batch, sort by bathc then group
+    cluster <- F
+    order <- order(batch, groups)
+    title <- "Sorted By Batch"
+  } else {
+    cli::cli_abort("Invalid value for {.arg column_sort}: cannot be {.val {column_sort}}")
+  }
+
+  # Then order the groups/batches/etc
+  sorted_groups <- groups[order]
+  sorted_batches <- batch[order]
+  sorted_labels <- sampleLabels[order]
+  ordered_data <- missing[,order]
+
+  # Set up heatmap annotation
+  ColAnn <- ComplexHeatmap::HeatmapAnnotation(
+    Sample = sorted_groups,
+    Batch = sorted_batches,
+    col = list(Sample = groupColors,
+               Batch = batchColors),
+    annotation_legend_param = list(Sample = list(title = "Group",
+                                                 at = unique(sorted_groups),
+                                                 labels = paste("", unique(sorted_groups))),
+                                   Batch = list(title = "Batch",
+                                                at = unique(sorted_batches),
+                                                labels = paste("Batch", unique(sorted_batches)))),
+    show_legend = legend
+  )
+  # Plot heatmap
+  hm_clust <- ComplexHeatmap::Heatmap(
+    ordered_data + 0,
+    col = c("white", "black"),
+    column_names_side = "top",
+    column_title = title,
+    show_row_names = FALSE,
+    show_column_names = TRUE,
+    name = "Status",
+    column_names_gp = grid::gpar(fontsize=7),
+    heatmap_legend_param = list(at = c(0, 1),
+                                labels = c("Missing", "Valid")),
+    show_heatmap_legend = legend,
+    top_annotation = ColAnn,
+    cluster_columns = cluster,
+    column_labels = sorted_labels
+  )
+
+  # Return the heatmap
+  return(hm_clust)
+}
+
+plotHeatmapsForReport <- function(data,
+                                  groups,
+                                  batch = NULL,
+                                  sampleLabels = NULL,
+                                  dir = ".",
+                                  showAllProteins = FALSE,
+                                  save = FALSE) {
+
+
+
+  # Process arguments
+  if (is.null(batch)) {
+    batch <- c(rep("1",ncol(data)))
+  }
+
+  if (is.null(sampleLabels)) {
+    sampleLabels <- colnames(data)
+  }
+  if (!dir.exists(dir)) {
+    dir.create(dir, recursive=TRUE)
+  }
+
+  # Set up colors
+  batchCol <- colorBatch(batch)
+  groupCol <- colorGroup2(groups)
+
+  #Prepare data
+  missing <- !is.na(data)
+  if (!showAllProteins) {
+    complete = apply(missing, 1, all)
+    completeNA = apply(!missing, 1, all)
+    missing <- missing[!complete & !completeNA,]
+  }
+
+
+
+  # Set up width for
+  if (length(groups) <100 ) {
+    width <- round(0.0871*length(groups)^2 + 24.375*length(groups) + 473.02, 0)
+    width_single <- width/200
+    width_together <- width/72
+  } else {
+    width <- round(0.0035*length(groups)^2 + 10.035*length(groups) + 146.15, 0)
+    width_single <- width/90
+    width_together <- width/30
+  }
+
+  # If we're saving, make individual plots of each type for merging
+  # with slightly different formatting than the plots alone.
+  # Will only do this if saving (trying to display the three plots all together
+  # in the Rstudio window is too small, no point in doing if save == F)
+  if (save) {
+    png(filename = file.path(dir, "NaHMplot.png"),
+        units="in",
+        width = width_together,
+        height = 8,
+        res = 100,
+        pointsize = 8)
+
+    # Make each plot individually, plotting together
+    hm_clust <- missingValueHeatmap(missing = missing,
+                                    groups = groups,
+                                    batch = batch,
+                                    column_sort = "cluster",
+                                    sampleLabels = sampleLabels,
+                                    groupColors = colorGroup2(groups),
+                                    batchColors = colorBatch(batch),
+                                    legend = F)
+    hm_group <- missingValueHeatmap(missing = missing,
+                                    groups = groups,
+                                    batch = batch,
+                                    column_sort = "group",
+                                    sampleLabels = sampleLabels,
+                                    groupColors = colorGroup2(groups),
+                                    batchColors = colorBatch(batch),
+                                    legend = F)
+    hm_batch <- missingValueHeatmap(missing = missing,
+                                    groups = groups,
+                                    batch = batch,
+                                    column_sort = "batch",
+                                    sampleLabels = sampleLabels,
+                                    groupColors = colorGroup2(groups),
+                                    batchColors = colorBatch(batch),
+                                    legend = T)
+    print(class(hm_clust))
+
+    ComplexHeatmap::draw(hm_clust + hm_group + hm_batch,
+                         heatmap_legend_side = "right",
+                         annotation_legend_side = "right",
+                         ht_gap = grid::unit(2, "cm"),
+                         column_title = "Missing Values")
+    dev.off()
+
+  }
+
+
+  # Then, do individual plots.
+  # Cluster samples
+  if (save) {
+    png(filename = file.path(dir, "NaHMplot_clust.png"),
+        units = "in",
+        width = width_single,
+        height = 8,
+        res = 100,
+        pointsize = 8)
+  }
+  hm_clust <- missingValueHeatmap(missing = missing,
+                                  groups = groups,
+                                  batch = batch,
+                                  column_sort = "cluster",
+                                  sampleLabels = sampleLabels,
+                                  groupColors = colorGroup2(groups),
+                                  batchColors = colorBatch(batch),
+                                  legend = T)
+  # Will draw these whether we're saving or not
+  ComplexHeatmap::draw(hm_clust)
+  dev.off()
+
+
+  # Sample by group
+  if (save) {
+    png(filename = file.path(dir, "NaHMplot_group.png"),
+        units = "in",
+        width = width_single,
+        height = 8,
+        res = 100,
+        pointsize = 8)
+  }
+
+  hm_group <- missingValueHeatmap(missing = missing,
+                                  groups = groups,
+                                  batch = batch,
+                                  column_sort = "group",
+                                  sampleLabels = sampleLabels,
+                                  groupColors = colorGroup2(groups),
+                                  batchColors = colorBatch(batch),
+                                  legend = T)
+  ComplexHeatmap::draw(hm_group)
+  dev.off()
+
+
+  # Sample by batch
+  if (save) {
+    png(filename = file.path(dir, "NaHMplot_batch.png"),
+        units = "in",
+        width = width_single,
+        height = 8,
+        res = 100,
+        pointsize = 8)
+  }
+
+  hm_batch <- missingValueHeatmap(missing = missing,
+                                  groups = groups,
+                                  batch = batch,
+                                  column_sort = "batch",
+                                  sampleLabels = sampleLabels,
+                                  groupColors = colorGroup2(groups),
+                                  batchColors = colorBatch(batch),
+                                  legend = T)
+  ComplexHeatmap::draw(hm_batch)
+  dev.off()
+
+
+
+  data2 <- list(missing = missing,
+                hm_clust = hm_clust,
+                hm_group = hm_group,
+                hm_batch = hm_batch)
+  return(invisible(data2))
+
+}
+
+# TODO: Could do further decomposition of these functions, which are not at the same
+# level. Right now, we have a sort of generic heatmapper that returns the plot object.
+# And it has a helper function that does the plot saving around it.
+# Our other functions (boxplots, etc) are fully contained: they make and save the plot
+# and return data, not plot objects. would prefer to make them all like the heatmaps,
+# but not a super-high priority at the moment.
 

@@ -122,3 +122,34 @@ make_new_filename <- function(x, dir) {
   new_name
 }
 
+
+
+colorBatch <- function(batch){
+
+  batchCol <- unlist(ifelse(length(unique(batch)) == 1, grDevices::rainbow(1, start=0.5),
+                            list(grDevices::rainbow(length(unique(batch))))))
+  names(batchCol) <- unique(batch)
+
+  return(batchCol)
+
+} ## COLOR BATCH
+
+
+##-----------------------------
+##  [07] GROUP PLOT COLORS 1
+##-----------------------------
+colorGroup <- function(group){
+
+  if(length(unique(group)) < 9){
+    groupCol <- yarrr::piratepal(palette="basel")[1:length(unique(group))]
+    names(groupCol) <- unique(group)
+  } else {
+    if(length(unique(group)) >= 9){
+      groupCol <- grDevices::rainbow(length(unique(group)))
+      names(groupCol) <- unique(group)
+    }}
+
+  return(groupCol)
+
+}
+
