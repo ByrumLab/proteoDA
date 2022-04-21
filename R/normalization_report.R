@@ -206,8 +206,6 @@ make_proteinorm_report <- function(normList,
 }
 
 
-
-
 ### New generic proteinorm boxplot function.
 
 proteinormMetricBoxplot <- function(normList,
@@ -223,6 +221,16 @@ proteinormMetricBoxplot <- function(normList,
   if (is.null(batch)) {
     batch <- c(rep("1", ncol(normList[[1]])))
   }
+
+  # Upon exiting the function, close any open graphics devices
+  # Need to possibly be a little careful with this:
+  # The idea is that, if there's an error, we want
+  # to close the graphics device that has been created
+  # within this function. This function closes all graphics devices
+  # including any from higher up in the stack.
+  # There probably shouldn't be any higher up in the stack, but I think
+  # at the moment this is not true for the normalization report code.
+  on.exit(graphics.off(), add = TRUE)
 
   # coerce group and batch to factor???
   # Not sure we need to do this
@@ -253,8 +261,6 @@ proteinormMetricBoxplot <- function(normList,
         width = 650,
         height = 650,
         pointsize = 15)
-    # Close the device if there's an error below before we're done plotting
-    on.exit(dev.off(), add = TRUE)
   }
 
   # Collect current par() options that we're going to change,
@@ -305,9 +311,7 @@ proteinormMetricBoxplot <- function(normList,
 
 
 
-##------------------------------
-##  [11] plotLogRatio
-##------------------------------
+### UPdated plotting of log Ratio density
 plotLogRatioDensity <- function(normList,
                                 groups,
                                 batch = NULL,
@@ -326,6 +330,9 @@ plotLogRatioDensity <- function(normList,
     batch <- c(rep("1", ncol(normList[[1]])))
   }
   batch <- make_factor(as.character(batch), prefix = NULL)
+
+  # Close any graphics devices if there's an error below before we're done plotting
+  on.exit(graphics.off(), add = TRUE)
 
   # Calculate the log2ratios for each element of the Normlist
   plotData <- lapply(normList, FUN = log2ratio, groups = groups)
@@ -365,8 +372,6 @@ plotLogRatioDensity <- function(normList,
         width = 650,
         height = 650,
         pointsize = 15)
-    # Close the device if there's an error below before we're done plotting
-    on.exit(dev.off(), add = TRUE)
   }
 
   # Initialize empty plot
@@ -416,3 +421,88 @@ plotLogRatioDensity <- function(normList,
   return(invisible(densityList))
 
 }
+
+
+
+### Updated total intensity plot
+plotTotInten <- function(normList,
+                         groups,
+                         batch = NULL,
+                         sampleLabels = NULL,
+                         dir = ".",
+                         save = FALSE) {
+
+  # Prep args
+  # Again, not sure we need to coerce to factor here
+  groups <- make_factor(groups)
+  if (is.null(batch)) {
+    batch <- c(rep("1",ncol(normList[[1]])))
+  }
+  batch <- make_factor(as.character(batch), prefix = NULL)
+  if (is.null(sampleLabels)) {
+    sampleLabels <- colnames(normList[[1]])
+  }
+
+  # Collect current par() options that we're going to change,
+  # and set them back on exit
+  old_mar <- par()$mar
+  old_oma <- par()$oma
+  on.exit(par(mar = old_mar), add = TRUE)
+  on.exit(par(oma = old_oma), add = TRUE)
+
+  # Close any graphics devices if there's an error below before we're done plotting
+  on.exit(graphics.off(), add = TRUE)
+
+  # Set up plotting area, variably by number of samples
+    if (length(groups) < 100) {
+    width <- round(0.0871*length(groups)^2 + 24.375*length(groups) + 473.02, 0)
+    height <- 800
+    ncols <- 3
+    par(oma = c(2, 1, 1, 1),
+        mar = c(8, 5, 5, 2))
+    } else {
+      width <- round(0.0035*length(groups)^2 + 10.035*length(groups) + 146.15, 0)
+      height <- 2400
+      ncols <- 1
+      par(oma = c(1, 5, 5, 5),
+          mar = c(8, 2, 2, 2))
+  }
+
+  # If saving, set up files
+  if (save) {
+    if (!dir.exists(dir)) {
+      dir.create(dir, recursive = TRUE)
+    }
+    png(filename = file.path(dir, "TotIntenPlot.png"),
+        units = "px",
+        width = width,
+        height = height,
+        pointsize = 15)
+  }
+
+
+  # Make a plot for each element of normList
+  layout(matrix(1:9, ncol = ncols, byrow = TRUE))
+  barList <- NULL
+  for (i in names(normList)) {
+    barList[[i]] <- colSums(normList[[i]], na.rm = T)
+    barplot(barList[[i]],
+            main = "",
+            las = 2,
+            yaxt = "n",
+            cex.main = 1.5,
+            cex.lab = 1.2,
+            col = colorGroup2(groups)[groups],
+            names.arg = sampleLabels)
+    title(main = i, font.main = 1, cex.main = 1.5, line = 2)
+    axis(side = 2, cex.axis = 1.2, las = 2)
+    if (i == "VSN") {
+      mtext(side = 2, text = "Total Intensity", line = 6, cex = 1.5)
+    }
+  }
+  names(barList) <- names(normList)
+  if (save) dev.off()
+
+  return(invisible(barList))
+}
+
