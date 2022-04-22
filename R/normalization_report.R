@@ -1,3 +1,80 @@
+#' Create proteinorm report
+#'
+#' Creates, and optionally saves as a PDF report, a bunch of plots which give
+#' information about the performance of different normalization metrics and
+#' amount of missing data. A wrapper that calls many subfunctions: \itemize{
+#'   \item Makes boxplots
+#'     of some normalization metrics with \code{\link{proteinormMetricBoxplot}}.
+#'   \item Makes density plots of the log2ratio between groups with
+#'     \code{\link{plotLogRatioDensity}}.
+#'   \item Plots total sample intensity with \code{\link{plotTotInten}}.
+#'   \item  Makes missing value heatmaps with \code{\link{plotHeatmapsForReport}}
+#' } Each of these functions has further subfunctions, see their documentation.
+#'
+#'
+#' @param normList A list of normalized data matrices. Generally, the "normList"
+#'   slot of the list that is output by \code{\link{process_data}}.
+#' @param groups Optional, a vector describing what experimental or treatment
+#'   group each sample belongs to. Generally, the "group" column in the targets
+#'   data frame output by \code{\link{process_data}}. If not supplied, will
+#'   warn the user and treat all samples as belonging to the same group.
+#' @param batch Optional, a vector describing what batch each sample belongs to.
+#'   If not supplied, will treat all samples as being from the same batch.
+#' @param sampleLabels Optional, a set of sample labels to use. If not supplied,
+#'   defaults to using the column names in the normList.
+#' @param enrich What type of analysis is this for? Options are
+#'   "protein" and "phospho". Only used for making output dir name when one isn't
+#'   supplied.
+#' @param save Should the report be saved as a PDF? Default is TRUE. If FALSE,
+#'   will print all plots to the R or RStudio graphics device.
+#' @param dir The directory in which to save the report. If not provided,
+#'   will default to either "protein_analysis/01_quality_control" or
+#'   "phospho_analysis/01_quality_control" within the current working
+#'   directory, depending on the enrich argument.
+#' @param file The file name of the report to be saved. Must end in .pdf. Will
+#'   default to "proteiNorm_Report.pdf" if no filename is provided.
+#' @param keep.png Keep the individual .png files of each plot? Default is FALSE.
+#' @param showAllProteins For missing data heatmaps, show all proteins (including
+#'  ones with no missing data)? Default is FALSE.
+#'
+#' @return Invisibly, returns a list with nine slots:
+#'   \enumerate{
+#'     \item "pcv"- A list, equal in length to the input normList, where each
+#'       element of the list gives the results of the \code{\link{PCV}} function
+#'       for a given normaliztion method.
+#'     \item "pmad"- A list, equal in length to the input normList, where each
+#'       element of the list gives the results of the \code{\link{PMAD}} function
+#'       for a given normaliztion method.
+#'     \item "pev"- A list, equal in length to the input normList, where each
+#'       element of the list gives the results of the \code{\link{PEV}} function
+#'       for a given normaliztion method.
+#'     \item "cor"- A list, equal in length to the input normList, where each
+#'       element of the list gives the results of the \code{\link{COR}} function
+#'       for a given normaliztion method.
+#'     \item "lograt"- A list, equal in length to the input normList, where each
+#'       element of the list is the density object of the log2ratio density for a
+#'       given normalization method. See \code{\link{plotLogRatioDensity}} and
+#'       \code{\link{log2ratio}}.
+#'     \item "nahm"- A list of length 4, where the first element is the missing data
+#'       matrix and the next three are the ComplexHeatmap plot objects.
+#'     \item "totint"- A list, equal in length to the input normList, where each
+#'       element of the list gives the total intensity for each sample for a
+#'       given normaliztation method.
+#'     \item "dir"- The directory for the report to be saved in.
+#'     \item "file"- The file for the report to be saved in.
+#'  }
+#'
+#'
+#' @export
+#'
+#' @seealso \code{\link{proteinormMetricBoxplot}},
+#'   \code{\link{plotLogRatioDensity}}, \code{\link{plotTotInten}},
+#'   \code{\link{plotHeatmapsForReport}},
+#'   \code{\link{norm_metrics}},
+#'
+#' @examples
+#' # No examples yet
+#'
 make_proteinorm_report <- function(normList,
                                    groups = NULL,
                                    batch = NULL,
@@ -138,7 +215,7 @@ make_proteinorm_report <- function(normList,
 
     cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
 
-    pdf(file.path(out_dir,file),
+    grDevices::pdf(file.path(out_dir,file),
         paper = "USr",
         pagecentre = TRUE,
         pointsize = 10,
@@ -163,7 +240,7 @@ make_proteinorm_report <- function(normList,
     }
 
     # Close device
-    dev.off()
+    grDevices::dev.off()
 
     # Deal with the .png files
     if (!keep.png) { # Delete
@@ -190,8 +267,7 @@ make_proteinorm_report <- function(normList,
   # Return data from the reports invisibly.
   # TODO: reconsider whether we return anything at all?
   output_data <-  c(boxplot_plotting_res,
-                    list(cor = cor,
-                         lograt = lograt,
+                    list(lograt = lograt,
                          nahm = nahm,
                          totint = totint,
                          dir = out_dir,
@@ -199,14 +275,34 @@ make_proteinorm_report <- function(normList,
   cli::cli_rule()
   cli::cli_inform(c("v" = "Success"))
 
-  if (save) dev.off()
-
   return(invisible(output_data))
 }
 
 
-### New generic proteinorm boxplot function.
 
+
+#' Make boxplot of a proteinorm metric
+#'
+#' Makes, and optionally saves, a boxplot showing the selected normalization
+#' metric across samples. See \code{\link{norm_metrics}} for info on
+#' the available metrics.
+#'
+#' @inheritParams make_proteinorm_report
+#' @param metric The normalization metric to calculate and plot. Can be "PCV",
+#'   "PMAD", "PEV", or "COR". See \code{\link{norm_metrics}}.
+#' @param dir The directory in which to save the plot, if saving. Default is the
+#'   current working directory.
+#' @param save Should the plot be saved (as a .png)? Default is FALSE.
+#'
+#' @return A list, giving the results of applying the given normalization metric
+#'   to the input normList.
+#' @export
+#'
+#' @seealso \code{\link{norm_metrics}}
+#'
+#' @examples
+#' # No examples yet
+#'
 proteinormMetricBoxplot <- function(normList,
                                     metric = c("PCV", "PMAD", "PEV", "COR"),
                                     groups,
@@ -237,6 +333,7 @@ proteinormMetricBoxplot <- function(normList,
                                          "Median Absolute Deviation",
                                          "Pooled Estimate of Variance",
                                          "Intragroup Correlation"))
+  type <- NULL
   labels <- base::subset(plot_labelling, type == metric)
 
 
@@ -245,7 +342,7 @@ proteinormMetricBoxplot <- function(normList,
     if (!dir.exists(dir)) {
       dir.create(dir, recursive = TRUE)
     }
-    png(filename = file.path(dir, labels$basefile),
+    grDevices::png(filename = file.path(dir, labels$basefile),
         units = "px",
         width = 650,
         height = 650,
@@ -255,17 +352,17 @@ proteinormMetricBoxplot <- function(normList,
 
   # Collect current par() options that we're going to change,
   # and set them back on exit
-  old_mar <- par()$mar
-  on.exit(par(mar = old_mar), add = TRUE)
+  old_mar <- graphics::par()$mar
+  on.exit(graphics::par(mar = old_mar), add = TRUE)
 
   # Get plot data by applying our metric function across
   # the input normlist
   plotData <- base::lapply(normList, FUN = metric, groups = groups)
 
   # Make the plot
-  par(mar = c(8, 6, 4, 3))
+  graphics::par(mar = c(8, 6, 4, 3))
   # main plot
-  boxplot(x = plotData,
+  graphics::boxplot(x = plotData,
           main = labels$main,
           las = 2,
           col = binfcolors[1:length(normList)],
@@ -274,33 +371,59 @@ proteinormMetricBoxplot <- function(normList,
           xaxt = "n",
           cex.main = 1.5)
   # Y axis
-  axis(side = 2, cex.axis = 1.2, las = 2)
+  graphics::axis(side = 2, cex.axis = 1.2, las = 2)
   # X axis
-  axis(side = 1,
+  graphics::axis(side = 1,
        at = seq_along(names(normList)),
        labels = names(normList),
        cex.axis = 1.3,
        las = 2)
   # Y axis text
-  mtext(side = 2,
+  graphics::mtext(side = 2,
         text = labels$yaxis,
         line = 4.5,
         cex = ifelse(save, 1.2, 0.9))
   # Points
-  points(rep(seq_along(normList),
+  graphics::points(rep(seq_along(normList),
              each = length(plotData[[1]])),
          unlist(plotData),
          pch = "*",
          cex = 1)
 
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
   return(invisible(plotData))
 }
 
 
 
-### Updated plotting of log Ratio density
+#' Make a plot of the density of the log2ratio
+#'
+#' Makes, and optionally saves, a plot showing the density of the log2ratio.
+#' Uses \code{\link{log2ratio}} for calculating the ratio.
+#'
+#' @inheritParams make_proteinorm_report
+#' @param zoom Should the plot cover the full range of log2ratios, or zoom
+#'   in around 0? Default is FALSE.
+#' @param legend Include a legend in the plot? Default is TRUE.
+#' @param inset Passed to \code{\link[graphics:legend]{graphics::legend}}, the
+#'   inset distance from the margin as a fraction of the plot region. Default is
+#'   0.02.
+#' @param dir The directory in which to save the plot, if saving. Default is the
+#'   current working directory.
+#' @param save Should the plot be saved (as a .png)? Default is FALSE.
+#'
+#' @return A list, equal in length to the input normList, where each
+#'       element of the list is the density object of the log2ratio density for a
+#'       given normalization method. See \code{\link{log2ratio}}.
+#'
+#' @export
+#'
+#' @seealso \code{\link{log2ratio}}
+#'
+#' @examples
+#' # No examples yet
+#'
 plotLogRatioDensity <- function(normList,
                                 groups,
                                 batch = NULL,
@@ -324,7 +447,7 @@ plotLogRatioDensity <- function(normList,
   plotData <- lapply(normList, FUN = log2ratio, groups = groups)
 
   # Set up plotting area limits
-  maxY <- max(unlist(base::lapply(plotData, FUN=function(x) max(density(x, na.rm = T)$y))))
+  maxY <- max(unlist(base::lapply(plotData, FUN=function(x) max(stats::density(x, na.rm = T)$y))))
   minY=0
 
   if (zoom) {
@@ -333,8 +456,8 @@ plotLogRatioDensity <- function(normList,
     maxY <- maxY + (0.2*maxY)
     minY <- maxY - (0.5*maxY)
   } else {
-    minX <- 0.5 * min(unlist(min(density(plotData[["vsn"]], na.rm = T)$x)))
-    maxX <- 0.5 * max(unlist(max(density(plotData[["vsn"]], na.rm = T)$x)))
+    minX <- 0.5 * min(unlist(min(stats::density(plotData[["vsn"]], na.rm = T)$x)))
+    maxX <- 0.5 * max(unlist(max(stats::density(plotData[["vsn"]], na.rm = T)$x)))
   }
 
   # If saving, set up dir and filename
@@ -344,7 +467,7 @@ plotLogRatioDensity <- function(normList,
       dir.create(dir, recursive = TRUE)
     }
     filename <- file.path(dir, paste0("Log2RatioPlot", ifelse(zoom,"-zoom.png", ".png")))
-    png(filename = filename,
+    grDevices::png(filename = filename,
         units = "px",
         width = 650,
         height = 650,
@@ -359,16 +482,16 @@ plotLogRatioDensity <- function(normList,
   ### SO, WHEN IT IS IN FRONT, IT OPENS A GRAPHICS DEVICE.
   ### THEN, PNG OPENS ANOTHER GRAPHICS DEVICE. AND CLOSING ON EXIT
   ### WILL ONLY CLOSE ONE OF THEM.
-  old_mar <- par()$mar
-  on.exit(par(mar = old_mar), add = TRUE)
+  old_mar <- graphics::par()$mar
+  on.exit(graphics::par(mar = old_mar), add = TRUE)
 
   if (legend) {
-    par(mar=c(5,5,4,3))
+    graphics::par(mar=c(5,5,4,3))
   } else {
-    par(mar=c(5,5,3,4))
+    graphics::par(mar=c(5,5,3,4))
   }
   # Initialize empty plot
-  plot(NA, las = 1,
+  base::plot(NA, las = 1,
        xlim = c(minX, maxX),
        ylim = c(minY, maxY),
        xlab = "Log2 ratio",
@@ -377,22 +500,22 @@ plotLogRatioDensity <- function(normList,
        cex.main = 1.5,
        cex.axis = 1.2,
        cex.lab = 1.3)
-  abline(v = 0, lwd = 2, lty = 3, col = "grey")
+  graphics::abline(v = 0, lwd = 2, lty = 3, col = "grey")
 
 
   # Plot each density line
   densityList <- list()
   for (method in names(normList)) {
-    lines(density(plotData[[method]], na.rm = T),
+    graphics::lines(stats::density(plotData[[method]], na.rm = T),
           col = binfcolors[which(names(plotData) %in% method)],
           lwd = 3)
 
-    densityList[[method]] <- density(plotData[[method]], na.rm = T)
+    densityList[[method]] <- stats::density(plotData[[method]], na.rm = T)
   }
 
   # Plot legend if including
   if (legend) {
-    legend("topright",
+    graphics::legend("topright",
            inset = c(inset, 0),
            names(plotData),
            bty = "n",
@@ -409,14 +532,32 @@ plotLogRatioDensity <- function(normList,
            horiz = FALSE,
            ncol = 1)
   }
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
   return(invisible(densityList))
 }
 
 
 
-### Updated total intensity plot
+#' Make plots of total intensity for each sample
+#'
+#' Makes, and optionally saves, a set of plot showing the total intensity for
+#' each sample across the normalization methods.
+#'
+#' @inheritParams make_proteinorm_report
+#' @param dir The directory in which to save the plot, if saving. Default is the
+#'   current working directory.
+#' @param save Should the plot be saved (as a .png)? Default is FALSE.
+#'
+#' @return A list, equal in length to the input normList, where each
+#'       element of the list gives total intensity for each sample for a
+#'       given normalization method.
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
 plotTotInten <- function(normList,
                          groups,
                          batch = NULL,
@@ -451,7 +592,7 @@ plotTotInten <- function(normList,
     if (!dir.exists(dir)) {
       dir.create(dir, recursive = TRUE)
     }
-    png(filename = file.path(dir, "TotIntenPlot.png"),
+    grDevices::png(filename = file.path(dir, "TotIntenPlot.png"),
         units = "px",
         width = width,
         height = height,
@@ -460,27 +601,27 @@ plotTotInten <- function(normList,
 
   # Collect current par() options that we're going to change,
   # and set them back on exit
-  old_mar <- par()$mar
-  old_oma <- par()$oma
-  on.exit(par(mar = old_mar), add = TRUE)
-  on.exit(par(oma = old_oma), add = TRUE)
+  old_mar <- graphics::par()$mar
+  old_oma <- graphics::par()$oma
+  on.exit(graphics::par(mar = old_mar), add = TRUE)
+  on.exit(graphics::par(oma = old_oma), add = TRUE)
 
   # Set up plotting parameters
   # Have to do this twice, can't have the pars above the png making
   if (length(groups) < 100) {
-    par(oma = c(2, 1, 1, 1),
-        mar = c(8, 5, 5, 2))
+    graphics::par(oma = c(2, 1, 1, 1),
+                  mar = c(8, 5, 5, 2))
   } else {
-    par(oma = c(1, 5, 5, 5),
-        mar = c(8, 2, 2, 2))
+    graphics::par(oma = c(1, 5, 5, 5),
+                  mar = c(8, 2, 2, 2))
   }
 
   # Make a plot for each element of normList
-  layout(matrix(1:9, ncol = ncols, byrow = TRUE))
+  graphics::layout(matrix(1:9, ncol = ncols, byrow = TRUE))
   barList <- NULL
   for (i in names(normList)) {
     barList[[i]] <- colSums(normList[[i]], na.rm = T)
-    barplot(barList[[i]],
+    graphics::barplot(barList[[i]],
             main = "",
             las = 2,
             yaxt = "n",
@@ -488,21 +629,42 @@ plotTotInten <- function(normList,
             cex.lab = 1.2,
             col = colorGroup2(groups)[groups],
             names.arg = sampleLabels)
-    title(main = i, font.main = 1, cex.main = 1.5, line = 2)
-    axis(side = 2, cex.axis = 1.2, las = 2)
+    graphics::title(main = i, font.main = 1, cex.main = 1.5, line = 2)
+    graphics::axis(side = 2, cex.axis = 1.2, las = 2)
     if (i == "VSN") {
-      mtext(side = 2, text = "Total Intensity", line = 6, cex = 1.5)
+      graphics::mtext(side = 2, text = "Total Intensity", line = 6, cex = 1.5)
     }
   }
   names(barList) <- names(normList)
 
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
   return(invisible(barList))
 }
 
 
-### New generic heatmap function
+
+#' Create a missing values heatmap
+#'
+#' Makes a ComplexHeatmap object showing a heatmap of missing values in the
+#' input data.
+#'
+#' @inheritParams make_proteinorm_report
+#' @param missing An input matrix describing the missing data. See internals
+#'   of \code{\link{plotHeatmapsForReport}}.
+#' @param column_sort How should the columns of the heatmap be sorted? Options
+#'   are: "cluster"- sort by similarity in missing values, "group"- sort samples
+#'   by group, "batch"- sort samples by batch.
+#' @param groupColors A vector of colors to use for coloring samples by group
+#' @param batchColors A vector of colors to use for coloring samples by batch.
+#' @param legend Include a legend in the plot? Default is FALSE.
+#'
+#' @return A ComplexHeatmap object
+#' @export
+#'
+#' @examples
+#' # No examples yet.
+#'
 missingValueHeatmap <- function(missing,
                                 groups,
                                 batch = NULL,
@@ -585,6 +747,27 @@ missingValueHeatmap <- function(missing,
   return(hm_clust)
 }
 
+
+#' Make a set of missing value heatmaps
+#'
+#' Makes, and optionally saves, a set of missing value heatmaps using
+#' \code{\link{missingValueHeatmap}}.
+#'
+#' @inheritParams make_proteinorm_report
+#' @param data A normalized data matrix. Generally, the "log2" slot of the normList
+#'   slot in the list output by \code{\link{process_data}}.
+#' @param dir The directory in which to save the plot, if saving. Default is the
+#'   current working directory.
+#' @param save Should the plot be saved (as a .png)? Default is FALSE.
+#'
+#' @return A list of length 4, where the first element is the missing data
+#'       matrix and the next three are the ComplexHeatmap plot objects sorted
+#'       by cluster, group, and batch, respectively.
+#' @export
+#'
+#' @examples
+#' # No examples yet.
+#'
 plotHeatmapsForReport <- function(data,
                                   groups,
                                   batch = NULL,
@@ -634,7 +817,7 @@ plotHeatmapsForReport <- function(data,
   # Will only do this if saving (trying to display the three plots all together
   # in the Rstudio window is too small, no point in doing if save == F)
   if (save) {
-    png(filename = file.path(dir, "NaHMplot.png"),
+    grDevices::png(filename = file.path(dir, "NaHMplot.png"),
         units="in",
         width = width_together,
         height = 8,
@@ -679,14 +862,14 @@ plotHeatmapsForReport <- function(data,
                          annotation_legend_side = "right",
                          ht_gap = grid::unit(2, "cm"),
                          column_title = "Missing Values")
-    dev.off()
+    grDevices::dev.off()
   }
 
 
   # Then, do individual plots.
   # Cluster samples
   if (save) {
-    png(filename = file.path(dir, "NaHMplot_clust.png"),
+    grDevices::png(filename = file.path(dir, "NaHMplot_clust.png"),
         units = "in",
         width = width_single,
         height = 8,
@@ -703,12 +886,12 @@ plotHeatmapsForReport <- function(data,
                                   legend = T)
   # Will draw these whether we're saving or not
   ComplexHeatmap::draw(hm_clust)
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
 
   # Sample by group
   if (save) {
-    png(filename = file.path(dir, "NaHMplot_group.png"),
+    grDevices::png(filename = file.path(dir, "NaHMplot_group.png"),
         units = "in",
         width = width_single,
         height = 8,
@@ -725,12 +908,12 @@ plotHeatmapsForReport <- function(data,
                                   batchColors = colorBatch(batch),
                                   legend = T)
   ComplexHeatmap::draw(hm_group)
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
 
   # Sample by batch
   if (save) {
-    png(filename = file.path(dir, "NaHMplot_batch.png"),
+    grDevices::png(filename = file.path(dir, "NaHMplot_batch.png"),
         units = "in",
         width = width_single,
         height = 8,
@@ -747,7 +930,7 @@ plotHeatmapsForReport <- function(data,
                                   batchColors = colorBatch(batch),
                                   legend = T)
   ComplexHeatmap::draw(hm_batch)
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
 
 

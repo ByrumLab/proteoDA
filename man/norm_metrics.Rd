@@ -43,7 +43,7 @@ A set of functions that normalize sample data (in columns of a data frame
 or matrix), according to various methods: \itemize{
 \item PCV- Calculated the pooled coefficient of variation (CV, standard
 deviation divided by the mean) for all proteins within a group. That is,
-the average (mean) of the per-proetin CVs.
+the average (mean) of the per-protein CVs.
 \item PMAD- Calculate the pooled median absolute deviation. The MAD is the
 median of the absolute deviations of each sample from the group median.
 The pooled MAD is the group median of the per-protein PMADs.

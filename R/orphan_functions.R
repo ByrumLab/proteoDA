@@ -15,7 +15,7 @@ findDensityCutoff <- function(longdat, cutoffPercent = 0.001) {
     breakSeq <- seq(from = max(min(longdat, na.rm = TRUE), 0),
                     to = densityCutoff,
                     by = (densityCutoff - max(min(longdat, na.rm=TRUE), 0)) / 30)
-    freqs <- hist(longdat[longdat < densityCutoff], breaks = breakSeq, plot = FALSE)
+    freqs <- graphics::hist(longdat[longdat < densityCutoff], breaks = breakSeq, plot = FALSE)
     newDensityCutoff <- freqs$breaks[which((freqs$counts / totalNum) < cutoffPercent)[1] + 1]
   }
   return(densityCutoff)

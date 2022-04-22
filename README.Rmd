@@ -59,13 +59,18 @@ norm <- process_data(data = extracted_data$data,
                      targets = sub_higgs$targets,
                      min.reps = 5,
                      min.grps = 3)
-
+# Make the proteinorm report
+make_proteinorm_report(normList = norm$normList,
+                       groups = norm$targets$group, 
+                       enrich = "protein", 
+                       save = T)
 
 # Functions are documented, check them out:
 ?extract_data
 ?make_targets
 ?subset_targets
 ?process_data
+?make_proteinorm_report
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -116,7 +121,7 @@ On the test side, I started writing some unit tests for the data extraction func
 | `make_targets`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `subset_targets`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `process_data`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_proteinorm_report`   | :x:                | :x:                | :x:                |
+| `make_proteinorm_report`   | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_qc_report`           | :x:                | :x:                | :x:                |
 | `make_design`              | :x:                | :x:                | :x:                |
 | `make_contrasts`           | :x:                | :x:                | :x:                |

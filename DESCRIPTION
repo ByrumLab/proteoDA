@@ -7,14 +7,23 @@ Description: Functions for performing DIA proteomics analysis.
 License: MIT + file LICENSE
 Imports:
     cli,
+    ComplexHeatmap,
+    genefilter,
+    grDevices,
+    grid,
+    gridExtra,
     limma,
     magrittr,
+    matrixStats,
     NormalyzerDE,
+    png,
     preprocessCore,
     rlang,
     stringr,
     tools,
-    vsn
+    unikn,
+    vsn,
+    yarrr
 Depends: 
     R (>= 2.10)
 Suggests: 

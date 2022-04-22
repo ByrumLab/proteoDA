@@ -7,7 +7,8 @@
 all_pw_diffs(vector)
 }
 \arguments{
-\item{vector}{}
+\item{vector}{A numeric vector of items for which you want all pairwise
+differences}
 }
 \value{
 A vector of all pairwise differences between the elements in the vector

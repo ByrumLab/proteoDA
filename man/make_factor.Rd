@@ -7,7 +7,7 @@
 make_factor(x, prefix = "X")
 }
 \arguments{
-\item{x}{Input vctor to be converted to a factor}
+\item{x}{Input vector to be converted to a factor}
 
 \item{prefix}{Optional: a prefix to put in front of numbers when
 converting to a factor. Default is "X"}
