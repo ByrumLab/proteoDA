@@ -9,7 +9,6 @@ make_proteinorm_report <- function(normList,
                                    keep.png = FALSE,
                                    showAllProteins = FALSE) {
 
-
   cli::cli_rule()
 
   #################################
@@ -80,9 +79,6 @@ make_proteinorm_report <- function(normList,
     # Notify user of where tmp png files will be
     cli::cli_inform("Temporarily saving {.path .png} files in {.path {out_dir}}")
   }
-
-
-
 
   ####################
   ## Make the plots ##
@@ -203,6 +199,8 @@ make_proteinorm_report <- function(normList,
   cli::cli_rule()
   cli::cli_inform(c("v" = "Success"))
 
+  if (save) dev.off()
+
   return(invisible(output_data))
 }
 
@@ -259,7 +257,6 @@ proteinormMetricBoxplot <- function(normList,
   # and set them back on exit
   old_mar <- par()$mar
   on.exit(par(mar = old_mar), add = TRUE)
-  on.exit(dev.off(), add = TRUE)
 
   # Get plot data by applying our metric function across
   # the input normlist
@@ -295,6 +292,8 @@ proteinormMetricBoxplot <- function(normList,
          unlist(plotData),
          pch = "*",
          cex = 1)
+
+  if (save) dev.off()
 
   return(invisible(plotData))
 }
@@ -362,7 +361,6 @@ plotLogRatioDensity <- function(normList,
   ### WILL ONLY CLOSE ONE OF THEM.
   old_mar <- par()$mar
   on.exit(par(mar = old_mar), add = TRUE)
-  on.exit(dev.off(), add = TRUE)
 
   if (legend) {
     par(mar=c(5,5,4,3))
@@ -411,8 +409,9 @@ plotLogRatioDensity <- function(normList,
            horiz = FALSE,
            ncol = 1)
   }
-  return(invisible(densityList))
+  if (save) dev.off()
 
+  return(invisible(densityList))
 }
 
 
@@ -424,7 +423,6 @@ plotTotInten <- function(normList,
                          sampleLabels = NULL,
                          dir = ".",
                          save = FALSE) {
-
   # Prep args
   # Again, not sure we need to coerce to factor here
   groups <- make_factor(groups)
@@ -460,14 +458,12 @@ plotTotInten <- function(normList,
         pointsize = 15)
   }
 
-
   # Collect current par() options that we're going to change,
   # and set them back on exit
   old_mar <- par()$mar
   old_oma <- par()$oma
   on.exit(par(mar = old_mar), add = TRUE)
   on.exit(par(oma = old_oma), add = TRUE)
-  on.exit(dev.off(), add = TRUE)
 
   # Set up plotting parameters
   # Have to do this twice, can't have the pars above the png making
@@ -499,6 +495,8 @@ plotTotInten <- function(normList,
     }
   }
   names(barList) <- names(normList)
+
+  if (save) dev.off()
 
   return(invisible(barList))
 }
@@ -594,9 +592,6 @@ plotHeatmapsForReport <- function(data,
                                   dir = ".",
                                   showAllProteins = FALSE,
                                   save = FALSE) {
-
-
-
   # Process arguments
   if (is.null(batch)) {
     batch <- c(rep("1",ncol(data)))
@@ -671,7 +666,13 @@ plotHeatmapsForReport <- function(data,
                                     groupColors = colorGroup2(groups),
                                     batchColors = colorBatch(batch),
                                     legend = T)
-    print(class(hm_clust))
+
+    # Giving these objects unique names in the
+    # name slot, to avoid a warning. Doesn't seem to affect
+    # the plot at all
+    hm_clust@name <- "a"
+    hm_group@name <- "b"
+    hm_batch@name <- "c"
 
     ComplexHeatmap::draw(hm_clust + hm_group + hm_batch,
                          heatmap_legend_side = "right",
@@ -679,7 +680,6 @@ plotHeatmapsForReport <- function(data,
                          ht_gap = grid::unit(2, "cm"),
                          column_title = "Missing Values")
     dev.off()
-
   }
 
 
@@ -703,7 +703,7 @@ plotHeatmapsForReport <- function(data,
                                   legend = T)
   # Will draw these whether we're saving or not
   ComplexHeatmap::draw(hm_clust)
-  dev.off()
+  if (save) dev.off()
 
 
   # Sample by group
@@ -725,7 +725,7 @@ plotHeatmapsForReport <- function(data,
                                   batchColors = colorBatch(batch),
                                   legend = T)
   ComplexHeatmap::draw(hm_group)
-  dev.off()
+  if (save) dev.off()
 
 
   # Sample by batch
@@ -747,7 +747,7 @@ plotHeatmapsForReport <- function(data,
                                   batchColors = colorBatch(batch),
                                   legend = T)
   ComplexHeatmap::draw(hm_batch)
-  dev.off()
+  if (save) dev.off()
 
 
 
@@ -755,8 +755,8 @@ plotHeatmapsForReport <- function(data,
                 hm_clust = hm_clust,
                 hm_group = hm_group,
                 hm_batch = hm_batch)
-  return(invisible(data2))
 
+  return(invisible(data2))
 }
 
 # TODO: Could do further decomposition of these functions, which are not at the same
@@ -764,5 +764,6 @@ plotHeatmapsForReport <- function(data,
 # And it has a helper function that does the plot saving around it.
 # Our other functions (boxplots, etc) are fully contained: they make and save the plot
 # and return data, not plot objects. would prefer to make them all like the heatmaps,
-# but not a super-high priority at the moment.
+# but not a super-high priority at the moment. Might necessitate a switch to ggplot,
+# which I would probably prefer anyway.
 
