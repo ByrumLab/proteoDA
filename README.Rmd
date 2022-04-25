@@ -65,12 +65,26 @@ make_proteinorm_report(normList = norm$normList,
                        enrich = "protein", 
                        save = T)
 
+# Make the QC report
+## SKIPPED FOR NOW
+## STILL TO BE ADDED
+
+# Make the design matrix
+design <- make_design(targets=norm$targets,
+                      group_column = "group",
+                      factor_columns = NULL,
+                      paired_column = NULL)
+
+
+
 # Functions are documented, check them out:
 ?extract_data
 ?make_targets
 ?subset_targets
 ?process_data
 ?make_proteinorm_report
+#?make_qc_report
+?make_design
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -123,7 +137,7 @@ On the test side, I started writing some unit tests for the data extraction func
 | `process_data`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_proteinorm_report`   | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_qc_report`           | :x:                | :x:                | :x:                |
-| `make_design`              | :x:                | :x:                | :x:                |
+| `make_design`              | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_contrasts`           | :x:                | :x:                | :x:                |
 | `run_limma_analysis`       | :x:                | :x:                | :x:                |
 | `add_limma_results`        | :x:                | :x:                | :x:                |  
