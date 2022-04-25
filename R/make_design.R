@@ -1,3 +1,28 @@
+#' Prepare limma model design matrix
+#'
+#' Creates the model design matrix, targets data frame, and design formula for use in
+#' limma.
+#'
+#' @param targets A targets dataframe. In the pipeline, usually the "targets" slot
+#'   of the list output by \code{\link{process_data}}.
+#' @param group_column The name of the column in the targets dataframe that
+#'   describes the main groups to be compared in the limma model.
+#' @param factor_columns Optional. The name of the column(s) in the targets dataframe
+#'   that describes additional statistical factors for analysis. Default is NULL.
+#' @param paired_column Optional. The name of the column in the targets dataframe
+#'   that lists paired samples, for use in limma's paired mixed effect model.
+#'
+#' @return A list with three slots \enumerate{
+#'   \item "design"- The model design matrix for the specified factors.
+#'   \item "targets"- An updated targets data frame including only the grouping,
+#'     factor, and paired columns specified.
+#'   \item "designformula"- The model design formula for the specified factors.
+#' }
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
 make_design <- function(targets,
                         group_column,
                         factor_columns = NULL,
@@ -94,7 +119,7 @@ make_design <- function(targets,
   # right now, as far as I can tell, it relies on the
   # environment options, which could lead to some very weird behavior if
   # they were ever changed accidentally.
-  design <- model.matrix(eval(parse(text = designformula)), data = tar)
+  design <- stats::model.matrix(eval(parse(text = designformula)), data = tar)
   # TODO: Did some testing by putting, e.g., replicate as a factor
   # The design matrix I got out used different encoding: left off replicate 1
   # The group part of the matrix used a full encoding, while the non-group
