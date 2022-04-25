@@ -1,118 +1,123 @@
-make_design <- function(targets, group, factors=NULL, paired=NULL){
-
-  param<-list()
-  param[["group"]]<-group
-  param[["factors"]]<-ifelse(is.null(factors),"NULL",paste(factors,collapse=", "))
-  param[["paired"]]<-ifelse(is.null(paired),"NULL",paired)
-  param<-t(data.frame(param))
-  colnames(param)<-"make.design.parameters"
-  param
+make_design <- function(targets,
+                        group_column,
+                        factor_columns = NULL,
+                        paired_column = NULL) {
+  # In current implementation, not saved to log file for some reason?
+  # Just commenting out for now.
+  # param <- list()
+  # param[["group"]] <- group
+  # param[["factors"]] <- ifelse(is.null(factors), "NULL", paste(factors, collapse = ", "))
+  # param[["paired"]] <- ifelse(is.null(paired), "NULL", paired)
+  # param <- t(data.frame(param))
+  # colnames(param) <- "make.design.parameters"
+  # param
 
   ## if input values are all column names in targets
-  pass<-c(group,paired,factors) %in% colnames(targets);pass
-  if(all(pass)==TRUE){
+  pass <- c(group_column, paired_column, factor_columns) %in% colnames(targets)
 
-    ## subset targets to include input
-    ## columns should be in this order: group,paired,followed by factors
-    if(is.null(factors)&is.null(paired)){
-      tar<-as.data.frame(targets[,c(group,paired,factors)],row.names=rownames(targets));tar
-      colnames(tar)<-group
-    } else{
-      tar<-targets[,c(group,paired,factors)];head(tar)
-    }
-    ## check that each factor contains 2 or more levels
-    levs <- apply(tar,2,FUN=function(x){length(unique(x))})>1;levs
-    if(any(levs==FALSE)){
-      stop(paste("Error! The following factors only have 1 level.",
-                 "Factors must have 2 or more levels in order",
-                 "to create design matrix. \nInvalid factors include: ",
-                 paste(colnames(tar)[levs==FALSE],collapse=", ")))
-    }
+  if (!all(pass)) {
+    # Stop if all input values are not column names in targets
+    invalidCols <- c(group_column, paired_column, factor_columns)[pass == FALSE]
+    cli::cli_abort(c("Some input column names not found in the targets data frame",
+                     "x" = "{cli::qty(length(invalidCols))} Column{?s} {.val {invalidCols}} not present in {.arg targets}} "))
+  }
 
-    ## make group a named list and create means model no intercept formula
-    grp<-list(as.list.data.frame(tar[,group]));names(grp)<-group
-    groupformula=paste0("~0+",names(grp));groupformula
+  # Reorder columns for target
+  tar <- targets[ , c(group_column, paired_column, factor_columns), drop = F]
 
-    ## if paired factor supplied then design matrix and targets file for
-    ## mixed effects model created. i.e. paired column in targets renamed
-    ## "paired"
-    if(!is.null(paired)){
-      ## make paired a named list. if paired.type is paired then
-      ## add to formula.
-      p.col<-grep(paired, colnames(tar))
-      stopifnot(colnames(tar)[p.col]==paired)
-      colnames(tar)[p.col] <- "paired" ## rename column
-      cat("\n")
-      message("creating design matrix and targets file for paired sample design",
-              "using limmas mixed effects model...");cat("\n")
-      print(paste("input paired column name (",paired,") changed to 'paired' "))
-      paired=NULL ## so paired is not included in design formula
-      pairedformula<-names(paired)
-    }
-    ## no paired samples
-    if(is.null(paired)){ pairedformula<-names(paired) }
-    pairedformula
+  ## check that each factor contains 2 or more levels
+  enough_levels <- apply(tar, 2, FUN = function(x) {length(unique(x)) >= 2})
+  if (!all(enough_levels)) {
+    invalidLevels <- names(enough_levels)[!enough_levels]
+    cli::cli_abort(c("Columns must have at least two unique levels to create a design matrix",
+                     "x" = "{cli::qty(length(invalidLevels))} Column{?s} {.val {invalidLevels}} {?has/have} 1 or fewer levels."))
+  }
 
-    ## named lists of factors. add to formula
-    if(!is.null(factors)){
-      ## single factor
-      if(length(factors)==1){
-        facs=list(as.list.data.frame(tar[,factors]))
-        names(facs)=factors
-      }
-      ## multiple factors
-      if(length(factors)>1){
-        facs=as.list.data.frame(tar[,factors])
-      }
-    }
-    ## no factors
-    if(is.null(factors)){ facs<-NULL }
-    additiveformula=names(facs);length(additiveformula)
-    additiveformula
+  ## make group a named list and create means model no intercept formula
+  groupformula <- paste0("~0+", group_column)
+
+  ## if paired factor supplied then design matrix and targets file for
+  ## mixed effects model created. i.e. paired column in targets renamed
+  ## "paired"
+  if (!is.null(paired_column)) {
+    ## make paired a named list. if paired.type is paired then
+    ## add to formula.
+    p.col <- grep(paired_column, colnames(tar))
+    stopifnot(colnames(tar)[p.col] == paired_column) #TODO: DOES THIS EVER FAIL?
+    # IT DOES IF YOU SUPPLY MULTIPLE COLUMNS HERE. BUT SHOULD WE BE CHECKING THAT ABOVE ANYWAY?
+    colnames(tar)[p.col] <- "paired" ## rename column
+    cli::cli_inform("Creating design matrix and targets for paired sample design using limma's mixed effect model")
+    cli::cli_inform("Renamed input {.arg paired_column} {.val {paired_column}} to {.val paired}")
+    paired_column <- NULL ## so paired is not included in design formula
+  }
+  # From my reading of the code, we wlays want pairedformula to me NULL
+  # And it is never included in the design formula and matrix, only the
+  # target??
+  # TODO: double check on this, and streamline it out if thats true.
+  pairedformula <- NULL
 
 
-    ## make each a factor, if numeric or starts with number
-    ## append column name to values to make it a character vector.
-    for(i in base::seq_along(tar)){
-      if(is.numeric(tar[,i]) | any(substr(tar[,i],1,1) %in% c(0:9))){
-        tar[,i]<-make_factor(tar[,i], prefix=colnames(tar)[i])
-      } else { tar[,i]<-make_factor(tar[,i]) }
-    }
-
-
-    ## DESIGN FORMULA
-    if(length(groupformula)>0){designformula<-groupformula }
-    if(length(pairedformula)>0){designformula<-paste(designformula,pairedformula,sep="+")}
-    if(length(additiveformula)>0){
-      additiveformula<-paste(additiveformula,collapse="+");additiveformula
-      designformula<-paste(designformula,additiveformula,sep="+");designformula
-    }
-    designformula
-
-    ## create design matrix
-    design <- model.matrix(eval(parse(text=designformula,prompt="+")),data=tar); design
-
-    ## change column names of design.
-    desCols<-levels(tar[,group])
-    for(x in c(paired,factors)){desCols<-c(desCols, levels(tar[,x])[-1])}
-    print(colnames(design)); print(desCols)
-    colnames(design)<-desCols;head(design)
-
+  ## named lists of factors. add to formula
+  if (!is.null(factor_columns)) {
+    facs <- as.list.data.frame(tar[ , factor_columns, drop = F])
   } else {
-    ## if all input values are not column names in targets stop.
-    if(any(pass==FALSE)){
-      invalidCols <- c(group,paired,factors)[pass==FALSE];invalidCols
-      stop("Error! Invalid input values: ", paste(invalidCols,collapse=", ") )
-    }}
+    facs <- NULL
+  }
+  additiveformula <- names(facs)
+
+  # Coerce target columns into factors
+  # adding the colname as a prefix to numeric vectors
+  for (i in base::seq_along(tar)) {
+    if (is.numeric(tar[,i]) | any(substr(tar[,i],1,1) %in% c(0:9))) {
+      tar[,i] <- make_factor(tar[,i], prefix = colnames(tar)[i])
+    } else {
+      tar[,i] <- make_factor(tar[,i])
+    }
+  }
+
+  ## DESIGN FORMULA
+  # Start it with the group formula
+  designformula <- groupformula
+  # Add paired section if needed?
+  if (length(pairedformula) > 0) { # TODO: DOES THIS EVER GET CALLED???
+    # SEEMS THAT ABOVE WE SET pairedformula == NULL whether we're including
+    # a pairing column or not??
+    designformula <- paste(designformula, pairedformula, sep = "+")
+  }
+  # Add additive/factor sections if needed
+  if (length(additiveformula) > 0) {
+    additiveformula <- paste(additiveformula, collapse = "+")
+    designformula <- paste(designformula, additiveformula, sep = "+")
+  }
+  ## create design matrix
+  # TODO: explicitly set up contrasts here?
+  # right now, as far as I can tell, it relies on the
+  # environment options, which could lead to some very weird behavior if
+  # they were ever changed accidentally.
+  design <- model.matrix(eval(parse(text = designformula)), data = tar)
+  # TODO: Did some testing by putting, e.g., replicate as a factor
+  # The design matrix I got out used different encoding: left off replicate 1
+  # The group part of the matrix used a full encoding, while the non-group
+  # part used use encoding where one level was all 0s.
+
+  ## change column names of design.
+  desCols <- levels(tar[,group_column])
+  for (x in c(paired_column, factor_columns)) {
+    desCols <- c(desCols, levels(tar[,x])[-1])
+    # TODO: why drop the first level of the paired or factor cols here??
+    # Rather, I get why we do it: to make what the design matrix makes above
+    # But why does the design matrix do that above? I guess it default to treatment
+    # contrasts for the later terms of the model formula?
+  }
+  colnames(design) <- desCols
 
 
-  print(head(tar));cat("\n"); print(head(design));cat("\n");
-  print(tail(design));cat("\n"); print(designformula)
-  cat("\n\n"); print("design matrix and targets created. Success!!")
+  cli::cli_inform("Design matrix and targets created")
+  cli::cli_inform(c("v" = "Success"))
 
   ## the targets file returned by this function should be used in the limma analysis
-  data2 <- list(design=design, targets=tar, designformula=designformula)
-  return(data2)
-
+  list(design = design,
+       targets = tar,
+       designformula = designformula)
 
 }
