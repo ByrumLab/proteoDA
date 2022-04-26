@@ -74,8 +74,9 @@ design <- make_design(targets=norm$targets,
                       group_column = "group",
                       factor_columns = NULL,
                       paired_column = NULL)
-
-
+# Make the contrasts matrix
+contrasts <- make_contrasts(file = "path/to/contrasts/file.csv",
+                            design = design$design)
 
 # Functions are documented, check them out:
 ?extract_data
@@ -85,6 +86,7 @@ design <- make_design(targets=norm$targets,
 ?make_proteinorm_report
 #?make_qc_report
 ?make_design
+?make_contrasts
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -180,6 +182,6 @@ tests as well. Maybe better to just do it once.
 | `make_proteinorm_report` | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_qc_report`         | :x:                | :x:                | :x:                |
 | `make_design`            | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_contrasts`         | :x:                | :x:                | :x:                |
+| `make_contrasts`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `run_limma_analysis`     | :x:                | :x:                | :x:                |
 | `add_limma_results`      | :x:                | :x:                | :x:                |
