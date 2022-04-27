@@ -224,5 +224,35 @@ colorGroup2 <- function(group) {
       names(groupCol) <- unique(group)
     }
     return(groupCol)
-  }
+}
+
+
+##------------------------------
+##  PLOT RIGHT MARGIN
+##------------------------------
+right_margin <- function(x) {
+  maxchar <- max(nchar(as.character(x))) + 10
+  right <- maxchar/5
+  return(right)
+}
+
+
+##------------------------------
+##  PLOT LEFT MARGIN
+##------------------------------
+left_margin <- function(x) {
+  maxchar <- max(nchar(as.character(x))) + 30
+  left <- maxchar/5
+  return(left)
+}
+
+
+##------------------------------
+##  PLOT HEIGHT
+##------------------------------
+plot_height <- function(x){
+  height <- (600/20)*length(x)
+  height <- ifelse(height > 1000, 1000, height)
+  return(height)
+}
 
