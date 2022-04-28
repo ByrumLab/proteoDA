@@ -5,6 +5,7 @@ Authors@R:
     person("Timothy", "Thurman", , "tthurman@uams.edu", role = c("aut", "cre"))
 Description: Functions for performing DIA proteomics analysis.
 License: MIT + file LICENSE
+biocViews:
 Imports:
     cli,
     ComplexHeatmap,
