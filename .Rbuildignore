@@ -11,3 +11,4 @@
 ^tmp\.R$
 ^\\*\_BQ\.csv$
 ^targets\.csv$
+^test_workflow.R$

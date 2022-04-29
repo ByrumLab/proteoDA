@@ -53,8 +53,8 @@ normalize_data <- function(data, targets) {
   }
 
   # TODO: possibly redundant? Does this happen in the filter_data function as well?
-  data <- data[ , rownames(targets)]
-  stopifnot(colnames(data) == rownames(targets))
+  data2 <- data[ , rownames(targets)]
+  stopifnot(colnames(data2) == rownames(targets))
 
   # This section, for renaming row and column names of the targets and data
   # to match the "samples" column in targets (if it exists) is redundant, as
@@ -74,27 +74,28 @@ normalize_data <- function(data, targets) {
 
   # norm.methods is one of the vectors of strings that is internal data in the
   # package
-  normList <- vector("list", length(norm.methods))
-  names(normList) <- norm.methods
+  normList <- NULL
+  # names(normList) <- norm.methods
 
   cli::cli_inform("Starting normaliztion")
 
   ## apply normalization methods using functions listed above.
   ## NOTE: most of the normalizations use log2(intensity) as input except
   ## VSN which normalizes using raw intensities with no log2 transformation.
-  normList[["log2"]]     <- logNorm(dat = data)
+  normList[["log2"]]     <- logNorm(dat = data2)
   normList[["median"]]   <- medianNorm(logDat = normList[["log2"]])
   normList[["mean"]]     <- meanNorm(logDat = normList[["log2"]])
-  normList[["vsn"]]      <- vsnNorm(dat = data)
+  normList[["vsn"]]      <- vsnNorm(dat = data2)
   normList[["quantile"]] <- quantNorm(logDat = normList[["log2"]])
   normList[["cycloess"]] <- cycLoessNorm(logDat = normList[["log2"]])
   normList[["rlr"]]      <- rlrNorm(logDat = normList[["log2"]])
-  normList[["gi"]]       <- giNorm(logDat = normList[["log2"]])
+  normList[["gi"]]       <- giNorm(dat = data2)
+  normList[["gi2"]]      <- giNorm_old(logDat = normList[["log2"]])
 
   cli::cli_inform("Data normalization complete")
 
   # Return list of output
-  list(normList = normList, targets = targets)
+  list(normList = normList, targets = targets, data2 = data2)
 }
 
 
@@ -116,12 +117,15 @@ normalize_data <- function(data, targets) {
 #'   \item cycLoessNorm- Cyclic Loess normalization, using the
 #'     \code{\link[limma:normalizeCyclicLoess]{limma::normalizeCyclicLoess}}
 #'     function.
-#'   \item rlrNorm- Global linear regression normalization, using the
+#'   \item rlrNorm- Global linear regression normalization, inspired by the
 #'     \code{\link[NormalyzerDE:performGlobalRLRNormalization]{NormalyzerDE::performGlobalRLRNormalization}}
-#'     function.
-#'   \item giNorm- Global intensity normalization, using the
+#'     function, but with a slightly different implementation.
+#'   \item giNorm- Global intensity normalization, inspired by the
 #'     \code{\link[NormalyzerDE:globalIntensityNormalization]{NormalyzerDE::globalIntensityNormalization}}
-#'     function.
+#'     function, but with a slightly different implementation. In brief,
+#'     normalizes each sample/column by dividing by the total intensity for the
+#'     sample and multiplying by the median of per-sample intensities. Thus,
+#'     like mean or median normalization, but using sum instead of
 #' }
 #'
 #'
@@ -213,17 +217,67 @@ cycLoessNorm <- function(logDat) {
 #' @export
 #'
 rlrNorm <- function(logDat) {
-  rlrNormed <- NormalyzerDE::performGlobalRLRNormalization(as.matrix(logDat), noLogTransform = TRUE)
-  colnames(rlrNormed) <- colnames(logDat)
-  row.names(rlrNormed) <- rownames(logDat)
-  return(as.matrix(rlrNormed))
+  # First, an internal function to do get the coefficients from rlm regression
+  # for one column
+  get_rlm_coeffs_and_slopes <- function(unnormalized_col, predictors) {
+    MASS::rlm(unnormalized_col ~ predictors,
+              na.action = stats::na.exclude)$coefficients
+  }
+
+  # Median intensities across samples are the predictors for the rlm
+  row_medians <- matrixStats::rowMedians(logDat, na.rm = TRUE)
+
+  # Apply the one-col function across the input matrix cols
+  coefficients <- t(apply(X = logDat,
+                        MARGIN = 2,
+                        FUN = get_rlm_coeffs_and_slopes,
+                        predictors = row_medians))
+
+  stopifnot(nrow(t(logDat)) == nrow(coefficients))
+  # Do the normalization: subtract the intercept from each point, then divide
+  # by slope
+  normalized_mat <- t((t(logDat) - coefficients[,1])/coefficients[,2])
+  normalized_mat
 }
 
 #' @rdname norm_functions
 #' @export
 #'
-giNorm <- function(logDat) {
-  giNormed <- NormalyzerDE::globalIntensityNormalization(as.matrix(logDat), noLogTransform = TRUE)
+giNorm <- function(dat) {
+  # Make sure input data is matrix
+  dat_mat <- as.matrix(dat)
+  # Follow same pattern as mean and median, but with
+  # sums
+  col_sums <- colSums(dat_mat, na.rm = TRUE)
+  median_col_sum <- stats::median(col_sums)
+
+  normMatrix <- t(t(dat_mat)/col_sums) * median_col_sum
+  # extra step to return log2 values, as with previous implementation
+  normLog2Matrix <- log2(normMatrix)
+  normLog2Matrix[is.infinite(normLog2Matrix)] <- NA
+  normLog2Matrix
+}
+
+#' @rdname norm_functions
+#' @export
+#'
+giNorm_old <- function(logDat) {
+    rawMatrix <- 2^logDat
+    colSums <- colSums(rawMatrix, na.rm = TRUE)
+    colSumsMedian <- stats::median(colSums)
+    normMatrix <- matrix(nrow = nrow(rawMatrix), ncol = ncol(rawMatrix),
+                         byrow = TRUE)
+    normFunc <- function(colIndex) {
+      (rawMatrix[rowIndex, colIndex]/colSums[colIndex]) * colSumsMedian
+    }
+    for (rowIndex in seq_len(nrow(rawMatrix))) {
+      normMatrix[rowIndex, ] <- vapply(seq_len(ncol(rawMatrix)),
+                                       normFunc, 0)
+    }
+    normLog2Matrix <- log2(normMatrix)
+    colnames(normLog2Matrix) <- colnames(rawMatrix)
+
+  giNormed <- normLog2Matrix
   colnames(giNormed) <- colnames(logDat)
   row.names(giNormed) <- rownames(logDat)
   return(as.matrix(giNormed))

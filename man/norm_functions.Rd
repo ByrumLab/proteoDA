@@ -26,7 +26,7 @@ cycLoessNorm(logDat)
 
 rlrNorm(logDat)
 
-giNorm(logDat)
+giNorm(dat)
 }
 \arguments{
 \item{dat}{A numeric data frame, where each row is a protein and columns
@@ -54,12 +54,15 @@ function.
 \item cycLoessNorm- Cyclic Loess normalization, using the
 \code{\link[limma:normalizeCyclicLoess]{limma::normalizeCyclicLoess}}
 function.
-\item rlrNorm- Global linear regression normalization, using the
+\item rlrNorm- Global linear regression normalization, inspired by the
 \code{\link[NormalyzerDE:performGlobalRLRNormalization]{NormalyzerDE::performGlobalRLRNormalization}}
-function.
-\item giNorm- Global intensity normalization, using the
+function, but with a slightly different implementation.
+\item giNorm- Global intensity normalization, inspired by the
 \code{\link[NormalyzerDE:globalIntensityNormalization]{NormalyzerDE::globalIntensityNormalization}}
-function.
+function, but with a slightly different implementation. In brief,
+normalizes each sample/column by dividing by the total intensity for the
+sample and multiplying by the median of per-sample intensities. Thus,
+like mean or median normalization, but using sum instead of
 }
 }
 \examples{
