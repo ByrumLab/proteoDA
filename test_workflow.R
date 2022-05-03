@@ -39,6 +39,10 @@ ext_zhan <- extract_data(file = "for_testing/Example Data/Zhan_DIA_217_samples/i
                          pipe = "DIA",
                          enrich = "protein")
 
+ext_reb <- extract_data(file = "for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv",
+                       pipe = "DIA",
+                       enrich = "protein")
+
 # Make targets ------------------------------------------------------------
 
 target_higgs <- make_targets(file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
@@ -86,6 +90,11 @@ target_zhan <- make_targets(file = "for_testing/Example Data/Zhan_DIA_217_sample
                             pipe = "DIA",
                             enrich = "protein")
 
+target_reb <- make_targets(file = "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv",
+                           sampleIDs = colnames(ext_reb$data),
+                           pipe = "DIA",
+                           enrich = "protein")
+
 # Subset targets --------------------------------------------------------------
 sub_higgs <- subset_targets(targets=target_higgs, filter_column = "group", rm.vals = "Pool")
 
@@ -94,6 +103,8 @@ sub_ndu <- subset_targets(targets=target_ndu, filter_column = "group", rm.vals =
 sub_lupashin <- subset_targets(targets=target_lupashin, filter_column = "group", rm.vals = c("Pool", "input"))
 
 sub_zhan <- subset_targets(targets = target_zhan, filter_column = "group", rm.vals = "pool")
+
+sub_reb <- subset_targets(targets = target_reb, filter_column = "group", rm.vals = "Pool")
 
 
 # Process data ------------------------------------------------------------
@@ -119,6 +130,10 @@ norm_zhan <- process_data(data = ext_zhan$data,
                           min.grps = 2)
 toc()
 
+norm_reb <- process_data(data = ext_reb$data,
+                         targets = sub_reb$targets,
+                         min.reps = 2,
+                         min.grps = 1)
 
 # Normalization report ----------------------------------------------------
 # Higgs
@@ -135,11 +150,14 @@ tic()
 make_proteinorm_report(normList = norm_zhan$normList, groups = norm_zhan$targets$group, file = "zhan.pdf")
 toc()
 
+make_proteinorm_report(normList = norm_reb$normList, groups = norm_reb$targets$group, file = "rebello.pdf")
+
 
 
 # Make QC report ----------------------------------------------------------
-make_qc_report(normList = norm_higgs$normList, norm.meth = "vsn",
+make_qc_report(normList = norm_higgs$normList, norm.method = "vsn",
                groups = norm_higgs$targets$group,
+               batch = norm_higgs$targets$group,
                enrich = "protein", save = TRUE, file = "higgs_qc.pdf")
 
 make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
@@ -153,6 +171,10 @@ make_qc_report(normList = norm_lupashin$normList, norm.meth = "vsn",
 make_qc_report(normList = norm_zhan$normList, norm.meth = "vsn",
                groups = norm_zhan$targets$group,
                enrich = "protein", save = TRUE, file = "zhan_qc.pdf")
+
+make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
+               groups = norm_reb$targets$group,
+               enrich = "protein", save = TRUE, file = "rebello_qc.pdf")
 
 
 # Make design -------------------------------------------------------------
