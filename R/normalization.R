@@ -90,12 +90,11 @@ normalize_data <- function(data, targets) {
   normList[["cycloess"]] <- cycLoessNorm(logDat = normList[["log2"]])
   normList[["rlr"]]      <- rlrNorm(logDat = normList[["log2"]])
   normList[["gi"]]       <- giNorm(dat = data2)
-  normList[["gi2"]]      <- giNorm_old(logDat = normList[["log2"]])
 
   cli::cli_inform("Data normalization complete")
 
   # Return list of output
-  list(normList = normList, targets = targets, data2 = data2)
+  list(normList = normList, targets = targets)
 }
 
 
@@ -150,7 +149,7 @@ NULL
 #' @export
 #'
 logNorm <- function(dat) {
-  logInt <- log2(dat)
+  logInt <- log2(as.matrix(dat))
   logInt[is.infinite(as.matrix(logInt))] <- NA
   return(as.matrix(logInt))
 }
@@ -197,7 +196,7 @@ vsnNorm <- function(dat) {
 #' @export
 #'
 quantNorm <- function(logDat) {
-  quantNormed <- preprocessCore::normalize.quantiles(as.matrix(logDat), copy = FALSE)
+  quantNormed <- preprocessCore::normalize.quantiles(as.matrix(logDat), copy = TRUE)
   colnames(quantNormed) <- colnames(logDat)
   row.names(quantNormed) <- rownames(logDat)
   return(as.matrix(quantNormed))
@@ -256,30 +255,5 @@ giNorm <- function(dat) {
   normLog2Matrix <- log2(normMatrix)
   normLog2Matrix[is.infinite(normLog2Matrix)] <- NA
   normLog2Matrix
-}
-
-#' @rdname norm_functions
-#' @export
-#'
-giNorm_old <- function(logDat) {
-    rawMatrix <- 2^logDat
-    colSums <- colSums(rawMatrix, na.rm = TRUE)
-    colSumsMedian <- stats::median(colSums)
-    normMatrix <- matrix(nrow = nrow(rawMatrix), ncol = ncol(rawMatrix),
-                         byrow = TRUE)
-    normFunc <- function(colIndex) {
-      (rawMatrix[rowIndex, colIndex]/colSums[colIndex]) * colSumsMedian
-    }
-    for (rowIndex in seq_len(nrow(rawMatrix))) {
-      normMatrix[rowIndex, ] <- vapply(seq_len(ncol(rawMatrix)),
-                                       normFunc, 0)
-    }
-    normLog2Matrix <- log2(normMatrix)
-    colnames(normLog2Matrix) <- colnames(rawMatrix)
-
-  giNormed <- normLog2Matrix
-  colnames(giNormed) <- colnames(logDat)
-  row.names(giNormed) <- rownames(logDat)
-  return(as.matrix(giNormed))
 }
 

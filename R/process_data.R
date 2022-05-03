@@ -94,7 +94,6 @@ process_data <- function(data,
 
   # Return output
   list(normList = norm$normList,
-       filtered_data = norm$data2,
        targets = norm$targets,
        filt = filt,
        param = logs$param,

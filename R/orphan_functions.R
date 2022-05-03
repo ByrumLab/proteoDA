@@ -122,3 +122,30 @@ plotCorrScatter <- function(data, method=c("pearson","spearman","kendall"),
 cell_fun = function(j, i, x, y, width, height, fill) {
   grid::grid.text(sprintf("%.1f", cor_mat[i, j]), x, y, gp = grid::gpar(fontsize = fontsize - 2))
 }
+
+
+# Get colors for groups
+#
+# Used to get colors for the groups in our missing value heatmaps.
+#
+# @param group A vector of group names.
+#
+# @return A vector of colors for each unique group
+# @export
+#
+# @examples
+# # No examples yet
+#
+# colorGroup <- function(group){
+#
+#   if(length(unique(group)) < 9){
+#     groupCol <- yarrr::piratepal(palette="basel")[1:length(unique(group))]
+#     names(groupCol) <- unique(group)
+#   } else {
+#     if(length(unique(group)) >= 9){
+#       groupCol <- grDevices::rainbow(length(unique(group)))
+#       names(groupCol) <- unique(group)
+#     }}
+#
+#   return(groupCol)
+# }

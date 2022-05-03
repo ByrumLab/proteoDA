@@ -96,68 +96,16 @@ sub_lupashin <- subset_targets(targets=target_lupashin, filter_column = "group",
 sub_zhan <- subset_targets(targets = target_zhan, filter_column = "group", rm.vals = "pool")
 
 
-
-
-####### TO FIGURE OUT:
-# I made new rlrNorm and giNorm functions. Did a lot of testing with them,
-# and they seemed OK. though, I may have messed up the tolerance on my
-# waldo compares
-# In any case, I'm running into a weird bug:
-# when I just use the decontaminated data as input, e.g.,
-# with: ext_higg$data,
-# the old and new giNorm functions are apparently giving me basically the same
-# answer (down to ~15 decimal places):
-waldo::compare(giNorm_old(logDat = logNorm(ext_higgs$data)),
-               giNorm(dat = ext_higgs$data))
-old <- giNorm_old(logDat = logNorm(ext_higgs$data))
-new <- giNorm(dat = ext_higgs$data)
-mean(new-old, na.rm = T) # basically 0.
-# But, when I started running the proteionorm report function with this new function,
-# I got very weird looking log2 ratios and the normalization metrics looked different
-# So, I added the old normalization back into the process_data function and ran it:
-norm_higgs <- process_data(data = ext_higgs$data,
-                           targets = sub_higgs$targets,
-                           min.reps = 5,
-                           min.grps = 3)
-mean(norm_higgs$normList$gi - norm_higgs$normList$gi2) # difference of 0.02!!
-# So, somethign weird is going on here, and I don't know what
-# In the old way, you longNorm and then take 2^ again to reverse ie:
-# maybe numerical imprecision there? Should try doing some print statements
-# in the bodies of the two functions, see if they are calculating the same
-# col sums and getting the same median col sum.
-
-# I modified the functions to output the filtered data that goes into the normalization
-# steps:
-old <- giNorm_old(logNorm(norm_higgs$filtered_data))
-new <- giNorm(norm_higgs$filtered_data)
-waldo::compare(old, new)
-max(new - old) # biggest difference is to 15 decimals....
-mean(new-old, na.rm = T) # again, the difference is 0 if I do it this way
-# SO WHY ARE THEY DIFFERENT COMING OUT OF process_data?!?!?!?!?!
-# I am fried and cannot think of a reason why? Something going wrong with
-# row or column sorting????
-# Add back in a ginorm_old version that just calls the normalyzer DE, not the
-# underlying code, and see if tha tmakes a difference?
-nrow(norm_higgs$filtered_data) < nrow(ext_higgs$data)
-
 # Process data ------------------------------------------------------------
 norm_higgs <- process_data(data = ext_higgs$data,
                            targets = sub_higgs$targets,
                            min.reps = 5,
                            min.grps = 3)
-giNorm_old(2^logNorm(norm_higgs$filtered_data))
-giNorm_old(logNorm(norm_higgs$filtered_data)) == giNorm(2^logNorm(norm_higgs$filtered_data))
-mean(giNorm_old(logNorm(norm_higgs$filtered_data)) - giNorm(norm_higgs$filtered_data))
-
-waldo::compare(2^logNorm(norm_higgs$filtered_data), as.matrix(norm_higgs$filtered_data))
-
-mean(norm_higgs$normList$gi - norm_higgs$normList$gi2)
 
 norm_ndu <- process_data(data = ext_ndu$data,
                          targets = sub_ndu$targets,
                          min.reps = 3,
                          min.grps = 1)
-mean(norm_ndu$normList$gi - norm_ndu$normList$gi2, na.rm = T)
 
 norm_lupashin <- process_data(data = ext_lupashin$data,
                               targets = sub_lupashin$targets,
@@ -170,40 +118,6 @@ norm_zhan <- process_data(data = ext_zhan$data,
                           min.reps = 13,
                           min.grps = 2)
 toc()
-
-
-old_giNorm <- function(logDat) {
-  giNormed <- NormalyzerDE::globalIntensityNormalization(as.matrix(logDat), noLogTransform = TRUE)
-  colnames(giNormed) <- colnames(logDat)
-  row.names(giNormed) <- rownames(logDat)
-  return(as.matrix(giNormed))
-}
-
-old <- old_giNorm(logDat = logNorm(ext_higgs$data))
-new <- giNorm(dat = ext_higgs$data)
-
-colnames(dim(old))
-colnames(dim(new))
-unique(rownames(old) == rownames(new))
-str(old)
-str(new)
-
-mean(new[old != new] - old[old != new], na.rm = T )
-
-waldo::compare(old_giNorm(logDat = logNorm(ext_higgs$data)),
-               giNorm(dat = ext_higgs$data))
-sum(is.na(old))
-sum(is.na(new))
-typeof(new)
-typeof(old)
-
-class(new)
-class(old)
-giNorm
-
-norm_higgs$normList$gi <- old
-
-waldo::compare(norm_higgs$normList$gi, old)
 
 
 # Normalization report ----------------------------------------------------

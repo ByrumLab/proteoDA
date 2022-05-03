@@ -15,16 +15,15 @@ Imports:
     gridExtra,
     limma,
     magrittr,
+    MASS,
     matrixStats,
-    NormalyzerDE,
     png,
     preprocessCore,
     rlang,
     stringr,
     tools,
     unikn,
-    vsn,
-    yarrr
+    vsn
 Depends: 
     R (>= 2.10)
 Suggests: 
