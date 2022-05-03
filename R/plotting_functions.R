@@ -28,7 +28,7 @@ plotCorHM <- function(data,
     }
   }
   if (save) {
-    png(
+    grDevices::png(
       filename = file.path(dir, "CorrHeatmap.png"), units = "px",
       width = width, height = width, pointsize = 15
     )
@@ -78,9 +78,9 @@ plotCorHM <- function(data,
     row_labels = sampleLabels,
 
   )
-  par(mar = c(10, 10, 10, 10))
+  graphics::par(mar = c(10, 10, 10, 10))
   ComplexHeatmap::draw(hm_corr, heatmap_legend_side = "top", ht_gap = grid::unit(2, "cm"))
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
   return(invisible(cor_mat))
 }
@@ -114,31 +114,31 @@ plotBoxplot <- function(data,
     }
   }
   if (save) {
-    png(
+    grDevices::png(
       filename = file.path(dir, "BoxPlot.png"), units = "px",
       width = width, height = 750, pointsize = 15
     )
   }
 
-  op <- par(no.readonly = TRUE)
-  par(mar = c(x2, 6, 3, x3), par(oma = c(0.5, 0, 0.5, x3 / 2 + 3)))
+  op <- graphics::par(no.readonly = TRUE)
+  graphics::par(mar = c(x2, 6, 3, x3), graphics::par(oma = c(0.5, 0, 0.5, x3 / 2 + 3)))
   box <- graphics::boxplot(data,
     col = colorGroup2(groups)[groups], names = sampleLabels,
     notch = FALSE, horizontal = FALSE, outline = FALSE,
     las = 2, cex.axis = 1, cex.labs = 1, cex = 1
   )
-  mtext(side = 2, text = "Intensity", font = 1, line = 3, cex = 1.2)
+  graphics::mtext(side = 2, text = "Normalized Intensity", font = 1, line = 3, cex = 1.2)
   title(main = ifelse(is.null(title), "", title), font.main = 1, cex.main = 1.3, line = 1.1)
   if (!legend) {
     x3 <- 1
   } else {
-    legend(par("usr")[2], par("usr")[4],
+    legend(graphics::par("usr")[2], graphics::par("usr")[4],
       bty = "n", xpd = NA, legend = levels(groups), pch = 22, cex = 1,
       box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg = colorGroup2(groups),
       col = colorGroup2(groups), pt.cex = 1.2, pt.lwd = 0, inset = 0.02, horiz = F, ncol = 1
     )
   }
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
   return(invisible(box))
 }
@@ -177,30 +177,30 @@ plotViolin <- function(data,
     }
   }
   if (save) {
-    png(
+    grDevices::png(
       filename = file.path(dir, "ViolinPlot.png"), units = "px",
       width = width, height = 750, pointsize = 15
     )
   }
-  op <- par(no.readonly = TRUE)
-  par(mar = c(x2, 6, 3, x3), par(oma = c(0.5, 0, 0.5, x3 / 2 + 3)))
+  op <- graphics::par(no.readonly = TRUE)
+  graphics::par(mar = c(x2, 6, 3, x3), graphics::par(oma = c(0.5, 0, 0.5, x3 / 2 + 3)))
   vio <- vioplot::vioplot(plotData,
     col = colorGroup2(groups)[groups], names = sampleLabels,
     main = "", ylab = "", xlab = "",
     las = 2, font = 1, cex.axis = 1, cex.labs = 1, cex = 1
   )
-  mtext(side = 2, text = "Density", line = 3, cex = 1.2)
+  graphics::mtext(side = 2, text = "Density", line = 3, cex = 1.2)
   title(main = ifelse(is.null(title), "", title), font.main = 1, cex.main = 1.3, line = 1.1)
   if (!legend) {
     x3 <- 1
   } else {
-    legend(par("usr")[2], par("usr")[4],
+    legend(graphics::par("usr")[2], graphics::par("usr")[4],
       bty = "n", xpd = NA, legend = levels(groups), pch = 22, cex = 1,
       box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg = colorGroup2(groups),
       col = colorGroup2(groups), pt.cex = 1.2, pt.lwd = 0, inset = 0.02, horiz = F, ncol = 1
     )
   }
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
   return(invisible(vio))
 } ## VIOLIN
@@ -275,14 +275,14 @@ plotPCA <- function(data, groups = NULL, sampleLabels = NULL, title = NULL, top 
     }
   }
   if (save) {
-    png(
+    grDevices::png(
       filename = file.path(dir, "PCAplot.png"), units = "px",
       width = 750, height = 650, pointsize = 15
     )
   }
 
-  op <- par(no.readonly = TRUE)
-  par(mar = c(x2, 6, 3, x3), par(oma = c(0.5, 0, 0.5, x3 / 2 + 3)))
+  op <- graphics::par(no.readonly = TRUE)
+  graphics::par(mar = c(x2, 6, 3, x3), graphics::par(oma = c(0.5, 0, 0.5, x3 / 2 + 3)))
   plot(
     x = pca$x[, dims[1]], y = pca$x[, dims[2]],
     pch = 21, bg = colorGroup2(groups)[groups], col = colorGroup2(groups)[groups],
@@ -294,7 +294,7 @@ plotPCA <- function(data, groups = NULL, sampleLabels = NULL, title = NULL, top 
   title(main = ifelse(is.null(title), "", title), font.main = 1, cex.main = 1.3, line = 1.2)
   graphics::grid()
   if (ncol(data) <= 50) {
-    text(
+    graphics::text(
       labels = sampleLabels, x = pca$x[, dims[1]], y = pca$x[, dims[2]],
       cex = cex.char, adj = ifelse(max.char < 3, -0.6, ifelse(max.char < 5, -0.4, -0.2)),
       col = colorGroup2(groups)[as.character(groups)]
@@ -304,13 +304,13 @@ plotPCA <- function(data, groups = NULL, sampleLabels = NULL, title = NULL, top 
   if (!legend) {
     x3 <- 1
   } else {
-    legend(par("usr")[2], par("usr")[4],
+    legend(graphics::par("usr")[2], graphics::par("usr")[4],
       bty = "n", xpd = NA, legend = levels(groups), pch = 22, cex = 1,
       box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg = colorGroup2(groups),
       col = colorGroup2(groups), pt.cex = 1.2, pt.lwd = 0, inset = 0.02, horiz = F, ncol = 1
     )
   }
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
   data2 <- list(pca = pca, dat = data)
   return(invisible(data2))
@@ -376,15 +376,15 @@ plotDendrogram <- function(data, groups = NULL, sampleLabels = NULL,
     }
   }
   if (save) {
-    png(
+    grDevices::png(
       filename = file.path(dir, "Dendrogram.png"), units = "px",
       width = width, height = 650, pointsize = 15
     )
   }
 
 
-  op <- par(no.readonly = TRUE)
-  par(xpd = T, mar = par()$mar + c(3, 0, 2, 5))
+  op <- graphics::par(no.readonly = TRUE)
+  graphics::par(xpd = T, mar = graphics::par()$mar + c(3, 0, 2, 5))
   d <- ClassDiscovery::distanceMatrix(dataset = data, metric = clust.metric)
   hc <- stats::hclust(d, method = clust.meth)
   ClassDiscovery::plotColoredClusters(hc,
@@ -394,15 +394,15 @@ plotDendrogram <- function(data, groups = NULL, sampleLabels = NULL,
   )
   title(main = ifelse(is.null(title), "", title), font.main = 1, line = 2.5, cex = 1.5)
   if (legend) {
-    legend(par("usr")[2], par("usr")[4],
+    legend(graphics::par("usr")[2], graphics::par("usr")[4],
       bty = "n", xpd = NA, legend = levels(groups), pch = 22, cex = 1,
       box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg = colorGroup2(groups),
       col = colorGroup2(groups), pt.cex = 1.2, pt.lwd = 0, inset = 0.02, horiz = F, ncol = 1
     )
   }
-  par(mar = c(5, 4, 4, 2) + 0.1)
+  graphics::par(mar = c(5, 4, 4, 2) + 0.1)
 
-  if (save) dev.off()
+  if (save) grDevices::dev.off()
 
   data2 <- list(hc = hc, d = d, dat = data, clust.meth = clust.meth, clust.metric = clust.metric, stdize = stdize, top = top)
 

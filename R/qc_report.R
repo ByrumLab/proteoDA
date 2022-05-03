@@ -108,7 +108,7 @@ make_qc_report <- function(normList,
 
     ## FILENAME NOT NULL
     if (!is.null(file)) {
-      if (file_ext(file) != "pdf") {
+      if (tools::file_ext(file) != "pdf") {
         stop(
           "\nError! Invalid output file type...\nincorrect: file = '", file, "'",
           "\ncorrect:   file = 'QC_Report.pdf'"
@@ -158,7 +158,7 @@ make_qc_report <- function(normList,
   if (!is.null(batch)) {
     if (save) {
       width <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
-      png(filename = file.path(dir, "BoxPlot2.png"),
+      grDevices::png(filename = file.path(dir, "BoxPlot2.png"),
           units = "px",
           width = width,
           height = 750,
@@ -172,7 +172,7 @@ make_qc_report <- function(normList,
                         dir = dir,
                         save = FALSE)
     if (save == TRUE) {
-      dev.off()
+      grDevices::dev.off()
     }
   }
 
@@ -187,7 +187,7 @@ make_qc_report <- function(normList,
   if (!is.null(batch)) {
     width <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
     if (save) {
-      png(filename = file.path(dir, "violinPlot2.png"),
+      grDevices::png(filename = file.path(dir, "violinPlot2.png"),
           units = "px",
           width = width,
           height = 750,
@@ -201,7 +201,7 @@ make_qc_report <- function(normList,
                        dir = dir,
                        save = FALSE)
     if (save) {
-      dev.off()
+      grDevices::dev.off()
     }
   }
 
@@ -223,7 +223,7 @@ make_qc_report <- function(normList,
   )
   if (!is.null(batch)) {
     if (save == TRUE) {
-      png(filename = file.path(dir, "PCAplot2.png"), units = "px", width = 750, height = 650, pointsize = 15)
+      grDevices::png(filename = file.path(dir, "PCAplot2.png"), units = "px", width = 750, height = 650, pointsize = 15)
     }
     pca2 <- plotPCA(
       data = data,
@@ -241,7 +241,7 @@ make_qc_report <- function(normList,
       save = FALSE
     )
     if (save) {
-      dev.off()
+      grDevices::dev.off()
     }
   }
 
@@ -255,7 +255,7 @@ make_qc_report <- function(normList,
     if (save) {
       width <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
       print(width)
-      png(filename = file.path(dir, "Dendrogram2.png"), units = "px", width = width, height = 650, pointsize = 15)
+      grDevices::png(filename = file.path(dir, "Dendrogram2.png"), units = "px", width = width, height = 650, pointsize = 15)
     }
     dendro2 <- plotDendrogram(
       data = data, groups = batch, sampleLabels = sampleLabels, top = top, stdize = stdize,
@@ -263,7 +263,7 @@ make_qc_report <- function(normList,
       cex.names = 1, xlim = NULL, title = "Cluster Dendrogram", legend = legend, dir = dir, save = FALSE
     )
     if (save) {
-      dev.off()
+      grDevices::dev.off()
     }
   }
 
@@ -297,7 +297,7 @@ make_qc_report <- function(normList,
   if (save) {
 
     ##  MAKE PDF FILE
-    pdf(file.path(dir, file), paper = "USr", pagecentre = TRUE, pointsize = 15, width = 12, height = 8)
+    grDevices::pdf(file.path(dir, file), paper = "USr", pagecentre = TRUE, pointsize = 15, width = 12, height = 8)
 
     ## QC_REPORT.PDF (NO BATCH)
     if (is.null(batch)) {
@@ -349,7 +349,7 @@ make_qc_report <- function(normList,
       do.call(gridExtra::grid.arrange, c(thePlots[9], ncol = 1))
     } ## BATCH IS NOT NULL
 
-    dev.off()
+    grDevices::dev.off()
 
     ## REMOVE PNG FILES
     if (!keep.png) {

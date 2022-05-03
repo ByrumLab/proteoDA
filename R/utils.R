@@ -172,9 +172,6 @@ colorGroup2 <- function(group) {
                    grape, ocean, mtndew, gold, orchid, aceblue, poop)
     names(binfcolors)<-c("blueberry", "cherry", "apple", "barbie", "fanta",
                          "grape", "ocean", "mtndew", "gold", "orchid", "aceblue", "poop")
-    ## plots color palette
-    colors <- unikn::newpal(col=binfcolors, names = names(colors))
-    colors <- unikn::usecol(pal=binfcolors, n="all", use_names = TRUE)
 
     ## group=6-12
     if(length(unique(group)) > 5){
@@ -182,7 +179,7 @@ colorGroup2 <- function(group) {
       names(groupCol) <- unique(group)
     }
     if(length(unique(group)) > 12) {
-      groupCol <- c(grDevices::rainbow(length(unique(group)))); groupCol
+      groupCol <- c(grDevices::rainbow(length(unique(group))))
       names(groupCol) <- unique(group)
     }
     if(length(unique(group)) <= 5) {

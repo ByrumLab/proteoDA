@@ -135,6 +135,26 @@ tic()
 make_proteinorm_report(normList = norm_zhan$normList, groups = norm_zhan$targets$group, file = "zhan.pdf")
 toc()
 
+
+
+# Make QC report ----------------------------------------------------------
+make_qc_report(normList = norm_higgs$normList, norm.meth = "vsn",
+               groups = norm_higgs$targets$group,
+               enrich = "protein", save = TRUE, file = "higgs_qc.pdf")
+
+make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
+               groups = norm_ndu$targets$group,
+               enrich = "protein", save = TRUE, file = "ndu_qc.pdf")
+
+make_qc_report(normList = norm_lupashin$normList, norm.meth = "vsn",
+               groups = norm_lupashin$targets$group,
+               enrich = "protein", save = TRUE, file = "lupashin_qc.pdf")
+
+make_qc_report(normList = norm_zhan$normList, norm.meth = "vsn",
+               groups = norm_zhan$targets$group,
+               enrich = "protein", save = TRUE, file = "zhan_qc.pdf")
+
+
 # Make design -------------------------------------------------------------
 des_higgs<- make_design(targets=norm_higgs$targets,
                         group_column = "group",

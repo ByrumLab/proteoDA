@@ -7,6 +7,8 @@ Description: Functions for performing DIA proteomics analysis.
 License: MIT + file LICENSE
 biocViews:
 Imports:
+    circlize,
+    ClassDiscovery,
     cli,
     ComplexHeatmap,
     genefilter,
@@ -19,10 +21,11 @@ Imports:
     matrixStats,
     png,
     preprocessCore,
+    RColorBrewer,
     rlang,
     stringr,
     tools,
-    unikn,
+    vioplot,
     vsn
 Depends: 
     R (>= 2.10)
