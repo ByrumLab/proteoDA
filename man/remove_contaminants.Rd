@@ -31,8 +31,8 @@ A list of data with contaminants removed, with three elements:
 \enumerate{
 \item "data", a data frame with the contaminants removed. Rows are
 proteins, columns include both protein info and individual intensities.
-\item "no_contam", an integer giving the number of contaminant rows removed
-\item "no_qfilter", an integer giving the number of retained rows
+\item "num_contam", an integer giving the number of contaminant rows removed
+\item "num_qfilter", an integer giving the number of retained rows
 (ie, nrow() of the "data" slot).
 }
 }

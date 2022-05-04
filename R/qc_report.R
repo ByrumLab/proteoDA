@@ -17,6 +17,7 @@ make_qc_report <- function(normList,
                            dir = NULL,
                            file = NULL,
                            save = FALSE,
+                           overwrite = FALSE,
                            keep.png = FALSE) {
 
 
@@ -124,9 +125,13 @@ make_qc_report <- function(normList,
 
     # Check if filename already exists, remake it if so
     if (file.exists(file.path(out_dir, file))) {
-      new_file <- make_new_filename(x = file, dir = out_dir)
-      cli::cli_inform("{.path {file}} already exists. Renaming as {.path {new_file}} instead.")
-      file <- new_file
+      if (overwrite) {
+        cli::cli_inform("{.path {file}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
+      } else {
+        cli::cli_abort(c("{.path {file}} already exists in {.path {out_dir}}",
+                     "!" = "and {.arg overwrite} == {.val {overwrite}}",
+                     "i" = "Give {.arg file} a unique name or set {.arg overwrite} to {.val TRUE}"))
+      }
     }
 
     # Notify user of where tmp png files will be
@@ -135,7 +140,7 @@ make_qc_report <- function(normList,
 
   ## NORMALIZED INTENSITY DATA
   # TODO: figure out what exactly is going on here.
-  # Isn't the data always a normList?
+  # Isn't the data always ?
   ## list object or dataframe/matrix of norm. intensities
   if (any(class(normList) == "list")) {
     data <- normList[[norm.method]]
@@ -262,7 +267,6 @@ make_qc_report <- function(normList,
   if (!is.null(batch)) {
     if (save) {
       width <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
-      print(width)
       grDevices::png(filename = file.path(out_dir, "Dendrogram2.png"), units = "px", width = width, height = 650, pointsize = 15)
     }
     dendro2 <- plotDendrogram(
@@ -285,16 +289,16 @@ make_qc_report <- function(normList,
   if (is.null(batch)) {
     plotList <- list(
       box = box, vio = vio, pca = pca, dendro = dendro, corhm = corhm, norm.meth = norm.method,
-      dir = ifelse(save, out_dir, NULL),
-      file = ifelse(save, file, NULL)
+      dir = ifelse(save, out_dir, NA),
+      file = ifelse(save, file, NA)
     )
   }
   if (!is.null(batch)) {
     plotList <- list(
       box = box, box2 = box2, vio = vio, vio2 = vio2, pca = pca, pca2 = pca2,
       dendro = dendro, dendro2 = dendro2, corhm = corhm, norm.meth = norm.method,
-      dir = ifelse(save, out_dir, NULL),
-      file = ifelse(save, file, NULL)
+      dir = ifelse(save, out_dir, NA),
+      file = ifelse(save, file, NA)
     )
   }
 
@@ -303,6 +307,8 @@ make_qc_report <- function(normList,
   ##  SAVE QC REPORT PDF FILE
   ## -----------------------------
   if (save) {
+
+    cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
 
     ##  MAKE PDF FILE
     grDevices::pdf(file.path(out_dir, file), paper = "USr", pagecentre = TRUE, pointsize = 15, width = 12, height = 8)
@@ -336,7 +342,7 @@ make_qc_report <- function(normList,
         "PCAplot.png", "PCAplot2.png", "Dendrogram.png", "Dendrogram2.png", "CorrHeatmap.png"
       )
       pnglist <- paste0(paste0(file.path(out_dir), "/"), files)
-      pnglist
+
       thePlots <- lapply(1:length(pnglist), function(i) {
         grid::rasterGrob(png::readPNG(pnglist[i], native = F))
       })
@@ -359,24 +365,26 @@ make_qc_report <- function(normList,
 
     grDevices::dev.off()
 
-    ## REMOVE PNG FILES
-    if (!keep.png) {
+    # Deal with the .png files
+    if (!keep.png) { # Delete
       unlink(pnglist)
-      print(file.path(out_dir, file))
-      print("png files removed...")
-    } else {
+      cli::cli_inform("Temporary {.path .png} files removed from {.path {out_dir}} ")
+    } else { # Move to a new png directory
+      # Setup dir name
+      pngdir <- gsub(".pdf", "_pngs", file)
+      # Create if it doesn't exist
       if (!dir.exists(file.path(out_dir, pngdir))) {
         dir.create(file.path(out_dir, pngdir), recursive = TRUE)
       }
-      lapply(files, function(x) {
-        file.copy(from = file.path(out_dir, x), to = file.path(out_dir, pngdir, x))
-        file.remove(file.path(out_dir, x))
+      # Move files
+      lapply(pnglist, function(x) {
+        file.copy(from = x, to = file.path(out_dir, pngdir, basename(x)))
+        file.remove(x)
       })
-      print(paste("png files moved to :", file.path(out_dir, pngdir)))
     }
   }
 
-
+  # Logging
   param <- stats <- list()
   param[["norm.method"]] <- norm.method
   param[["batch"]] <- ifelse(is.null(batch), "NULL", paste(unique(batch), collapse = ", "))
@@ -396,18 +404,19 @@ make_qc_report <- function(normList,
   }
   param[["enrich"]] <- enrich
 
-  stats[["no_samples"]] <- ncol(data)
-  stats[["no_groups"]] <- length(unique(groups))
-  stats[["no_batches"]] <- ifelse(is.null(batch), 0, length(unique(batch)))
-  stats[["tot_no_rows"]] <- nrow(data)
-  stats[["top_no_rows"]] <- top
+  stats[["num_samples"]] <- ncol(data)
+  stats[["num_groups"]] <- length(unique(groups))
+  stats[["num_batches"]] <- ifelse(is.null(batch), 0, length(unique(batch)))
+  stats[["tot_num_rows"]] <- nrow(data)
+  stats[["top_num_rows"]] <- top
 
   logs <- make_log(param, stats, title = "QC REPORT", save = TRUE)
 
 
-  data2 <- list(plots = plotList, param = logs$param, stats = logs$stats)
+  output_data <- list(plots = plotList, param = logs$param, stats = logs$stats)
 
-  print("QC report files created. Success!!")
+  cli::cli_rule()
+  cli::cli_inform(c("v" = "Success"))
 
-  return(invisible(data2))
+  return(invisible(output_data))
 }

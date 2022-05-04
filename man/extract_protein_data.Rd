@@ -43,10 +43,10 @@ a protein ID, in the form of UniprotID_Gene_name_id.
 \item "sampleIDs"- A vector of the sample IDs for the data. Seems like the
 column names from the rawData slot. Redundant?
 \item "annotColumns"- The column names of the "rawAnnot" slot. Redundant?
-\item "no_samples"- The number of samples.
+\item "num_samples"- The number of samples.
 Currently seems redundant: just ncol() of rawData slot. Maybe useful if we
 moved back to merging annotation and sample data?
-\item "no_extracted"- The number of proteins (nrow() of rawData slot).
+\item "num_extracted"- The number of proteins (nrow() of rawData slot).
 Redundant?
 \item "pipe"- The pipeline argument used.
 \item "enrich"- The enrich argument used.

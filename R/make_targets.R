@@ -151,18 +151,18 @@ make_targets <- function(file = NULL,
       ## list of TMT tags and TMT batches in metadata file
       unq_tags    <- unique(metadata$tag)   ## list of unique TMT tags
       unq_bats    <- unique(metadata$batch) ## list of unique TMT batches
-      no_unq_tags <- length(unq_tags)    ## no of unique TMT tags
-      no_unq_bats <- length(unq_bats)    ## no of unique batches
+      num_unq_tags <- length(unq_tags)    ## no of unique TMT tags
+      num_unq_bats <- length(unq_bats)    ## no of unique batches
       ## stop if each batch does not contain same no samples
-      stopifnot(length(sampleIDs) == no_unq_tags * no_unq_bats)
+      stopifnot(length(sampleIDs) == num_unq_tags * num_unq_bats)
 
       ## use no. unique tags to determine type of TMT kit used in experiment.
       # TODO?: switch to ifelse statements?
-      if (all(no_unq_tags==6  & all(unq_tags %in% TMT6plex)))  {plex <- TMT6plex}
-      if (all(no_unq_tags==10 & all(unq_tags %in% TMT10plex))) {plex <- TMT10plex}
-      if (all(no_unq_tags==11 & all(unq_tags %in% TMT11plex))) {plex <- TMT11plex}
-      if (all(no_unq_tags==16 & all(unq_tags %in% TMT16plex))) {plex <- TMT16plex}
-      if (no_unq_tags %notin% c(6,10,11,16)) {
+      if (all(num_unq_tags==6  & all(unq_tags %in% TMT6plex)))  {plex <- TMT6plex}
+      if (all(num_unq_tags==10 & all(unq_tags %in% TMT10plex))) {plex <- TMT10plex}
+      if (all(num_unq_tags==11 & all(unq_tags %in% TMT11plex))) {plex <- TMT11plex}
+      if (all(num_unq_tags==16 & all(unq_tags %in% TMT16plex))) {plex <- TMT16plex}
+      if (num_unq_tags %notin% c(6,10,11,16)) {
         return(message("Error! TMTplex could not be determined."))
       }
 
@@ -201,18 +201,18 @@ make_targets <- function(file = NULL,
       ## unique TMT tags and TMT batches extracted from sampleIDs
       unq_idx     <- unique(channel)    ## list of unique TMT tags
       unq_b       <- unique(b)            ## list of unique TMT batches
-      no_unq_idx  <- length(unq_idx) ## no of unique TMT tags
-      no_unq_b    <- length(unq_b)     ## no of unique batches
+      num_unq_idx  <- length(unq_idx) ## no of unique TMT tags
+      num_unq_b    <- length(unq_b)     ## no of unique batches
       ## stop if each batch does not contain same no samples
-      stopifnot(length(sampleIDs) == no_unq_idx * no_unq_b) # TODO more informative error message
+      stopifnot(length(sampleIDs) == num_unq_idx * num_unq_b) # TODO more informative error message
 
       ## use no. unique tags to determine type of TMT kit used in experiment.
       # TODO: switch to ifelse?
-      if (all(no_unq_idx == 6  & all(unq_idx %in% names(TMT6plex))))  {plex2 <- TMT6plex}
-      if (all(no_unq_idx == 10 & all(unq_idx %in% names(TMT10plex)))) {plex2 <- TMT10plex}
-      if (all(no_unq_idx == 11 & all(unq_idx %in% names(TMT11plex)))) {plex2 <- TMT11plex}
-      if (all(no_unq_idx == 16 & all(unq_idx %in% names(TMT16plex)))) {plex2 <- TMT16plex}
-      if (no_unq_idx %in% c(6,10,11,16) == FALSE) {
+      if (all(num_unq_idx == 6  & all(unq_idx %in% names(TMT6plex))))  {plex2 <- TMT6plex}
+      if (all(num_unq_idx == 10 & all(unq_idx %in% names(TMT10plex)))) {plex2 <- TMT10plex}
+      if (all(num_unq_idx == 11 & all(unq_idx %in% names(TMT11plex)))) {plex2 <- TMT11plex}
+      if (all(num_unq_idx == 16 & all(unq_idx %in% names(TMT16plex)))) {plex2 <- TMT16plex}
+      if (num_unq_idx %in% c(6,10,11,16) == FALSE) {
         return(stop(paste("Error! TMTplex tags could not be determined from channel",
                           "index extracted from sampleIDs. :(")))
         }
@@ -314,16 +314,16 @@ make_targets <- function(file = NULL,
       ## list of TMT tags and TMT batches
       unq_idx     <- unique(channel)   ## list of unique TMT tags
       unq_b       <- unique(b)           ## list of unique TMT batches
-      no_unq_idx  <- length(unq_idx)## no of unique TMT tags
-      no_unq_b    <- length(unq_b)    ## no of unique batches
+      num_unq_idx  <- length(unq_idx)## no of unique TMT tags
+      num_unq_b    <- length(unq_b)    ## no of unique batches
       ## stop if each batch does not contain same no samples
-      stopifnot(length(sampleIDs)==no_unq_idx * no_unq_b)
+      stopifnot(length(sampleIDs)==num_unq_idx * num_unq_b)
 
       ## use no. unique tags to determine type of TMT kit used in experiment.
-      if(all(no_unq_idx==6  & all(unq_idx %in% names(TMT6plex)))){ plex2  <- TMT6plex }
-      if(all(no_unq_idx==10 & all(unq_idx %in% names(TMT10plex)))){ plex2 <- TMT10plex }
-      if(all(no_unq_idx==11 & all(unq_idx %in% names(TMT11plex)))){ plex2 <- TMT11plex }
-      if(all(no_unq_idx==16 & all(unq_idx %in% names(TMT16plex)))){ plex2 <- TMT16plex }
+      if(all(num_unq_idx==6  & all(unq_idx %in% names(TMT6plex)))){ plex2  <- TMT6plex }
+      if(all(num_unq_idx==10 & all(unq_idx %in% names(TMT10plex)))){ plex2 <- TMT10plex }
+      if(all(num_unq_idx==11 & all(unq_idx %in% names(TMT11plex)))){ plex2 <- TMT11plex }
+      if(all(num_unq_idx==16 & all(unq_idx %in% names(TMT16plex)))){ plex2 <- TMT16plex }
       plex2
       ## channel indexes from sampleIDs used to obtain TMT tag info.
       if(!is.null(plex2)){ tag <- plex2[names(plex2)[channel]] }
@@ -405,7 +405,8 @@ import_meta <-function(file,
                           sep = sep,
                           stringsAsFactors = FALSE,
                           header = TRUE,
-                          check.names = TRUE)
+                          check.names = TRUE,
+                          strip.white = T)
 
 
   if (!all(reqCols %in% colnames(data))) {

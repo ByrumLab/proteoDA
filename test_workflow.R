@@ -78,7 +78,7 @@ target_ndu4 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/inpu
 
 target_kintler <- make_targets(sampleIDs = colnames(ext_kintler$data),
                                pipe = "DIA",
-                               enrich = "protein") # error because of now "Sample" in ID
+                               enrich = "protein") # error because of no "Sample" in ID
 
 target_lupashin <- make_targets(file = "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv",
                                 sampleIDs = colnames(ext_lupashin$data),
@@ -137,9 +137,9 @@ norm_reb <- process_data(data = ext_reb$data,
 
 # Normalization report ----------------------------------------------------
 # Higgs
-make_proteinorm_report(normList = norm_higgs$normList, groups = norm_higgs$targets$group, file = "higgs.pdf")
+make_proteinorm_report(normList = norm_higgs$normList, groups = norm_higgs$targets$group, file = "higgs.pdf", overwrite = T)
 # Ndu
-make_proteinorm_report(normList = norm_ndu$normList, groups = norm_ndu$targets$group, file = "ndu.pdf")
+make_proteinorm_report(normList = norm_ndu$normList, groups = norm_ndu$targets$group, file = "ndu.pdf", overwrite = T)
 
 # Lupashin
 make_proteinorm_report(normList=norm_lupashin$normList, groups = norm_lupashin$targets$group, file = "lupashin.pdf")
@@ -150,7 +150,7 @@ tic()
 make_proteinorm_report(normList = norm_zhan$normList, groups = norm_zhan$targets$group, file = "zhan.pdf")
 toc()
 
-make_proteinorm_report(normList = norm_reb$normList, groups = norm_reb$targets$group, file = "rebello.pdf")
+make_proteinorm_report(normList = norm_reb$normList, groups = norm_reb$targets$group, file = "rebello.pdf", overwrite = T)
 
 
 
@@ -158,23 +158,28 @@ make_proteinorm_report(normList = norm_reb$normList, groups = norm_reb$targets$g
 make_qc_report(normList = norm_higgs$normList, norm.method = "vsn",
                groups = norm_higgs$targets$group,
                batch = norm_higgs$targets$group,
-               enrich = "protein", save = TRUE, file = "higgs_qc.pdf")
+               enrich = "protein", save = TRUE, file = "higgs_qc.pdf", overwrite = T)
 
 make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
                groups = norm_ndu$targets$group,
-               enrich = "protein", save = TRUE, file = "ndu_qc.pdf")
+               enrich = "protein", save = TRUE, file = "ndu_qc.pdf", overwrite = T)
 
 make_qc_report(normList = norm_lupashin$normList, norm.meth = "vsn",
                groups = norm_lupashin$targets$group,
-               enrich = "protein", save = TRUE, file = "lupashin_qc.pdf")
+               enrich = "protein", save = TRUE, file = "lupashin_qc.pdf", overwrite = T)
 
 make_qc_report(normList = norm_zhan$normList, norm.meth = "vsn",
                groups = norm_zhan$targets$group,
-               enrich = "protein", save = TRUE, file = "zhan_qc.pdf")
+               enrich = "protein", save = TRUE, file = "zhan_qc.pdf", overwrite = T)
 
 make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
                groups = norm_reb$targets$group,
-               enrich = "protein", save = TRUE, file = "rebello_qc.pdf")
+               enrich = "protein", save = TRUE, file = "rebello_qc.pdf", overwrite = T, keep.png = T)
+
+
+make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
+               groups = norm_reb$targets$group,
+               enrich = "protein", save = F)
 
 
 # Make design -------------------------------------------------------------
@@ -198,6 +203,11 @@ des_zhan <- make_design(targets = norm_zhan$targets,
                         factor_columns = NULL,
                         paired_column = NULL)
 
+des_reb <- make_design(targets = norm_reb$targets,
+                           group_column = "group",
+                           factor_columns = NULL,
+                           paired_column = NULL)
+
 # Make contrasts ----------------------------------------------------------
 # Higgs
 # No higgs contrast file??
@@ -219,5 +229,7 @@ contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_0
 # Zhan
 contrasts_zhan <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt",
                                  design = des_zhan$design)
-
+# Rebello
+contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/contrasts.csv",
+                                    design = des_reb$design)
 

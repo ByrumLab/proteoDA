@@ -11,6 +11,7 @@ make_proteinorm_report(
   sampleLabels = NULL,
   enrich = c("protein", "phospho"),
   save = TRUE,
+  overwrite = FALSE,
   dir = NULL,
   file = NULL,
   keep.png = FALSE,
@@ -38,6 +39,9 @@ supplied.}
 
 \item{save}{Should the report be saved as a PDF? Default is TRUE. If FALSE,
 will print all plots to the R or RStudio graphics device.}
+
+\item{overwrite}{Should report file be overwritten if it already exists?
+Default is FALSE.}
 
 \item{dir}{The directory in which to save the report. If not provided,
 will default to either "protein_analysis/01_quality_control" or

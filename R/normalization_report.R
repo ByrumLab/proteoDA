@@ -27,6 +27,8 @@
 #'   supplied.
 #' @param save Should the report be saved as a PDF? Default is TRUE. If FALSE,
 #'   will print all plots to the R or RStudio graphics device.
+#' @param overwrite Should report file be overwritten if it already exists?
+#'   Default is FALSE.
 #' @param dir The directory in which to save the report. If not provided,
 #'   will default to either "protein_analysis/01_quality_control" or
 #'   "phospho_analysis/01_quality_control" within the current working
@@ -81,6 +83,7 @@ make_proteinorm_report <- function(normList,
                                    sampleLabels = NULL,
                                    enrich = c("protein", "phospho"), #TODO: only used for making dir name...
                                    save = TRUE,
+                                   overwrite = FALSE,
                                    dir = NULL,
                                    file = NULL,
                                    keep.png = FALSE,
@@ -146,11 +149,14 @@ make_proteinorm_report <- function(normList,
                        "X" = "{.arg file} must end in {.path .pdf}, not {.path {tools::file_ext(file)}}"))
     }
 
-    # Check if filename already exists, remake it if so
     if (file.exists(file.path(out_dir, file))) {
-      new_file <- make_new_filename(x = file, dir = out_dir)
-      cli::cli_inform("{.path {file}} already exists. Renaming as {.path {new_file}} instead.")
-      file <- new_file
+      if (overwrite) {
+        cli::cli_inform("{.path {file}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
+      } else {
+        cli::cli_abort(c("{.path {file}} already exists in {.path {out_dir}}",
+                         "!" = "and {.arg overwrite} == {.val {overwrite}}",
+                         "i" = "Give {.arg file} a unique name or set {.arg overwrite} to {.val TRUE}"))
+      }
     }
 
     # Notify user of where tmp png files will be

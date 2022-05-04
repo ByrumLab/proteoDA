@@ -98,7 +98,7 @@ extract_data <- function(file = NULL,
     reqCols <- DIADATA$reqCols
 
     param[["file"]] <- DIADATA$file
-    stats[["total_input_rows"]] <- DIADATA$no_input
+    stats[["total_input_rows"]] <- DIADATA$num_input
 
     ## REMOVE IRRELEVANT COLUMNS
     ## irrelevant columns, columns 2-3 (visible,star) are removed from
@@ -153,7 +153,7 @@ extract_data <- function(file = NULL,
 
     ## REMOVE CONTAMINANTS
     qfilterData <- remove_contaminants(data = diaData, pipe = pipe, enrich = enrich)
-    stats[["no_contam_removed"]] <- qfilterData$no_contam
+    stats[["num_contam_removed"]] <- qfilterData$num_contam
 
     ## EXTRACT PROTEIN DATA
     extProt <- extract_protein_data(
@@ -161,8 +161,8 @@ extract_data <- function(file = NULL,
       pipe = pipe, enrich = enrich
     )
 
-    stats[["total_input_samples"]] <- extProt$no_samples
-    stats[["no_extracted_rows"]] <- extProt$no_extracted
+    stats[["total_input_samples"]] <- extProt$num_samples
+    stats[["num_extracted_rows"]] <- extProt$num_extracted
 
     ## SAVE PARAM/STATS TO LOG FILE
     logs <- make_log(param = param, stats = stats, title = "EXTRACTED DATA", save = TRUE)
@@ -189,11 +189,11 @@ extract_data <- function(file = NULL,
 
     ## IMPORT DATA
     maxQuant <- import_data(file = file, pipe = pipe, enrich = enrich)
-    stats[["total_input_rows"]] <- maxQuant$no_input
+    stats[["total_input_rows"]] <- maxQuant$num_input
 
     ## REMOVE CONTAMINANTS
     qfilterData <- remove_contaminants(data = maxQuant$data, pipe = pipe, enrich = enrich)
-    stats[["no_contam_removed"]] <- qfilterData$no_contam
+    stats[["num_contam_removed"]] <- qfilterData$num_contam
 
 
     ## EXTRACT PROTEIN DATA AND ANNOTATION
@@ -202,8 +202,8 @@ extract_data <- function(file = NULL,
       pipe = pipe, enrich = enrich
     )
 
-    stats[["total_input_samples"]] <- extProt$no_samples
-    stats[["no_extracted_rows"]] <- extProt$no_extracted
+    stats[["total_input_samples"]] <- extProt$num_samples
+    stats[["num_extracted_rows"]] <- extProt$num_extracted
     param[["pattern"]] <- extProt$pattern
 
     ## SAVE PARAM/STATS TO LOG FILE
@@ -231,12 +231,12 @@ extract_data <- function(file = NULL,
 
     ## IMPORT DATA
     maxQuant <- import_data(file = file, pipe = pipe, enrich = enrich)
-    stats[["total_input_rows"]] <- maxQuant$no_input
+    stats[["total_input_rows"]] <- maxQuant$num_input
 
 
     ## REMOVE CONTAMINANTS
     qfilterData <- remove_contaminants(data = maxQuant$data, pipe = pipe, enrich = enrich)
-    stats[["no_contam_removed"]] <- qfilterData$no_contam
+    stats[["num_contam_removed"]] <- qfilterData$num_contam
 
 
     ## EXTRACT PROTEIN DATA
@@ -245,8 +245,8 @@ extract_data <- function(file = NULL,
       pipe = pipe, enrich = enrich
     )
 
-    stats[["total_input_samples"]] <- extProt$no_samples
-    stats[["no_extracted_rows"]] <- extProt$no_extracted
+    stats[["total_input_samples"]] <- extProt$num_samples
+    stats[["num_extracted_rows"]] <- extProt$num_extracted
     param[["pattern"]] <- extProt$pattern
 
     ## SAVE PARAM/STATS TO LOG FILE
@@ -275,11 +275,11 @@ extract_data <- function(file = NULL,
 
     ## IMPORT DATA
     maxQuant <- import_data(file = file, pipe = pipe, enrich = enrich)
-    stats[["total_input_rows"]] <- maxQuant$no_input
+    stats[["total_input_rows"]] <- maxQuant$num_input
 
     ## REMOVE CONTAMINANTS
     qfilterData <- remove_contaminants(data = maxQuant$data, pipe = pipe, enrich = enrich)
-    stats[["no_contam_removed"]] <- qfilterData$no_contam
+    stats[["num_contam_removed"]] <- qfilterData$num_contam
 
     ## LOCAL PROBABILITY FILTER
     qfilterData <- local_prob_filter(
@@ -287,15 +287,15 @@ extract_data <- function(file = NULL,
       pipe = pipe, enrich = enrich
     )
     param[["min.prob"]] <- qfilterData$min.prob
-    stats[["no_localprob_removed"]] <- qfilterData$no_localprob_removed
+    stats[["num_localprob_removed"]] <- qfilterData$num_localprob_removed
 
     ## EXTRACT PHOSPHO DATA
     extPhos <- extract_phospho_data(
       data = qfilterData$data, sampleIDs = sampleIDs,
       pipe = pipe, enrich = enrich
     )
-    stats[["total_input_samples"]] <- extPhos$classList$class_1$no_class_samples
-    stats[["no_extracted_rows"]] <- extPhos$classList$class_1$no_class_phospho
+    stats[["total_input_samples"]] <- extPhos$classList$class_1$num_class_samples
+    stats[["num_extracted_rows"]] <- extPhos$classList$class_1$num_class_phospho
     param[["pattern"]] <- extPhos$classList$class_1$idList$pattern
 
     ## SAVE PARAM/STATS TO LOG FILE
@@ -335,7 +335,7 @@ extract_data <- function(file = NULL,
 #'      \item "data": a data frame, where each row is a (raw) protein, the first
 #'        few columns are protein ID data, and the last columns are the individual
 #'        sample intensities (as character vectors).
-#'     \item "no_input", a named integer listing the total number of raw proteins (ie,
+#'     \item "num_input", a named integer listing the total number of raw proteins (ie,
 #'        the number of rows of the data slot)
 #'     \item a character vector of the required columns for this pipeline/enrichment
 #'        combination.
@@ -413,7 +413,7 @@ import_data <-function(file,
     ## name of column 1 is changed to 'id'
     if(colnames(data)[1]=="X."){ colnames(data)[1] <- "id" }
     data <- data.frame(data)
-    no_input <- nrow(data)
+    num_input <- nrow(data)
 
     ## checks to make sure the input file contains the required annotation/contamination
     ## columns. This ensures that the file imported correctly and helps to identify
@@ -421,9 +421,9 @@ import_data <-function(file,
     if(all(reqCols %in% colnames(data))==TRUE){
 
       cli::cli_inform("{pipe} {enrich} file {.file {file}} imported")
-      cli::cli_inform("Input file contains {no_input} {enrich} entries")
+      cli::cli_inform("Input file contains {num_input} {enrich} entries")
 
-      data2<-list(data=data, no_input=no_input, reqCols=reqCols)
+      data2<-list(data=data, num_input=num_input, reqCols=reqCols)
       return(data2)
 
     } else {
@@ -444,7 +444,7 @@ import_data <-function(file,
     ## are converted to periods.
     data <- utils::read.csv(file=file, sep=sep, stringsAsFactors=FALSE,
                             header=TRUE, check.names=TRUE)
-    no_input <- nrow(data)
+    num_input <- nrow(data)
 
     ## checks that file contains required annotation/contaminant columns,
     ## the id column of MaxQuant output files is a unique key, if the values
@@ -457,9 +457,9 @@ import_data <-function(file,
       if(all(!duplicated(data$id) & is.integer(data$id))){
 
         cli::cli_inform("{pipe} {enrich} file {.file {file}} imported")
-        cli::cli_inform("Input file contains {no_input} {enrich} entries")
+        cli::cli_inform("Input file contains {num_input} {enrich} entries")
 
-        data2 <- list(data=data, no_input=no_input)
+        data2 <- list(data=data, num_input=num_input)
         return(data2)
 
       } else {
@@ -498,8 +498,8 @@ import_data <-function(file,
 #'   \enumerate{
 #'     \item "data", a data frame with the contaminants removed. Rows are
 #'       proteins, columns include both protein info and individual intensities.
-#'     \item "no_contam", an integer giving the number of contaminant rows removed
-#'     \item "no_qfilter", an integer giving the number of retained rows
+#'     \item "num_contam", an integer giving the number of contaminant rows removed
+#'     \item "num_qfilter", an integer giving the number of retained rows
 #'       (ie, nrow() of the "data" slot).
 #'   }
 #'
@@ -532,37 +532,37 @@ remove_contaminants <- function(data,
 
   if(pipe=="DIA"){
 
-    no_rows <- nrow(data)
+    num_rows <- nrow(data)
     data <- data[!grepl("DECOY", data[, contamColums]),]
     data <- data[!grepl("Group of", data[, contamColums]),]
 
-    no_contam  <- no_rows - nrow(data)
-    no_qfilter <- nrow(data)
+    num_contam  <- num_rows - nrow(data)
+    num_qfilter <- nrow(data)
 
-    cli::cli_inform("{no_contam} contaminantes removed")
-    cli::cli_inform("{no_qfilter} {pipe} {enrich} entries retained")
+    cli::cli_inform("{num_contam} contaminantes removed")
+    cli::cli_inform("{num_qfilter} {pipe} {enrich} entries retained")
 
-    data2 <- list(data=data, no_contam=no_contam, no_qfilter=no_qfilter)
+    data2 <- list(data=data, num_contam=num_contam, num_qfilter=num_qfilter)
     return(data2)
 
   } ## DIA CONTAM
 
   if(pipe=="TMT" | pipe=="phosphoTMT" | pipe=="LF"){
 
-    no_rows <- nrow(data)
+    num_rows <- nrow(data)
     for(x in contamColums){
       data[,x][is.na(data[,x])] <- ""
       remove<-data[,x]=="+"
       data <- data[remove==FALSE, ]
     }
 
-    no_contam  <- no_rows - nrow(data)
-    no_qfilter <- nrow(data)
+    num_contam  <- num_rows - nrow(data)
+    num_qfilter <- nrow(data)
 
-    print(paste(no_contam, "contaminants removed. Success!!"))
-    print(paste(no_qfilter, pipe, enrich, "entries retained ..."))
+    print(paste(num_contam, "contaminants removed. Success!!"))
+    print(paste(num_qfilter, pipe, enrich, "entries retained ..."))
 
-    data2 <- list(data=data, no_contam=no_contam, no_qfilter=no_qfilter)
+    data2 <- list(data=data, num_contam=num_contam, num_qfilter=num_qfilter)
     return(data2)
 
   } ## TMT/phosphoTMT/LF
@@ -594,10 +594,10 @@ remove_contaminants <- function(data,
 #'     \item "sampleIDs"- A vector of the sample IDs for the data. Seems like the
 #'       column names from the rawData slot. Redundant?
 #'     \item "annotColumns"- The column names of the "rawAnnot" slot. Redundant?
-#'     \item "no_samples"- The number of samples.
+#'     \item "num_samples"- The number of samples.
 #'       Currently seems redundant: just ncol() of rawData slot. Maybe useful if we
 #'       moved back to merging annotation and sample data?
-#'     \item "no_extracted"- The number of proteins (nrow() of rawData slot).
+#'     \item "num_extracted"- The number of proteins (nrow() of rawData slot).
 #'       Redundant?
 #'     \item "pipe"- The pipeline argument used.
 #'     \item "enrich"- The enrich argument used.
@@ -664,19 +664,19 @@ extract_protein_data <- function(data,
     rawData[,][rawData[,]=="Missing Value"] <- 0
     for(i in 1:ncol(rawData)){ rawData[,i] <- remove_commas(rawData[,i]) }
 
-    no_samples   <- ncol(rawData)
-    no_extracted <- nrow(rawData)
+    num_samples   <- ncol(rawData)
+    num_extracted <- nrow(rawData)
 
-    cli::cli_inform(c("Intensity data for {no_extracted} {pipe} {enrich} entries and {no_samples} samples extracted"))
+    cli::cli_inform(c("Intensity data for {num_extracted} {pipe} {enrich} entries and {num_samples} samples extracted"))
     cli::cli_rule()
     cli::cli_inform(c("v" = "Success!!"))
-    # print(paste("intensity data for", no_extracted,
-    #             pipe, enrich, "entries and ",no_samples, "samples extracted.",
+    # print(paste("intensity data for", num_extracted,
+    #             pipe, enrich, "entries and ",num_samples, "samples extracted.",
     #             "Success!!"));cat("\n")
 
     data2 <- list(rawData=rawData, rawAnnot=rawAnnot, sampleIDs=sampleIDs,
-                  annotColums=annotColums, no_samples=no_samples,
-                  no_extracted=no_extracted, pipe=pipe, enrich=enrich, pattern=pattern)
+                  annotColums=annotColums, num_samples=num_samples,
+                  num_extracted=num_extracted, pipe=pipe, enrich=enrich, pattern=pattern)
     return(data2)
 
 
@@ -720,16 +720,16 @@ extract_protein_data <- function(data,
     rawAnnot <- data[, annotColums]
     rawData  <- data[, sampleIDs]
 
-    no_samples   <- ncol(rawData)
-    no_extracted <- nrow(rawData)
+    num_samples   <- ncol(rawData)
+    num_extracted <- nrow(rawData)
 
-    print(paste("corrected reporter intensity data for", no_extracted,
-                pipe, enrich, "entries and ",no_samples, "samples extracted.",
+    print(paste("corrected reporter intensity data for", num_extracted,
+                pipe, enrich, "entries and ",num_samples, "samples extracted.",
                 "Success!!"));cat("\n")
 
     data2 <- list(rawData=rawData, rawAnnot=rawAnnot, sampleIDs=sampleIDs,
-                  annotColums=annotColums, no_samples=no_samples,
-                  no_extracted=no_extracted, pipe=pipe, enrich=enrich, pattern=pattern)
+                  annotColums=annotColums, num_samples=num_samples,
+                  num_extracted=num_extracted, pipe=pipe, enrich=enrich, pattern=pattern)
     return(data2)
 
   } ## TMT/PROTEIN
@@ -817,20 +817,20 @@ local_prob_filter <- function(data,
   rlang::arg_match(pipe)
   rlang::arg_match(enrich)
 
-  no_rows  <- nrow(data)
+  num_rows  <- nrow(data)
   min.prob <- ifelse(is.numeric(min.prob),min.prob,0.75)
   remove   <- data[, phosphoLocalProbColum] < min.prob
   data     <- data[remove==FALSE, ]
 
-  no_localprob_removed <- no_rows - nrow(data)
-  no_localprob_kept    <- nrow(data)
+  num_localprob_removed <- num_rows - nrow(data)
+  num_localprob_kept    <- nrow(data)
 
-  print(paste(no_localprob_removed, pipe, "entries with localization",
+  print(paste(num_localprob_removed, pipe, "entries with localization",
               "probabilities < ", min.prob, "removed. Success!!"))
-  print(paste(no_localprob_kept, pipe, "entries kept for further analysis..."))
+  print(paste(num_localprob_kept, pipe, "entries kept for further analysis..."))
 
-  data2 <- list(data=data, min.prob=min.prob, no_localprob_removed=no_localprob_removed,
-                no_localprob_kept=no_localprob_kept)
+  data2 <- list(data=data, min.prob=min.prob, num_localprob_removed=num_localprob_removed,
+                num_localprob_kept=num_localprob_kept)
   return(data2)
 
 
@@ -1123,10 +1123,10 @@ extract_phospho_data <- function(data, sampleIDs=NULL, pipe, enrich){
     rawAnnot <- data[, annotColums]; dim(rawAnnot)
     rawData  <- data[, classIDs]; dim(rawData)
 
-    no_samples   <- ncol(rawData)
-    no_extracted <- nrow(rawData)
+    num_samples   <- ncol(rawData)
+    num_extracted <- nrow(rawData)
 
-    cli::cli_inform(c("Intensity data for {no_extracted} {pipe} {enrich} entries and {no_samples} samples extracted."))
+    cli::cli_inform(c("Intensity data for {num_extracted} {pipe} {enrich} entries and {num_samples} samples extracted."))
 
     ## EXTRACT CLASS DATA
     classList <- vector("list", max(IDs$classNums))
@@ -1152,19 +1152,19 @@ extract_phospho_data <- function(data, sampleIDs=NULL, pipe, enrich){
       annotColums2 <- c(annotColums, "Class")
       stopifnot(rownames(classData)==rownames(classAnnot))
 
-      no_class_samples <- ncol(classData)
-      no_class_phospho <- nrow(classData)
+      num_class_samples <- ncol(classData)
+      num_class_phospho <- nrow(classData)
 
-      print(paste("classData",i,":","intensity data for",no_class_phospho,
-                  "class", i, pipe,enrich, "entries and", no_class_samples,
+      print(paste("classData",i,":","intensity data for",num_class_phospho,
+                  "class", i, pipe,enrich, "entries and", num_class_samples,
                   "samples extracted. Success!!",sep=" "))
 
       ## id list from extract_sampleIDs() for class i
       idList <- list(classIDs=classIDs, sampleIDs=sampleIDs, classNums=classNums,
                      annotColums=annotColums2, pattern=pattern)
       classList[[i]] <- list(rawData=classData, rawAnnot=classAnnot[rownames(classData), ],
-                             idList=idList, no_class_samples=no_class_samples,
-                             no_class_phospho=no_class_phospho)
+                             idList=idList, num_class_samples=num_class_samples,
+                             num_class_phospho=num_class_phospho)
     }## INDIV CLASSES
 
     data2 <- list(classList=classList)

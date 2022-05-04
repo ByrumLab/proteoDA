@@ -149,3 +149,44 @@
 #
 #   return(groupCol)
 # }
+
+
+#' Make new filename to avoid overwriting
+#'
+#' Takes in a filename and a directory for a file that already exists. Tries to
+#' make a new filename by adding "_01" between the filename and extension, and
+#' continues to do so, increasing the number, until it finds a filename that does
+#' not yet exist. Returns that filename.
+#'
+#' @param x Non-unique filename we're trying to replace.
+#' @param dir directory of the file we're trying to create
+#'
+#' @return A new, unique filename
+#'
+#'
+#' @examples
+#' # No examples yet
+#'
+make_new_filename <- function(x, dir) {
+  # Parse input filename and get current file list
+  ext <- tools::file_ext(x)
+  base_name <- stringr::str_remove(x, paste0(".", ext))
+  current_files <- list.files(path=dir)
+
+  # Loop setup
+  attempt <- 0
+  success <- FALSE
+  # Start looping
+  while (!success) {
+    if (attempt >= 50) {
+      cli::cli_abort("Could not create new unique filename to replace {.path {x}} after {.val {attempt}} tries. ")
+    }
+    attempt <- attempt + 1
+
+    suffix <- stringr::str_pad(as.character(attempt), width = 2, side = "left", pad = "0")
+    new_name <- paste0(base_name, "_", suffix, ".", ext)
+    success <- new_name %notin% current_files
+  }
+
+  new_name
+}

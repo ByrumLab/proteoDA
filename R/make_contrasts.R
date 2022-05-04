@@ -87,7 +87,7 @@ make_contrasts <- function(file = NULL,
 
   # Write logs
   param[["file"]] <- file
-  stats[["no_contrasts"]] <- ncol(contrasts)
+  stats[["num_contrasts"]] <- ncol(contrasts)
   logs <- make_log(param = param,
                    stats = stats,
                    title = "CONTRASTS",

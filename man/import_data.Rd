@@ -31,7 +31,7 @@ DIA/protein, a list with 3 slots:
 \item "data": a data frame, where each row is a (raw) protein, the first
 few columns are protein ID data, and the last columns are the individual
 sample intensities (as character vectors).
-\item "no_input", a named integer listing the total number of raw proteins (ie,
+\item "num_input", a named integer listing the total number of raw proteins (ie,
 the number of rows of the data slot)
 \item a character vector of the required columns for this pipeline/enrichment
 combination.
