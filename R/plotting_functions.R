@@ -100,6 +100,7 @@ plotBoxplot <- function(data,
   groups <- make_factor(x = as.character(groups), prefix = NULL)
 
   ## remove rows with an NA
+  ## TODO: DO WE WANT TO DO THIS??
   data <- data[!apply(is.na(data), 1, any), ]
 
   ## plot margins
@@ -119,6 +120,17 @@ plotBoxplot <- function(data,
       width = width, height = 750, pointsize = 15
     )
   }
+
+  # Reorder group affiliations
+  # Since groups is an ordered factor (see make_factor()),
+  # this puts them in the order of their levels, then sorts by name.
+  # Does not necessarily sort alphabetically.
+  group_order <- sort.int(groups, index.return = T)$ix
+
+  # Then, reorder the input data and groups
+  data <- data[,group_order]
+  sampleLabels <- sampleLabels[group_order]
+  groups <- groups[group_order]
 
   op <- graphics::par(no.readonly = TRUE)
   graphics::par(mar = c(x2, 6, 3, x3), graphics::par(oma = c(0.5, 0, 0.5, x3 / 2 + 3)))
@@ -182,6 +194,18 @@ plotViolin <- function(data,
       width = width, height = 750, pointsize = 15
     )
   }
+
+  # Reorder group affiliations
+  # Since groups is an ordered factor (see make_factor()),
+  # this puts them in the order of their levels, then sorts by name.
+  # Does not necessarily sort alphabetically.
+  group_order <- sort.int(groups, index.return = T)$ix
+
+  # Then, reorder the input data and groups
+  plotData <- plotData[group_order]
+  sampleLabels <- sampleLabels[group_order]
+  groups <- groups[group_order]
+
   op <- graphics::par(no.readonly = TRUE)
   graphics::par(mar = c(x2, 6, 3, x3), graphics::par(oma = c(0.5, 0, 0.5, x3 / 2 + 3)))
   vio <- vioplot::vioplot(plotData,

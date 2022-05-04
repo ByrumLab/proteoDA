@@ -160,21 +160,44 @@ make_qc_report(normList = norm_higgs$normList, norm.method = "vsn",
                batch = norm_higgs$targets$group,
                enrich = "protein", save = TRUE, file = "higgs_qc.pdf", overwrite = T)
 
+make_qc_report(normList = norm_higgs$normList, norm.method = "vsn",
+               groups = norm_higgs$targets$group,
+               batch = norm_higgs$targets$group,
+               enrich = "protein", save = TRUE, file = "higgs_qc_new_grouping.pdf", overwrite = T)
+
 make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
                groups = norm_ndu$targets$group,
                enrich = "protein", save = TRUE, file = "ndu_qc.pdf", overwrite = T)
+
+make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
+               groups = norm_ndu$targets$group,
+               enrich = "protein", save = TRUE, file = "ndu_qc_new_grouping.pdf", overwrite = T)
 
 make_qc_report(normList = norm_lupashin$normList, norm.meth = "vsn",
                groups = norm_lupashin$targets$group,
                enrich = "protein", save = TRUE, file = "lupashin_qc.pdf", overwrite = T)
 
+make_qc_report(normList = norm_lupashin$normList, norm.meth = "vsn",
+               groups = norm_lupashin$targets$group,
+               enrich = "protein", save = TRUE, file = "lupashin_qc_new_grouping.pdf", overwrite = T)
+
+
 make_qc_report(normList = norm_zhan$normList, norm.meth = "vsn",
                groups = norm_zhan$targets$group,
                enrich = "protein", save = TRUE, file = "zhan_qc.pdf", overwrite = T)
 
+
+make_qc_report(normList = norm_zhan$normList, norm.meth = "vsn",
+               groups = norm_zhan$targets$group,
+               enrich = "protein", save = TRUE, file = "zhan_qc_new_grouping.pdf", overwrite = T)
+
 make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
                groups = norm_reb$targets$group,
-               enrich = "protein", save = TRUE, file = "rebello_qc.pdf", overwrite = T, keep.png = T)
+               enrich = "protein", save = TRUE, file = "rebello_qc.pdf", overwrite = T)
+
+make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
+               groups = norm_reb$targets$group,
+               enrich = "protein", save = TRUE, file = "rebello_qc_new_grouping.pdf", overwrite = T)
 
 
 make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
