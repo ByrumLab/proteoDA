@@ -237,15 +237,10 @@ make_proteinorm_report <- function(normList,
     thePlots <- lapply(1:length(png_paths), function(i) {grid::rasterGrob(png::readPNG(png_paths[i], native=F))})
 
     # Assemble on PDF
-
     # Make the first page, with the 6 main plots on one page
-    do.call(gridExtra::grid.arrange, c(thePlots[1:6], ncol=3))
-    # Then, put all plots onto individual pages
-    for (i in seq_along(thePlots)) {
-      do.call(gridExtra::grid.arrange, c(thePlots[i], ncol=1))
-    }
-
-    # Close device
+    gridExtra::grid.arrange(grobs = thePlots[1:6], ncol = 3)
+    # Then print all plots on their own page
+    lapply(X = thePlots, FUN = gridExtra::grid.arrange, ncol = 1)
     grDevices::dev.off()
 
     # Deal with the .png files

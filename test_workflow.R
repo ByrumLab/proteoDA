@@ -138,6 +138,7 @@ norm_reb <- process_data(data = ext_reb$data,
 # Normalization report ----------------------------------------------------
 # Higgs
 make_proteinorm_report(normList = norm_higgs$normList, groups = norm_higgs$targets$group, file = "higgs.pdf", overwrite = T)
+make_proteinorm_report(normList = norm_higgs$normList, groups = norm_higgs$targets$group, file = "higgs2.pdf", overwrite = T)
 # Ndu
 make_proteinorm_report(normList = norm_ndu$normList, groups = norm_ndu$targets$group, file = "ndu.pdf", overwrite = T)
 

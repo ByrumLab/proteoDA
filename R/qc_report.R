@@ -157,14 +157,13 @@ make_qc_report <- function(normList,
   top <- ifelse(top > nrow(data), nrow(data), top)
 
 
-  ## -----------------
-  ##  CREATE PLOTS
-  ## -----------------
-  ## BOX PLOTS
+  ##################
+  ## Create plots ##
+  ##################
   box <- plotBoxplot(data = data,
                      groups = groups,
                      sampleLabels = sampleLabels,
-                     title = "Box Plot",
+                     title = "Grouped by group",
                      legend = legend,
                      dir = out_dir,
                      save = save)
@@ -180,7 +179,7 @@ make_qc_report <- function(normList,
     box2 <- plotBoxplot(data = data,
                         groups = batch,
                         sampleLabels = sampleLabels,
-                        title = "Box Plot",
+                        title = "Grouped by batch",
                         legend = legend,
                         dir = out_dir,
                         save = FALSE)
@@ -193,7 +192,7 @@ make_qc_report <- function(normList,
   vio <- plotViolin(data,
                     groups = groups,
                     sampleLabels,
-                    title = "Violin Plot",
+                    title = "Grouped by group",
                     legend,
                     out_dir,
                     save)
@@ -209,7 +208,7 @@ make_qc_report <- function(normList,
     vio2 <- plotViolin(data = data,
                        groups = batch,
                        sampleLabels = sampleLabels,
-                       title = "Violin Plot",
+                       title = "Grouped by batch",
                        legend = legend,
                        dir = out_dir,
                        save = FALSE)
@@ -223,7 +222,7 @@ make_qc_report <- function(normList,
     data = data,
     groups = groups,
     sampleLabels = sampleLabels,
-    title = "PCA Plot",
+    title = "PCA, colored by group",
     top = top,
     stdize = stdize,
     dims = dims,
@@ -242,7 +241,7 @@ make_qc_report <- function(normList,
       data = data,
       groups = batch,
       sampleLabels = sampleLabels,
-      title = "PCA Plot",
+      title = "PCA, colored by batch",
       top = top,
       stdize = stdize,
       dims = dims,
@@ -260,9 +259,12 @@ make_qc_report <- function(normList,
 
   ## CLUSTER DENDROGRAMS
   dendro <- plotDendrogram(
-    data = data, groups = groups, sampleLabels = sampleLabels, top = top, stdize = stdize,
+    data = data, groups = groups, sampleLabels = sampleLabels,
+    top = top, stdize = stdize,
     clust.metric = clust.metric, clust.meth = clust.method,
-    cex.names = 1, xlim = NULL, title = "Cluster Dendrogram", legend = legend, dir = out_dir, save = save
+    cex.names = 1, xlim = NULL,
+    title = paste0("Method: ", clust.method, ". Metric: ", clust.metric, "\nColored by group"),
+    legend = legend, dir = out_dir, save = save
   )
   if (!is.null(batch)) {
     if (save) {
@@ -270,9 +272,12 @@ make_qc_report <- function(normList,
       grDevices::png(filename = file.path(out_dir, "Dendrogram2.png"), units = "px", width = width, height = 650, pointsize = 15)
     }
     dendro2 <- plotDendrogram(
-      data = data, groups = batch, sampleLabels = sampleLabels, top = top, stdize = stdize,
+      data = data, groups = batch, sampleLabels = sampleLabels,
+      top = top, stdize = stdize,
       clust.metric = clust.metric, clust.meth = clust.method,
-      cex.names = 1, xlim = NULL, title = "Cluster Dendrogram", legend = legend, dir = out_dir, save = FALSE
+      cex.names = 1, xlim = NULL,
+      title = paste0("Method: ", clust.method, ". Metric: ", clust.metric, "\nColored by batch"),
+      legend = legend, dir = out_dir, save = FALSE
     )
     if (save) {
       grDevices::dev.off()
@@ -313,56 +318,31 @@ make_qc_report <- function(normList,
     ##  MAKE PDF FILE
     grDevices::pdf(file.path(out_dir, file), paper = "USr", pagecentre = TRUE, pointsize = 15, width = 12, height = 8)
 
-    ## QC_REPORT.PDF (NO BATCH)
     if (is.null(batch)) {
       files <- c("BoxPlot.png", "ViolinPlot.png", "PCAplot.png", "Dendrogram.png", "CorrHeatmap.png")
-      pnglist <- paste0(paste0(file.path(out_dir), "/"), files)
-      pnglist
-      thePlots <- lapply(1:length(pnglist), function(i) {
-        grid::rasterGrob(png::readPNG(pnglist[i], native = F))
-      })
+    } else {
+      files <- c("BoxPlot.png", "BoxPlot2.png", "ViolinPlot.png",
+                 "ViolinPlot2.png", "PCAplot.png", "PCAplot2.png",
+                 "Dendrogram.png", "Dendrogram2.png", "CorrHeatmap.png")
+    }
 
-      if (ncol(data) <= 50) {
-        do.call(gridExtra::grid.arrange, c(thePlots[1:4], ncol = 2))
-      }
-      do.call(gridExtra::grid.arrange, c(thePlots[1], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[2], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[3], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[4], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[5], ncol = 1))
-    } ## BATCH IS NULL
+    # Collect pngs as plot objects
+    pnglist <- paste0(paste0(file.path(out_dir), "/"), files)
+    thePlots <- lapply(1:length(pnglist), function(i) {
+      grid::rasterGrob(png::readPNG(pnglist[i], native = F))
+    })
 
+    if (ncol(data) <= 50) { # When project is small enough
+        # Put first 4 plots onto the first page
+        gridExtra::grid.arrange(grobs = thePlots[1:4], ncol = 2)
+        # And plot the next 4 plots on another page when batch
+        if (!is.null(batch)) {
+          gridExtra::grid.arrange(grobs = thePlots[5:8], ncol = 2)
+        }
+    }
 
-    ## QC_REPORT.PDF (BATCH INCLUDED)
-    if (!is.null(batch)) {
-
-      ## QC_REPORT.PDF
-      files <- c(
-        "BoxPlot.png", "BoxPlot2.png", "ViolinPlot.png", "ViolinPlot2.png",
-        "PCAplot.png", "PCAplot2.png", "Dendrogram.png", "Dendrogram2.png", "CorrHeatmap.png"
-      )
-      pnglist <- paste0(paste0(file.path(out_dir), "/"), files)
-
-      thePlots <- lapply(1:length(pnglist), function(i) {
-        grid::rasterGrob(png::readPNG(pnglist[i], native = F))
-      })
-
-      ## QC REPORT PDF FILE
-      if (ncol(data) <= 50) {
-        do.call(gridExtra::grid.arrange, c(thePlots[1:4], ncol = 2))
-        do.call(gridExtra::grid.arrange, c(thePlots[5:8], ncol = 2))
-      }
-      do.call(gridExtra::grid.arrange, c(thePlots[1], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[2], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[3], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[4], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[5], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[6], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[7], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[8], ncol = 1))
-      do.call(gridExtra::grid.arrange, c(thePlots[9], ncol = 1))
-    } ## BATCH IS NOT NULL
-
+    # Print all plots on their own page
+    lapply(X = thePlots, FUN = gridExtra::grid.arrange, ncol = 1)
     grDevices::dev.off()
 
     # Deal with the .png files
@@ -395,8 +375,6 @@ make_qc_report <- function(normList,
   param[["clust.method"]] <- clust.method
   if (save) {
     param[["dir"]] <- out_dir
-  }
-  if (save) {
     param[["file"]] <- file
   }
   if (keep.png) {
@@ -411,7 +389,6 @@ make_qc_report <- function(normList,
   stats[["top_num_rows"]] <- top
 
   logs <- make_log(param, stats, title = "QC REPORT", save = TRUE)
-
 
   output_data <- list(plots = plotList, param = logs$param, stats = logs$stats)
 
