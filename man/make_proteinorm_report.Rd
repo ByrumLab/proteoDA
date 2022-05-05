@@ -30,8 +30,9 @@ warn the user and treat all samples as belonging to the same group.}
 \item{batch}{Optional, a vector describing what batch each sample belongs to.
 If not supplied, will treat all samples as being from the same batch.}
 
-\item{sampleLabels}{Optional, a set of sample labels to use. If not supplied,
-defaults to using the column names in the normList.}
+\item{sampleLabels}{Optional, a set of sample labels to use, in the same order as
+the columns in the normList. If not supplied, defaults to using the column
+names in the normList.}
 
 \item{enrich}{What type of analysis is this for? Options are
 "protein" and "phospho". Only used for making output dir name when one isn't

@@ -1,6 +1,27 @@
-plotBoxplot <- function(data,
-                        groups = NULL, sampleLabels = NULL,
-                        title = NULL, legend = TRUE) {
+#' Boxplot for QC report
+#'
+#' Makes a boxplot of per-sample intensities. Samples are grouped by the "groups"
+#' argument on the x-axis. Colors are determined by the \code{\link{colorGroup2}}
+#' function.
+#'
+#' @param data A data frame of intensity data, likely normalized. Rows should be
+#'   proteins and columns should be samples.
+#' @param groups A character or factor vector, listing the group(s) the samples
+#'   belong to.
+#' @param sampleLabels Optional, a vector of sample labels to use. If not supplied,
+#'   defaults to using the column names in the data.
+#' @param title Optional, a plot title.
+#' @param legend Include a legend in the plot? Default is TRUE.
+#'
+#' @return Invisibly returns the list object created by
+#'   \code{\link[graphics:boxplot]{graphics::boxplot}}.
+#' @export
+#'
+#' @examples
+#' # No examples yet
+qc_boxplot <- function(data,
+                       groups = NULL, sampleLabels = NULL,
+                       title = NULL, legend = TRUE) {
   if (is.null(sampleLabels)) {
     sampleLabels <- as.character(colnames(data))
   }
@@ -8,10 +29,6 @@ plotBoxplot <- function(data,
     groups <- c(rep("group", ncol(data)))
   }
   groups <- make_factor(x = as.character(groups), prefix = NULL)
-
-  ## remove rows with an NA
-  ## TODO: DO WE WANT TO DO THIS??
-  # data <- data[!apply(is.na(data), 1, any), ]
 
   # Reorder group affiliations
   # Since groups is an ordered factor (see make_factor()),
@@ -57,8 +74,21 @@ plotBoxplot <- function(data,
   invisible(box)
 }
 
-
-plotViolin <- function(data,
+#' Violin plot for QC report
+#'
+#' Makes a violin plot of per-sample intensities. Samples are grouped by the "groups"
+#' argument on the x-axis. Colors are determined by the \code{\link{colorGroup2}}
+#' function.
+#'
+#' @inheritParams qc_boxplot
+#'
+#' @return  Invisibly returns the list object created by
+#'   \code{\link[vioplot:vioplot]{vioplot::vioplot}}.
+#' @export
+#'
+#' @examples
+#' # No examples yet
+qc_violin_plot <- function(data,
                        groups = NULL, sampleLabels = NULL,
                        title = NULL, legend = TRUE) {
   if (is.null(sampleLabels)) {
@@ -68,10 +98,6 @@ plotViolin <- function(data,
     groups <- c(rep("group", ncol(data)))
   }
   groups <- make_factor(x = as.character(groups), prefix = NULL)
-
-  ## remove rows with an NA
-  # TODO: do we want to do this?
-  # data <- data[!apply(is.na(data), 1, any), ]
 
   ## convert data data.frame to a named list
   plotData <- list()
@@ -125,10 +151,39 @@ plotViolin <- function(data,
   invisible(vio)
 }
 
-## data=normalized intensities, or zscore intensities. if stdize=TRUE then it scales each row
-## (each protein) to have a mean of zero and standard deviation = 1 if data matrix is already
-## scaled then set stdize=FALSE, dims= vector of PC to plot.
-plotPCA <- function(data,
+
+
+#' PCA plot for QC report
+#'
+#' Performs and then plots a principal component analysis of sample intensities.
+#' Samples are colored according to the groups argument, with colors
+#' determined by the \code{\link{colorGroup2}} function. By default, uses
+#' only the 500 most variable proteins for the analysis.
+#'
+#' @inheritParams qc_boxplot
+#' @param top The number of most variable proteins to use for the analysis.
+#'   Default is 500.
+#' @param stdize Should input data be standardized to a mean of 0 and std.dev of
+#'   1? If input data are not yet standardized, should be TRUE. Default is TRUE.
+#' @param dims A numeric vector of length 2 which lists the PC axes to plot.
+#'   Default is c(1,2), to plot the first two principal components.
+#' @param cex.dot Character expansion factor for plotting points. Default is 2.
+#' @param xlim Optional. Custom x-axis limits of the plot. By default, the min is
+#'   10% below the min PC score on the x-axis, and the max is above the max PC
+#'   score on the x-axis, with some padding for sample labels.
+#' @param ylim Optional. Custom y-axis limits of the plot. Default is 10% above
+#'   and below the min/max PC score on the y-axis.
+#'
+#' @return Invisibly returns a list with two elements: \enumerate{
+#'   \item "pca"- The list returned by
+#'     \code{\link[stats:princomp]{stats::princomp}}.
+#'   \item "pca.data"- The data matrix that went into the PCA.
+#' }
+#' @export
+#'
+#' @examples
+#' # No examples yet
+qc_pca_plot <- function(data,
                     groups = NULL, sampleLabels = NULL,
                     title = NULL, legend = TRUE,
                     top = 500, stdize = TRUE,
@@ -235,20 +290,48 @@ plotPCA <- function(data,
            col = colorGroup2(groups), pt.cex = 1.2, pt.lwd = 0, inset = 0.02, horiz = F, ncol = 1)
   }
 
-  data2 <- list(pca = pca, dat = data)
+  data2 <- list(pca = pca, pca.data = data)
 
   invisible(data2)
 }
 
 
-## normalized intensities input (cols=samples, rows=proteins.
-## NAs removed, then top variable proteins identified.
-## if stdize is true the rows of data are centered and scaled to 0 and 1 z-score,
-## distance calc. then clustering.
-plotDendrogram <- function(data, groups = NULL, sampleLabels = NULL,
+#' Dendrogram for QC report
+#'
+#' Performs and then plots a hierarchical clustering analysis of sample intensities
+#' across samples. Sample labels are colored according to the "groups" argument,
+#' with colors determined by the \code{\link{colorGroup2}} function. By default,
+#' uses only the 500 most variable proteins for the analysis.
+#'
+#' @inheritParams qc_pca_plot
+#' @param clust.metric The cluster metric used to define distance. Default is
+#'   "euclidean". See
+#'   \code{\link[ClassDiscovery:distanceMatrix]{ClassDiscovery::distanceMatrix}}
+#'   for options.
+#' @param clust.method The agglomeration method to use for clustering. Default
+#'   is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.
+#' @param cex.names Character expansion factor for sample labels. Default is 1.
+#'
+#' @return Invisibly returns a list with seven elements: \enumerate{
+#'   \item "hc"- The hclust object returned by
+#'     \code{\link[stats:hclust]{stats::hclust}}.
+#'   \item "dist"- The distance matrix returned by
+#'     \code{\link[ClassDiscovery:distanceMatrix]{ClassDiscovery::distanceMatrix}}.
+#'   \item "corr.data"- The data matrix that went into the correlation analysis.
+#'   \item "clust.method"- The clust.method argument used.
+#'   \item "clust.metric"- The clust.method argument used.
+#'   \item "stdize"- The stdize argument used.
+#'   \item "top"- The top argument used.
+#' }
+#' @export
+#'
+#' @examples
+#' # No examples yet
+
+qc_dendrogram <- function(data, groups = NULL, sampleLabels = NULL,
                            top = 500, stdize = TRUE,
                            clust.metric = "euclidean", clust.method = "complete",
-                           cex.names = 1, xlim = NULL, title = NULL, legend = TRUE) {
+                           cex.names = 1, title = NULL, legend = TRUE) {
 
   # Check arguments
   clust.metric <- rlang::arg_match(
@@ -277,9 +360,7 @@ plotDendrogram <- function(data, groups = NULL, sampleLabels = NULL,
   }
   groups <- make_factor(x = groups)
 
-  ## remove rows with an NA,get top variable proteins
-  # TODO: do we want to remove rows with NAs?
-  #data <- data[!apply(is.na(data), 1, any), ]
+  # Get top variable proteins
   o <- order(matrixStats::rowVars(data), decreasing = TRUE)
   data <- data[o, ]
   top <- ifelse(nrow(data) >= top, top, nrow(data))
@@ -326,7 +407,7 @@ plotDendrogram <- function(data, groups = NULL, sampleLabels = NULL,
   }
 
   data2 <- list(hc = hc, dist = d,
-                dat = data,
+                corr.data = data,
                 clust.method = clust.method, clust.metric = clust.metric,
                 stdize = stdize, top = top)
 
@@ -335,8 +416,23 @@ plotDendrogram <- function(data, groups = NULL, sampleLabels = NULL,
 
 
 
-
-plotCorHM <- function(data,
+#' Correlation heatmap for QC report
+#'
+#' Plots a ComplexHeatmap object showing the pairwise correlations of intensities
+#' across samples. Samples are grouped by similarity on the x- and y-axis, with
+#' labels colored by group and batch.
+#'
+#' @inheritParams qc_pca_plot
+#' @param batch A character or factor vector, listing the batch(es) the samples
+#'   belong to.
+#'
+#' @return Invisibly returns the correlation matrix created by
+#'   \code{\link[stats:cor]{stats::cor}}.
+#' @export
+#'
+#' @examples
+#' # No examples yet
+qc_corr_hm <- function(data,
                       groups, batch = NULL, sampleLabels = NULL) {
 
   groups <- make_factor(groups)

@@ -20,8 +20,9 @@
 #'   warn the user and treat all samples as belonging to the same group.
 #' @param batch Optional, a vector describing what batch each sample belongs to.
 #'   If not supplied, will treat all samples as being from the same batch.
-#' @param sampleLabels Optional, a set of sample labels to use. If not supplied,
-#'   defaults to using the column names in the normList.
+#' @param sampleLabels Optional, a set of sample labels to use, in the same order as
+#'   the columns in the normList. If not supplied, defaults to using the column
+#'   names in the normList.
 #' @param enrich What type of analysis is this for? Options are
 #'   "protein" and "phospho". Only used for making output dir name when one isn't
 #'   supplied.
@@ -289,6 +290,8 @@ make_proteinorm_report <- function(normList,
 #' the available metrics.
 #'
 #' @inheritParams make_proteinorm_report
+#' @param groups A character or factor vector, listing the group(s) the samples
+#'   belong to.
 #' @param metric The normalization metric to calculate and plot. Can be "PCV",
 #'   "PMAD", "PEV", or "COR". See \code{\link{norm_metrics}}.
 #' @param dir The directory in which to save the plot, if saving. Default is the
@@ -404,6 +407,10 @@ proteinormMetricBoxplot <- function(normList,
 #' Uses \code{\link{log2ratio}} for calculating the ratio.
 #'
 #' @inheritParams make_proteinorm_report
+#' @param groups A character or factor vector, listing the group(s) the samples
+#'   belong to.
+#' @param batch Optional. A character or factor vector, listing the batch(es)
+#'   the samples belong to.
 #' @param zoom Should the plot cover the full range of log2ratios, or zoom
 #'   in around 0? Default is FALSE.
 #' @param legend Include a legend in the plot? Default is TRUE.
@@ -545,7 +552,9 @@ plotLogRatioDensity <- function(normList,
 #' Makes, and optionally saves, a set of plot showing the total intensity for
 #' each sample across the normalization methods.
 #'
-#' @inheritParams make_proteinorm_report
+#' @inheritParams proteinormMetricBoxplot
+#' @param sampleLabels Optional, a set of sample labels to use. If not supplied,
+#'   defaults to using the column names in the normList.
 #' @param dir The directory in which to save the plot, if saving. Default is the
 #'   current working directory.
 #' @param save Should the plot be saved (as a .png)? Default is FALSE.
@@ -650,7 +659,7 @@ plotTotInten <- function(normList,
 #' Makes a ComplexHeatmap object showing a heatmap of missing values in the
 #' input data.
 #'
-#' @inheritParams make_proteinorm_report
+#' @inheritParams plotTotInten
 #' @param missing An input matrix describing the missing data. See internals
 #'   of \code{\link{plotHeatmapsForReport}}.
 #' @param column_sort How should the columns of the heatmap be sorted? Options
@@ -754,11 +763,13 @@ missingValueHeatmap <- function(missing,
 #' Makes, and optionally saves, a set of missing value heatmaps using
 #' \code{\link{missingValueHeatmap}}.
 #'
-#' @inheritParams make_proteinorm_report
+#' @inheritParams plotTotInten
 #' @param data A normalized data matrix. Generally, the "log2" slot of the normList
 #'   slot in the list output by \code{\link{process_data}}.
 #' @param dir The directory in which to save the plot, if saving. Default is the
 #'   current working directory.
+#' @param showAllProteins For missing data heatmaps, show all proteins (including
+#'  ones with no missing data)? Default is FALSE.
 #' @param save Should the plot be saved (as a .png)? Default is FALSE.
 #'
 #' @return A list of length 4, where the first element is the missing data

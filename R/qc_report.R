@@ -1,3 +1,55 @@
+#' Create quality control report
+#'
+#' Creates, and optionally saves as a PDF report, a bunch of plots which give
+#' information on the distribution, clustering, and correlation of protein intensities
+#' across samples for the chosen normalization method. By default, the PCA and
+#' clustering analyses are performed on the top 500 most variable proteins. This
+#' function is a wrapper that calls many subfunctions: \itemize{
+#'   \item Makes boxplots of per-sample intensities
+#'     with \code{\link{qc_boxplot}}.
+#'   \item Makes violin plots of per-sample intensities
+#'     with \code{\link{qc_violin_plot}}.
+#'   \item Performs and plots a PCA with \code{\link{qc_pca_plot}}.
+#'   \item Does hierarchical clustering and plots a dendrogram with
+#'     \code{\link{qc_dendrogram}}.
+#'   \item Plots a correlation heatmap with \code{\link{qc_corr_hm}}.
+#' } See the documentation of these subfunctions for more info.
+#'
+#'
+#' @inheritParams make_proteinorm_report
+#' @param norm.method The normalization method for which to perform the QC analysis.
+#'   Should be a name of one of the datasets in normList.
+#' @param file The file name of the report to be saved. Must end in .pdf. Will
+#'   default to "QC_Report.pdf" if no filename is provided.
+#' @param legend Include legends in the plots within the report? Default is TRUE.
+#' @param top.proteins The number of most variable proteins to use for the analysis.
+#'   Default is 500.
+#' @param stdize Should input data be standardized to a mean of 0 and std.dev of
+#'   1? If input data are not yet standardized, should be TRUE. Default is TRUE.
+#' @param pca.axes  A numeric vector of length 2 which lists the PC axes to plot.
+#'   Default is c(1,2), to plot the first two principal components.
+#' @param pca.xlim Optional. Custom x-axis limits of the PCA plot. By default,
+#'   the min is 10% below the min PC score on the x-axis, and the max is above
+#'   the max PC score on the x-axis, with some padding for sample labels.
+#' @param pca.ylim Optional. Custom y-axis limits of the PCA plot. Default is
+#'   10% above and below the min/max PC score on the y-axis.
+#' @param pca.dot Character expansion factor for the size of the points in the
+#'   PCA plot. Default is 2.
+#' @inheritParams qc_dendrogram
+#' @param clust.label.cex Character expansion factor for sample labels in the
+#'   dendrogram. Default is 1.
+#'
+#' @return Invisibly returns a list with three slots: \enumerate{
+#'   \item "plots"- A large list, where each element in the list is the returned
+#'     object from the corresponding plotting function for that type of plot.
+#'   \item "stats"- A dataframe with statistics on the data.
+#'   \item "param"- A dataframe giving the parameters used for making the report.
+#' }
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
 make_qc_report <- function(normList,
                            groups = NULL, batch = NULL, sampleLabels = NULL,
                            norm.method = NULL, enrich = c("protein", "phospho"),
@@ -152,11 +204,11 @@ make_qc_report <- function(normList,
     )
   }
   # Group boxplot
-  box <- plotBoxplot(data = data,
-                     groups = groups,
-                     sampleLabels = sampleLabels,
-                     title = "Grouped by group",
-                     legend = legend)
+  box <- qc_boxplot(data = data,
+                    groups = groups,
+                    sampleLabels = sampleLabels,
+                    title = "Grouped by group",
+                    legend = legend)
   if (save) grDevices::dev.off()
 
   # If plotting by batch
@@ -167,11 +219,11 @@ make_qc_report <- function(normList,
         width = width_box, height = 750, pointsize = 15
       )
     }
-    box2 <- plotBoxplot(data = data,
-                        groups = batch,
-                        sampleLabels = sampleLabels,
-                        title = "Grouped by batch",
-                        legend = legend)
+    box2 <- qc_boxplot(data = data,
+                       groups = batch,
+                       sampleLabels = sampleLabels,
+                       title = "Grouped by batch",
+                       legend = legend)
     if (save) grDevices::dev.off()
   }
 
@@ -184,11 +236,11 @@ make_qc_report <- function(normList,
       width = width_vio, height = 750, pointsize = 15)
   }
   # Main group plot
-  vio <- plotViolin(data,
-                    groups = groups,
-                    sampleLabels,
-                    title = "Grouped by group",
-                    legend)
+  vio <- qc_violin_plot(data,
+                        groups = groups,
+                        sampleLabels,
+                        title = "Grouped by group",
+                        legend)
   if (save) grDevices::dev.off()
 
   if (!is.null(batch)) {
@@ -196,11 +248,11 @@ make_qc_report <- function(normList,
       grDevices::png(filename = file.path(out_dir, "ViolinPlot2.png"),
           units = "px", width = width_vio, height = 750, pointsize = 15)
     }
-    vio2 <- plotViolin(data = data,
-                       groups = batch,
-                       sampleLabels = sampleLabels,
-                       title = "Grouped by batch",
-                       legend = legend)
+    vio2 <- qc_violin_plot(data = data,
+                           groups = batch,
+                           sampleLabels = sampleLabels,
+                           title = "Grouped by batch",
+                           legend = legend)
     if (save) grDevices::dev.off()
   }
 
@@ -212,7 +264,7 @@ make_qc_report <- function(normList,
     grDevices::png(filename = file.path(out_dir, "PCAplot.png"), units = "px",
       width = width_pca, height = 650, pointsize = 15)
   }
-  pca <- plotPCA(
+  pca <- qc_pca_plot(
     data = data, groups = groups, sampleLabels = sampleLabels,
     title = "PCA, colored by group",
     top = top.proteins, stdize = stdize, dims = pca.axes,
@@ -226,7 +278,7 @@ make_qc_report <- function(normList,
       grDevices::png(filename = file.path(out_dir, "PCAplot2.png"), units = "px",
                      width = width_pca, height = 650, pointsize = 15)
     }
-    pca2 <- plotPCA(
+    pca2 <- qc_pca_plot(
       data = data, groups = batch, sampleLabels = sampleLabels,
       title = "PCA, colored by batch",
       top = top.proteins, stdize = stdize, dims = pca.axes,
@@ -242,7 +294,7 @@ make_qc_report <- function(normList,
     grDevices::png(filename = file.path(out_dir, "Dendrogram.png"), units = "px",
       width = width_dendro, height = 650, pointsize = 15)
   }
-  dendro <- plotDendrogram(
+  dendro <- qc_dendrogram(
     data = data, groups = groups, sampleLabels = sampleLabels,
     top = top.proteins, stdize = stdize,
     clust.metric = clust.metric, clust.method = clust.method,
@@ -256,7 +308,7 @@ make_qc_report <- function(normList,
       grDevices::png(filename = file.path(out_dir, "Dendrogram2.png"), units = "px",
                      width = width_dendro, height = 650, pointsize = 15)
     }
-    dendro2 <- plotDendrogram(
+    dendro2 <- qc_dendrogram(
       data = data, groups = batch, sampleLabels = sampleLabels,
       top = top.proteins, stdize = stdize,
       clust.metric = clust.metric, clust.method = clust.method,
@@ -274,7 +326,7 @@ make_qc_report <- function(normList,
     grDevices::png(filename = file.path(out_dir, "CorrHeatmap.png"), units = "px",
       width = width_cor, height = width_cor, pointsize = 15)
   }
-  corhm <- plotCorHM(data = data,
+  corhm <- qc_corr_hm(data = data,
                      groups = groups, batch = batch, sampleLabels = sampleLabels)
   if (save) grDevices::dev.off()
 
@@ -346,13 +398,9 @@ make_qc_report <- function(normList,
   param[["dims"]] <- paste(pca.axes, collapse = ", ")
   param[["clust.metric"]] <- clust.metric
   param[["clust.method"]] <- clust.method
-  if (save) {
-    param[["dir"]] <- out_dir
-    param[["file"]] <- file
-  }
-  if (keep.png) {
-    param[["png.dir"]] <- pngdir
-  }
+  param[["dir"]] <- ifelse(save, out_dir, NA)
+  param[["file"]] <- ifelse(save, file, NA)
+  param[["png.dir"]] <- ifelse(keep.png, pngdir, NA)
   param[["enrich"]] <- enrich
 
   stats[["num_samples"]] <- ncol(data)
@@ -369,20 +417,19 @@ make_qc_report <- function(normList,
   ###############
   if (is.null(batch)) {
     plotList <- list(
-      box = box, vio = vio, pca = pca, dendro = dendro, corhm = corhm, norm.meth = norm.method,
-      dir = ifelse(save, out_dir, NA),
-      file = ifelse(save, file, NA)
+      box = box, violin = vio, pca = pca, dendro = dendro, corr_hm = corhm
     )
   } else {
     plotList <- list(
-      box = box, box2 = box2, vio = vio, vio2 = vio2, pca = pca, pca2 = pca2,
-      dendro = dendro, dendro2 = dendro2, corhm = corhm, norm.meth = norm.method,
-      dir = ifelse(save, out_dir, NA),
-      file = ifelse(save, file, NA)
+      box_group = box, box_batch = box2,
+      violin_group = vio, violin_batch = vio2,
+      pca_group = pca, pca_batch = pca2,
+      dendro_group = dendro, dendro_batch = dendro2,
+      corr_hm = corhm
     )
   }
 
-  output_data <- list(plots = plotList, param = logs$param, stats = logs$stats)
+  output_data <- list(plots = plotList, stats = logs$stats, param = logs$param)
 
   cli::cli_rule()
   cli::cli_inform(c("v" = "Success"))

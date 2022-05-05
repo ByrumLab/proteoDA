@@ -18,10 +18,8 @@ plotHeatmapsForReport(
 \item{data}{A normalized data matrix. Generally, the "log2" slot of the normList
 slot in the list output by \code{\link{process_data}}.}
 
-\item{groups}{Optional, a vector describing what experimental or treatment
-group each sample belongs to. Generally, the "group" column in the targets
-data frame output by \code{\link{process_data}}. If not supplied, will
-warn the user and treat all samples as belonging to the same group.}
+\item{groups}{A character or factor vector, listing the group(s) the samples
+belong to.}
 
 \item{batch}{Optional, a vector describing what batch each sample belongs to.
 If not supplied, will treat all samples as being from the same batch.}

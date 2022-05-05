@@ -62,12 +62,14 @@ norm <- process_data(data = extracted_data$data,
 # Make the proteinorm report
 make_proteinorm_report(normList = norm$normList,
                        groups = norm$targets$group, 
-                       enrich = "protein", 
-                       save = T)
+                       enrich = "protein")
 
 # Make the QC report
-## SKIPPED FOR NOW
-## STILL TO BE ADDED
+make_qc_report(normList = norm$normList, 
+               norm.method = "vsn",
+               groups = norm$targets$group,
+               batch = norm$targets$group,
+               enrich = "protein")
 
 # Make the design matrix
 design <- make_design(targets=norm$targets,
@@ -84,7 +86,7 @@ contrasts <- make_contrasts(file = "path/to/contrasts/file.csv",
 ?subset_targets
 ?process_data
 ?make_proteinorm_report
-#?make_qc_report
+?make_qc_report
 ?make_design
 ?make_contrasts
 
@@ -180,7 +182,7 @@ tests as well. Maybe better to just do it once.
 | `subset_targets`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `process_data`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_proteinorm_report` | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_qc_report`         | :x:                | :x:                | :x:                |
+| `make_qc_report`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_design`            | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_contrasts`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `run_limma_analysis`     | :x:                | :x:                | :x:                |
