@@ -1,25 +1,16 @@
 make_qc_report <- function(normList,
-                           norm.method = "cycloess",
-                           groups = NULL,
-                           batch = NULL,
-                           sampleLabels = NULL,
-                           stdize = TRUE,
-                           top = 500,
-                           dims = c(1, 2),
-                           cex.dot = 2,
-                           clust.metric = "euclidean",
-                           clust.method = "complete",
-                           cex.names = 1,
-                           xlim = NULL,
-                           ylim = NULL,
+                           groups = NULL, batch = NULL, sampleLabels = NULL,
+                           norm.method = NULL, enrich = c("protein", "phospho"),
+                           dir = NULL, file = NULL, save = TRUE,
+                           overwrite = FALSE, keep.png = FALSE,
                            legend = TRUE,
-                           enrich = c("protein", "phospho"),
-                           dir = NULL,
-                           file = NULL,
-                           save = FALSE,
-                           overwrite = FALSE,
-                           keep.png = FALSE) {
-
+                           top.proteins = 500, # Number of top variable proteins to include in PCA and dendrogram
+                           stdize = TRUE,
+                           pca.axes = c(1, 2),
+                           pca.xlim = NULL, pca.ylim = NULL, pca.dot = 2,
+                           clust.metric = "euclidean", clust.method = "complete",
+                           clust.label.cex = 1
+                           ) {
 
   cli::cli_rule()
 
@@ -38,27 +29,6 @@ make_qc_report <- function(normList,
       "cycloess", "rlr", "gi"
     )), multiple = FALSE
   )
-
-  # here, the values are presumably from some distance function?
-  clust.metric <- rlang::arg_match(
-    arg = clust.metric,
-    values = c(
-      "pearson", "sqrt pearson", "spearman", "absolute pearson",
-      "uncentered correlation", "weird", "cosine", "euclidean",
-      "maximum", "manhattan", "canberra", "binary", "minkowski"
-    ),
-    multiple = FALSE
-  )
-
-  clust.method <- rlang::arg_match(
-    arg = clust.method,
-    values = c(
-      "ward.D", "ward.D2", "single", "complete", "average", "mcquitty",
-      "median", "centroid"
-    ), multiple = FALSE
-  )
-
-
 
   ##################
   ## Set defaults ##
@@ -140,7 +110,7 @@ make_qc_report <- function(normList,
 
   ## NORMALIZED INTENSITY DATA
   # TODO: figure out what exactly is going on here.
-  # Isn't the data always ?
+  # Isn't the data always a list?
   ## list object or dataframe/matrix of norm. intensities
   if (any(class(normList) == "list")) {
     data <- normList[[norm.method]]
@@ -152,165 +122,166 @@ make_qc_report <- function(normList,
     data <- as.matrix(normList)
   }
 
-
-  # TODO: NEED TO FIGURE OUT MORE WHAT TOP DOES BEFORE I MESS WITH IT
-  top <- ifelse(top > nrow(data), nrow(data), top)
-
-
   ##################
   ## Create plots ##
   ##################
+
+  # Set up widths
+  # Will make individual for now, so we can fine tune if needed
+  if (save) {
+    width_box <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
+    width_vio <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
+    width_pca <- 750
+    width_dendro <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
+    if (length(groups) < 100) {
+      width_cor <- round(0.0871 * length(groups)^2 + 24.375 * length(groups) + 473.02, 0)
+    } else {
+      width_cor <- round((0.0035 * length(groups)^2 + 10.035 * length(groups) + 146.15)*1.3, 0)
+    }
+  }
+
+  ####
+  ## BOXPLOT(S)
+  ####
+
+  if (save) {
+    # Open Graphics device for main plot
+    grDevices::png(
+      filename = file.path(out_dir, "BoxPlot.png"), units = "px",
+      width = width_box, height = 750, pointsize = 15
+    )
+  }
+  # Group boxplot
   box <- plotBoxplot(data = data,
                      groups = groups,
                      sampleLabels = sampleLabels,
                      title = "Grouped by group",
-                     legend = legend,
-                     dir = out_dir,
-                     save = save)
+                     legend = legend)
+  if (save) grDevices::dev.off()
+
+  # If plotting by batch
   if (!is.null(batch)) {
     if (save) {
-      width <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
-      grDevices::png(filename = file.path(out_dir, "BoxPlot2.png"),
-          units = "px",
-          width = width,
-          height = 750,
-          pointsize = 15)
+      grDevices::png(
+        filename = file.path(out_dir, "BoxPlot2.png"), units = "px",
+        width = width_box, height = 750, pointsize = 15
+      )
     }
     box2 <- plotBoxplot(data = data,
                         groups = batch,
                         sampleLabels = sampleLabels,
                         title = "Grouped by batch",
-                        legend = legend,
-                        dir = out_dir,
-                        save = FALSE)
-    if (save == TRUE) {
-      grDevices::dev.off()
-    }
+                        legend = legend)
+    if (save) grDevices::dev.off()
   }
 
-  ## VIOLIN PLOTS
+  ####
+  ## VIOLIN PLOT(S)
+  ####
+  if (save) {
+    grDevices::png(
+      filename = file.path(out_dir, "ViolinPlot.png"), units = "px",
+      width = width_vio, height = 750, pointsize = 15)
+  }
+  # Main group plot
   vio <- plotViolin(data,
                     groups = groups,
                     sampleLabels,
                     title = "Grouped by group",
-                    legend,
-                    out_dir,
-                    save)
+                    legend)
+  if (save) grDevices::dev.off()
+
   if (!is.null(batch)) {
-    width <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
     if (save) {
       grDevices::png(filename = file.path(out_dir, "ViolinPlot2.png"),
-          units = "px",
-          width = width,
-          height = 750,
-          pointsize = 15)
+          units = "px", width = width_vio, height = 750, pointsize = 15)
     }
     vio2 <- plotViolin(data = data,
                        groups = batch,
                        sampleLabels = sampleLabels,
                        title = "Grouped by batch",
-                       legend = legend,
-                       dir = out_dir,
-                       save = FALSE)
-    if (save) {
-      grDevices::dev.off()
-    }
+                       legend = legend)
+    if (save) grDevices::dev.off()
   }
 
-  ## PCA PLOTS
+
+  ####
+  ## PCA PLOT(S)
+  ####
+  if (save) {
+    grDevices::png(filename = file.path(out_dir, "PCAplot.png"), units = "px",
+      width = width_pca, height = 650, pointsize = 15)
+  }
   pca <- plotPCA(
-    data = data,
-    groups = groups,
-    sampleLabels = sampleLabels,
+    data = data, groups = groups, sampleLabels = sampleLabels,
     title = "PCA, colored by group",
-    top = top,
-    stdize = stdize,
-    dims = dims,
-    cex.dot = cex.dot,
-    xlim = xlim,
-    ylim = ylim,
-    legend = legend,
-    dir = out_dir,
-    save = save
-  )
+    top = top.proteins, stdize = stdize, dims = pca.axes,
+    cex.dot = pca.dot, xlim = pca.xlim, ylim = pca.ylim,
+    legend = legend)
+  if (save) grDevices::dev.off()
+
+
   if (!is.null(batch)) {
-    if (save == TRUE) {
-      grDevices::png(filename = file.path(out_dir, "PCAplot2.png"), units = "px", width = 750, height = 650, pointsize = 15)
+    if (save) {
+      grDevices::png(filename = file.path(out_dir, "PCAplot2.png"), units = "px",
+                     width = width_pca, height = 650, pointsize = 15)
     }
     pca2 <- plotPCA(
-      data = data,
-      groups = batch,
-      sampleLabels = sampleLabels,
+      data = data, groups = batch, sampleLabels = sampleLabels,
       title = "PCA, colored by batch",
-      top = top,
-      stdize = stdize,
-      dims = dims,
-      cex.dot = cex.dot,
-      xlim = xlim,
-      ylim = xlim,
-      legend = legend,
-      dir = out_dir,
-      save = FALSE
-    )
-    if (save) {
-      grDevices::dev.off()
-    }
+      top = top.proteins, stdize = stdize, dims = pca.axes,
+      cex.dot = pca.dot, xlim = pca.xlim, ylim = pca.ylim,
+      legend = legend)
+    if (save) grDevices::dev.off()
   }
 
-  ## CLUSTER DENDROGRAMS
+  ####
+  ## DENDROGRAM(S)
+  ####
+  if (save) {
+    grDevices::png(filename = file.path(out_dir, "Dendrogram.png"), units = "px",
+      width = width_dendro, height = 650, pointsize = 15)
+  }
   dendro <- plotDendrogram(
     data = data, groups = groups, sampleLabels = sampleLabels,
-    top = top, stdize = stdize,
-    clust.metric = clust.metric, clust.meth = clust.method,
-    cex.names = 1, xlim = NULL,
+    top = top.proteins, stdize = stdize,
+    clust.metric = clust.metric, clust.method = clust.method,
+    cex.names = clust.label.cex,
     title = paste0("Method: ", clust.method, ". Metric: ", clust.metric, "\nColored by group"),
-    legend = legend, dir = out_dir, save = save
+    legend = legend
   )
+  if (save) grDevices::dev.off()
   if (!is.null(batch)) {
     if (save) {
-      width <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
-      grDevices::png(filename = file.path(out_dir, "Dendrogram2.png"), units = "px", width = width, height = 650, pointsize = 15)
+      grDevices::png(filename = file.path(out_dir, "Dendrogram2.png"), units = "px",
+                     width = width_dendro, height = 650, pointsize = 15)
     }
     dendro2 <- plotDendrogram(
       data = data, groups = batch, sampleLabels = sampleLabels,
-      top = top, stdize = stdize,
-      clust.metric = clust.metric, clust.meth = clust.method,
-      cex.names = 1, xlim = NULL,
+      top = top.proteins, stdize = stdize,
+      clust.metric = clust.metric, clust.method = clust.method,
+      cex.names = clust.label.cex,
       title = paste0("Method: ", clust.method, ". Metric: ", clust.metric, "\nColored by batch"),
-      legend = legend, dir = out_dir, save = FALSE
-    )
-    if (save) {
-      grDevices::dev.off()
-    }
+      legend = legend
+      )
+    if (save) grDevices::dev.off()
   }
 
-  ## SAMPLE CORRELATION HEATMAP (PEARSON)
+  ####
+  ## HEATMAP(S)
+  ####
+  if (save) {
+    grDevices::png(filename = file.path(out_dir, "CorrHeatmap.png"), units = "px",
+      width = width_cor, height = width_cor, pointsize = 15)
+  }
   corhm <- plotCorHM(data = data,
-                     groups = groups, batch = batch, sampleLabels = sampleLabels,
-                     dir = out_dir, save = save)
+                     groups = groups, batch = batch, sampleLabels = sampleLabels)
+  if (save) grDevices::dev.off()
 
 
-  ## PLOTS LIST OBJECT
-  if (is.null(batch)) {
-    plotList <- list(
-      box = box, vio = vio, pca = pca, dendro = dendro, corhm = corhm, norm.meth = norm.method,
-      dir = ifelse(save, out_dir, NA),
-      file = ifelse(save, file, NA)
-    )
-  }
-  if (!is.null(batch)) {
-    plotList <- list(
-      box = box, box2 = box2, vio = vio, vio2 = vio2, pca = pca, pca2 = pca2,
-      dendro = dendro, dendro2 = dendro2, corhm = corhm, norm.meth = norm.method,
-      dir = ifelse(save, out_dir, NA),
-      file = ifelse(save, file, NA)
-    )
-  }
-
-
-  ## -----------------------------
-  ##  SAVE QC REPORT PDF FILE
-  ## -----------------------------
+  ##################
+  ## Save report  ##
+  ##################
   if (save) {
 
     cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
@@ -364,13 +335,15 @@ make_qc_report <- function(normList,
     }
   }
 
-  # Logging
+  ##############
+  ## Logging  ##
+  ##############
   param <- stats <- list()
   param[["norm.method"]] <- norm.method
   param[["batch"]] <- ifelse(is.null(batch), "NULL", paste(unique(batch), collapse = ", "))
   param[["stdize"]] <- stdize
-  param[["top"]] <- top
-  param[["dims"]] <- paste(dims, collapse = ", ")
+  param[["top.proteins"]] <- top.proteins
+  param[["dims"]] <- paste(pca.axes, collapse = ", ")
   param[["clust.metric"]] <- clust.metric
   param[["clust.method"]] <- clust.method
   if (save) {
@@ -385,15 +358,34 @@ make_qc_report <- function(normList,
   stats[["num_samples"]] <- ncol(data)
   stats[["num_groups"]] <- length(unique(groups))
   stats[["num_batches"]] <- ifelse(is.null(batch), 0, length(unique(batch)))
-  stats[["tot_num_rows"]] <- nrow(data)
-  stats[["top_num_rows"]] <- top
+  stats[["total_num_rows"]] <- nrow(data)
+  stats[["top_num_rows"]] <- top.proteins
 
   logs <- make_log(param, stats, title = "QC REPORT", save = TRUE)
+
+
+  ###############
+  ## Returning ##
+  ###############
+  if (is.null(batch)) {
+    plotList <- list(
+      box = box, vio = vio, pca = pca, dendro = dendro, corhm = corhm, norm.meth = norm.method,
+      dir = ifelse(save, out_dir, NA),
+      file = ifelse(save, file, NA)
+    )
+  } else {
+    plotList <- list(
+      box = box, box2 = box2, vio = vio, vio2 = vio2, pca = pca, pca2 = pca2,
+      dendro = dendro, dendro2 = dendro2, corhm = corhm, norm.meth = norm.method,
+      dir = ifelse(save, out_dir, NA),
+      file = ifelse(save, file, NA)
+    )
+  }
 
   output_data <- list(plots = plotList, param = logs$param, stats = logs$stats)
 
   cli::cli_rule()
   cli::cli_inform(c("v" = "Success"))
 
-  return(invisible(output_data))
+  invisible(output_data)
 }
