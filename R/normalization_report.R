@@ -626,12 +626,25 @@ plotTotInten <- function(normList,
                   mar = c(8, 2, 2, 2))
   }
 
+
+  # Reorder group affiliations
+  # Since groups is an ordered factor (see make_factor()),
+  # this puts them in the order of their levels, then sorts by name.
+  # Does not necessarily sort alphabetically.
+  group_order <- sort.int(groups, index.return = T)$ix
+
+  # Then, reorder the sample labels and groups
+  sampleLabels <- sampleLabels[group_order]
+  groups <- groups[group_order]
+  # Cols in data reordered below
+
+
   # Make a plot for each element of normList
   graphics::layout(matrix(1:9, ncol = ncols, byrow = TRUE))
   barList <- NULL
   for (i in names(normList)) {
     barList[[i]] <- colSums(normList[[i]], na.rm = T)
-    graphics::barplot(barList[[i]],
+    graphics::barplot(barList[[i]][group_order],
             main = "",
             las = 2,
             yaxt = "n",
