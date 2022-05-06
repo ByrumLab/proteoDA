@@ -248,21 +248,38 @@ contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/con
                                     design = des_reb$design)
 
 
-
+test <- norm_reb$targets
+test <- rbind(test, "test" = rep(NA, dim(test)[2]))
 
 # Run the analysis --------------------------------------------------------
-lim <- run_limma_analysis(data       = norm_reb$normList[["vsn"]],
-                          annot      = ext_reb$annot[rownames(norm_reb$normList[["vsn"]]),],
-                          targets    = des_reb$targets,
-                          design     = des_reb$design,
-                          contrasts  = contrasts_rebello$contrasts,
-                          min.pval   = 0.055,
-                          min.lfc    = 1,
-                          adj.method = "BH",
-                          paired     = FALSE,  ## TRUE if paired samples/mixed.effects model
-                          pipe       = "DIA",
-                          enrich     = "protein",
-                          dir        = NULL, ## NULL creates 02_diff_exprssion directory
-                          save       = TRUE,
-                          ilab       = "rebello_test"  ## PI_DATE
-)
+# Splitting up functionality
+# First, fit the model
+
+fit_lupashin <- fit_limma_model(data = norm_lupashin$normList[["vsn"]],
+                                 targets = des_lupashin$targets,
+                                 design = des_lupashin$design,
+                                 contrasts = contrasts_lupashin$contrasts)
+
+fit_ndu_brain <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
+                                targets = des_ndu$targets,
+                                design = des_ndu$design,
+                                contrasts = contrasts_ndu_brain$contrasts)
+fit_ndu_intestine <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
+                                 targets = des_ndu$targets,
+                                 design = des_ndu$design,
+                                 contrasts = contrasts_ndu_intestine$contrasts)
+fit_ndu_kidney <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
+                                 targets = des_ndu$targets,
+                                 design = des_ndu$design,
+                                 contrasts = contrasts_ndu_kidney$contrasts)
+
+fit_zhan <- fit_limma_model(data = norm_zhan$normList[["vsn"]],
+                            targets = des_zhan$targets,
+                            design = des_zhan$design,
+                            contrasts = contrasts_zhan$contrasts)
+
+
+fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
+                           targets = des_reb$targets,
+                           design = des_reb$design,
+                           contrasts = contrasts_rebello$contrasts)

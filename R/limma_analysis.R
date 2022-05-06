@@ -1,115 +1,160 @@
-run_limma_analysis <- function(data, annot, targets, design, contrasts, min.pval=0.055, min.lfc=1,
-                               adj.method="BH", paired=FALSE, pipe="DIA", enrich="protein",
-                               dir=NULL, save=TRUE, ilab="PI_DATE"){
+## ---------------------------
+##  LIMMA EBAYES (NORMAL)
+## ---------------------------
+## paired==FALSE is used for group comparisons,
+## group comparisons correcting for e.g. batch or gender effect
+## group comparisons for paired samples etc.
 
-  adj.method <- match.arg(arg=adj.method, choices=c("none","BH","BY","holm"),several.ok=FALSE);adj.method
-  pipe   <- match.arg(arg=pipe,choices=c("DIA","TMT","phosphoTMT","LF"),several.ok=FALSE);pipe
-  enrich <- match.arg(arg=enrich,choices=c("protein","phospho"), several.ok=FALSE);enrich
 
-  param <- stats <- list()
-  param[["min.lfc"]]    <- min.lfc
-  param[["min.pval"]]   <- min.pval
-  param[["adj.method"]] <- adj.method
-  param[["paired"]]     <- paired
-  param[["robust"]]     <- TRUE
-  param[["pipe"]]       <- pipe
-  param[["enrich"]]     <- enrich
-  param[["ilab"]]       <- ilab
 
+## ---------------------------------
+##  LIMMA EBAYES (MIXED EFFECTS)
+## ---------------------------------
+## paired==TRUE is used for group comparisons,
+## when comparing within (paired samples) and across (groups)
+## subjects
+
+fit_limma_model <- function(data,
+                            targets,
+                            design,
+                            contrasts,
+                            paired = FALSE) {
+  # Original fxn had a check that rownames in the data equaled rownames in the
+  # annotation. Took that out for now, and removed annotation as an argument,
+  # since we don't actually need the annotation to fit the model. But may want
+  # to put that back in. We definitely need to check that at some point (maybe in
+  # later functions?), but it may be worth doing it now to just not waste time running the
+  # model on something that is incorrect.
+
+  # On the other hand, depending on the various outputs, may be able to
+  # reorder and match things back up if they ever are actually out of sync.
+
+  # NEED TO ADD SOME SORT OF CHECK FOR THE CONTRASTS
+
+
+  # Do some checks of the input data
+  # All samples in data have targets
+  if (!all(colnames(data) %in% rownames(targets))) {
+    problemCols <- colnames(data)[colnames(data) %notin% rownames(targets)]
+    cli::cli_abort(c("Not all column names in {.arg data} have a matching rowname in {.arg targets}",
+                     "!" = "{cli::qty(length(problemCols))} Column{?s} without a match: {.val {problemCols}}"))
+  }
+  # All targets have corresponding data
+  if (!all(rownames(targets) %in% colnames(data))) {
+    problemTargets <- rownames(targets)[rownames(targets) %notin% colnames(data)]
+    cli::cli_abort(c("Not all target rownames in {.arg targets} have a matching colname in {.arg data}",
+                     "!" = "{cli::qty(length(problemTargets))} Row{?s} without a match: {.val {problemTargets}}"))
+  }
+
+  # Ensure data cols are in same order as rows in targets
+  data <- data[, rownames(targets)]
+  groups <- targets$group
+
+  # Double-check that the order is all the same
+  if (!identical(colnames(data), rownames(targets))) {
+    cli::cli_abort(c("Colnames of {.arg data} and rownames of {.arg targets} still not the same after sorting",
+                     "i" = "Not sure how this error can happen. Use the dubugger."))
+  }
+
+  cli::cli_rule()
+
+  # On to model fitting
+  # First step of fitting differs between paired and unpaired
+  if (paired) {
+
+    cli::cli_inform("Performing paired analysis with mixed effects model")
+    # check for paired col
+    if ("paired" %notin% colnames(targets)) {
+      cli::cli_abort(c("{.arg targets} does not contain required column names {.val paired}",
+                       "i" = "Add {.val paired} column, or using {.fun make_design}",
+                       "i" = "Ensure that design formula does not include {.val paired}",
+                       "i" = "e.g. ~0+group OR ~0+group+batch NOT ~0+group+paired"))
+    }
+
+    # Coerce paired col to factor, if it isn't
+    if (!is.factor(targets$paired)) {
+      targets$paired <- make_factor(targets$paired, prefix = "")
+    }
+
+    corfit <- limma::duplicateCorrelation(object = data, design = design, block = targets$paired)
+    corfit_display <- round(corfit$consensus.correlation, 3)
+    cli::cli_inform("Estimated inter-duplicate correlation = {.val {corfit_display}}")
+
+    if (corfit$consensus.correlation < 0.1) {
+      cli::cli_inform(cli::col_yellow("Estimated inter-duplicate correlation is low,
+                                      which may indicate little or no paired influence"))
+    }
+
+    fit <- limma::lmFit(object = data, design = design,
+                        block = targets$paired,
+                        correlation = corfit$consensus.correlation)
+  } else {
+    cli::cli_inform("Performing standard un-paired model")
+    fit <- limma::lmFit(object = data, design = design)
+    }
+
+  # contrasts fit and eBayes are the same across paired and not paired
+  con.fit <- limma::contrasts.fit(fit = fit, contrasts = contrasts)
+  efit <- limma::eBayes(fit = con.fit, robust = TRUE)
+
+
+  # Set up return
+  model <- list(efit = efit, con.fit = con.fit, fit = fit, design = design, contrasts = contrasts)
+  if (paired) model[["corfit"]] <- corfit
+
+  cli::cli_inform("limma DE analysis with {.arg paired} == {paired} complete")
+  cli::cli_rule()
+  cli::cli_inform(c("v" = "Success!"))
+
+  model
+}
+
+
+
+
+dummy_function <- function(data,
+                           annot,
+                           targets,
+                           design,
+                           contrasts,
+                           min.pval = 0.055,
+                           min.lfc = 1,
+                           adj.method = "BH",
+                           paired = FALSE,
+                           pipe = "DIA",
+                           enrich = "protein",
+                           dir = NULL,
+                           save = TRUE,
+                           ilab = "PI_DATE") {
+
+
+
+
+
+
+  enrich <- match.arg(arg = enrich, choices = c("protein", "phospho"), several.ok = FALSE)
+
+
+
+
+  pipe <- match.arg(arg = pipe, choices = c("DIA", "TMT", "phosphoTMT", "LF"), several.ok = FALSE)
+
+  adj.method <- match.arg(
+    arg = adj.method,
+    choices = c("none", "BH", "BY", "holm"), several.ok = FALSE
+  )
 
   ## MATCH TARGETS, DATA, ANNOTATION
-  if(all(rownames(data) %in% rownames(annot))){ annot <- annot[rownames(data), ]
-  } else { stop("Error! Row names of norm. data and row names of annotation
-                    do not match.") }
-  if(all(colnames(data) %in% rownames(targets))){
-    data   <- data[, rownames(targets)]
-    groups <- targets$group
-  } else { stop("Error! Column names of norm. data and row names of targets
-                    do not match.") }
-  stopifnot(identical(colnames(data), rownames(targets)))
+  # from original limma analysis
+  if (all(rownames(data) %in% rownames(annot))) {
+    annot <- annot[rownames(data), ]
+  } else {
+    stop("Error! Row names of norm. data and row names of annotation
+                    do not match.")
+  }
+
   stopifnot(identical(rownames(data), rownames(annot)))
-  stopifnot(length(groups)==ncol(data))
 
-  ## CREATE OUTPUT DIRECTORY
-  if(save==TRUE){
-    if(!is.null(dir)){ if(!dir.exists(dir)){dir.create(dir,recursive=TRUE)} }
-
-    if(is.null(dir)){
-      if(enrich=="protein"){
-        dir <- "./protein_analysis/02_diff_expression"
-        if(!dir.exists(dir)){ dir.create(file.path(dir),recursive=TRUE) }
-      }
-      if(enrich=="phospho"){
-        dir <- "./phospho_analysis/02_diff_expression"
-        if(!dir.exists(dir)){ dir.create(file.path(dir), recursive=TRUE) }
-      }
-    }
-
-  } ## SAVE == TRUE
-
-  param[["dir"]] <- ifelse(save==TRUE, file.path(dir),"NULL")
-
-
-  ##---------------------------
-  ##  LIMMA EBAYES (NORMAL)
-  ##---------------------------
-  ## paired==FALSE is used for group comparisons,
-  ## group comparisons correcting for e.g. batch or gender effect
-  ## group comparisons for paired samples etc.
-  if(paired==FALSE){
-
-    ## fit limma models and perform DE
-    fit     <- limma::lmFit(object=data, design=design)
-    con.fit <- limma::contrasts.fit(fit=fit, contrasts=contrasts)
-    efit    <- limma::eBayes(fit=con.fit, robust=TRUE)
-    print(paste("limma DE analysis (paired==FALSE) complete. Success!!"))
-
-    model<-list(efit=efit, con.fit=con.fit,fit=fit, design=design, contrasts=contrasts)
-
-  } ## LIMMA EBAYES
-
-  ##---------------------------------
-  ##  LIMMA EBAYES (MIXED EFFECTS)
-  ##---------------------------------
-  ## paired==TRUE is used for group comparisons,
-  ## when comparing within (paired samples) and across (groups)
-  ## subjects
-  if(paired==TRUE){
-
-    message("performing paired analysis using mixed effects model ...")
-    message("checking targets for 'paired' column ...")
-    if("paired" %in% colnames(targets)==FALSE){
-      stop("Error! Targets does not contain a column named 'paired'.
-                 Correlation between sample pairs cannot be estimated.
-                 To use the mixed effects model add a column named 'paired' (and set as factor)
-                 to the targets file indicating paired sample info. or use make_design() function.
-                 The design matrix should be created using a design formula that does
-                 not include 'paired': e.g. ~0+group OR ~0+group+batch NOT ~0+group+paired")
-    } ## FALSE
-    if("paired" %in% colnames(targets)==TRUE){
-      if(!is.factor(targets$paired)){
-        if(is.character(targets$paired)){ targets$paired<-make_factor(targets$paired) }
-        if(is.numeric(targets$paired)){ targets$paired<-make_factor(targets$paired, prefix="") }
-      }} ## TRUE
-
-    ## LIMMA EBAYES (MIXED EFFECTS)
-    message("estimating correlation among sample pairs ...")
-    corfit <- limma::duplicateCorrelation(object=data, design=design, block=targets$paired)
-    cat("\n");message(paste("corfit = ", corfit$consensus.correlation)); cat("\n")
-    if(corfit$consensus.correlation < 0.1){
-      warning("Warning! The consensus correlation is either very small or has a negative value,
-                    which may indicate little if any paired influence.")
-    }
-    fit     <- limma::lmFit(object=data, design=design, block=targets$paired,
-                            correlation=corfit$consensus.correlation)
-    con.fit <- limma::contrasts.fit(fit=fit, contrasts=contrasts)
-    efit    <- limma::eBayes(fit=con.fit, robust=TRUE)
-    print(paste("limma DE analysis (paired==TRUE) complete. Success!!"))
-
-    model<-list(efit=efit, con.fit=con.fit,fit=fit, corfit=corfit,
-                design=design, contrasts=contrasts)
-
-  } ## MIXED EFFECTS
 
 
   ## DE stat results are extracted in 3 formats. statList is list object, where each
@@ -123,68 +168,6 @@ run_limma_analysis <- function(data, annot, targets, design, contrasts, min.pval
                                enrich=enrich,ilab=ilab)
 
   ## SAVE DE PLOTS
-  if(save==TRUE){ ## SAVE DE PLOTS
-    print("saving limma plots ...")
-    base::lapply(names(res$statList), function(x){
-
-      ## VOLCANO PLOTS
-      png(filename=file.path(dir,paste0(x,"_volcano_plot.png")), units="px",
-          width=700,height=600, pointsize=15)
-      volcanoPlot(stats=res$statList[[x]],comparison=x, min.pval=min.pval,
-                  min.lfc=min.lfc, xlim=NULL,ylim=NULL,sig.type="p.adj",
-                  top=NULL,labels=NULL,inset=-0.2,legend=TRUE)
-      dev.off()
-      png(filename=file.path(dir,paste0(x,"_volcano_plot_pvalue.png")), units="px",
-          width=700,height=600, pointsize=15)
-      volcanoPlot(stats=res$statList[[x]],comparison=x, min.pval=min.pval,
-                  min.lfc=min.lfc, xlim=NULL,ylim=NULL,sig.type="pval",
-                  top=NULL,labels=NULL,inset=-0.2,legend=TRUE)
-      dev.off()
-
-      ## MD PLOTS
-      png(filename=file.path(dir,paste0(x,"_MD_plot.png")), units="px",
-          width=700, height=600,pointsize=15)
-      mdPlot(stats=res$statList[[x]], comparison=x, min.pval=min.pval,
-             min.lfc=min.lfc, xlim=NULL, ylim=NULL, sig.type="p.adj",
-             top=NULL, labels=NULL, inset=-0.2, legend=TRUE)
-      dev.off()
-      png(filename=file.path(dir,paste0(x,"_MD_plot_pvalue.png")), units="px",
-          width=700, height=600,pointsize=15)
-      mdPlot(stats=res$statList[[x]], comparison=x, min.pval=min.pval,
-             min.lfc=min.lfc, xlim=NULL, ylim=NULL, sig.type="pval",
-             top=NULL, labels=NULL, inset=-0.2, legend=TRUE)
-      dev.off()
-
-      ## P-VALUE HISTOGRAMS
-      png(filename=file.path(dir,paste0(x,"_pvalue_histogram.png")), units="px",
-          width=1400, height=600, pointsize=15)
-      pvalueHistogram(stats=res$statList[[x]], comparison=x)
-      dev.off()
-
-      ## GLIMMA VOLCANO PLOTS
-      glimmaVolcanoPlot(stats=res$statList[[x]], comparison=x, data=res$data,
-                        res$annot, groups=groups, min.pval=min.pval,
-                        min.lfc=min.lfc,sig.type="p.adj", pipe=pipe,
-                        enrich=enrich, dir=dir)
-      glimmaVolcanoPlot(stats=res$statList[[x]], comparison=x, data=res$data,
-                        res$annot, groups=groups, min.pval=min.pval,
-                        min.lfc=min.lfc,sig.type="pval", pipe=pipe,
-                        enrich=enrich, dir=dir)
-
-      ## GLIMMA MD PLOTS
-      glimmaMDPlot(stats=res$statList[[x]], comparison=x, data=res$data,
-                   annot=res$annot, groups=groups, min.pval=min.pval,
-                   min.lfc=min.lfc, sig.type="p.adj", pipe=pipe,
-                   enrich=enrich, dir=dir)
-      glimmaMDPlot(stats=res$statList[[x]], comparison=x, data=res$data,
-                   annot=res$annot, groups=groups, min.pval=min.pval,
-                   min.lfc=min.lfc, sig.type="pval", pipe=pipe,
-                   enrich=enrich, dir=dir)
-    })
-
-    print("All limma plots saved. Success!!")
-
-  } ## SAVE DE PLOTS
 
 
   if(save==TRUE){
@@ -223,6 +206,20 @@ run_limma_analysis <- function(data, annot, targets, design, contrasts, min.pval
   cat("\n\n");print(res$sum.dt); cat("\n\n")
   sink()
 
+
+
+  param <- stats <- list()
+  param[["min.lfc"]]    <- min.lfc
+  param[["min.pval"]]   <- min.pval
+  param[["adj.method"]] <- adj.method
+  param[["paired"]]     <- paired
+  param[["robust"]]     <- TRUE
+  param[["pipe"]]       <- pipe
+  param[["enrich"]]     <- enrich
+  param[["ilab"]]       <- ilab
+
+
+
   ## save DE parameters to log file
   logs<-make_log(param=param, stats=stats, title="LIMMA DE ANALYSIS",save=TRUE)
 
@@ -234,7 +231,7 @@ run_limma_analysis <- function(data, annot, targets, design, contrasts, min.pval
 
   return(data2)
 
-} ## LIMMA
+}
 
 
 
