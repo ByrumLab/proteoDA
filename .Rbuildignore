@@ -9,6 +9,6 @@
 ^\\*BQ\.csv$
 ^notes\.md$
 ^tmp\.R$
-^\\*\_BQ\.csv$
+^\\*\_BQ\\*$
 ^targets\.csv$
 ^test_workflow.R$

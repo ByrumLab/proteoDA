@@ -247,3 +247,22 @@ contrasts_zhan <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_s
 contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/contrasts.csv",
                                     design = des_reb$design)
 
+
+
+
+# Run the analysis --------------------------------------------------------
+lim <- run_limma_analysis(data       = norm_reb$normList[["vsn"]],
+                          annot      = ext_reb$annot[rownames(norm_reb$normList[["vsn"]]),],
+                          targets    = des_reb$targets,
+                          design     = des_reb$design,
+                          contrasts  = contrasts_rebello$contrasts,
+                          min.pval   = 0.055,
+                          min.lfc    = 1,
+                          adj.method = "BH",
+                          paired     = FALSE,  ## TRUE if paired samples/mixed.effects model
+                          pipe       = "DIA",
+                          enrich     = "protein",
+                          dir        = NULL, ## NULL creates 02_diff_exprssion directory
+                          save       = TRUE,
+                          ilab       = "rebello_test"  ## PI_DATE
+)

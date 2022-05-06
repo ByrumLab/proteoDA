@@ -8,7 +8,7 @@
 for_testing
 Kinter_DIA_022521_Samples_Report_BQ.csv
 logs/*
-*_BQ.csv
+*_BQ*
 targets.csv
-
 protein_analysis/
+
