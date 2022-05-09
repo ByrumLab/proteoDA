@@ -29,6 +29,7 @@ fit_limma_model <- function(data,
   # On the other hand, depending on the various outputs, may be able to
   # reorder and match things back up if they ever are actually out of sync.
 
+  # TODO:
   # NEED TO ADD SOME SORT OF CHECK FOR THE CONTRASTS
 
 
@@ -51,10 +52,9 @@ fit_limma_model <- function(data,
   groups <- targets$group
 
   # Double-check that the order is all the same
-  if (!identical(colnames(data), rownames(targets))) {
-    cli::cli_abort(c("Colnames of {.arg data} and rownames of {.arg targets} still not the same after sorting",
-                     "i" = "Not sure how this error can happen. Use the dubugger."))
-  }
+  # TODO: Shouldn't really ever trigger this, right? maybe remove?
+  stopifnot(identical(colnames(data), rownames(targets)))
+
 
   cli::cli_rule()
 
@@ -96,13 +96,14 @@ fit_limma_model <- function(data,
   # contrasts fit and eBayes are the same across paired and not paired
   con.fit <- limma::contrasts.fit(fit = fit, contrasts = contrasts)
   efit <- limma::eBayes(fit = con.fit, robust = TRUE)
+  cli::cli_inform("limma DE analysis with {.arg paired} == {paired} complete")
 
 
   # Set up return
-  model <- list(efit = efit, con.fit = con.fit, fit = fit, design = design, contrasts = contrasts)
-  if (paired) model[["corfit"]] <- corfit
+  model <- list(eBayes_fit = efit, contrasts_fit = con.fit, lm_fit = fit, design = design, contrasts = contrasts)
+  if (paired) model[["corr_fit"]] <- corfit
 
-  cli::cli_inform("limma DE analysis with {.arg paired} == {paired} complete")
+
   cli::cli_rule()
   cli::cli_inform(c("v" = "Success!"))
 
@@ -112,276 +113,180 @@ fit_limma_model <- function(data,
 
 
 
-dummy_function <- function(data,
-                           annot,
-                           targets,
-                           design,
-                           contrasts,
-                           min.pval = 0.055,
-                           min.lfc = 1,
-                           adj.method = "BH",
-                           paired = FALSE,
-                           pipe = "DIA",
-                           enrich = "protein",
-                           dir = NULL,
-                           save = TRUE,
-                           ilab = "PI_DATE") {
-  enrich <- match.arg(arg = enrich, choices = c("protein", "phospho"), several.ok = FALSE)
+# utility function used in extract_limma_DE_results
+check_DE_perc <- function(DE_outcomes_table, threshold = 0.1, min.pval, min.lfc, adj.method) {
+  perc_sig <- colSums(DE_outcomes_table != 0, na.rm = T)/colSums(!is.na(DE_outcomes_table))
 
-
-
-
-  pipe <- match.arg(arg = pipe, choices = c("DIA", "TMT", "phosphoTMT", "LF"), several.ok = FALSE)
-
-  adj.method <- match.arg(
-    arg = adj.method,
-    choices = c("none", "BH", "BY", "holm"), several.ok = FALSE
-  )
-
-  ## MATCH TARGETS, DATA, ANNOTATION
-  # from original limma analysis
-  if (all(rownames(data) %in% rownames(annot))) {
-    annot <- annot[rownames(data), ]
-  } else {
-    stop("Error! Row names of norm. data and row names of annotation
-                    do not match.")
+  if (any(perc_sig > threshold)) {
+    above_thresh <- names(perc_sig)[perc_sig > threshold]
+    thresh_perc <- threshold*100
+    cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is DE in {cli::qty(length(above_thresh))} {?A/some} contrast{?s}",
+                      "!" = "Criteria for DE: min.lfc > {.val {min.lfc}}, min.pval < {.val {min.pval}}, p.value adjustment = {.val {adj.method}}",
+                      "!" = "{cli::qty(length(above_thresh))} Problematic contrast{?s}: {.val {above_thresh}}",
+                      "!" = "Assumption that most genes/proteins/phospho are not DE may be violated"))
   }
 
-  stopifnot(identical(rownames(data), rownames(annot)))
-
-  ## DE stat results are extracted in 3 formats. statList is list object, where each
-  ## item in the list is a data.frame of the stat results for a particular contrast.
-  ## This list object is used to create/save DE plots and individual stat result files.
-  ## comboStats = combined stat results in wide format. This data.frame is used to
-  ## create results file for Big Query upload. This data.frame is used to create results file
-  ## returned to the investigator.
-  res <- extract_limma_results(
-    efit = efit, annot = annot, data = data, min.pval = min.pval,
-    min.lfc = min.lfc, adj.method = adj.method, dir = dir, save = save,
-    enrich = enrich, ilab = ilab
-  )
-
-  ## SAVE DE PLOTS
-  if (save) {
-    ## SUMMARY OF DIFF EXPRESSION
-    sumfile <- paste0("./", dir, "/summary.txt")
-    sink(file = sumfile)
-    cat(paste0("\n##", paste(rep("-", 40), collapse = "")))
-    cat("\n##  Summary of Differential Expression")
-    cat(paste0("\n##", paste(rep("-", 40), collapse = "")))
-    cat("\n\n")
-    cat(paste0("Significance Criteria: (|logFC| >= ", min.lfc, " & p-value <= ", min.pval, ")"))
-    cat("\n\n")
-    print(res$sum.dtp)
-    cat(paste0("Significance Criteria: (|logFC| >= ", min.lfc, " & adj. p-value <= ", min.pval, ")"))
-    cat("\n\n")
-    print(res$sum.dt)
-    cat("\n\n")
-    sink()
-  } ## SAVE
-
-
-  ## save summary DE results to log file
-  if (!dir.exists("logs")) {
-    dir.create("logs", recursive = TRUE)
-  }
-  sink(file = "./logs/processing.log", append = TRUE)
-  title <- "LIMMA DE SUMMARY (P-VALUE)"
-  cat(paste0("\n##", paste(rep("-", 40), collapse = "")))
-  cat(paste0("\n##  ", title, "\n"))
-  cat(paste0("##", paste(rep("-", 40), collapse = "")))
-  cat("\n\n")
-  print(res$sum.dtp)
-  cat("\n\n")
-  sink()
-
-  sink(file = "./logs/processing.log", append = TRUE)
-  title <- "LIMMA DE SUMMARY (ADJ. P-VALUE)"
-  cat(paste0("\n##", paste(rep("-", 40), collapse = "")))
-  cat(paste0("\n##  ", title, "\n"))
-  cat(paste0("##", paste(rep("-", 40), collapse = "")))
-  cat("\n\n")
-  print(res$sum.dt)
-  cat("\n\n")
-  sink()
-
-  param <- stats <- list()
-  param[["min.lfc"]] <- min.lfc
-  param[["min.pval"]] <- min.pval
-  param[["adj.method"]] <- adj.method
-  param[["paired"]] <- paired
-  param[["robust"]] <- TRUE
-  param[["pipe"]] <- pipe
-  param[["enrich"]] <- enrich
-  param[["ilab"]] <- ilab
-
-  ## save DE parameters to log file
-  logs <- make_log(param = param, stats = stats, title = "LIMMA DE ANALYSIS", save = TRUE)
-
-
-  data2 <- list(
-    statList = res$statList, comboStats = res$comboStats, comboStats.BQ = res$comboStats.BQ,
-    de = res$de, dep = res$dep, dt = res$dt, dtp = res$dtp, sum.dt = res$sum.dt, sum.dtp = res$sum.dtp,
-    contrastNames = res$contrastNames, model = model, targets = res$targets, groups = groups,
-    data = res$data, annot = res$annot, param = logs$param, stats = logs$stats
-  )
-
-  return(data2)
+ perc_sig
 }
 
 
 
-##----------------------------------------
-##  EXTRACT LIMMA RESULTS (REQUIRED)
-##----------------------------------------
-extract_limma_results <- function(efit, data, annot, min.pval = 0.055, min.lfc = 1, adj.method = "BH",
-                                  dir = ".", save = FALSE, enrich, ilab) {
 
+extract_limma_DE_results <- function(limma_fit, min.pval = 0.55, min.lfc = 1, adj.method = "BH") {
 
-  ## DECIDE TESTS
-  print(paste("extracting limma stat results for each comparison (statList)..."))
-  contrastNames <- colnames(efit$coefficients)
-  dt <- limma::decideTests(efit, adjust.method = adj.method, p.value = min.pval, lfc = min.lfc)
-  dtp <- limma::decideTests(efit, adjust.method = "none", p.value = min.pval, lfc = min.lfc)
-  sum.dt <- summary(dt)
-  sum.dtp <- summary(dtp)
+  # Just get it going initially, without too much testing.
+  # Really, shouldn't need to do much testing if we're just passing in the whole limma fit object
 
-  ## STAT RESULTS (statList)
-  statList <- list()
+  efit <- limma_fit$eBayes_fit # This should fail if we're not working with our data
+  contrast_names <- colnames(efit$coefficients)
+
+  # Get dfs where 0 = insig, -1 is sig downregulated, and 1 is sig upregulated
+  outcomes_table_rawp <- limma::decideTests(efit, adjust.method = "none", p.value = min.pval, lfc = min.lfc) %>%
+    as.data.frame(.)
+  outcomes_table_adjp <- limma::decideTests(efit, adjust.method = adj.method, p.value = min.pval, lfc = min.lfc) %>%
+    as.data.frame(.)
+
+  perc_sig_rawp <- check_DE_perc(outcomes_table_rawp, min.pval = min.pval, min.lfc = min.lfc, adj.method = "none")
+  perc_sig_adjp <- check_DE_perc(outcomes_table_adjp, min.pval = min.pval, min.lfc = min.lfc, adj.method = adj.method)
+
+  # Make statlist, for use in later functions
+  # A list where length is number of contrasts
+  # And each element is a dataframe of results for that contrast
+  results_per_contrast <- list()
   limmaStatColums <- c("logFC", "CI.L", "CI.R", "AveExpr", "t", "B", "P.Value", "adj.P.Val")
-  statList <- base::lapply(contrastNames, function(x) {
-    stats <- limma::topTable(efit,
-      coef = x, number = Inf, adjust.method = adj.method,
-      sort.by = "none", p.value = 1, lfc = 0, confint = TRUE
+  results_per_contrast <- base::lapply(contrast_names, function(x) {
+    one_contrast_table <- limma::topTable(efit,
+                             coef = x, number = Inf, adjust.method = adj.method,
+                             sort.by = "none", p.value = 1, lfc = 0, confint = TRUE
     )
-    df <- cbind(dtp[, x], dt[, x])
-    colnames(df) <- c("sig.PVal", "sig.FDR")
-    stats <- cbind(stats[, limmaStatColums], df[rownames(stats), ])
+    outcomes <- cbind(outcomes_table_rawp[, x, drop = F], outcomes_table_adjp[, x, drop = F])
+    colnames(outcomes) <- c("sig.PVal", "sig.FDR")
+    one_contrast_results <- cbind(one_contrast_table[, limmaStatColums], outcomes[rownames(outcomes), ])
   })
-  names(statList) <- contrastNames
-  print(paste("statList created. Success!!"))
+  names(results_per_contrast) <- contrast_names
 
-  ## COMBO STATS
-  comboStats <- NULL
-  for (x in names(statList)) {
-    tmp <- statList[[x]]
-    colnames(tmp) <- paste(colnames(tmp), x, sep = "_")
-    if (!is.null(comboStats)) {
-      comboStats <- cbind(comboStats, tmp[rownames(comboStats), ])
-    }
-    if (is.null(comboStats)) {
-      comboStats <- tmp
-    }
-  }
-
-  ## SAVE LIMMA STAT RESULTS
-  ## save stat results for individual contrasts as csv files.
-  ## save combined stat results as a csv file in dir. also
-  ## save BQ combined stat results (NAs /blanks replaced with zeros)
-  ## as csv in project directory for Big Query upload.
-  if (save) { ## SAVE STAT RESULTS
-
-    ## INDIVIDUAL STATS
-    base::lapply(names(statList), function(x) {
-      stats <- statList[[x]]
-      stats2 <- cbind(annot[rownames(stats), ], data[rownames(stats), ], stats)
-      filename <- paste0(x, "_results.csv")
-      utils::write.csv(stats2, file = file.path(dir, filename), row.names = FALSE)
-    })
-  }
-
-  ## COMBINED STATS
-  comboStats2 <- cbind(annot[rownames(comboStats), ], data[rownames(comboStats), ], comboStats)
-  if (save) {
-    filename <- paste("combined_results.csv", sep = "_")
-    utils::write.csv(comboStats2, file = file.path(dir, filename), row.names = FALSE)
-  }
-
-  ## COMBINED STATS FOR BIG QUERY
-  comboStats2[, ][is.na(comboStats2)] <- 0
-  comboStats2[, ][comboStats2 == ""] <- 0
-  if (any(substr(colnames(comboStats2), start = 1, stop = 1) %in% c(0:9)) == TRUE) {
-    colnames(comboStats2) <- paste0("X", colnames(comboStats2))
-  }
-  if (save) {
-    filename <- paste(ilab, enrich, "results_BQ.csv", sep = "_")
-    if (file.exists(file.path(".", filename))) {
-      print("BQ file already exists. creating a new BQ filename...")
-      filename <- make_new_filename(x = filename, dir = ".")
-    }
-    utils::write.csv(comboStats2, file = file.path(".", filename), row.names = FALSE)
-    print("limma stat results for BQ saved. Success!!")
-  }
-
-
-  de <- lapply(names(statList), function(x) {
-    get_de(stats = statList[[x]], min.pval = min.pval, min.lfc = min.lfc, type = "p.adj", de.type = "limma")
-  })
-  names(de) <- names(statList)
-
-  dep <- lapply(names(statList), function(x) {
-    get_de(stats = statList[[x]], min.pval = min.pval, min.lfc = min.lfc, type = "pval", de.type = "limma")
-  })
-  names(dep) <- names(statList)
-
-
-  data2 <- list(
-    statList = statList, comboStats = comboStats, comboStats.BQ = comboStats2, de = de, dep = dep,
-    dt = dt, dtp = dtp, sum.dt = sum.dt, sum.dtp = sum.dtp, data = data, annot = annot,
-    contrastNames = contrastNames
-  )
-  print("limma stat results extracted. Success!!")
-  return(data2)
-} ## GET RESULTS
-
-
-
-
-##------------------
-##    GET_DE
-##------------------
-## uses stats matrix to extract DE gene stuff including sig, up, dn stat matrices, ids for the sig lists
-get_de <- function(stats, min.pval = 0.055, min.lfc = 1, type = c("p.adj", "pval"), de.type = c("edger", "limma")) {
-  if (de.type == "edger") {
-    if (type == "p.adj") {
-      cols <- c("logFC", "FDR")
-    }
-    if (type == "pval") {
-      cols <- c("logFC", "PValue")
-    }
-  }
-  if (de.type == "limma") {
-    if (type == "p.adj") {
-      cols <- c("logFC", "adj.P.Val")
-    }
-    if (type == "pval") {
-      cols <- c("logFC", "P.Value")
-    }
-  }
-
-  sig <- subset(stats, abs(stats[, cols[1]]) >= min.lfc & stats[, cols[2]] <= min.pval)
-  up <- subset(sig, sig[, cols[1]] >= min.lfc)
-  dn <- subset(sig, sig[, cols[1]] <= min.lfc)
-  percent <- round((nrow(sig) / nrow(stats)) * 100, 2)
-
-  info <- t(data.frame(list(
-    no_up = nrow(up), no_dn = nrow(dn), no_sig = nrow(sig), pcnt_sig = paste0(percent, "%"),
-    no_genes = nrow(stats)
-  )))
-  colnames(info) <- c("")
-
-  ## TMM assumption that most genes are not DE messages
-  if (percent > 10) {
-    message(paste0("Warning: > 10% of the data is DE (", percent, "%  > 10%)"))
-    message(paste0(
-      "Warning: the assumption that most genes/proteins/phospho are not DE may be violated (",
-      percent, "% is > 10%)"
-    ))
-  }
-
-  ids <- list(sig = rownames(sig), up = rownames(up), dn = rownames(dn), all = rownames(stats))
-  return(list(
-    sig = sig, up = up, dn = dn, stats = stats, ids = ids, info = info,
-    param = list(min.pval = min.pval, min.lfc = min.lfc)
-  ))
+  stats_by_contrast = results_per_contrast
 }
+
+## TODO:
+## NEED TO REVISIT LOGGING FOR ALL THIS.
+
+# dummy_function <- function(data,
+#                            annot,
+#                            targets,
+#                            design,
+#                            contrasts,
+#                            min.pval = 0.055,
+#                            min.lfc = 1,
+#                            adj.method = "BH",
+#                            paired = FALSE,
+#                            pipe = "DIA",
+#                            enrich = "protein",
+#                            dir = NULL,
+#                            save = TRUE,
+#                            ilab = "PI_DATE") {
+#   enrich <- match.arg(arg = enrich, choices = c("protein", "phospho"), several.ok = FALSE)
+#
+#
+#
+#
+#   pipe <- match.arg(arg = pipe, choices = c("DIA", "TMT", "phosphoTMT", "LF"), several.ok = FALSE)
+#
+#   adj.method <- match.arg(
+#     arg = adj.method,
+#     choices = c("none", "BH", "BY", "holm"), several.ok = FALSE
+#   )
+#
+#   ## MATCH TARGETS, DATA, ANNOTATION
+#   # from original limma analysis
+#   if (all(rownames(data) %in% rownames(annot))) {
+#     annot <- annot[rownames(data), ]
+#   } else {
+#     stop("Error! Row names of norm. data and row names of annotation
+#                     do not match.")
+#   }
+#
+#   stopifnot(identical(rownames(data), rownames(annot)))
+#
+#   ## DE stat results are extracted in 3 formats. statList is list object, where each
+#   ## item in the list is a data.frame of the stat results for a particular contrast.
+#   ## This list object is used to create/save DE plots and individual stat result files.
+#   ## comboStats = combined stat results in wide format. This data.frame is used to
+#   ## create results file for Big Query upload. This data.frame is used to create results file
+#   ## returned to the investigator.
+#   res <- extract_limma_results(
+#     efit = efit, annot = annot, data = data, min.pval = min.pval,
+#     min.lfc = min.lfc, adj.method = adj.method, dir = dir, save = save,
+#     enrich = enrich, ilab = ilab
+#   )
+#
+#   ## SAVE DE PLOTS
+#   if (save) {
+#     ## SUMMARY OF DIFF EXPRESSION
+#     sumfile <- paste0("./", dir, "/summary.txt")
+#     sink(file = sumfile)
+#     cat(paste0("\n##", paste(rep("-", 40), collapse = "")))
+#     cat("\n##  Summary of Differential Expression")
+#     cat(paste0("\n##", paste(rep("-", 40), collapse = "")))
+#     cat("\n\n")
+#     cat(paste0("Significance Criteria: (|logFC| >= ", min.lfc, " & p-value <= ", min.pval, ")"))
+#     cat("\n\n")
+#     print(res$sum.dtp)
+#     cat(paste0("Significance Criteria: (|logFC| >= ", min.lfc, " & adj. p-value <= ", min.pval, ")"))
+#     cat("\n\n")
+#     print(res$sum.dt)
+#     cat("\n\n")
+#     sink()
+#   } ## SAVE
+#
+#
+#   ## save summary DE results to log file
+#   if (!dir.exists("logs")) {
+#     dir.create("logs", recursive = TRUE)
+#   }
+#   sink(file = "./logs/processing.log", append = TRUE)
+#   title <- "LIMMA DE SUMMARY (P-VALUE)"
+#   cat(paste0("\n##", paste(rep("-", 40), collapse = "")))
+#   cat(paste0("\n##  ", title, "\n"))
+#   cat(paste0("##", paste(rep("-", 40), collapse = "")))
+#   cat("\n\n")
+#   print(res$sum.dtp)
+#   cat("\n\n")
+#   sink()
+#
+#   sink(file = "./logs/processing.log", append = TRUE)
+#   title <- "LIMMA DE SUMMARY (ADJ. P-VALUE)"
+#   cat(paste0("\n##", paste(rep("-", 40), collapse = "")))
+#   cat(paste0("\n##  ", title, "\n"))
+#   cat(paste0("##", paste(rep("-", 40), collapse = "")))
+#   cat("\n\n")
+#   print(res$sum.dt)
+#   cat("\n\n")
+#   sink()
+#
+#   param <- stats <- list()
+#   param[["min.lfc"]] <- min.lfc
+#   param[["min.pval"]] <- min.pval
+#   param[["adj.method"]] <- adj.method
+#   param[["paired"]] <- paired
+#   param[["robust"]] <- TRUE
+#   param[["pipe"]] <- pipe
+#   param[["enrich"]] <- enrich
+#   param[["ilab"]] <- ilab
+#
+#   ## save DE parameters to log file
+#   logs <- make_log(param = param, stats = stats, title = "LIMMA DE ANALYSIS", save = TRUE)
+#
+#
+#   data2 <- list(
+#     statList = res$statList, comboStats = res$comboStats, comboStats.BQ = res$comboStats.BQ,
+#     de = res$de, dep = res$dep, dt = res$dt, dtp = res$dtp, sum.dt = res$sum.dt, sum.dtp = res$sum.dtp,
+#     contrastNames = res$contrastNames, model = model, targets = res$targets, groups = groups,
+#     data = res$data, annot = res$annot, param = logs$param, stats = logs$stats
+#   )
+#
+#   return(data2)
+# }
+
+
+

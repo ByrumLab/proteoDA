@@ -175,15 +175,33 @@ extraction functions, but I think I might hold off on that for now. If
 we do any changing of the code structure, we may have to re-write the
 tests as well. Maybe better to just do it once.
 
-| Function                 | Code               | Document           | Test               |
-|--------------------------|--------------------|--------------------|--------------------|
-| `extract_data`           | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| `make_targets`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `subset_targets`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `process_data`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_proteinorm_report` | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_qc_report`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_design`            | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_contrasts`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `run_limma_analysis`     | :x:                | :x:                | :x:                |
-| `add_limma_results`      | :x:                | :x:                | :x:                |
+| Function                   | Code               | Document           | Test               |
+|----------------------------|--------------------|--------------------|--------------------|
+| `extract_data`             | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| `make_targets`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `subset_targets`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `process_data`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `make_proteinorm_report`   | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `make_qc_report`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `make_design`              | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `make_contrasts`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `fit_limmma_model`         | :heavy_check_mark: | :x:                | :x:                |
+| `extract_limma_DE_results` | :heavy_check_mark: | :x:                | :x:                |
+| `write_limma_results`      | :x:                | :x:                | :x:                |
+| `make_limma_report`        | :x:                | :x:                | :x:                |
+
+The final steps in the pipeline, for the limma analysis, are being
+reworked a little. Originally, there were two functions:
+`run_limma_analysis` fit the model, extracted data, saved some .csv
+files, and made the glimma plots. `add_limma_results` added limma
+results to an excel spreadsheet. I’m working to separate out some of the
+functionality into independent functions. Now, we have:
+
+-   `fit_limma_model`- Which just does model fitting, and returns a list
+    of various model fit objects.
+-   `extract_limma_DE_results`- Which extracts statistical results for
+    each contrast from the list of limma model fits.
+-   TBD- `write_limma_results`- Which will output the various .csv and
+    excel files of results.
+-   TBD- `make_limma_report`- Which will output the GLIMMA plots and
+    html report for end users.

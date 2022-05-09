@@ -120,3 +120,67 @@ make_limma_de_report <- function(data, annot, targets, design, contrasts, min.pv
 
   invisible(NULL)
 }
+
+
+
+
+# Some results p.csv saving taken out of extract_limma_results.
+
+dummy_function_2 <- function(){
+
+## COMBO STATS
+comboStats <- NULL
+for (x in names(statList)) {
+  tmp <- statList[[x]]
+  colnames(tmp) <- paste(colnames(tmp), x, sep = "_")
+  if (!is.null(comboStats)) {
+    comboStats <- cbind(comboStats, tmp[rownames(comboStats), ])
+  }
+  if (is.null(comboStats)) {
+    comboStats <- tmp
+  }
+}
+
+## SAVE LIMMA STAT RESULTS
+## save stat results for individual contrasts as csv files.
+## save combined stat results as a csv file in dir. also
+## save BQ combined stat results (NAs /blanks replaced with zeros)
+## as csv in project directory for Big Query upload.
+if (save) { ## SAVE STAT RESULTS
+
+  ## INDIVIDUAL STATS
+  base::lapply(names(statList), function(x) {
+    stats <- statList[[x]]
+    stats2 <- cbind(annot[rownames(stats), ], data[rownames(stats), ], stats)
+    filename <- paste0(x, "_results.csv")
+    utils::write.csv(stats2, file = file.path(dir, filename), row.names = FALSE)
+  })
+}
+
+## COMBINED STATS
+comboStats2 <- cbind(annot[rownames(comboStats), ], data[rownames(comboStats), ], comboStats)
+if (save) {
+  filename <- paste("combined_results.csv", sep = "_")
+  utils::write.csv(comboStats2, file = file.path(dir, filename), row.names = FALSE)
+}
+
+## COMBINED STATS FOR BIG QUERY
+comboStats2[, ][is.na(comboStats2)] <- 0
+comboStats2[, ][comboStats2 == ""] <- 0
+if (any(substr(colnames(comboStats2), start = 1, stop = 1) %in% c(0:9)) == TRUE) {
+  colnames(comboStats2) <- paste0("X", colnames(comboStats2))
+}
+if (save) {
+  filename <- paste(ilab, enrich, "results_BQ.csv", sep = "_")
+  if (file.exists(file.path(".", filename))) {
+    print("BQ file already exists. creating a new BQ filename...")
+    filename <- make_new_filename(x = filename, dir = ".")
+  }
+  utils::write.csv(comboStats2, file = file.path(".", filename), row.names = FALSE)
+  print("limma stat results for BQ saved. Success!!")
+}
+
+}
+
+
+
