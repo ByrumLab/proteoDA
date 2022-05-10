@@ -20,6 +20,10 @@ knitr::opts_chunk$set(
 
 The `proteomicsDIA` package will (eventually) be our internal R package that supplies all the functions we need for doing proteomics analysis of DIA data.
 
+## Non-DIA experiments
+
+At the moment, these functions should work fine for non-DIA experiments as well. Most of the functions are the same for the different experiment types. Some functions, like `extract_data()` and `make_targets()`, have slightly different behavior depending on the pipeline. At the moment, only the DIA code within these functions has been updated: you might notice differences in the text printed to the console and in the output objects. But, the non-DIA code is more or less unchanged from version 26 of Charity's functions, so it should still all work properly. If you run into any problems, [file an issue](https://github.com/ByrumLab/proteomicsDIA/issues). 
+
 ## Installation
 
 The Github repository where the package is stored is private, so installation is a little more complicated that usual. You'll need the `devtools` package installed (which you'll want to have installed anyway for developing the package, see below). You'll also need the personal access token (PAT) that gives you access to the repository. Email Tim or Stephanie to get it. Once you have it, you can install the development version of `proteomicsDIA` from [GitHub](https://github.com/) with:
@@ -56,7 +60,7 @@ sub <- subset_targets(targets = targets,
 
 # Process data
 norm <- process_data(data = extracted_data$data,
-                     targets = sub_higgs$targets,
+                     targets = sub$targets,
                      min.reps = 5,
                      min.grps = 3)
 # Make the proteinorm report

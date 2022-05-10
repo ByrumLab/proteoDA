@@ -73,46 +73,46 @@
 
 
     ## global par plot parameters
-    par(
+    graphics::par(
       font.axis = 1, lwd = 1, font.main = 2, cex.main = 1.5, fg = "black",
       col.axis = "black", cex.axis = 1.2, cex.lab = 1.3, font.axis = 1, xaxs = "i", yaxs = "i"
     )
     if (legend == TRUE) {
-      par(mar = c(6, 7, 4, 6))
+      graphics::par(mar = c(6, 7, 4, 6))
     }
     if (legend == FALSE) {
-      par(mar = c(6, 7, 4, 3))
+      graphics::par(mar = c(6, 7, 4, 3))
     }
 
     ## create blank plot area
     plot(x = 1, las = 1, type = "n", main = "", xlab = "", ylab = "", xlim = xlim, ylim = ylim)
-    title(line = 1, main = comparison, cex.main = 1.3)
-    mtext(side = 1, line = 3, cex = 1.3, text = expression(paste(log[2], " (fold-change)", sep = "")))
-    mtext(side = 2, line = 4.5, cex = 1.3, text = ylab)
-    rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col = "gray94", lwd = 0)
-    grid(col = "white", lty = "dotted", lwd = 1.2)
-    box(which = "plot", lwd = 4, lty = 1, col = "gray94")
+    graphics::title(line = 1, main = comparison, cex.main = 1.3)
+    graphics::mtext(side = 1, line = 3, cex = 1.3, text = expression(paste(log[2], " (fold-change)", sep = "")))
+    graphics::mtext(side = 2, line = 4.5, cex = 1.3, text = ylab)
+    graphics::rect(graphics::par("usr")[1], graphics::par("usr")[3], graphics::par("usr")[2], graphics::par("usr")[4], col = "gray94", lwd = 0)
+    graphics::grid(col = "white", lty = "dotted", lwd = 1.2)
+    graphics::box(which = "plot", lwd = 4, lty = 1, col = "gray94")
 
     ## subset based on significance cutoffs
     up <- subset(stats, p <= min.pval & logFC >= min.lfc)
     down <- subset(stats, p <= min.pval & logFC <= -min.lfc)
 
     ## add points
-    with(stats, points(logFC, -log10(p),
+    with(stats, graphics::points(logFC, -log10(p),
       pch = 21, bg = scales::alpha(colour = "grey60", alpha = 0.5), ## black
       col = scales::alpha(colour = "grey50", alpha = 0.5), lwd = 0.5, cex = 1.1
     ))
-    with(up, points(logFC, -log10(p),
+    with(up, graphics::points(logFC, -log10(p),
       pch = 21, bg = scales::alpha(colour = "#FF0000", alpha = 1), ## red
       col = scales::alpha(colour = "#990000", alpha = 1), lwd = 0.5, cex = 1.1
     ))
-    with(down, points(logFC, -log10(p),
+    with(down, graphics::points(logFC, -log10(p),
       pch = 21, bg = "#1E90FF", col = "#003399", lwd = 0.5, ## blue
       cex = 1
     ))
 
-    abline(v = c(-min.lfc, min.lfc), col = "dimgray", lty = 2, lwd = 0.8)
-    abline(h = -log10(min.pval), col = "dimgray", lty = 2, lwd = 0.8)
+    graphics::abline(v = c(-min.lfc, min.lfc), col = "dimgray", lty = 2, lwd = 0.8)
+    graphics::abline(h = -log10(min.pval), col = "dimgray", lty = 2, lwd = 0.8)
 
 
     ## ADD LABELS
@@ -146,10 +146,10 @@
         ## subset data for positive logFC values, add labels
         subup <- subset(subdata, subdata$logFC > 0)
         if (nrow(subup) > 0) {
-          points(
+          graphics::points(
             x = subup$logFC, y = -log10(subup$p), pch = 21, cex = 1.2,
             bg = "orange", col = "darkorange3", lwd = 0.5,
-            text(
+            graphics::text(
               x = subup$logFC, y = -log10(subup$p), col = "orange",
               labels = subup$labels, pos = 4, cex = 0.6, font = 2
             )
@@ -159,10 +159,10 @@
         ## ADD USER INPUT LABELS TO NEG logFC < 0
         subdn <- subset(subdata, subdata$logFC < 0)
         if (nrow(subdn > 0)) {
-          points(
+          graphics::points(
             x = subdn$logFC, y = -log10(subdn$p), pch = 21, cex = 1.2,
             bg = "orange", col = "darkorange3", lwd = 0.5,
-            text(
+            graphics::text(
               x = subdn$logFC, y = -log10(subdn$p), col = "orange",
               labels = subdn$labels, pos = 2, cex = 0.6, font = 2
             )
@@ -183,10 +183,10 @@
         sig <- up[with(up, order(logFC, order(p, decreasing = FALSE), decreasing = TRUE)), ]
         top2 <- ifelse(top > nrow(sig), nrow(sig), top)
         sig <- sig[1:top2, ]
-        points(
+        graphics::points(
           x = sig$logFC, y = -log10(sig$p), pch = 21, cex = 1.2,
           bg = "green", col = "forestgreen", lwd = 0.5,
-          text(
+          graphics::text(
             x = sig$logFC, y = -log10(sig$p), col = "green3",
             labels = sig$labels, pos = 4, cex = 0.6, font = 2
           )
@@ -196,10 +196,10 @@
         sig <- down[with(down, order(logFC, order(p, decreasing = FALSE), decreasing = FALSE)), ]
         top2 <- ifelse(top > nrow(sig), nrow(sig), top)
         sig <- sig[1:top2, ]
-        points(
+        graphics::points(
           x = sig$logFC, y = -log10(sig$p), pch = 21, cex = 1.2,
           bg = "green", col = "forestgreen", lwd = 0.5,
-          text(
+          graphics::text(
             x = sig$logFC, y = -log10(sig$p), col = "green3",
             labels = sig$labels, pos = 2, cex = 0.6, font = 2
           )
@@ -284,45 +284,45 @@
     }
 
     ## global par plot parameters
-    par(
+    graphics::par(
       font.axis = 1, lwd = 1, font.main = 2, cex.main = 1.5, fg = "black",
       col.axis = "black", cex.axis = 1.2, cex.lab = 1.3, font.axis = 1, xaxs = "i", yaxs = "i"
     )
     if (legend == TRUE) {
-      par(mar = c(6, 7, 4, 6))
+      graphics::par(mar = c(6, 7, 4, 6))
     }
     if (legend == FALSE) {
-      par(mar = c(6, 7, 4, 3))
+      graphics::par(mar = c(6, 7, 4, 3))
     }
 
     ## create blank plot area
     plot(x = 1, las = 1, type = "n", main = "", xlab = "", ylab = "", xlim = xlim, ylim = ylim)
-    title(line = 1, main = main.title, cex.main = 1.3)
-    mtext(side = 1, line = 3, cex = 1.3, text = "avg. expression")
-    mtext(side = 2, line = 3.5, cex = 1.3, text = expression(paste(log[2], " (fold-change)", sep = "")))
+    graphics::title(line = 1, main = main.title, cex.main = 1.3)
+    graphics::mtext(side = 1, line = 3, cex = 1.3, text = "avg. expression")
+    graphics::mtext(side = 2, line = 3.5, cex = 1.3, text = expression(paste(log[2], " (fold-change)", sep = "")))
 
-    rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col = "gray94")
-    grid(col = "white", lty = "dotted", lwd = 1.2)
-    box(which = "plot", lwd = 4, lty = 1, col = "gray94")
+    graphics::rect(graphics::par("usr")[1], graphics::par("usr")[3], graphics::par("usr")[2], graphics::par("usr")[4], col = "gray94")
+    graphics::grid(col = "white", lty = "dotted", lwd = 1.2)
+    graphics::box(which = "plot", lwd = 4, lty = 1, col = "gray94")
 
     ## subset based on significance cutoffs
     up <- subset(stats, p <= min.pval & logFC >= min.lfc)
     down <- subset(stats, p <= min.pval & logFC <= -min.lfc)
 
     ## add points
-    with(stats, points(AveExpr, logFC,
+    with(stats, graphics::points(AveExpr, logFC,
       pch = 21, bg = scales::alpha(colour = "grey60", alpha = 0.5), ## black
       col = scales::alpha(colour = "grey50", alpha = 0.5), lwd = 0.5, cex = 1.1
     ))
-    with(up, points(AveExpr, logFC,
+    with(up, graphics::points(AveExpr, logFC,
       pch = 21, bg = scales::alpha(colour = "#FF0000", alpha = 1), ## red
       col = scales::alpha(colour = "#990000", alpha = 1), lwd = 0.5, cex = 1.1
     ))
-    with(down, points(AveExpr, logFC,
+    with(down, graphics::points(AveExpr, logFC,
       pch = 21, bg = "#1E90FF", col = "#003399", lwd = 0.5, ## blue
       cex = 1
     ))
-    abline(h = c(-min.lfc, min.lfc), col = "dimgray", lty = 2, lwd = 0.8)
+    graphics::abline(h = c(-min.lfc, min.lfc), col = "dimgray", lty = 2, lwd = 0.8)
 
 
     ## ADD LABELS
@@ -355,10 +355,10 @@
         ## subset data for positive logFC values, add labels
         subup <- subset(subdata, subdata$logFC > 0)
         if (nrow(subup) > 0) {
-          points(
+          graphics::points(
             x = subup$AveExpr, y = subup$logFC, pch = 21, cex = 1.2,
             bg = "orange", col = "darkorange3", lwd = 0.5,
-            text(
+            graphics::text(
               x = subup$AveExpr, y = subup$logFC, col = "orange",
               labels = subup$labels, pos = 4, cex = 0.6, font = 2
             )
@@ -368,10 +368,10 @@
         ## ADD USER INPUT LABELS TO NEG logFC < 0
         subdn <- subset(subdata, subdata$logFC < 0)
         if (nrow(subdn > 0)) {
-          points(
+          graphics::points(
             x = subdn$AveExpr, y = subdn$logFC, pch = 21, cex = 1.2,
             bg = "orange", col = "darkorange3", lwd = 0.5,
-            text(
+            graphics::text(
               x = subdn$AveExpr, y = subdn$logFC, col = "orange",
               labels = subdn$labels, pos = 2, cex = 0.6, font = 2
             )
@@ -392,10 +392,10 @@
         sig <- up[with(up, order(logFC, order(p, decreasing = FALSE), decreasing = TRUE)), ]
         top2 <- ifelse(top > nrow(sig), nrow(sig), top)
         sig <- sig[1:top2, ]
-        points(
+        graphics::points(
           x = sig$AveExpr, y = sig$logFC, pch = 21, cex = 1.2,
           bg = "green", col = "forestgreen", lwd = 0.5,
-          text(
+          graphics::text(
             x = sig$AveExpr, y = sig$logFC, col = "green3",
             labels = sig$labels, pos = 4, cex = 0.6, font = 2
           )
@@ -405,10 +405,10 @@
         sig <- down[with(down, order(logFC, order(p, decreasing = FALSE), decreasing = FALSE)), ]
         top2 <- ifelse(top > nrow(sig), nrow(sig), top)
         sig <- sig[1:top2, ]
-        points(
+        graphics::points(
           x = sig$AveExpr, y = sig$logFC, pch = 21, cex = 1.2,
           bg = "green", col = "forestgreen", lwd = 0.5,
-          text(
+          graphics::text(
             x = sig$AveExpr, y = sig$logFC, col = "green3",
             labels = sig$labels, pos = 4, cex = 0.6, font = 2
           )
@@ -658,30 +658,30 @@
   pvalueHistogram <- function(stats, comparison = NULL) {
     stats <- data.frame(stats)
 
-    layout(matrix(1:2, ncol = 2, byrow = TRUE))
+    graphics::layout(matrix(1:2, ncol = 2, byrow = TRUE))
     ##   P-VALUE HISTOGRAM
     ## https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6164648/#B1-high-throughput-07-00023
     ## inspect histogram of unadjusted P.Values for the differential expression results.
     ## Figure shows histogram of p-values from gene-by-gene statistical tests.
-    par(mar = c(6, 7, 5, 5))
+    graphics::par(mar = c(6, 7, 5, 5))
     graphics::hist(stats$P.Value,
       col = "dodgerblue", breaks = 50,
       main = "", xlab = "", ylab = "",
       xlim = c(0, 1), las = 1, cex.axis = 1.2
     )
-    title(line = 1, main = comparison, cex.main = 1.3)
-    mtext(side = 1, line = 3, cex = 1.3, text = "p-value")
-    mtext(side = 2, line = 4, cex = 1.3, text = "Frequency")
+    graphics::title(line = 1, main = comparison, cex.main = 1.3)
+    graphics::mtext(side = 1, line = 3, cex = 1.3, text = "p-value")
+    graphics::mtext(side = 2, line = 4, cex = 1.3, text = "Frequency")
 
     ##   ADJUSTED P-VALUE HISTOGRAM
-    par(mar = c(6, 7, 5, 5))
+    graphics::par(mar = c(6, 7, 5, 5))
     graphics::hist(stats$adj.P.Val,
       col = "dodgerblue", breaks = 50,
       main = "", xlab = "", ylab = "",
       xlim = c(0, 1), las = 1, cex.axis = 1.2
     )
-    title(line = 1, main = comparison, cex.main = 1.3)
-    mtext(side = 1, line = 3, cex = 1.3, text = "adj. p-value")
-    mtext(side = 2, line = 4, cex = 1.3, text = "Frequency")
+    graphics::title(line = 1, main = comparison, cex.main = 1.3)
+    graphics::mtext(side = 1, line = 3, cex = 1.3, text = "adj. p-value")
+    graphics::mtext(side = 2, line = 4, cex = 1.3, text = "Frequency")
   } ## PVALUE HISTOGRAM
 } ## DE PLOT FUNCTIONS

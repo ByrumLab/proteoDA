@@ -3,12 +3,11 @@
 .Rhistory
 
 
-
 # Data, results, and other files during package testing
 for_testing
 Kinter_DIA_022521_Samples_Report_BQ.csv
 logs/*
 *_BQ*
-targets.csv
+targets*.csv
 protein_analysis/
-
+phospho_analysis/

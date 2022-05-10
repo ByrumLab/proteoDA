@@ -1,6 +1,12 @@
+make_limma_spreadsheets <-
+
+
 make_limma_de_report <- function(data, annot, targets, design, contrasts, min.pval = 0.055, min.lfc = 1,
                                  adj.method = "BH", paired = FALSE, pipe = "DIA", enrich = "protein",
                                  dir = NULL, save = TRUE, ilab = "PI_DATE") {
+
+
+  # I think data here is just the raw data that got passed into the original function: an element from the normList
   param[["dir"]] <- ifelse(save == TRUE, file.path(dir), "NULL")
 
   ## CREATE OUTPUT DIRECTORY
@@ -34,7 +40,7 @@ make_limma_de_report <- function(data, annot, targets, design, contrasts, min.pv
     base::lapply(names(res$statList), function(x) {
 
       ## VOLCANO PLOTS
-      png(
+      grDevices::png(
         filename = file.path(dir, paste0(x, "_volcano_plot.png")), units = "px",
         width = 700, height = 600, pointsize = 15
       )
@@ -43,8 +49,8 @@ make_limma_de_report <- function(data, annot, targets, design, contrasts, min.pv
         min.lfc = min.lfc, xlim = NULL, ylim = NULL, sig.type = "p.adj",
         top = NULL, labels = NULL, inset = -0.2, legend = TRUE
       )
-      dev.off()
-      png(
+      grDevices::dev.off()
+      grDevices::png(
         filename = file.path(dir, paste0(x, "_volcano_plot_pvalue.png")), units = "px",
         width = 700, height = 600, pointsize = 15
       )
@@ -53,10 +59,10 @@ make_limma_de_report <- function(data, annot, targets, design, contrasts, min.pv
         min.lfc = min.lfc, xlim = NULL, ylim = NULL, sig.type = "pval",
         top = NULL, labels = NULL, inset = -0.2, legend = TRUE
       )
-      dev.off()
+      grDevices::dev.off()
 
       ## MD PLOTS
-      png(
+      grDevices::png(
         filename = file.path(dir, paste0(x, "_MD_plot.png")), units = "px",
         width = 700, height = 600, pointsize = 15
       )
@@ -65,8 +71,8 @@ make_limma_de_report <- function(data, annot, targets, design, contrasts, min.pv
         min.lfc = min.lfc, xlim = NULL, ylim = NULL, sig.type = "p.adj",
         top = NULL, labels = NULL, inset = -0.2, legend = TRUE
       )
-      dev.off()
-      png(
+      grDevices::dev.off()
+      grDevices::png(
         filename = file.path(dir, paste0(x, "_MD_plot_pvalue.png")), units = "px",
         width = 700, height = 600, pointsize = 15
       )
@@ -75,15 +81,15 @@ make_limma_de_report <- function(data, annot, targets, design, contrasts, min.pv
         min.lfc = min.lfc, xlim = NULL, ylim = NULL, sig.type = "pval",
         top = NULL, labels = NULL, inset = -0.2, legend = TRUE
       )
-      dev.off()
+      grDevices::dev.off()
 
       ## P-VALUE HISTOGRAMS
-      png(
+      grDevices::png(
         filename = file.path(dir, paste0(x, "_pvalue_histogram.png")), units = "px",
         width = 1400, height = 600, pointsize = 15
       )
       pvalueHistogram(stats = res$statList[[x]], comparison = x)
-      dev.off()
+      grDevices::dev.off()
 
       ## GLIMMA VOLCANO PLOTS
       glimmaVolcanoPlot(

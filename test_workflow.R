@@ -283,3 +283,119 @@ fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
                            targets = des_reb$targets,
                            design = des_reb$design,
                            contrasts = contrasts_rebello$contrasts)
+
+
+
+# Some testing of next steps ----------------------------------------------
+z <- extract_limma_DE_results(limma_fit = fit_reb)
+
+
+names(z)
+
+
+efit <- fit_reb$eBayes_fit
+adj.method <- "BH"
+min.pval <- 0.05
+min.lfc <- 1
+
+
+## DECIDE TESTS
+print(paste("extracting limma stat results for each comparison (statList)..."))
+contrastNames <- colnames(efit$coefficients)
+dt <- limma::decideTests(efit, adjust.method = adj.method, p.value = min.pval, lfc = min.lfc)
+dtp <- limma::decideTests(efit, adjust.method = "none", p.value = min.pval, lfc = min.lfc)
+sum.dt <- summary(dt)
+sum.dtp <- summary(dtp)
+
+
+stats <- limma::topTable(efit, coef = contrastNames[1], number = Inf, adjust.method = adj.method, sort = "none", p.value = 1,
+                lfc = 0, confint = T)
+
+cbind(dtp[, contrastNames[1]], dt[, contrastNames[1]])
+
+## STAT RESULTS (statList)
+statList <- list()
+limmaStatColums <- c("logFC", "CI.L", "CI.R", "AveExpr", "t", "B", "P.Value", "adj.P.Val")
+statList <- base::lapply(contrastNames, function(x) {
+  stats <- limma::topTable(efit,
+                           coef = x, number = Inf, adjust.method = adj.method,
+                           sort.by = "none", p.value = 1, lfc = 0, confint = TRUE
+  )
+  df <- cbind(dtp[, x], dt[, x])
+  colnames(df) <- c("sig.PVal", "sig.FDR")
+  stats <- cbind(stats[, limmaStatColums], df[rownames(stats), ])
+})
+names(statList) <- contrastNames
+print(paste("statList created. Success!!"))
+
+
+
+test_statList <- statList[[4]]
+
+dt[,names(statList)[4]][dt[,names(statList)[4]] > 1,]
+dt[rownames(dt) %in% rownames(x$sig),]
+
+x <- get_de(stats = test_statList, min.pval = min.pval, min.lfc = min.lfc, type = "p.adj", de.type = "limma")
+x
+x$sig
+
+
+
+
+
+
+# Testing phospho ---------------------------------------------------------
+# extract data
+thomas_tmt <- extract_data(file = "for_testing/Example Data/Thomas_03922_phos/proteinGroups.txt",
+             pipe = "TMT",
+             enrich = "protein")
+
+thomas_phospho <- extract_data(file = "for_testing/Example Data/Thomas_03922_phos/Phospho (STY)Sites.txt",
+                           pipe = "phosphoTMT",
+                           enrich = "phospho")
+
+
+tar_tmt <- make_targets(file = "for_testing/Example Data/Thomas_03922_phos/Thomas_032922_metafile_pro.csv",
+                        sampleIDs = colnames(thomas_tmt$data),
+                        pipe = "phosphoTMT",
+                        enrich = "protein")
+
+tar_phospho <- make_targets(file = "for_testing/Example Data/Thomas_03922_phos/Thomas_032922_metafile_phos.csv",
+                        sampleIDs = colnames(thomas_tmt$data),
+                        pipe = "phosphoTMT",
+                        enrich = "phospho")
+sub_protein <- subset_targets(tar_tmt, filter_column = "group", rm.vals = "Pool")
+sub_phospho <- subset_targets(tar_phospho, filter_column = "group", rm.vals = "Pool")
+
+
+norm_prot <- process_data(data = thomas_tmt$data, targets = sub_protein$targets,
+                          min.reps = 3, min.grps = 2)
+
+colnames(thomas_phospho$data) <- stringr::str_replace(colnames(thomas_phospho$data), ".phospho", ".lysate")
+norm_phospho <- process_data(data = thomas_phospho$data, targets = sub_phospho$targets,
+                          min.reps = 3, min.grps = 2)
+
+
+make_proteinorm_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
+                       enrich = "protein", file = "thomas_protein.pdf")
+make_proteinorm_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
+                       enrich = "phospho", file = "thomas_phospho.pdf")
+
+make_qc_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
+               norm.method = "log2",
+               enrich = "protein",
+               file = "thomas_protein_qc.pdf")
+
+make_qc_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
+               norm.method = "log2",
+               enrich = "phospho",
+               file = "thomas_phospho_qc.pdf")
+
+
+des_prot <- make_design(targets = norm_prot$targets, group_column = "group")
+des_phos <- make_design(targets = norm_phospho$targets, group_column = "group")
+
+contrast_prot <- make_contrasts("for_testing/Example Data/Thomas_03922_phos/contrasts.csv",
+                                design = des_prot$design)
+contrast_phos <- make_contrasts("for_testing/Example Data/Thomas_03922_phos/contrasts.csv",
+                                design = des_phos$design)

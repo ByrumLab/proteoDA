@@ -10,5 +10,7 @@
 ^notes\.md$
 ^tmp\.R$
 ^\\*\_BQ\\*$
-^targets\.csv$
+^target\\*\.csv$
 ^test_workflow.R$
+^protein_analysis
+^phospho_analysis
