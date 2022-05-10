@@ -459,10 +459,14 @@ get_dia_sample_number <- function(sampleIDs) {
                      "!" = "Supplied sample ids: {.val {supplied_ids}}"))
   } else {
     ## pool samples
-    number1 <- gsub("\\.", "_", sampleIDs[pat1])
-    number1 <- gsub(".*[P/p]ool_", "", number1)  ## removes everything b4 Pool_
-    number1 <- gsub("_.*", "", number1)  ## removes everything after number _mzML
-    number1 <- paste0("P", as.numeric(number1)) ## adds capital P to number == P1, P2, P3
+    if (length(pat1) != 0) {
+      number1 <- gsub("\\.", "_", sampleIDs[pat1])
+      number1 <- gsub(".*[P/p]ool_", "", number1)  ## removes everything b4 Pool_
+      number1 <- gsub("_.*", "", number1)  ## removes everything after number _mzML
+      number1 <- paste0("P", as.numeric(number1)) ## adds capital P to number == P1, P2, P3
+    } else {
+      number1 <- NULL
+    }
 
     ## samples
     number2 <- gsub("\\.","_", sampleIDs[pat2])
