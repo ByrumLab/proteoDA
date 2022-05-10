@@ -145,10 +145,7 @@ make_proteinorm_report <- function(normList,
     }
 
     # Check that the filename is a pdf
-    if (tools::file_ext(file) != "pdf") {
-      cli::cli_abort(c("Invalid filename for report",
-                       "X" = "{.arg file} must end in {.path .pdf}, not {.path {tools::file_ext(file)}}"))
-    }
+    validate_filename(file, allowed_exts = c("pdf"))
 
     if (file.exists(file.path(out_dir, file))) {
       if (overwrite) {

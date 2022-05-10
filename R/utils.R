@@ -183,3 +183,40 @@ plot_height <- function(x){
   return(height)
 }
 
+
+#' Validate filename
+#'
+#' Internal function used to check constraints on user-defined filenames. By
+#' default checkes whether there are spaces in the filename, and whether the
+#' extension is in the list of allowed extensions.
+#'
+#' @param filename File name to check
+#' @param allowed_exts Character vector of allowable extensions, with no period
+#' @param check_space Check for whitespace in file name?
+#'
+#' @return If filename checks out, returns invisible TRUE. Otherwise, throws
+#' error.
+#'
+#' @examples
+#' # No examples yet
+validate_filename <- function(filename, allowed_exts, check_space = T) {
+
+  # Check spaces
+  if (check_space) {
+    if (stringr::str_detect(filename, " ")) {
+      cli::cli_abort(c("Invalid file name supplied",
+                       "x" = "Supplied file name {.val {filename}} contains spaces, which are not allowed",
+                       "i" = "Edit the supplied file name to remove spaces"))
+    }
+  }
+
+  # check extension:
+  if (tools::file_ext(filename) %notin% allowed_exts) {
+    cli::cli_abort(c("Invalid file name supplied",
+                     "x" = "File name cannot end in {.path {tools::file_ext(filename)}}",
+                     "i" = "Permitted file {cli::qty(length(allowed_exts))} extension{?s}: {.val {allowed_exts}}"))
+
+  }
+
+  invisible(TRUE)
+}
