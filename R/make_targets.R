@@ -229,19 +229,19 @@ make_targets <- function(file = NULL,
                             pipe = rep(pipe,length(sampleIDs)),
                             enrichment = rep(enrich, length(sampleIDs)),
                             row.names=NULL) #TODO? addign rownames here, if we're gonna use them
-      rownames(targets) <- paste(targets$batch,targets$tag,sep=".")(targets)
+      rownames(targets) <- paste(targets$batch,targets$tag,sep=".")
 
 
       ## TMT COMBINED
       if (all(rownames(targets) %in% rownames(metadata))) {
         ## merge metadata with targets information removing duplicate columns in targets
         targets <- targets[rownames(metadata), ]
-        remove  <- colnames(targets) %in% colnames(metadata)(remove) # TODO? Not sure whats going on here?? Is this allowed
+        remove  <- colnames(targets) %in% colnames(metadata)
         targets2<-as.data.frame(targets[, remove == FALSE])
         colnames(targets2)<-colnames(targets)[remove == FALSE]
-        targets <- cbind(metadata,targets2)(targets)
+        targets <- cbind(metadata,targets2)
         stopifnot(targets$channel==metadata$channel)
-        rownames(targets) <- targets$sampleIDs(targets)
+        rownames(targets) <- targets$sampleIDs
 
         ## save targets file to project directory
         if(pipe=="phosphoTMT" & enrich=="protein"){ filename <- "targets.pro.csv" }
@@ -251,7 +251,8 @@ make_targets <- function(file = NULL,
         print(paste("targets file: ", filename, "saved to project directory. Success!!"))
 
         ## return the combined targets info. and imported metadata
-        cat("\n")("targets metadata created. Success!!")
+        cat("\n")
+        cat("targets metadata created. Success!!")
         return(targets)
 
       } ## TMT COMBINED
