@@ -100,7 +100,12 @@ fit_limma_model <- function(data,
 
 
   # Set up return
-  model <- list(eBayes_fit = efit, contrasts_fit = con.fit, lm_fit = fit, design = design, contrasts = contrasts)
+  model <- list(eBayes_fit = efit,
+                contrasts_fit = con.fit,
+                lm_fit = fit,
+                data = data,
+                design = design,
+                contrasts = contrasts)
   if (paired) model[["corr_fit"]] <- corfit
 
 
@@ -113,26 +118,11 @@ fit_limma_model <- function(data,
 
 
 
-# utility function used in extract_limma_DE_results
-check_DE_perc <- function(DE_outcomes_table, threshold = 0.1, min.pval, min.lfc, adj.method) {
-  perc_sig <- colSums(DE_outcomes_table != 0, na.rm = T)/colSums(!is.na(DE_outcomes_table))
 
-  if (any(perc_sig > threshold)) {
-    above_thresh <- names(perc_sig)[perc_sig > threshold]
-    thresh_perc <- threshold*100
-    cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is DE in {cli::qty(length(above_thresh))} {?A/some} contrast{?s}",
-                      "!" = "Criteria for DE: min.lfc > {.val {min.lfc}}, min.pval < {.val {min.pval}}, p.value adjustment = {.val {adj.method}}",
-                      "!" = "{cli::qty(length(above_thresh))} Problematic contrast{?s}: {.val {above_thresh}}",
-                      "!" = "Assumption that most genes/proteins/phospho are not DE may be violated"))
-  }
+extract_limma_DE_results <- function(limma_fit, min.pval = 0.055, min.lfc = 1, adj.method = "BH") {
 
- perc_sig
-}
-
-
-
-
-extract_limma_DE_results <- function(limma_fit, min.pval = 0.55, min.lfc = 1, adj.method = "BH") {
+  # TODO:
+  # ADD a check on adjustment method?
 
   # Just get it going initially, without too much testing.
   # Really, shouldn't need to do much testing if we're just passing in the whole limma fit object
@@ -165,8 +155,31 @@ extract_limma_DE_results <- function(limma_fit, min.pval = 0.55, min.lfc = 1, ad
   })
   names(results_per_contrast) <- contrast_names
 
-  stats_by_contrast = results_per_contrast
+  list(stats_by_contrast = results_per_contrast,
+       data = limma_fit$data,
+       min.pval = min.pval,
+       min.lfc = min.lfc,
+       adj.method = adj.method) # just passing data through
 }
+
+
+
+# utility function used in extract_limma_DE_results
+check_DE_perc <- function(DE_outcomes_table, threshold = 0.1, min.pval, min.lfc, adj.method) {
+  perc_sig <- colSums(DE_outcomes_table != 0, na.rm = T)/colSums(!is.na(DE_outcomes_table))
+
+  if (any(perc_sig > threshold)) {
+    above_thresh <- names(perc_sig)[perc_sig > threshold]
+    thresh_perc <- threshold*100
+    cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is DE in {cli::qty(length(above_thresh))} {?A/some} contrast{?s}",
+                      "!" = "Criteria for DE: min.lfc > {.val {min.lfc}}, min.pval < {.val {min.pval}}, p.value adjustment = {.val {adj.method}}",
+                      "!" = "{cli::qty(length(above_thresh))} Problematic contrast{?s}: {.val {above_thresh}}",
+                      "!" = "Assumption that most genes/proteins/phospho are not DE may be violated"))
+  }
+
+  perc_sig
+}
+
 
 ## TODO:
 ## NEED TO REVISIT LOGGING FOR ALL THIS.

@@ -235,10 +235,11 @@ contrasts_ndu_intestine <- make_contrasts(file = "for_testing/Example Data/NDu_0
                                           design = des_ndu$design)
 
 # Lupashin
-contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts.csv",
-                                     design = des_lupashin$design)
 contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv",
                                      design = des_lupashin$design)
+contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts.csv",
+                                     design = des_lupashin$design)
+
 
 # Zhan
 contrasts_zhan <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt",
@@ -247,9 +248,6 @@ contrasts_zhan <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_s
 contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/contrasts.csv",
                                     design = des_reb$design)
 
-
-test <- norm_reb$targets
-test <- rbind(test, "test" = rep(NA, dim(test)[2]))
 
 # Run the analysis --------------------------------------------------------
 # Splitting up functionality
@@ -285,60 +283,22 @@ fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
                            contrasts = contrasts_rebello$contrasts)
 
 
+# Then, extract results tables according to the desired
+# statistical limits
 
 # Some testing of next steps ----------------------------------------------
-z <- extract_limma_DE_results(limma_fit = fit_reb)
+results_lupashin <- extract_limma_DE_results(limma_fit = fit_lupashin)
 
 
-names(z)
-
-
-efit <- fit_reb$eBayes_fit
-adj.method <- "BH"
-min.pval <- 0.05
-min.lfc <- 1
-
-
-## DECIDE TESTS
-print(paste("extracting limma stat results for each comparison (statList)..."))
-contrastNames <- colnames(efit$coefficients)
-dt <- limma::decideTests(efit, adjust.method = adj.method, p.value = min.pval, lfc = min.lfc)
-dtp <- limma::decideTests(efit, adjust.method = "none", p.value = min.pval, lfc = min.lfc)
-sum.dt <- summary(dt)
-sum.dtp <- summary(dtp)
-
-
-stats <- limma::topTable(efit, coef = contrastNames[1], number = Inf, adjust.method = adj.method, sort = "none", p.value = 1,
-                lfc = 0, confint = T)
-
-cbind(dtp[, contrastNames[1]], dt[, contrastNames[1]])
-
-## STAT RESULTS (statList)
-statList <- list()
-limmaStatColums <- c("logFC", "CI.L", "CI.R", "AveExpr", "t", "B", "P.Value", "adj.P.Val")
-statList <- base::lapply(contrastNames, function(x) {
-  stats <- limma::topTable(efit,
-                           coef = x, number = Inf, adjust.method = adj.method,
-                           sort.by = "none", p.value = 1, lfc = 0, confint = TRUE
-  )
-  df <- cbind(dtp[, x], dt[, x])
-  colnames(df) <- c("sig.PVal", "sig.FDR")
-  stats <- cbind(stats[, limmaStatColums], df[rownames(stats), ])
-})
-names(statList) <- contrastNames
-print(paste("statList created. Success!!"))
+results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
 
 
 
-test_statList <- statList[[4]]
 
-dt[,names(statList)[4]][dt[,names(statList)[4]] > 1,]
-dt[rownames(dt) %in% rownames(x$sig),]
-
-x <- get_de(stats = test_statList, min.pval = min.pval, min.lfc = min.lfc, type = "p.adj", de.type = "limma")
-x
-x$sig
-
+write_limma_results(model_results = results_reb,
+                    annotation = ext_reb$annot,
+                    ilab = "dummy",
+                    enrich = "protein")
 
 
 
