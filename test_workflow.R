@@ -287,17 +287,55 @@ fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
 # statistical limits
 
 # Some testing of next steps ----------------------------------------------
+
+
+# Extract results ---------------------------------------------------------
 results_lupashin <- extract_limma_DE_results(limma_fit = fit_lupashin)
-
-
+results_ndu_brain <- extract_limma_DE_results(limma_fit = fit_ndu_brain)
+results_ndu_intestine <- extract_limma_DE_results(limma_fit = fit_ndu_intestine)
+results_ndu_kidney <- extract_limma_DE_results(limma_fit = fit_ndu_kidney)
+results_zhan <- extract_limma_DE_results(limma_fit = fit_zhan)
 results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
 
 
 
 
+# Write results -----------------------------------------------------------
+write_limma_results(model_results = results_lupashin,
+                    norm.method = "vsn",
+                    annotation = ext_lupashin$annot,
+                    ilab = "Lupashin_82928",
+                    enrich = "protein")
+
+write_limma_results(model_results = results_ndu_brain,
+                    norm.method = "vsn",
+                    annotation = ext_ndu$annot,
+                    ilab = "ndu_brain_82928",
+                    enrich = "protein")
+
+write_limma_results(model_results = results_ndu_intestine,
+                    norm.method = "vsn",
+                    annotation = ext_ndu$annot,
+                    ilab = "ndu_intestine_82928",
+                    enrich = "protein")
+
+write_limma_results(model_results = results_ndu_kidney,
+                    norm.method = "vsn",
+                    annotation = ext_ndu$annot,
+                    ilab = "ndu_kidney_82928",
+                    enrich = "protein")
+
 write_limma_results(model_results = results_reb,
+                    norm.method = "vsn",
                     annotation = ext_reb$annot,
-                    ilab = "dummy",
+                    ilab = "Rebello_82928",
+                    enrich = "protein")
+
+
+write_limma_results(model_results = results_zhan,
+                    norm.method = "vsn",
+                    annotation = ext_zhan$annot,
+                    ilab = "zhan_982974",
                     enrich = "protein")
 
 
@@ -337,19 +375,21 @@ norm_phospho <- process_data(data = thomas_phospho$data, targets = sub_phospho$t
 
 
 make_proteinorm_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
-                       enrich = "protein", file = "thomas_protein.pdf")
+                       enrich = "protein", file = "thomas_protein.pdf", overwrite = T)
 make_proteinorm_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
-                       enrich = "phospho", file = "thomas_phospho.pdf")
+                       enrich = "phospho", file = "thomas_phospho.pdf", overwrite = T)
 
 make_qc_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
                norm.method = "log2",
                enrich = "protein",
-               file = "thomas_protein_qc.pdf")
+               file = "thomas_protein_qc.pdf",
+               overwrite = T)
 
 make_qc_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
                norm.method = "log2",
                enrich = "phospho",
-               file = "thomas_phospho_qc.pdf")
+               file = "thomas_phospho_qc.pdf",
+               overwrite = T)
 
 
 des_prot <- make_design(targets = norm_prot$targets, group_column = "group")
@@ -359,3 +399,30 @@ contrast_prot <- make_contrasts("for_testing/Example Data/Thomas_03922_phos/cont
                                 design = des_prot$design)
 contrast_phos <- make_contrasts("for_testing/Example Data/Thomas_03922_phos/contrasts.csv",
                                 design = des_phos$design)
+
+
+fit_prot <- fit_limma_model(data = norm_prot$normList[["vsn"]],
+                            targets = des_prot$targets,
+                            design = des_prot$design,
+                            contrasts = contrast_prot$contrasts)
+
+fit_phos <- fit_limma_model(data = norm_phospho$normList[["vsn"]],
+                            targets = des_phos$targets,
+                            design = des_phos$design,
+                            contrasts = contrast_phos$contrasts)
+
+results_prot <- extract_limma_DE_results(fit_prot)
+results_phos <- extract_limma_DE_results(fit_phos)
+
+write_limma_results(results_prot,
+                    annotation = thomas_tmt$annot,
+                    ilab = "thomas_09819",
+                    norm.method = "vsn",
+                    pipe = "TMT", enrich = "protein")
+
+write_limma_results(results_phos,
+                    annotation = thomas_phospho$annot,
+                    ilab = "thomas_09819",
+                    norm.method = "vsn",
+                    pipe = "phosphoTMT", enrich = "phospho")
+

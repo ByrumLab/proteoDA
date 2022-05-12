@@ -2,33 +2,43 @@ write_limma_results <- function(model_results,
                                 annotation,
                                 ilab,
                                 out_dir = file.path(ilab, paste0(enrich, "_analysis")),
+                                norm.method,
                                 enrich = c("protein", "phospho"),
+                                pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
                                 contrasts_subdir = "per_contrast_results",
                                 summary_csv = "DE_summary.csv",
                                 combined_file_csv = "combined_results.csv",
                                 BQ_csv = paste0(ilab, "_results_BQ.csv"),
-                                spreadsheet_xlsx = NULL) {
+                                spreadsheet_xlsx = paste0(ilab, "_results.xlsx")) {
 
-  ##########################
-  ## Setup and arg checks ##
-  ##########################
-
+  # Setup and check args ----------------------------------------------------
+  pipe <- rlang::arg_match(pipe)
   enrich <- rlang::arg_match(enrich)
 
   if (!dir.exists(out_dir)) {
     dir.create(out_dir, recursive = T)
   }
 
+  # redo output filenames as NULL in arguments, and setup here.
+
   # Add filename validation
 
   # Add checks of model result rownames in annotation rownames.
 
+  # add check for whether outdir already exists
+
+  # add check for norm method
+
   statlist <- model_results$stats_by_contrast
   data <- model_results$data
 
-  #######################
-  ## Write summary csv ##
-  #######################
+  cli::cli_rule()
+
+
+  # Write summary CSV -------------------------------------------------------
+  summary_output_file <- file.path(out_dir, summary_csv)
+  cli::cli_inform("Writing DE summary table to {.path {summary_output_file}}")
+
 
   model_results <- results_reb
 
@@ -40,20 +50,22 @@ write_limma_results <- function(model_results,
   summary$lfc_thresh <- model_results$min.lfc
   summary$p_adj_method <- model_results$adj.method
 
-  summary_ouput_file <- file.path(out_dir, summary_csv)
+
 
   utils::write.csv(x = summary,
-                   file = summary_ouput_file,
+                   file = summary_output_file,
                    row.names = F)
 
-  if (!file.exists(summary_ouput_file)) {
-    cli::cli_abort(c("Failed to write summary {.path .csv} to {.path {summary_ouput_file}}"))
+  if (!file.exists(summary_output_file)) {
+    cli::cli_abort(c("Failed to write summary {.path .csv} to {.path {summary_output_file}}"))
   }
 
 
-  #############################
-  ## Write per-contrast csvs ##
-  #############################
+  # Write per-contrast csvs -------------------------------------------------
+  per_contrast_dir <- file.path(out_dir, contrasts_subdir)
+  cli::cli_inform("Writing per-contrast results {.path .csv}
+                  {cli::qty(length(statlist))} file{?s} to {.path {per_contrast_dir}}")
+
 
   contrast_csv_success <- write_per_contrast_csvs(annotation_df = annotation,
                                                   data = data,
@@ -61,13 +73,16 @@ write_limma_results <- function(model_results,
                                                   output_dir = file.path(out_dir, contrasts_subdir))
   if (!all(contrast_csv_success)) {
     failed <- names(contrast_csv_success)[!contrast_csv_success]
-    cli::cli_abort(c("Failed to write {.path .csv} results for {cli::qty(sum(!contrast_csv_success))} contrast{?s}:",
+    cli::cli_abort(c("Failed to write {.path .csv} results for
+                     {cli::qty(sum(!contrast_csv_success))} contrast{?s}:",
                      "!" = "{.val {failed}"))
   }
 
-  ################################
-  ## Write combined results csv ##
-  ################################
+
+  # Write combined results csv ----------------------------------------------
+  combined_output_file <- file.path(out_dir, combined_file_csv)
+  cli::cli_inform("Writing combined results table to {.path {combined_output_file}}")
+
 
   # Get common row order from the first element of the stat list
   row_order <- rownames(statlist[[1]])
@@ -90,11 +105,9 @@ write_limma_results <- function(model_results,
     cli::cli_abort(c("Failed to write combined results {.path .csv} to {.path {combined_output_file}}"))
   }
 
-  #################################
-  ## Write combined BiqQuery csv ##
-  #################################
-
+  # Write combined BiqQuery CSV ---------------------------------------------
   BQ_output_file <- file.path(out_dir, BQ_csv)
+  cli::cli_inform("Writing combined results table for BiqQuery to {.path {BQ_output_file}}")
   BQ_output <- combined_results
   BQ_output[is.na(BQ_output)] <- 0
   BQ_output[BQ_output == ""] <- 0
@@ -110,16 +123,32 @@ write_limma_results <- function(model_results,
     cli::cli_abort(c("Failed to write BigQuery results {.path .csv} to {.path {BQ_output_file}}"))
   }
 
-  #############################
-  ## Write excel spreadsheet ##
-  #############################
 
-  # TODO: deal with this.
+  # Write excel spreadsheet -------------------------------------------------
+  excel_output_file <- file.path(out_dir, spreadsheet_xlsx)
+  cli::cli_inform("Writing combined results Excel spreadsheet to {.path {excel_output_file}}")
 
-  ############
-  ## Finish ##
-  ############
 
+
+  write_limma_excel(filename = excel_output_file,
+                    statlist = statlist,
+                    annotation = annotation,
+                    data = data,
+                    norm.method = norm.method,
+                    min.pval = model_results$min.pval,
+                    min.lfc = model_results$min.lfc,
+                    pipe = pipe,
+                    enrich = enrich)
+
+  if (!file.exists(excel_output_file)) {
+    cli::cli_abort(c("Failed to write combined results Excel spreadsheet to {.path {excel_output_file}}"))
+  }
+
+
+  # Finish ------------------------------------------------------------------
+
+  cli::cli_rule()
+  cli::cli_inform(c("v" = "Success"))
   # If everything works, return combined results
   invisible(combined_results)
 }
@@ -173,306 +202,331 @@ write_per_contrast_csvs <- function(annotation_df,
   write_success
 }
 
-<<<<<<< HEAD
+
+write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
+                              min.pval, min.lfc, pipe, enrich) {
 
 
+  # Maybe some argument processing
+  normName <- names(norm.methods)[grep(norm.method,norm.methods)]
 
 
+  # initialize workbook
+  wb<-openxlsx::createWorkbook()
 
-
-
-
-add_limma_results <- function(wb, sheetName=NULL, statList, annot, data, norm.method,
-                              min.pval, min.lfc, pipe, enrich){
-
-  ## merge column colors
-  binfcolors <-c("#1F5EDC","#EE0010","#32CD32","#FF1493","#FF7F00",
-                 "#A342FC","#00C8FF","#ADFF2F","#FFE100","#E36EF6","#009ACE","#996633")
-  names(binfcolors)<-c("blueberry","cherry","apple","barbie","fanta",
-                       "grape","ocean","mtndew","gold","orchid","aceblue","poop")
-
-  ## column heading colors
-  lightbinfcolors<-c("#c8d8f7","#ffdadd","#d0f3d0","#ffb1db","#ffe1c4",
-                     "#dbb6fe","#c4f2ff","#e3ffb8","#fff8c4","#f1b8fb",
-                     "#baeeff","#eddcca")
-  names(lightbinfcolors)<-c("lightblueberry","lightcherry","lightapple","lightbarbie","lightfanta",
-                            "lightgrape","lightocean","lightmtndew","lightgold","lightorchid",
-                            "lightaceblue","lightpoop")
-
-
-  normName <- names(norm.methods)[grep(norm.method,norm.methods)];normName
-
-  if(pipe=="DIA" & enrich=="protein"){
-
-    annotCols=c("id", "Protein.Name","Accession.Number","Molecular.Weight", "Protein.Group.Score",
-                "Identified.Peptide.Count","Exclusivity",
-                "UniprotID", "Gene_name","Description")
-    newNames=c("id", "Protein Name","Accession Number","Molecular Weight", "Protein Group Score",
-               "Identified Peptide Count","Exclusivity",
-               "UniProt ID", "Gene Name","Description")
+  # Set up annotation columns -----------------------------------------------
+  # Can I streamline this? And how much does this need to be here?
+  # Are these the same column names we enforced when making the annotation
+  # in the extract data function?
+  if(pipe == "DIA" & enrich == "protein") {
+    annotCols <- c("id", "Protein.Name","Accession.Number","Molecular.Weight", "Protein.Group.Score",
+                   "Identified.Peptide.Count","Exclusivity",
+                   "UniprotID", "Gene_name","Description")
+    newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
+      stringr::str_replace(., "UniprotID", "UniProt ID")
     annot.title <- "Protein Annotation"
-    data.title   <- paste("Log2",ifelse(normName=="Log2","",normName),"Normalized Intensities");data.title
+    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Intensities")
+    sheetName <- "Protein Results"
 
-    if(is.null(sheetName)){ sheetName <- "Protein Results" }
-    ifelse(nchar(sheetName)>30,substring(sheetName,1,30), sheetName)
-    if(sheetName %in% names(wb)){ sheetName=paste("Sheet",(length(wb$worksheets)+1),sep="") };sheetName
-    print(sheetName)
-  }
+  } else if (pipe == "TMT" & enrich == "protein") {
 
-  if(pipe=="TMT" & enrich=="protein"){
-    annotCols= c("id", "Fasta.headers","Majority.protein.IDs", "Score", "UniprotID",
-                 "Gene_name","Description")
-    newNames= c("id", "Fasta headers","Majority protein IDs", "Score", "UniProt ID",
-                "Gene Name","Description")
+    annotCols <- c("id", "Fasta.headers","Majority.protein.IDs", "Score", "UniprotID",
+                   "Gene_name","Description")
+    newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
+      stringr::str_replace(., "UniprotID", "UniProt ID")
     annot.title <- "Protein Annotation"
-    data.title   <- paste("Log2",ifelse(normName=="Log2","",normName),"Normalized Exclusive MS1 Intensities");data.title
-    # sheetName   <- "Protein Results"
+    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive MS1 Intensities")
+    sheetName <- "Protein Results"
 
-    if(is.null(sheetName)){ sheetName <- "Protein Results" }
-    ifelse(nchar(sheetName)>30,substring(sheetName,1,30), sheetName)
-    if(sheetName %in% names(wb)){ sheetName=paste("Sheet",(length(wb$worksheets)+1),sep="") };sheetName
-    print(sheetName)
+  } else if (pipe == "LF" & enrich == "protein") {
 
-  }
-
-
-  if(pipe=="LF" & enrich=="protein"){
-    annotCols= c("id", "Fasta.headers","Majority.protein.IDs", "Score", "UniprotID",
-                 "Gene_name","Description")
-    newNames= c("id", "Fasta headers","Majority protein IDs", "Score", "UniProt ID",
-                "Gene Name","Description")
+    annotCols <- c("id", "Fasta.headers","Majority.protein.IDs", "Score", "UniprotID",
+                   "Gene_name","Description")
+    newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
+      stringr::str_replace(., "UniprotID", "UniProt ID")
     annot.title <- "Protein Annotation"
-    data.title   <- paste("Log2",ifelse(normName=="Log2","",normName),"Normalized Intensities");data.title
-    # sheetName   <- "Protein Results"
+    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Intensities")
+    sheetName <- "Protein Results"
 
-    if(is.null(sheetName)){ sheetName <- "Protein Results" }
-    ifelse(nchar(sheetName)>30,substring(sheetName,1,30), sheetName)
-    if(sheetName %in% names(wb)){ sheetName=paste("Sheet",(length(wb$worksheets)+1),sep="") };sheetName
-    print(sheetName)
-  }
+  } else if (pipe == "phosphoTMT" & enrich == "protein") {
 
+    annotCols <- c("id", "Fasta.headers", "Majority.protein.IDs", "Phospho..STY..site.IDs", "Score",
+                   "UniprotID","Gene_name","Description") %>%
+      stringr::str_replace(., "UniprotID", "Uniprot ID")
+    newNames <- stringr::str_replace(annotCols, "\\.\\.S", " (S") %>%
+      stringr::str_replace(., "Y\\.\\.", "Y) ") %>%
+      stringr::str_replace_all(., "[._]", " ") %>%
+      stringr::str_replace(., "UniprotID", "UniProt ID")
 
-  if(pipe=="phosphoTMT" & enrich=="protein"){
-
-    annotCols= c("id", "Fasta.headers", "Majority.protein.IDs", "Phospho..STY..site.IDs", "Score",
-                 "UniprotID","Gene_name","Description")
-    newNames= c("id", "Fasta headers", "Majority protein IDs", "Phospho (STY) site IDs", "Score",
-                "UniProt ID","Gene Name","Description")
     annot.title <- "Protein Annotation"
-    data.title   <- paste("Log2",ifelse(normName=="Log2","",normName),"Normalized Exclusive MS1 Intensities");data.title
-    # sheetName   <- "Protein Results"
+    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive MS1 Intensities")
+    sheetName <- "Protein Results"
 
-    if(is.null(sheetName)){ sheetName <- "Protein Results" }
-    ifelse(nchar(sheetName)>30,substring(sheetName,1,30), sheetName)
-    if(sheetName %in% names(wb)){ sheetName=paste("Sheet",(length(wb$worksheets)+1),sep="") };sheetName
-    print(sheetName)
-
-  }
-
-  if(pipe=="phosphoTMT" & enrich=="phospho"){
+  } else if (pipe == "phosphoTMT" & enrich == "phospho") {
 
     annotCols <- c("id","Fasta.headers", "proGroupID","UniprotID","Gene_name",
                    "Description", "PEP","Score", "Localization.prob", "Phospho..STY..Probabilities",
                    "Flanking","phosAAPosition","Class")
-    newNames <- c("id","Fasta headers", "Protein Group ID","UniProt ID","Gene Name",
-                  "Description", "PEP","Score", "Localization prob", "Phospho (STY) Probabilities",
-                  "Flanking","Site","Class")
+    newNames <- stringr::str_replace(annotCols, "\\.\\.S", " (S") %>%
+      stringr::str_replace(., "Y\\.\\.", "Y) ") %>%
+      stringr::str_replace_all(., "[._]", " ") %>%
+      stringr::str_replace(., "UniprotID", "UniProt ID")
 
     annot.title <- "Protein/Phospho Annotation"
-    data.title  <- paste("Log2",ifelse(normName=="Log2","",normName),"Normalized Exclusive MS1 Intensities");data.title
-    # sheetName   <- "Phospho Results"
-
-    if(is.null(sheetName)){ sheetName <- "Phospho Results" }
-    ifelse(nchar(sheetName)>30,substring(sheetName,1,30), sheetName)
-    if(sheetName %in% names(wb)){ sheetName=paste("Sheet",(length(wb$worksheets)+1),sep="") };sheetName
-    print(sheetName)
-
+    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive MS1 Intensities")
+    sheetName <- "Phospho Results"
+  } else {
+    cli::cli_abort("Invalid combination of {.arg pipe} and {.arg enrich}")
   }
 
 
-  ## get subset of annotation columns and rename them
-  annot <- annot[, annotCols];head(annot)
-  colnames(annot) <- newNames;head(annot)
-  annot <- make_excel_hyperlinks(data=annot, url.col="UniProt ID", url="https://www.uniprot.org/uniprot/")
+  # Initialize worksheet ----------------------------------------------------
+  openxlsx::addWorksheet(wb, sheetName = sheetName, tabColour = "#FFE100")
+  openxlsx::setRowHeights(wb, sheet = sheetName, rows = 3, heights = 30) # increase row height for the title row
+  openxlsx::setRowHeights(wb, sheet = sheetName, rows = 4, heights = 20) # increase row height for the header row
+  title_row <- 3
 
+  # Add annotation columns -----------------------------------------------------
 
-  ## add worksheet to workbook
-  openxlsx::addWorksheet(wb=wb, sheetName=sheetName, tabColour="#FFE100")
-  openxlsx::setRowHeights(wb=wb, sheet=sheetName, rows = 3, heights = 30);## increase row height for the header
-  openxlsx::setRowHeights(wb=wb, sheet=sheetName, rows = 4, heights = 20);## increase row height for the header
+  # Subset and rename
+  annot <- annotation[, annotCols]
+  colnames(annot) <- newNames
+  annot <- make_excel_hyperlinks(data = annot,
+                                 url.col = "UniProt ID",
+                                 url = "https://www.uniprot.org/uniprot/")
 
-
-  ##--------------
-  ##  ANNOTATION
-  ##--------------
   ## merge annotation columns
-  annot.start=1
-  annot.end=ncol(annot);annot.end
+  annot_col_start <- 1
+  annot_col_end <- ncol(annot)
 
-  openxlsx::mergeCells(wb=wb,sheet=sheetName, cols=annot.start:annot.end, rows=3)
-  openxlsx::writeData(wb=wb,sheet=sheetName, x=annot.title, startCol=1, startRow=3, colNames=FALSE)
-  mergeStyle <- openxlsx::createStyle(fgFill="#636262", halign="center", valign="center", textDecoration="bold",
-                                      fontColour="white", fontSize=14, numFmt="TEXT")
-  openxlsx::addStyle(wb=wb,sheet=sheetName, style=mergeStyle, rows=3, cols=1, stack=TRUE)
-
+  # Make title row
+  openxlsx::mergeCells(wb, sheet = sheetName,
+                       cols = annot_col_start:annot_col_end,
+                       rows = title_row)
+  openxlsx::writeData(wb, sheet = sheetName,
+                      x = annot.title,
+                      startCol = annot_col_start, startRow = title_row,
+                      colNames = FALSE)
+  mergeStyle <- openxlsx::createStyle(fgFill = "#636262",
+                                      halign = "center", valign = "center",
+                                      textDecoration = "bold",
+                                      fontColour = "white", fontSize = 14,
+                                      numFmt = "TEXT")
+  openxlsx::addStyle(wb = wb, sheet = sheetName,
+                     style = mergeStyle, rows = 3, cols = 1, stack = TRUE)
 
   ## write annotation data to worksheet
-  colStyle <- openxlsx::createStyle(fgFill = "#d8d8d8", halign="left", valign="center", textDecoration="bold",
-                                    fontColour="black", fontSize=11, numFmt="TEXT")
-  openxlsx::addStyle(wb=wb,sheet=sheetName, style=colStyle, rows=4, cols=annot.start:annot.end, stack=TRUE)
-  openxlsx::writeData(wb=wb, sheet=sheetName, x=annot,
-                      startCol = annot.start,
-                      startRow = 4,
+  colStyle <- openxlsx::createStyle(fgFill = "#d8d8d8",
+                                    halign = "left", valign = "center",
+                                    textDecoration = "bold",
+                                    fontColour = "black", fontSize=11,
+                                    numFmt="TEXT")
+  openxlsx::addStyle(wb, sheet = sheetName, style = colStyle,
+                     rows = title_row + 1,
+                     cols = annot_col_start:annot_col_end, stack = TRUE)
+  openxlsx::writeData(wb, sheet = sheetName,
+                      x = annot,
+                      startCol = annot_col_start,
+                      startRow = title_row + 1,
                       colNames = TRUE,
                       rowNames = FALSE,
-                      borders="columns",
-                      keepNA=TRUE, na.string="NA",
-                      sep="\t")
+                      borders = "columns",
+                      keepNA = TRUE,
+                      na.string = "NA",
+                      sep = "\t")
 
   ## add hyperlink style (blue font, underlined)
-  hyperlinkStyle <- openxlsx::createStyle(fontColour="#0000FF",halign="left",valign="center",textDecoration="underline")
-  cols <- grep("UniProt ID",colnames(annot));cols
-  openxlsx::addStyle(wb=wb, sheet=sheetName, style=hyperlinkStyle, cols=cols, rows=5:(nrow(annot)+4),
-                     gridExpand=TRUE,stack=TRUE)
+  hyperlinkStyle <- openxlsx::createStyle(fontColour = "#0000FF",
+                                          halign = "left",
+                                          valign = "center",
+                                          textDecoration = "underline")
+  cols <- grep("UniProt ID", colnames(annot))
+  openxlsx::addStyle(wb, sheet = sheetName,
+                     style = hyperlinkStyle, cols = cols,
+                     rows = (title_row + 2):(nrow(annot) + 4),
+                     gridExpand = TRUE, stack = TRUE)
 
 
 
-  ##--------------
-  ##  DATA
-  ##--------------
+
+  # Add data columns --------------------------------------------------------
   ## start/stop column positions for data
-  data.start=annot.end+1;data.start
-  data.end=annot.end+ncol(data);data.end
+  data_col_start <- annot_col_end + 1
+  data_col_end <- annot_col_end + ncol(data)
 
-  ## data merged column
-  openxlsx::mergeCells(wb=wb,sheet=sheetName, cols=data.start:data.end, rows=3)
-  openxlsx::writeData(wb=wb,sheet=sheetName, x=data.title, startCol=data.start, startRow=3, colNames=FALSE)
-  mergeStyle <- openxlsx::createStyle(fgFill = "#516285", halign="center", valign="center", textDecoration="bold",
-                                      fontColour="white", fontSize=14, numFmt="TEXT")
-  openxlsx::addStyle(wb=wb,sheet=sheetName, style=mergeStyle, rows=3, cols=data.start, stack=TRUE)
+  ## Set up title row
+  openxlsx::mergeCells(wb, sheet = sheetName,
+                       cols = data_col_start:data_col_end,
+                       rows = title_row)
+  openxlsx::writeData(wb, sheet = sheetName,
+                      x = data.title,
+                      startCol = data_col_start,
+                      startRow = title_row, colNames = FALSE)
+  mergeStyle <- openxlsx::createStyle(fgFill = "#516285",
+                                      halign = "center", valign = "center",
+                                      textDecoration = "bold",
+                                      fontColour = "white",
+                                      fontSize = 14, numFmt = "TEXT")
+  openxlsx::addStyle(wb, sheet = sheetName,
+                     style = mergeStyle,
+                     rows = title_row, cols = data_col_start, stack = TRUE)
 
   ## write data to worksheet
-  colStyle <- openxlsx::createStyle(fgFill = "#cdd4e1", halign="left", valign="center", textDecoration="bold",
-                                    fontColour="black", fontSize=11, numFmt="TEXT")
-  openxlsx::addStyle(wb=wb,sheet=sheetName, style=colStyle, rows=4, cols=data.start:data.end, stack=TRUE)
-  openxlsx::writeData(wb=wb, sheet=sheetName, x=data,
-                      startCol = data.start,
-                      startRow = 4,
+  colStyle <- openxlsx::createStyle(fgFill = "#cdd4e1",
+                                    halign = "left", valign = "center",
+                                    textDecoration = "bold",
+                                    fontColour = "black", fontSize = 11,
+                                    numFmt = "TEXT")
+  openxlsx::addStyle(wb, sheet = sheetName, style = colStyle,
+                     rows = title_row + 1, cols = data_col_start:data_col_end, stack=TRUE)
+  openxlsx::writeData(wb, sheet = sheetName, x = data,
+                      startCol = data_col_start,
+                      startRow = title_row + 1,
                       colNames = TRUE,
                       rowNames = FALSE,
-                      borders="columns",
-                      keepNA=TRUE, na.string="NA",
+                      borders = "columns",
+                      keepNA = TRUE, na.string = "NA",
                       sep="\t")
 
 
-  ##--------------
-  ##  STATS
-  ##--------------
-  ## colors for stat columns
-  if(length(names(statList)) > length(binfcolors)){
-    numColors<- ceiling(length(names(statList))/length(binfcolors))+1
-    colors2 <- rep(binfcolors,numColors)
-    lightcolors2 <- rep(lightbinfcolors,numColors)
+  # Add stats columns -------------------------------------------------------
+  # colors for stat columns
+  if (length(names(statlist)) > length(binfcolors)) {
+    numColors<- ceiling(length(names(statList))/length(binfcolors)) + 1
+    colors2 <- rep(binfcolors, numColors)
+    lightcolors2 <- rep(lightbinfcolors, numColors)
   } else {
-    if(length(names(statList))<=length(binfcolors)){
-      colors2<-binfcolors
-      lightcolors2<-lightbinfcolors
+    if (length(names(statlist)) <= length(binfcolors)) {
+      colors2 <- binfcolors
+      lightcolors2 <- lightbinfcolors
     }
   }
-  stopifnot(length(colors2) > length(names(statList)))
+  stopifnot(length(colors2) >= length(names(statlist)))
 
 
   ## write stat data to worksheet
-  stat.start=NULL;stat.end=NULL
-  for(i in base::seq_along(names(statList))){
-    stats <- statList[[i]]
-    comparison <- names(statList)[i];comparison
-    mycolor<-colors2[i];mycolor
-    mylightcolor<-lightcolors2[i];mylightcolor
+  stat.start<- NULL
+  stat.end  <- NULL
+
+  for(i in base::seq_along(names(statlist))) {
+
+    stats <- statlist[[i]]
+    comparison <- names(statlist)[i]
+    title_color <- colors2[i]
+    header_color <- lightcolors2[i]
 
     ## stats start
     if(is.null(stat.start)){
-      stat.start=data.end+1;stat.start
+      stat.start = data_col_end + 1
     } else {
       if(!is.null(stat.start)){
-        stat.start=stat.end+1;stat.start }
+        stat.start = stat.end + 1}
     }
 
     ## stats end
-    if(is.null(stat.end)){
-      stat.end=data.end+ncol(stats);stat.end
+    if (is.null(stat.end)) {
+      stat.end = data_col_end + ncol(stats)
     } else {
-      if(!is.null(stat.end)){
-        stat.end=stat.end+ncol(stats);stat.end }
+      if (!is.null(stat.end)) {
+        stat.end = stat.end + ncol(stats)
+      }
     }
 
-
-    openxlsx::mergeCells(wb=wb,sheet=sheetName, cols=stat.start:stat.end, rows=3)
-    openxlsx::writeData(wb=wb,sheet=sheetName, x=comparison, startCol=stat.start, startRow=3, colNames=FALSE)
-    mergeStyle <- openxlsx::createStyle(fgFill = mycolor, halign="center", valign="center", textDecoration="bold",
-                                        fontColour="white", fontSize=14, numFmt="TEXT")
-    openxlsx::addStyle(wb=wb,sheet=sheetName, style=mergeStyle, rows=3, cols=stat.start, stack=TRUE)
+    # set up title row
+    openxlsx::mergeCells(wb, sheet = sheetName,
+                         cols = stat.start:stat.end, rows = title_row)
+    openxlsx::writeData(wb, sheet = sheetName,
+                        x = comparison,
+                        startCol = stat.start, startRow = title_row, colNames = FALSE)
+    mergeStyle <- openxlsx::createStyle(fgFill = title_color, halign = "center",
+                                        valign = "center", textDecoration = "bold",
+                                        fontColour = "white", fontSize = 14, numFmt = "TEXT")
+    openxlsx::addStyle(wb, sheet = sheetName, style = mergeStyle, rows = title_row, cols = stat.start, stack=TRUE)
 
 
     ## write stats to worksheet
-    colStyle <- openxlsx::createStyle(fgFill = mylightcolor, halign="left", valign="center", textDecoration="bold",
-                                      fontColour="black", fontSize=11, numFmt="TEXT")
-    openxlsx::addStyle(wb=wb,sheet=sheetName, style=colStyle, rows=4, cols=stat.start:stat.end, stack=TRUE)
-    openxlsx::writeData(wb=wb, sheet=sheetName, x=stats,
+    colStyle <- openxlsx::createStyle(fgFill = header_color,
+                                      halign = "left", valign = "center",
+                                      textDecoration = "bold",
+                                      fontColour = "black", fontSize = 11, numFmt = "TEXT")
+    openxlsx::addStyle(wb, sheet = sheetName, style = colStyle, rows = title_row + 1,
+                       cols = stat.start:stat.end, stack = TRUE)
+    openxlsx::writeData(wb, sheet = sheetName, x = stats,
                         startCol = stat.start,
-                        startRow = 4,
+                        startRow = title_row + 1,
                         colNames = TRUE,
                         rowNames = FALSE,
-                        borders="columns",
-                        keepNA=TRUE, na.string="NA",
-                        sep="\t")
+                        borders = "columns",
+                        keepNA = TRUE, na.string = "NA",
+                        sep = "\t")
 
-
+    # Add conditional formatting to stats section
     posStyle  <- openxlsx::createStyle(fontColour="#990000", bgFill="#FFC7CE")
     negStyle  <- openxlsx::createStyle(fontColour="#006100", bgFill="#C6EFCE")
     normStyle <- openxlsx::createStyle(fontColour="#000000", bgFill="#FFFFFF")
 
-    fc.col    <- grep("logFC", colnames(stats))+stat.start-1;fc.col
-    fc.rule1  <- paste0(">=",min.lfc);fc.rule1
-    fc.rule2  <- paste0("<=",-min.lfc);fc.rule2
-    fdr.col   <- grep("adj.P.Val", colnames(stats))+stat.start-1; fdr.col
-    fdr.rule  <- paste0("<=",min.pval);fdr.rule
-    pval.col  <- grep("P.Value", colnames(stats))+stat.start-1;pval.col
-    pval.rule <- paste0("<=",min.pval);pval.rule
+    fc.col    <- grep("logFC", colnames(stats)) + stat.start - 1
+    fc.rule1  <- paste0(">=", min.lfc)
+    fc.rule2  <- paste0("<=", -min.lfc)
+    fdr.col   <- grep("adj.P.Val", colnames(stats)) + stat.start - 1
+    fdr.rule  <- paste0("<=", min.pval)
+    pval.col  <- grep("P.Value", colnames(stats)) + stat.start - 1
+    pval.rule <- paste0("<=", min.pval)
 
-    openxlsx::conditionalFormatting(wb=wb, sheet=sheetName, cols=fc.col, rows=5:(nrow(stats)+4),
-                                    type="expression", rule=fc.rule1, style=posStyle)
-    openxlsx::conditionalFormatting(wb=wb, sheet=sheetName, cols=fc.col, rows=5:(nrow(stats)+4),
-                                    type="expression", rule=fc.rule2, style=negStyle)
-    openxlsx::conditionalFormatting(wb=wb, sheet=sheetName, cols=fc.col, rows=5:(nrow(stats)+4),
-                                    type="contains", rule="NA", style=normStyle)
+
+    openxlsx::conditionalFormatting(wb, sheet = sheetName,
+                                    cols = fc.col, rows = (title_row + 2):(nrow(stats) + 4),
+                                    type = "expression", rule = fc.rule1, style = posStyle)
+    openxlsx::conditionalFormatting(wb = wb, sheet = sheetName,
+                                    cols = fc.col, rows = (title_row + 2):(nrow(stats) + 4),
+                                    type="expression", rule = fc.rule2, style = negStyle)
+    openxlsx::conditionalFormatting(wb=wb, sheet=sheetName,
+                                    cols = fc.col, rows = (title_row + 2):(nrow(stats) +4),
+                                    type="contains", rule="NA", style = normStyle)
+
     openxlsx::conditionalFormatting(wb=wb, sheet=sheetName, cols=fdr.col, rows=5:(nrow(stats)+4),
                                     type="expression", rule=fdr.rule, style=posStyle)
     openxlsx::conditionalFormatting(wb=wb, sheet=sheetName, cols=fdr.col, rows=5:(nrow(stats)+4),
                                     type="contains", rule="NA", style=normStyle)
+
     openxlsx::conditionalFormatting(wb=wb, sheet=sheetName, cols=pval.col, rows=5:(nrow(stats)+4),
                                     type="expression", rule=pval.rule, style=posStyle)
     openxlsx::conditionalFormatting(wb=wb, sheet=sheetName, cols=pval.col, rows=5:(nrow(stats)+4),
                                     type="contains", rule="NA", style=normStyle)
 
 
-  } ## FOR LOOP
-
+  }
 
   ## add global styles
   headerStyle <- openxlsx::createStyle(halign = "center", valign="center", #fontColour = "#000000",
                                        border = "TopBottomLeftRight", borderColour = c("black","black","black","black"),
                                        textDecoration = "bold")
-  openxlsx::addStyle(wb=wb, sheet=sheetName, style=headerStyle, cols=1:stat.end, rows=3, gridExpand=TRUE, stack=TRUE)
-  openxlsx::addStyle(wb=wb, sheet=sheetName, style=headerStyle, cols=1:stat.end, rows=4, gridExpand=TRUE, stack=TRUE)
-  openxlsx::addFilter(wb=wb, sheet=sheetName, cols=1:stat.end, rows=4)
+  openxlsx::addStyle(wb, sheet = sheetName, style = headerStyle,
+                     cols = 1:stat.end, rows = title_row,
+                     gridExpand = TRUE, stack = TRUE)
+  openxlsx::addStyle(wb, sheet = sheetName, style = headerStyle,
+                     cols = 1:stat.end, rows = title_row + 1,
+                     gridExpand = TRUE, stack = TRUE)
+  openxlsx::addFilter(wb, sheet = sheetName, cols = 1:stat.end, rows = title_row + 1)
 
+  # Save workbook
+  openxlsx::saveWorkbook(wb = wb,
+                         file = filename,
+                         overwrite = TRUE)
 
-} ## ADD LIMMA RESULTS
-
-
-
+  invisible(filename)
 }
 
-=======
->>>>>>> main
+make_excel_hyperlinks <- function(data, url.col, url) {
+
+  ids <- data[,url.col]
+  tmp <- is.na(ids)
+  url2 <- paste0(url, ids)
+  ids2 <- paste0("HYPERLINK(\"", url2, "\", \"", ids, "\")")
+  ids2[tmp] <- NA
+  data[,url.col] <- ids2
+  class(data[,url.col]) <- "formula"
+
+  return(data)
+}
+

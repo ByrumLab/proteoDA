@@ -20,6 +20,7 @@ Imports:
     magrittr,
     MASS,
     matrixStats,
+    openxlsx,
     png,
     preprocessCore,
     RColorBrewer,

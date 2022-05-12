@@ -171,7 +171,7 @@ check_DE_perc <- function(DE_outcomes_table, threshold = 0.1, min.pval, min.lfc,
   if (any(perc_sig > threshold)) {
     above_thresh <- names(perc_sig)[perc_sig > threshold]
     thresh_perc <- threshold*100
-    cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is DE in {cli::qty(length(above_thresh))} {?A/some} contrast{?s}",
+    cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is DE in {cli::qty(length(above_thresh))} {?a/some} contrast{?s}",
                       "!" = "Criteria for DE: min.lfc > {.val {min.lfc}}, min.pval < {.val {min.pval}}, p.value adjustment = {.val {adj.method}}",
                       "!" = "{cli::qty(length(above_thresh))} Problematic contrast{?s}: {.val {above_thresh}}",
                       "!" = "Assumption that most genes/proteins/phospho are not DE may be violated"))
