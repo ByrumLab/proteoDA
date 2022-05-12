@@ -612,6 +612,7 @@ plotTotInten <- function(normList,
   old_oma <- graphics::par()$oma
   on.exit(graphics::par(mar = old_mar), add = TRUE)
   on.exit(graphics::par(oma = old_oma), add = TRUE)
+  on.exit(graphics::layout(matrix(1)), add = TRUE)
 
   # Set up plotting parameters
   # Have to do this twice, can't have the pars above the png making
@@ -656,6 +657,7 @@ plotTotInten <- function(normList,
     }
   }
   names(barList) <- names(normList)
+
 
   if (save) grDevices::dev.off()
 
