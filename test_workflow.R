@@ -222,6 +222,7 @@ des_reb <- make_design(targets = norm_reb$targets,
                            factor_columns = NULL,
                            paired_column = NULL)
 
+
 # Make contrasts ----------------------------------------------------------
 # Higgs
 # No higgs contrast file??
@@ -244,6 +245,7 @@ contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_0
 # Zhan
 contrasts_zhan <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt",
                                  design = des_zhan$design)
+
 # Rebello
 contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/contrasts.csv",
                                     design = des_reb$design)
@@ -254,33 +256,29 @@ contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/con
 # First, fit the model
 
 fit_lupashin <- fit_limma_model(data = norm_lupashin$normList[["vsn"]],
-                                 targets = des_lupashin$targets,
-                                 design = des_lupashin$design,
-                                 contrasts = contrasts_lupashin$contrasts)
+                                design_obj = des_lupashin,
+                                contrasts_obj = contrasts_lupashin)
 
 fit_ndu_brain <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
-                                targets = des_ndu$targets,
-                                design = des_ndu$design,
-                                contrasts = contrasts_ndu_brain$contrasts)
+                                 design_obj = des_ndu,
+                                 contrasts_obj = contrasts_ndu_brain)
+
 fit_ndu_intestine <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
-                                 targets = des_ndu$targets,
-                                 design = des_ndu$design,
-                                 contrasts = contrasts_ndu_intestine$contrasts)
+                                     design_obj = des_ndu,
+                                     contrasts_obj = contrasts_ndu_intestine)
+
 fit_ndu_kidney <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
-                                 targets = des_ndu$targets,
-                                 design = des_ndu$design,
-                                 contrasts = contrasts_ndu_kidney$contrasts)
+                                  design_obj = des_ndu,
+                                  contrasts_obj = contrasts_ndu_kidney)
 
 fit_zhan <- fit_limma_model(data = norm_zhan$normList[["vsn"]],
-                            targets = des_zhan$targets,
-                            design = des_zhan$design,
-                            contrasts = contrasts_zhan$contrasts)
+                            design_obj = des_zhan,
+                            contrasts_obj = contrasts_zhan)
 
 
 fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
-                           targets = des_reb$targets,
-                           design = des_reb$design,
-                           contrasts = contrasts_rebello$contrasts)
+                           design_obj = des_reb,
+                           contrasts_obj = contrasts_rebello)
 
 
 # Then, extract results tables according to the desired
@@ -295,6 +293,7 @@ results_ndu_brain <- extract_limma_DE_results(limma_fit = fit_ndu_brain)
 results_ndu_intestine <- extract_limma_DE_results(limma_fit = fit_ndu_intestine)
 results_ndu_kidney <- extract_limma_DE_results(limma_fit = fit_ndu_kidney)
 results_zhan <- extract_limma_DE_results(limma_fit = fit_zhan)
+results_zhan_MM <- extract_limma_DE_results(limma_fit = fit_zhan_MM)
 results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
 
 

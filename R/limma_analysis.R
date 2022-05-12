@@ -15,9 +15,8 @@
 ## subjects
 
 fit_limma_model <- function(data,
-                            targets,
-                            design,
-                            contrasts,
+                            design_obj,
+                            contrasts_obj,
                             paired = FALSE) {
   # Original fxn had a check that rownames in the data equaled rownames in the
   # annotation. Took that out for now, and removed annotation as an argument,
@@ -28,6 +27,14 @@ fit_limma_model <- function(data,
 
   # On the other hand, depending on the various outputs, may be able to
   # reorder and match things back up if they ever are actually out of sync.
+
+  # Extract elements out of their objects
+  design <- design_obj$design
+  targets <- design_obj$targets
+  contrasts <- contrasts_obj$contrasts
+
+  # Need to add checks for these
+
 
   # TODO:
   # NEED TO ADD SOME SORT OF CHECK FOR THE CONTRASTS
@@ -49,7 +56,9 @@ fit_limma_model <- function(data,
 
   # Ensure data cols are in same order as rows in targets
   data <- data[, rownames(targets)]
-  groups <- targets$group
+
+  # Don't think this line is used for anything??
+  #groups <- targets$group
 
   # Double-check that the order is all the same
   # TODO: Shouldn't really ever trigger this, right? maybe remove?
