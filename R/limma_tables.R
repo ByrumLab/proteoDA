@@ -9,7 +9,8 @@ write_limma_results <- function(model_results,
                                 summary_csv = "DE_summary.csv",
                                 combined_file_csv = "combined_results.csv",
                                 BQ_csv = paste0(ilab, "_results_BQ.csv"),
-                                spreadsheet_xlsx = paste0(ilab, "_results.xlsx")) {
+                                spreadsheet_xlsx = paste0(ilab, "_results.xlsx"),
+                                add_filter = T) {
 
   # Setup and check args ----------------------------------------------------
   pipe <- rlang::arg_match(pipe)
@@ -135,7 +136,8 @@ write_limma_results <- function(model_results,
                     min.pval = model_results$min.pval,
                     min.lfc = model_results$min.lfc,
                     pipe = pipe,
-                    enrich = enrich)
+                    enrich = enrich,
+                    add_filter = add_filter)
 
   if (!file.exists(excel_output_file)) {
     cli::cli_abort(c("Failed to write combined results Excel spreadsheet to {.path {excel_output_file}}"))
@@ -201,7 +203,7 @@ write_per_contrast_csvs <- function(annotation_df,
 
 
 write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
-                              min.pval, min.lfc, pipe, enrich) {
+                              min.pval, min.lfc, pipe, enrich, add_filter) {
 
 
   # Maybe some argument processing
@@ -504,7 +506,10 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   openxlsx::addStyle(wb, sheet = sheetName, style = headerStyle,
                      cols = 1:stat.end, rows = title_row + 1,
                      gridExpand = TRUE, stack = TRUE)
-  openxlsx::addFilter(wb, sheet = sheetName, cols = 1:stat.end, rows = title_row + 1)
+  if (add_filter) {
+    openxlsx::addFilter(wb, sheet = sheetName, cols = 1:stat.end, rows = title_row + 1)
+  }
+
 
   # Save workbook
   openxlsx::saveWorkbook(wb = wb,

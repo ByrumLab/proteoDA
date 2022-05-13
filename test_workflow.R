@@ -3,6 +3,7 @@ library(pkgnet)
 library(tictoc)
 library(microbenchmark)
 library(devtools)
+library(profvis)
 
 CreatePackageReport("proteomicsDIA")
 # source("bin/functions26_CURRENT_031022.r")
@@ -103,8 +104,7 @@ sub_ndu <- subset_targets(targets = target_ndu,
                           filter_list = list(group = "Pool"))
 
 sub_lupashin <- subset_targets(targets = target_lupashin,
-                               filter_list = list(group = c("Pool", "input"),
-                                                  sample = "VPS54_1"))
+                               filter_list = list(group = c("Pool", "input")))
 
 sub_zhan <- subset_targets(targets = target_zhan,
                            filter_list = list(group = "Pool"))
@@ -287,31 +287,26 @@ fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
                            design_obj = des_reb,
                            contrasts_obj = contrasts_rebello)
 
-
-# Then, extract results tables according to the desired
-# statistical limits
-
-# Some testing of next steps ----------------------------------------------
-
-
 # Extract results ---------------------------------------------------------
 results_lupashin <- extract_limma_DE_results(limma_fit = fit_lupashin)
 results_ndu_brain <- extract_limma_DE_results(limma_fit = fit_ndu_brain)
 results_ndu_intestine <- extract_limma_DE_results(limma_fit = fit_ndu_intestine)
 results_ndu_kidney <- extract_limma_DE_results(limma_fit = fit_ndu_kidney)
 results_zhan <- extract_limma_DE_results(limma_fit = fit_zhan)
-results_zhan_MM <- extract_limma_DE_results(limma_fit = fit_zhan_MM)
 results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
 
 
 
 
 # Write results -----------------------------------------------------------
+profvis(
 write_limma_results(model_results = results_lupashin,
                     norm.method = "vsn",
                     annotation = ext_lupashin$annot,
                     ilab = "Lupashin_82928",
                     enrich = "protein")
+)
+
 
 write_limma_results(model_results = results_ndu_brain,
                     norm.method = "vsn",
