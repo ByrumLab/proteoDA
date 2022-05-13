@@ -4,15 +4,15 @@
 \alias{subset_targets}
 \title{Filter samples from targets file}
 \usage{
-subset_targets(targets, filter_column, rm.vals, ignore.case = TRUE)
+subset_targets(targets, filter_list, ignore.case = TRUE)
 }
 \arguments{
 \item{targets}{The input targets dataframe to be filtered}
 
-\item{filter_column}{The column in which to check values.}
-
-\item{rm.vals}{A character vector giving the values to search for in
-filter_column. Rows matching these values will be fitlered out.}
+\item{filter_list}{A named list describing how to filter targets dataframe.
+The name for each element of the list gives a column to be filters, and
+each element of the list should be a character vector of strings to search for
+in the given column. See examples.}
 
 \item{ignore.case}{Should the case of the strings in rm.vals be ignored? Is
 TRUE by default, such that case does not have to match. If FALSE, case must
@@ -29,12 +29,14 @@ A list with three elements:
 \description{
 Removes unwanted samples (rows) from the targets data frame This function is
 basically \code{\link[base]{subset}} with extra functionality. It removes
-rows if they contain certain values in a given column. Currently, can only
-filter on one column at a time, but can provide multiple values to filter
-against. By default, ignores the case of strings in rm.val. Calls
-\code{\link{make_log}} as a subfunction.
+rows if they contain certain values in a given column. By default, ignores
+the case of strings in rm.val. Calls \code{\link{make_log}} as a subfunction.
 }
 \examples{
-# No examples yet
+\dontrun{
+sub_targets <- subset_targets(targets = target,
+                              filter_list = list(group = "pool"
+                                                 sample = c("sampleA", "sampleB")))
+}
 
 }

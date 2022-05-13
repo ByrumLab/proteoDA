@@ -2,15 +2,14 @@
 #'
 #' Removes unwanted samples (rows) from the targets data frame This function is
 #' basically \code{\link[base]{subset}} with extra functionality. It removes
-#' rows if they contain certain values in a given column. Currently, can only
-#' filter on one column at a time, but can provide multiple values to filter
-#' against. By default, ignores the case of strings in rm.val. Calls
-#' \code{\link{make_log}} as a subfunction.
+#' rows if they contain certain values in a given column. By default, ignores
+#' the case of strings in rm.val. Calls \code{\link{make_log}} as a subfunction.
 #'
 #' @param targets The input targets dataframe to be filtered
-#' @param filter_column The column in which to check values.
-#' @param rm.vals A character vector giving the values to search for in
-#'   filter_column. Rows matching these values will be fitlered out.
+#' @param filter_list A named list describing how to filter targets dataframe.
+#'   The name for each element of the list gives a column to be filters, and
+#'   each element of the list should be a character vector of strings to search for
+#'   in the given column. See examples.
 #' @param ignore.case Should the case of the strings in rm.vals be ignored? Is
 #'   TRUE by default, such that case does not have to match. If FALSE, case must
 #'   match for rows to be removed.
@@ -23,18 +22,27 @@
 #'   }
 #' @export
 #'
-#' @examples
-#' # No examples yet
+#' @importFrom rlang .data
 #'
-subset_targets <- function(targets, filter_column, rm.vals, ignore.case = TRUE) {
+#' @examples
+#' \dontrun{
+#' sub_targets <- subset_targets(targets = target,
+#'                               filter_list = list(group = "pool"
+#'                                                  sample = c("sampleA", "sampleB")))
+#' }
+#'
 
-  # Check args
-  if (is.null(filter_column) | anyNA(filter_column)) {
-    cli::cli_abort(c("{.arg filter_column} cannot be {.val {filter_column}}",
-                     "i" = "Did you forget to specify the {.arg filter_column} argument?"))
+subset_targets <- function(targets, filter_list, ignore.case = TRUE) {
+
+  # check args
+  if (!is.list(filter_list)) {
+    cli::cli_abort(c("{.arg filter_list} must be a list"))
   }
-  if (length(filter_column) != 1) {
-    cli::cli_abort(c("{.arg filter_column} must be of length 1, not {length(filter_column)}}"))
+  if (is.null(names(filter_list)) | length(names(filter_list)) == 0) {
+    cli::cli_abort(c("{.arg filter_list} must be a named list"))
+  }
+  if (length(names(filter_list)) != length(filter_list)) {
+    cli::cli_abort(c("Each list element in {.arg filter_list} must be named"))
   }
 
   cli::cli_rule()
@@ -42,31 +50,31 @@ subset_targets <- function(targets, filter_column, rm.vals, ignore.case = TRUE) 
   # Set up some vars to avoid R CMD check warning
   to_remove <- for_match <- remove_reason <- NULL
 
-  ## Set up removal patterns
-  if (ignore.case) {
-    removal_patterns <- stringr::str_to_lower(rm.vals)
-    targets$for_match <- stringr::str_to_lower(targets[,filter_column])
-  } else {
-    removal_patterns <- rm.vals
-    targets$for_match <- targets[,filter_column]
-  }
-
   # Mark for removal any rows that match/contain the supplied strings to exclude
   targets$to_remove <- F
-  targets$remove_reason <- NA
-  for (pattern in removal_patterns) {
-    targets$to_remove <- ifelse(stringr::str_detect(targets$for_match, pattern), T, targets$to_remove)
-    targets$remove_reason <- ifelse(stringr::str_detect(targets$for_match, pattern), pattern, targets$remove_reason)
+  for (column in names(filter_list)) {
+    for (filter_string in unique(filter_list[[column]])) {
+      if (ignore.case) {
+        targets$to_remove <- stringr::str_to_lower(targets[,column]) %>%
+          stringr::str_detect(stringr::str_to_lower(filter_string)) %>%
+          ifelse(T, targets$to_remove)
+      } else {
+        targets$to_remove <- stringr::str_detect(targets[,column], filter_string) %>%
+          ifelse(T, targets$to_remove)
+      }
+    }
   }
 
   # Do subsetting, keeping removed samples for stats.
-  tar_removed <- subset(targets, subset = to_remove, select = c(-for_match, -to_remove))
-  tar_kept <- subset(targets, subset = !to_remove, select = c(-for_match, -to_remove, -remove_reason))
+  tar_removed <- subset(targets, subset = to_remove, select = c(-to_remove))
+  tar_kept <- subset(targets, subset = !to_remove, select = c(-to_remove))
 
   # Check that sample numbers match
-  # TODO: Not sure we even need this error message? I think it'd only happen with an NA
-  # in the column being subsetted, which shouldnt happen and which would likely trigger
-  # an error higher up??
+  # From testing, I think this would only happen if there's an NA in the column
+  # being filtered on, such that the to_remove column then also has an NA in it.
+  # Targets dataframes shouldn't really have NAs in them (not sure if that gets
+  # checked earlier in the pipeline), so maybe good to throw an error here in case
+  # that happens?
   if (nrow(tar_removed) + nrow(tar_kept) != nrow(targets)) {
     cli::cli_abort("Issue when subsetting targets",
                    "!" = "Rows kept + rows removed != rows input",
@@ -76,25 +84,20 @@ subset_targets <- function(targets, filter_column, rm.vals, ignore.case = TRUE) 
   # Write info to logs:
   param <- stats <- list()
   # Param
-  param[["filter_column"]] <- filter_column
-  param[["rm.vals"]] <- paste(unique(tar_removed$remove_reason), collapse=", ")
+  param[["filter_list"]] <- paste(lapply(names(filter_list), function (x) paste(x, "=", paste(filter_list[[x]], collapse = " or "))), collapse = "; ")
   param[["ignore.case"]] <- as.character(ignore.case)
   # Stats
   stats[["input_samples"]] <- nrow(targets)
-  for (reason in unique(tar_removed$remove_reason)) {
-    stats[[paste0(filter_column, " matched ", reason)]] <- nrow(subset(tar_removed, remove_reason == reason))
-  }
   stats[["samples_removed"]] <- nrow(tar_removed)
   stats[["samples_kept"]] <- nrow(tar_kept)
   # Logfile
-  title <- paste0("SUBSET TARGETS STATS (", filter_column, ")")
-  logs <- make_log(param = param, stats = stats, title = title, save=TRUE)
+  title <- paste0("SUBSET TARGETS STATS (", paste(names(filter_list), collapse = ", "), ")")
+  logs <- make_log(param = param, stats = stats, title = "test", save=TRUE)
 
   # print messages
   cli::cli_inform("Removed {nrow(tar_removed)} of the {nrow(targets)} sample{?s} {cli::qty(nrow(targets))} from the targets file")
   cli::cli_rule()
   cli::cli_inform(c("v" = "Success"))
-
 
   # Return
   list(targets = tar_kept, stats = logs$stats, param = logs$param)

@@ -140,10 +140,8 @@ extract_limma_DE_results <- function(limma_fit, min.pval = 0.055, min.lfc = 1, a
   contrast_names <- colnames(efit$coefficients)
 
   # Get dfs where 0 = insig, -1 is sig downregulated, and 1 is sig upregulated
-  outcomes_table_rawp <- limma::decideTests(efit, adjust.method = "none", p.value = min.pval, lfc = min.lfc) %>%
-    as.data.frame(.)
-  outcomes_table_adjp <- limma::decideTests(efit, adjust.method = adj.method, p.value = min.pval, lfc = min.lfc) %>%
-    as.data.frame(.)
+  outcomes_table_rawp <- as.data.frame(limma::decideTests(efit, adjust.method = "none", p.value = min.pval, lfc = min.lfc))
+  outcomes_table_adjp <- as.data.frame(limma::decideTests(efit, adjust.method = adj.method, p.value = min.pval, lfc = min.lfc))
 
   perc_sig_rawp <- check_DE_perc(outcomes_table_rawp, min.pval = min.pval, min.lfc = min.lfc, adj.method = "none")
   perc_sig_adjp <- check_DE_perc(outcomes_table_adjp, min.pval = min.pval, min.lfc = min.lfc, adj.method = adj.method)

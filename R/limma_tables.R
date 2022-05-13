@@ -39,13 +39,10 @@ write_limma_results <- function(model_results,
   summary_output_file <- file.path(out_dir, summary_csv)
   cli::cli_inform("Writing DE summary table to {.path {summary_output_file}}")
 
-
-  model_results <- results_reb
-
-  summary <- lapply(X = names(statlist),
-                    FUN = summarize_contrast_DE,
-                    contrast_res_list = statlist) %>%
-    do.call("rbind", .)
+  summary <- do.call("rbind",
+                     lapply(X = names(statlist),
+                            FUN = summarize_contrast_DE,
+                            contrast_res_list = statlist))
   summary$pval_thresh <- model_results$min.pval
   summary$lfc_thresh <- model_results$min.lfc
   summary$p_adj_method <- model_results$adj.method
@@ -223,7 +220,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
                    "Identified.Peptide.Count","Exclusivity",
                    "UniprotID", "Gene_name","Description")
     newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
-      stringr::str_replace(., "UniprotID", "UniProt ID")
+      stringr::str_replace("UniprotID", "UniProt ID")
     annot.title <- "Protein Annotation"
     data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Intensities")
     sheetName <- "Protein Results"
@@ -233,7 +230,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
     annotCols <- c("id", "Fasta.headers","Majority.protein.IDs", "Score", "UniprotID",
                    "Gene_name","Description")
     newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
-      stringr::str_replace(., "UniprotID", "UniProt ID")
+      stringr::str_replace("UniprotID", "UniProt ID")
     annot.title <- "Protein Annotation"
     data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive MS1 Intensities")
     sheetName <- "Protein Results"
@@ -243,7 +240,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
     annotCols <- c("id", "Fasta.headers","Majority.protein.IDs", "Score", "UniprotID",
                    "Gene_name","Description")
     newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
-      stringr::str_replace(., "UniprotID", "UniProt ID")
+      stringr::str_replace("UniprotID", "UniProt ID")
     annot.title <- "Protein Annotation"
     data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Intensities")
     sheetName <- "Protein Results"
@@ -252,11 +249,11 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
 
     annotCols <- c("id", "Fasta.headers", "Majority.protein.IDs", "Phospho..STY..site.IDs", "Score",
                    "UniprotID","Gene_name","Description") %>%
-      stringr::str_replace(., "UniprotID", "Uniprot ID")
+      stringr::str_replace("UniprotID", "Uniprot ID")
     newNames <- stringr::str_replace(annotCols, "\\.\\.S", " (S") %>%
-      stringr::str_replace(., "Y\\.\\.", "Y) ") %>%
-      stringr::str_replace_all(., "[._]", " ") %>%
-      stringr::str_replace(., "UniprotID", "UniProt ID")
+      stringr::str_replace("Y\\.\\.", "Y) ") %>%
+      stringr::str_replace_all("[._]", " ") %>%
+      stringr::str_replace("UniprotID", "UniProt ID")
 
     annot.title <- "Protein Annotation"
     data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive MS1 Intensities")
@@ -268,9 +265,9 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
                    "Description", "PEP","Score", "Localization.prob", "Phospho..STY..Probabilities",
                    "Flanking","phosAAPosition","Class")
     newNames <- stringr::str_replace(annotCols, "\\.\\.S", " (S") %>%
-      stringr::str_replace(., "Y\\.\\.", "Y) ") %>%
-      stringr::str_replace_all(., "[._]", " ") %>%
-      stringr::str_replace(., "UniprotID", "UniProt ID")
+      stringr::str_replace("Y\\.\\.", "Y) ") %>%
+      stringr::str_replace_all("[._]", " ") %>%
+      stringr::str_replace("UniprotID", "UniProt ID")
 
     annot.title <- "Protein/Phospho Annotation"
     data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive MS1 Intensities")
@@ -392,7 +389,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   # Add stats columns -------------------------------------------------------
   # colors for stat columns
   if (length(names(statlist)) > length(binfcolors)) {
-    numColors<- ceiling(length(names(statList))/length(binfcolors)) + 1
+    numColors<- ceiling(length(names(statlist))/length(binfcolors)) + 1
     colors2 <- rep(binfcolors, numColors)
     lightcolors2 <- rep(lightbinfcolors, numColors)
   } else {

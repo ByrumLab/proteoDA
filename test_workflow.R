@@ -96,15 +96,22 @@ target_reb <- make_targets(file = "for_testing/Example Data/rebello/Rebello_0405
                            enrich = "protein")
 
 # Subset targets --------------------------------------------------------------
-sub_higgs <- subset_targets(targets=target_higgs, filter_column = "group", rm.vals = "Pool")
+sub_higgs <- subset_targets(targets = target_higgs,
+                            filter_list = list(group = "Pool"))
 
-sub_ndu <- subset_targets(targets=target_ndu, filter_column = "group", rm.vals = "Pool")
+sub_ndu <- subset_targets(targets = target_ndu,
+                          filter_list = list(group = "Pool"))
 
-sub_lupashin <- subset_targets(targets=target_lupashin, filter_column = "group", rm.vals = c("Pool", "input"))
+sub_lupashin <- subset_targets(targets = target_lupashin,
+                               filter_list = list(group = c("Pool", "input"),
+                                                  sample = "VPS54_1"))
 
-sub_zhan <- subset_targets(targets = target_zhan, filter_column = "group", rm.vals = "pool")
+sub_zhan <- subset_targets(targets = target_zhan,
+                           filter_list = list(group = "Pool"))
 
-sub_reb <- subset_targets(targets = target_reb, filter_column = "group", rm.vals = "Pool")
+
+sub_reb <- subset_targets(targets = target_reb,
+                          filter_list = list(group = "Pool"))
 
 
 # Process data ------------------------------------------------------------
