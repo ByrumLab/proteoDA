@@ -85,6 +85,9 @@ make_contrasts <- function(file = NULL,
   # rename cols to just the name of the contrasts, not the full vector
   colnames(contrasts) <- gsub("=.*", "", colnames(contrasts))
 
+
+  #TODO: add in a check on rank of matrix (see the F1000 paper Charity sent)
+
   # Write logs
   param[["file"]] <- file
   stats[["num_contrasts"]] <- ncol(contrasts)
@@ -128,11 +131,6 @@ extract_contrast_groups <- function(contrast.vec) {
 
   # Basically replicating a lot of the stuff that
   # is already there, but with stringr. Though I have no idea what some of this is for
-  # TODO: Issue with all the single-digit operation removals is that they
-  # won't remove more digits, if there's an operation by a two-digit number
-  # e.g., /22 will get turned into just "2".
-  # Seems suboptimal, but I'm not really sure what the point of this section is
-  # I've changed the regexes so that they will remove operations by any # of digits.
   processed_contrasts <-  contrasts %>%
     stringr::str_remove_all(" ") %>% # remove blank spaces TODO: probably unneeded
     stringr::str_remove_all("\\/[[:digit:]]+") %>% ## removes division by one digit number (/2)

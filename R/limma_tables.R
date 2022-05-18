@@ -12,7 +12,7 @@ write_limma_results <- function(model_results,
                                 spreadsheet_xlsx = paste0(ilab, "_results.xlsx"),
                                 add_filter = T) {
 
-  # Setup and check args ----------------------------------------------------
+  # Check args ----------------------------------------------------
   pipe <- rlang::arg_match(pipe)
   enrich <- rlang::arg_match(enrich)
 
@@ -30,6 +30,8 @@ write_limma_results <- function(model_results,
 
   # add check for norm method
 
+
+  # Setup -------------------------------------------------------------------
   statlist <- model_results$stats_by_contrast
   data <- model_results$data
 
@@ -516,7 +518,8 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
                          file = filename,
                          overwrite = TRUE)
 
-  invisible(filename)
+  invisible(list(file = filename,
+                 wb = wb))
 }
 
 make_excel_hyperlinks <- function(data, url.col, url) {

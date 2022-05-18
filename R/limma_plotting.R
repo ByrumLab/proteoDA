@@ -1,4 +1,7 @@
 
+
+# ALLOW GROUPS TO VARY HERE.
+
 make_limma_de_report <- function(data, annot, targets, design, contrasts, min.pval = 0.055, min.lfc = 1,
                                  adj.method = "BH", paired = FALSE, pipe = "DIA", enrich = "protein",
                                  dir = NULL, save = TRUE, ilab = "PI_DATE") {

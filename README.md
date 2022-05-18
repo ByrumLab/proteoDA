@@ -65,7 +65,7 @@ targets <- make_targets(file = "path/to/metdata.csv",
 # Subset targets
 sub <- subset_targets(targets = targets, 
                       filter_list = list(group = "pool",
-                                         sample = c("sampleA", "sampleB"))
+                                         sample = c("sampleA", "sampleB")))
 
 # Process data
 norm <- process_data(data = extracted_data$data,

@@ -33,12 +33,7 @@ fit_limma_model <- function(data,
   targets <- design_obj$targets
   contrasts <- contrasts_obj$contrasts
 
-  # Need to add checks for these
-
-
-  # TODO:
-  # NEED TO ADD SOME SORT OF CHECK FOR THE CONTRASTS
-
+  #TODO: could possibly add some checks for the above, to make sure the objects are what we're expecting.
 
   # Do some checks of the input data
   # All samples in data have targets
@@ -53,16 +48,21 @@ fit_limma_model <- function(data,
     cli::cli_abort(c("Not all target rownames in {.arg targets} have a matching colname in {.arg data}",
                      "!" = "{cli::qty(length(problemTargets))} Row{?s} without a match: {.val {problemTargets}}"))
   }
+  # Levels in contrasts and levels in design match
+  # TODO: need to figure out the best way to deal with this check in conjunction with
+  # issue #14: these may not always match perfectly if, e.g., there's a
+  # factor we're controlling for in the design matrix but not comparing in the
+  # contrasts. So, I think everything in contrasts needs to be present in design,
+  # but not necessarily vice verse (at least, with the way things are now)
+  if (!all(rownames(contrasts) %in% colnames(design))) {
+    problemContrasts <- rownames(contrasts)[rownames(contrasts) %notin% colnames(design)]
+    cli::cli_abort(c("{cli::qty(length(problemContrasts))} {?A/Some} level{?s} in the contrast matrix {?is/are} not present in the design matrix",
+                     "!" = "{cli::qty(length(problemContrasts))} Level{?s} without a match: {.val {problemContrasts}}"))
+  }
+
 
   # Ensure data cols are in same order as rows in targets
   data <- data[, rownames(targets)]
-
-  # Don't think this line is used for anything??
-  #groups <- targets$group
-
-  # Double-check that the order is all the same
-  # TODO: Shouldn't really ever trigger this, right? maybe remove?
-  stopifnot(identical(colnames(data), rownames(targets)))
 
 
   cli::cli_rule()
@@ -127,11 +127,15 @@ fit_limma_model <- function(data,
 
 
 
-
 extract_limma_DE_results <- function(limma_fit, min.pval = 0.055, min.lfc = 1, adj.method = "BH") {
 
-  # TODO:
-  # ADD a check on adjustment method?
+  # check args
+  adj.method <- rlang::arg_match(
+    arg = adj.method,
+    values = c("none", "BH", "BY", "holm"),
+    multiple = FALSE
+  )
+
 
   # Just get it going initially, without too much testing.
   # Really, shouldn't need to do much testing if we're just passing in the whole limma fit object
@@ -172,7 +176,7 @@ extract_limma_DE_results <- function(limma_fit, min.pval = 0.055, min.lfc = 1, a
 
 
 # utility function used in extract_limma_DE_results
-check_DE_perc <- function(DE_outcomes_table, threshold = 0.1, min.pval, min.lfc, adj.method) {
+check_DE_perc <- function(DE_outcomes_table, threshold = 0.2, min.pval, min.lfc, adj.method) {
   perc_sig <- colSums(DE_outcomes_table != 0, na.rm = T)/colSums(!is.na(DE_outcomes_table))
 
   if (any(perc_sig > threshold)) {
@@ -227,18 +231,6 @@ check_DE_perc <- function(DE_outcomes_table, threshold = 0.1, min.pval, min.lfc,
 #   }
 #
 #   stopifnot(identical(rownames(data), rownames(annot)))
-#
-#   ## DE stat results are extracted in 3 formats. statList is list object, where each
-#   ## item in the list is a data.frame of the stat results for a particular contrast.
-#   ## This list object is used to create/save DE plots and individual stat result files.
-#   ## comboStats = combined stat results in wide format. This data.frame is used to
-#   ## create results file for Big Query upload. This data.frame is used to create results file
-#   ## returned to the investigator.
-#   res <- extract_limma_results(
-#     efit = efit, annot = annot, data = data, min.pval = min.pval,
-#     min.lfc = min.lfc, adj.method = adj.method, dir = dir, save = save,
-#     enrich = enrich, ilab = ilab
-#   )
 #
 #   ## SAVE DE PLOTS
 #   if (save) {

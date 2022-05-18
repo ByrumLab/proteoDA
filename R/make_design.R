@@ -75,10 +75,10 @@ make_design <- function(targets,
     cli::cli_inform("Renamed input {.arg paired_column} {.val {paired_column}} to {.val paired}")
     paired_column <- NULL ## so paired is not included in design formula
   }
-  # From my reading of the code, we wlays want pairedformula to me NULL
+  # From my reading of the code, we always want pairedformula to be NULL
   # And it is never included in the design formula and matrix, only the
   # target??
-  # TODO: double check on this, and streamline it out if thats true.
+  # TODO: double check on this, and streamline it out if that's true.
   pairedformula <- NULL
 
 
@@ -131,7 +131,7 @@ make_design <- function(targets,
     desCols <- c(desCols, levels(tar[,x])[-1])
     # TODO: why drop the first level of the paired or factor cols here??
     # Rather, I get why we do it: to make what the design matrix makes above
-    # But why does the design matrix do that above? I guess it default to treatment
+    # But why does the design matrix do that above? I guess it defaults to treatment
     # contrasts for the later terms of the model formula?
   }
   colnames(design) <- desCols
