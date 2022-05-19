@@ -204,7 +204,7 @@ validate_filename <- function(filename, allowed_exts, check_space = T) {
   # Check spaces
   if (check_space) {
     if (stringr::str_detect(filename, " ")) {
-      cli::cli_abort(c("Invalid file name supplied",
+      cli::cli_abort(c("Invalid file name supplied: {.path {filename}}",
                        "x" = "Supplied file name {.val {filename}} contains spaces, which are not allowed",
                        "i" = "Edit the supplied file name to remove spaces"))
     }
@@ -212,7 +212,7 @@ validate_filename <- function(filename, allowed_exts, check_space = T) {
 
   # check extension:
   if (tools::file_ext(filename) %notin% allowed_exts) {
-    cli::cli_abort(c("Invalid file name supplied",
+    cli::cli_abort(c("Invalid file name supplied: {.path {filename}}",
                      "x" = "File name cannot end in {.path {tools::file_ext(filename)}}",
                      "i" = "Permitted file {cli::qty(length(allowed_exts))} extension{?s}: {.val {allowed_exts}}"))
 

@@ -53,7 +53,7 @@ fit_limma_model <- function(data,
   # issue #14: these may not always match perfectly if, e.g., there's a
   # factor we're controlling for in the design matrix but not comparing in the
   # contrasts. So, I think everything in contrasts needs to be present in design,
-  # but not necessarily vice verse (at least, with the way things are now)
+  # but not necessarily vice versa (at least, with the way things are now)
   if (!all(rownames(contrasts) %in% colnames(design))) {
     problemContrasts <- rownames(contrasts)[rownames(contrasts) %notin% colnames(design)]
     cli::cli_abort(c("{cli::qty(length(problemContrasts))} {?A/Some} level{?s} in the contrast matrix {?is/are} not present in the design matrix",

@@ -1,42 +1,82 @@
 write_limma_results <- function(model_results,
                                 annotation,
                                 ilab,
-                                out_dir = file.path(ilab, paste0(enrich, "_analysis")),
+                                out_dir = NULL,
                                 norm.method,
                                 enrich = c("protein", "phospho"),
                                 pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
-                                contrasts_subdir = "per_contrast_results",
-                                summary_csv = "DE_summary.csv",
-                                combined_file_csv = "combined_results.csv",
-                                BQ_csv = paste0(ilab, "_results_BQ.csv"),
-                                spreadsheet_xlsx = paste0(ilab, "_results.xlsx"),
+                                overwrite = F,
+                                contrasts_subdir = NULL,
+                                summary_csv = NULL,
+                                combined_file_csv = NULL,
+                                BQ_csv = NULL,
+                                spreadsheet_xlsx = NULL,
                                 add_filter = T) {
 
   # Check args ----------------------------------------------------
   pipe <- rlang::arg_match(pipe)
   enrich <- rlang::arg_match(enrich)
 
-  if (!dir.exists(out_dir)) {
-    dir.create(out_dir, recursive = T)
+
+  # Assign defaults if not overridden above
+  if (is.null(out_dir)) {
+    out_dir <- file.path(ilab, paste0(enrich, "_analysis"))
+  }
+  if (is.null(contrasts_subdir)) {
+    contrasts_subdir <- "per_contrast_results"
+  }
+  if (is.null(summary_csv)) {
+    summary_csv <- "DE_summary.csv"
   }
 
-  # redo output filenames as NULL in arguments, and setup here.
+  if (is.null(combined_file_csv)) {
+    combined_file_csv <- "combined_results.csv"
+  }
 
-  # Add filename validation
+  if (is.null(BQ_csv)) {
+    BQ_csv <- paste0(ilab, "_results_BQ.csv")
+  }
 
-  # Add checks of model result rownames in annotation rownames.
+  if (is.null(spreadsheet_xlsx)) {
+    spreadsheet_xlsx <- paste0(ilab, "_results.xlsx")
+  }
 
-  # add check for whether outdir already exists
+  # Validate filenames
+  for (filename in c(summary_csv, combined_file_csv, BQ_csv)) {
+    validate_filename(filename, allowed_exts = "csv")
+  }
+  validate_filename(spreadsheet_xlsx, allowed_exts = "xlsx")
 
-  # add check for norm method
+  # Make sure proteins in results have matching rows in annotation
+  if (!all(unique(unlist(lapply(model_results$stats_by_contrast, rownames))) %in% rownames(annotation))) {
+    cli::cli_abort(c("Not all proteins/rownames in {.arg model_results} have a matching rowname in {.arg annotation}",
+                     "i" = "Are these objects from the same dataset?"))
+  }
+
+  # Check norm method
+  norm.method <- rlang::arg_match(
+    arg = norm.method,
+    values = norm.methods,
+    multiple = FALSE
+  )
 
 
   # Setup -------------------------------------------------------------------
+  cli::cli_rule()
+  if (dir.exists(out_dir)) {
+    if (overwrite) {
+      cli::cli_inform("Directory {.path {out_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting files in directory.")
+    } else {
+      cli::cli_abort(c("Directory {.path {out_dir}} already exists",
+                       "!" = "and {.arg overwrite} == {.val {overwrite}}",
+                       "i" = "Rename {.arg out_dir} or set {.arg overwrite} to {.val TRUE}"))
+    }
+  } else {
+    dir.create(out_dir, recursive = T)
+  }
+
   statlist <- model_results$stats_by_contrast
   data <- model_results$data
-
-  cli::cli_rule()
-
 
   # Write summary CSV -------------------------------------------------------
   summary_output_file <- file.path(out_dir, summary_csv)

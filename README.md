@@ -198,9 +198,9 @@ tests as well. Maybe better to just do it once.
 | `make_qc_report`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_design`              | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_contrasts`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `fit_limmma_model`         | :heavy_check_mark: | :x:                | :x:                |
-| `extract_limma_DE_results` | :heavy_check_mark: | :x:                | :x:                |
-| `write_limma_results`      | :x:                | :x:                | :x:                |
+| `fit_limmma_model`         | :heavy_minus_sign: | :x:                | :x:                |
+| `extract_limma_DE_results` | :heavy_minus_sign: | :x:                | :x:                |
+| `write_limma_results`      | :heavy_minus_sign: | :x:                | :x:                |
 | `make_limma_report`        | :x:                | :x:                | :x:                |
 
 The final steps in the pipeline, for the limma analysis, are being
@@ -210,11 +210,11 @@ files, and made the glimma plots. `add_limma_results` added limma
 results to an excel spreadsheet. I’m working to separate out some of the
 functionality into independent functions. Now, we have:
 
--   `fit_limma_model`- Which just does model fitting, and returns a list
-    of various model fit objects.
--   `extract_limma_DE_results`- Which extracts statistical results for
-    each contrast from the list of limma model fits.
--   TBD- `write_limma_results`- Which will output the various .csv and
-    excel files of results.
+-   `fit_limma_model`- Just does model fitting, and returns a list of
+    various model fit objects.
+-   `extract_limma_DE_results`- Extracts statistical results for each
+    contrast from the list of limma model fits.
+-   `write_limma_results`- Output the various .csv and excel files of
+    results.
 -   TBD- `make_limma_report`- Which will output the GLIMMA plots and
     html report for end users.

@@ -299,14 +299,12 @@ results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
 
 
 # Write results -----------------------------------------------------------
-profvis(
 write_limma_results(model_results = results_lupashin,
                     norm.method = "vsn",
                     annotation = ext_lupashin$annot,
                     ilab = "Lupashin_82928",
-                    enrich = "protein")
-)
-
+                    enrich = "protein",
+                    overwrite = T)
 
 
 write_limma_results(model_results = results_ndu_brain,
