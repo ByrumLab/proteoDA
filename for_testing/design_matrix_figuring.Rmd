@@ -1,0 +1,361 @@
+---
+title: "Design and Contrast Matrix Testing"
+output:
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE, echo = F}
+knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", cache = T, echo = T)
+options(width = 10000)
+# Load packages -----------------------------------------------------------
+library(knitr)
+library(waldo)
+library(devtools)
+library(dplyr)
+load_all()
+```
+
+As I implement the model fitting parts of the R package, I've been working to better understand the contrast and design matrix parts of the limma model fitting process. Much of this was motivated by figuring out how best to deal with multiple predictor variables, and in particular multiple predictor variables when we want to know their effects (and don't just want to control for one variable while examining another). 
+
+## Background
+
+Charity sent [this helpful paper](https://f1000research.com/articles/9-1444/v1), which is good background for this. There is one important issue from that paper in particular: intercept- vs. no-intercept parameterizations of categorical models. Consider a experiment with a control group and a treatment group, for which we want to find DE. In the intercept parameterization, we'd estimate the intercept as the mean expression for the "default" group (probably the control), and for the non-default group we'd estimate the difference/offset from the default group. So, we're directly estimating the quantity we're interested in (differential expression). 
+
+In the no-intercept parameterization, we estimate the mean expression for each group, and neither is the default. Then, to calculate differential expression, we need to supply a contrast matrix, telling limma how to add/subtract the per-group means to calculate differential expression (e.g., treatment- control). This might seem like extra steps, but it is really useful in cases where the predictor variable has multiple levels (e.g., A, B, and C). In the no-intercept model, we can just compare the per-group means for each pairwise comparison ($B-A$, $B-C$, etc.), which is easy to programmatically specify. In the intercept model, this is a little more complicated: comparisons against the default (say, A) are just the estimated coefficients, while comparisons between the non-default categories have to be subtracted (e.g., the B-A contrast is just $B$, but the C-B contrast is $C-B$). 
+
+## Multiple predictors of interest
+
+With that background out of the way, let's investigate what to do when we have multiple predictors that we're interested in. Duah first mentioned this issue to me with the Kaul project, so I'll work through it as an example. 
+
+First, we can load in the expression data and the sample data and process it:
+
+```{r}
+# Load expression data
+raw_data <- extract_data("for_testing/Example Data/kaul/Samples Report of Kaul_030922.csv",
+                         pipe = "DIA",
+                         enrich = "protein")
+
+targets <- make_targets(file = "for_testing/Example Data/kaul/Kaul_030922_metafile_2_DIA.csv",
+                        sampleIDs = colnames(raw_data$data),
+                        pipe = "DIA",
+                        enrich = "protein")
+
+# Subset targets
+sub <- subset_targets(targets = targets,
+                      filter_list = list(group = "pool"))
+
+# Process data
+norm <- process_data(data = raw_data$data,
+                     targets = sub$targets,
+                     min.reps = 5,
+                     min.grps = 2)
+
+```
+
+The Kaul data has two predictor variables: group (with levels of "control" and "HCV_HCC"), and gender (with levels of "male" and "female". In the metadata/targets file, we also have a third column, "group_gender", where the two predictors are combined to make one factor with 4 levels (Control.male, Control.female, etc...). Let's say we're interested in both effects: we want genes that are DE between treatments (while controlling for gender), and are also interested in genes that are DE between genders (while controlling for treatment). There are a few different ways we could maybe do it.
+
+### The single-factor approach
+
+One of the suggestions in the paper above is to turn your 2x2 factorial design into a 1x4 design, and then specify contrasts to compare across the original values. We've already got our 1x4 column, "group_gender". So, we'd make our design matrix like so:
+
+```{r onecol design}
+design_onecol <- make_design(targets=norm$targets,
+                             group_column = "group_gender",
+                             factor_columns = NULL,
+                             paired_column = NULL)
+```
+
+Leading to this design matrix:
+
+```{r}
+head(design_onecol$design)
+```
+
+And this formula:
+
+```{r}
+design_onecol$designformula
+```
+
+Next, we need to specify the contrasts we're interested in. This is a little bit complicated:
+
+```{r}
+contrasts_onecol <- make_contrasts(file = "for_testing/Example Data/kaul/contrasts_onecol.csv", 
+                                   design = design_onecol$design)
+
+writeLines(contrasts_onecol$contrast.vec)
+```
+
+So here, I specified 6 different contrasts: one to look at overall differences across treatments, one across gender, and contrasts to look at the effects of treatment within each gender, and the results of gender within each treatment. This model is, implicitly, an interaction model: the effect of treatment can vary across genders (and the effect of gender can vary across treatments). 
+
+We can fit the model and extract the DE results for our 6 contrasts:
+
+```{r}
+fit_onecol <- fit_limma_model(norm$normList[["vsn"]], 
+                              design_obj = design_onecol, 
+                              contrasts_obj = contrasts_onecol)
+results_onecol <- extract_limma_DE_results(fit_onecol)
+```
+
+We'll return to those later. On to another couple possible ways of parameterizing things. 
+
+
+### No intercept, group-first
+
+We could just specify our two factors in our `make_design()` code:
+
+```{r}
+design_groupfirst <- make_design(targets=norm$targets,
+                                 group_column = "group",
+                                 factor_columns = "gender",
+                                 paired_column = NULL)
+```
+
+This does lead to one issue: R's design matrices only do no-intercept encoding for the first variable. Later variables will be encoded in the intercept way:
+
+```{r}
+head(design_groupfirst$design)
+```
+
+As a side note, attempts to get around this (e.g., by making a custom design matrix with 4 columns, instead of three) lead to a matrix that is not of full rank such that limma can't fit a model. 
+
+So, we have our two predictors encoded slightly differently: experimental group with no-intercept encoding, but gender with intercept encoding. This is implicitly an additive model: the effect of female is constant across treatments. 
+
+Here, we don't actually need to set up contrasts for the effect of sex: they're already estimated by the model (the female term in the model is giving the contrast against the default of "male"). So, we don't actually need to specify contrasts to look at the effect of sex, we can just extract the DE results. I'll use the same code as what we do within our package functions: 
+
+```{r}
+fit_groupfirst_nocontrasts <- limma::lmFit(norm$normList[["vsn"]], design = design_groupfirst$design)
+results_groupfirst_nocontrasts <- extract_limma_DE_results(list(eBayes_fit = limma::eBayes(fit_groupfirst_nocontrasts, 
+                                                                                           robust = T)))
+```
+
+To calculate DE across our other predictor, group, we still need to supply contrasts. I tried a couple different ways of specifying them. With our scripts, we also need to supply a contrast to use for sex: otherwise the results for it will not be output (our code only outputs the contrasts that we ask for). For sex, this is, I think, as simple as just supplying the column name as the contrast, but I tried a couple other contrast strings as well: 
+
+```{r}
+contrasts_groupfirst <- make_contrasts(file = "for_testing/Example Data/kaul/contrasts_groupfirst.csv", 
+                                       design = design_groupfirst$design)
+writeLines(contrasts_groupfirst$contrast.vec)
+```
+
+Then, we can fit the model with these contrasts:
+
+```{r}
+fit_groupfirst_contrasts <- fit_limma_model(norm$normList[["vsn"]], 
+                                            design_obj = design_groupfirst, 
+                                            contrasts_obj = contrasts_groupfirst)
+results_groupfirst_contrasts <- extract_limma_DE_results(fit_groupfirst_contrasts)
+```
+
+### No intercept, gender first
+
+Of course, we could flip the order: use the no-intercept encoding for gender, and the intercept coding for group. This will hopefully give us the same results as above. 
+
+```{r}
+design_genderfirst <- make_design(targets=norm$targets,
+                                  group_column = "gender",
+                                  factor_columns = c("group"),
+                                  paired_column = NULL)
+# Again, can just fit it, without setting up contrasts
+fit_genderfirst_nocontrasts <- limma::lmFit(norm$normList[["vsn"]], design = design_genderfirst$design)
+results_genderfirst_nocontrasts <- extract_limma_DE_results(list(eBayes_fit = limma::eBayes(fit_genderfirst_nocontrasts,
+                                                                                            robust = T)))
+
+# But still need contrasts to get at the first variable (now gender):
+contrasts_genderfirst <- make_contrasts(file = "for_testing/Example Data/kaul/contrasts_genderfirst.csv", 
+                                        design = design_genderfirst$design)
+writeLines(contrasts_genderfirst$contrast.vec)
+```
+
+
+```{r}
+fit_genderfirst_contrasts <- fit_limma_model(norm$normList[["vsn"]], 
+                                             design_obj = design_genderfirst, 
+                                             contrasts_obj = contrasts_genderfirst)
+results_genderfirst_contrasts <- extract_limma_DE_results(fit_genderfirst_contrasts)
+```
+
+### Intercept model
+
+Finally, we can do the same additive models as above, but with the intercept parameterization. We have to make the design matrix outside our package function, and do the model fitting outside our package as well. But, there is no need to set up new contrasts, as the intercept parameterization already encodes our predictors as offsets:
+
+
+```{r}
+design_intercept <- list(design = model.matrix(~group+gender, data = norm$targets),
+                         targets = norm$targets[,c("group", "gender")])
+
+fit_intercept <- limma::lmFit(norm$normList[["vsn"]], design = design_intercept$design)
+results_intercept <- extract_limma_DE_results(list(eBayes_fit = limma::eBayes(fit_intercept,
+                                                                              robust = T)))
+
+# In this case, the code set female as the default, so need to flip some terms
+# to make it male-default like the ones above
+results_intercept$stats_by_contrast$genderfemale <- results_intercept$stats_by_contrast$gendermale %>%
+  mutate(logFC = logFC*-1,
+         CI.L.temp = CI.R*-1,
+         CI.R = CI.L*-1,
+         CI.L = CI.L.temp,
+         t = t*-1,
+         sig.PVal = sig.PVal*-1,
+         sig.FDR = sig.FDR*-1) %>%
+  select(-CI.L.temp)
+
+```
+
+
+## Comparing results across methods
+
+Now that we've run the model a few ways, we can compare the results across our different specifications/parameterizations. 
+
+### Comparing within models
+
+First, let's look within our no-intercept, 2 factor models. For these models, we could calculate the DE effect for our second term in two ways: by looking directly at the model output, or by specifying a contrast. These should be the same. Let's check the group effect (which means looking at the gender-first model):
+
+```{r}
+all.equal(results_genderfirst_nocontrasts$stats_by_contrast$HCV_HCC,
+          results_genderfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control_1) 
+all.equal(results_genderfirst_nocontrasts$stats_by_contrast$HCV_HCC,
+          results_genderfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control_2)  %>% 
+  writeLines()
+all.equal(results_genderfirst_nocontrasts$stats_by_contrast$HCV_HCC,
+          results_genderfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control_3)
+```
+
+This looks fine: the second way I tried specifying the contrast ("HCV_HCC-(male+female)/2") is incorrect, but the other two are the same, and match the effect estimated straight from the model. We can check if the same is true of the gender effect (within the group-first model):
+
+
+```{r}
+all.equal(results_groupfirst_nocontrasts$stats_by_contrast$female,
+          results_groupfirst_contrasts$stats_by_contrast$male_vs_female_1)
+all.equal(results_groupfirst_nocontrasts$stats_by_contrast$female,
+          results_groupfirst_contrasts$stats_by_contrast$male_vs_female_2) %>% 
+  writeLines()
+all.equal(results_groupfirst_nocontrasts$stats_by_contrast$female,
+          results_groupfirst_contrasts$stats_by_contrast$male_vs_female_3) 
+```
+
+And we get the same results. So, that is good: **in the no-intercept, two-factor model, we get the same DE results for the second predictor variable whether we specify the contrasts or not**.
+
+### Comparing order across no-intercept models
+
+Next, we want to look across our models: the order of specifying terms shouldn't matter (right?), so the group effect estimated in the no-intercept, group-first model should be the same as the group effect estimated in the no-intercept, gender-first model. Let's see:
+
+```{r}
+all.equal(results_groupfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control,
+          results_genderfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control_1) %>% 
+  writeLines()
+```
+
+So, they are not quite the same: the estimates of LogFC and average expression are the same, but the CIs and stats are a little different. The differences aren't huge (in the 3-4 decimal place, on average), and they don't led to big differences in terms of statistical inference: only `r sum(results_groupfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control$sig.FDR != results_genderfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control_1$sig.FDR)` proteins change significance of DE for adjusted P-values, and `r sum(results_groupfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control$sig.PVal != results_genderfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control_1$sig.PVal)` change considering raw P-values. Still, the differences are a little odd: they're larger than we'd generally expect from floating point imprecision in R (usually in the 14-16th decimal places), so I think they suggest some way in which the stats are calculated in subtly different ways when the order is flipped. 
+
+We can check and see if the gender effect has the same issue:
+
+```{r}
+all.equal(results_genderfirst_contrasts$stats_by_contrast$male_vs_female,
+          results_groupfirst_contrasts$stats_by_contrast$male_vs_female_1) %>% 
+  writeLines()
+
+```
+
+And it does, though again, the differences are small and for this effect they don't change our statistical inference at all: `r sum(results_genderfirst_contrasts$stats_by_contrast$male_vs_female$sig.FDR !=      results_groupfirst_contrasts$stats_by_contrast$male_vs_female_1$sig.FDR)` proteins change the significance of DE with adjusted P-values, and `r sum(results_genderfirst_contrasts$stats_by_contrast$male_vs_female$sig.PVal !=      results_groupfirst_contrasts$stats_by_contrast$male_vs_female_1$sig.PVal)` change considering raw P-values.
+
+So, this is a little odd: **in the no-intercept, two-factor model, the order of predictor variables does have a (small) effect on statistical inference**. Perhaps comparing against our last model, the intercept model, will help us figure this out. 
+
+### Intercept vs. no-intercept models
+
+First, let's just check: does order matter in the intercept model? We can run it with the order flipped (with gender first) and compare:
+
+```{r}
+# Change order
+design_intercept_flip <- list(design = model.matrix(~gender+group, data = norm$targets),
+                         targets = norm$targets[,c("gender", "group")])
+
+fit_intercept_flip <- limma::lmFit(norm$normList[["vsn"]], design = design_intercept_flip$design)
+results_intercept_flip <- extract_limma_DE_results(list(eBayes_fit = limma::eBayes(fit_intercept_flip,
+                                                                              robust = T)))
+
+
+all.equal(results_intercept$stats_by_contrast$groupHCV_HCC, results_intercept_flip$stats_by_contrast$groupHCV_HCC)
+all.equal(results_intercept$stats_by_contrast$gendermale, results_intercept_flip$stats_by_contrast$gendermale)
+```
+
+So, order doesn't matter in the intercept model. Let's compare the different two-factor, no-intercept models to the intercept model. First, the group predictor:
+
+
+```{r}
+# When group is listed first
+all.equal(results_groupfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control,
+          results_intercept$stats_by_contrast$groupHCV_HCC) %>% 
+  writeLines()
+```
+
+
+```{r}
+# When group is listed second
+all.equal(results_genderfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control_1,
+          results_intercept$stats_by_contrast$groupHCV_HCC) 
+```
+
+So, assuming the intercept model is "correct", in the two-factor no-intercept models, the **second** factor is the one that is being calculated correctly. 
+
+
+Can confirm by looking at gender:
+
+```{r}
+# When gender is listed first
+all.equal(results_genderfirst_contrasts$stats_by_contrast$male_vs_female,
+          results_intercept$stats_by_contrast$genderfemale) %>% 
+  writeLines()
+```
+
+
+```{r}
+# When gender is listed second
+all.equal(results_groupfirst_contrasts$stats_by_contrast$male_vs_female_1,
+          results_intercept$stats_by_contrast$genderfemale) 
+```
+
+So, why is this happening? I don't really know. These result tables that we're comparing are just calculated/extracted from the limma eBayes fit object. So I compared the eBayes fit objects for the two orders of the no-intercept model. They seem to be almost exactly the same, besides the differences in column order. The difference that seems to matter is the prior for the variance for each contrast. Those are slightly different:
+
+
+```{r}
+# Get prior variance in groupfirst
+groupfirst_prior_var <- fit_groupfirst_contrasts$eBayes_fit$var.prior
+names(groupfirst_prior_var) <- colnames(fit_groupfirst_contrasts$eBayes_fit)
+
+# Get prior varaince in genderfirst
+genderfirst_prior_var <- fit_genderfirst_contrasts$eBayes_fit$var.prior
+names(genderfirst_prior_var) <- colnames(fit_genderfirst_contrasts$eBayes_fit)
+
+
+print(groupfirst_prior_var)
+print(genderfirst_prior_var)
+```
+
+And that leads to all the slight downstream differences (in CIs, P-values, statistics, etc). I know with empirical Bayes the priors are derived from the means/variances/etc. of the sample data, but in our case we use the robust = TRUE option, so the prior variances and degrees of freedom aren't the same as the naive ones (and I think limma might do some further variance squishing). So, its a little hard to replicate exactly why the prior variances are different when the order of the model switches. My guess is it has to do with how variances are calculated across different levels within the same predictor: some difference in how variance is pooled across treatment levels and combinations? Or maybe sometimes the variance is only calculated within one category? Would have to dive deeper into the limma code to figure this out for sure. 
+
+This does seem to be mostly a minor issue, as these differences don't lead to wildly different inferences (at least, in the Kaul test data they don't).
+
+### Additive vs interactive models
+
+We can do one final model comparison: as I mentioned above, the 1x4 model is, implicitly, an interaction model. So, its estimates should be a little different from our three other models, which are additive. We'll compare against the intercept parameterization: 
+
+```{r}
+all.equal(results_onecol$stats_by_contrast$HCV_HCC_vs_Control,
+          results_intercept$stats_by_contrast$groupHCV_HCC, ) %>% 
+  writeLines()
+```
+
+Annoyingly, `all.equal()` seems to prioritize printing output on missing values first. But, there are bigger differences (in logFC, and in stats) between these, as we'd expect given that the models are different. 
+
+## Conclusions
+
+So, some of these model specification issues make a difference. In brief:
+
+* The order of specifying model terms matters in the no-intercept model. Would be good to test this further, with the types of experimental designs we see a little more often (one term with 3 or more levels). 
+
+* Need to be careful when specifying 2x2 vs 1x4 (or other higher-level) designs: need to think about when we want to include interactions, and when we don't.
+
+* As it is now, the default parameterization in our pipeline/R package is the no-intercept one. I think we should probably keep it that way as the default, but maybe add in an option in the `make_design()` function to allow easy switching to the intercept parameterization for projects where that makes more sense. 
+
+

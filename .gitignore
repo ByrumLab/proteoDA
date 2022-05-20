@@ -4,10 +4,22 @@
 
 
 # Data, results, and other files during package testing
-for_testing
+for_testing/UAMS_Academic_Horz_CMYK.jpg
+for_testing/logo_higherres.png
+for_testing/logo.png
+for_testing/Email_rmd/
+for_testing/*_cache/
+for_testing/*.html
+for_testing/Example Data
 Kinter_DIA_022521_Samples_Report_BQ.csv
 logs/*
 *_BQ*
 targets*.csv
 protein_analysis/
 phospho_analysis/
+
+
+
+
+
+
