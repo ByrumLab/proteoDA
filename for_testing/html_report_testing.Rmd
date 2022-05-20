@@ -1,0 +1,187 @@
+---
+title: " "
+output: 
+  html_document:
+    mathjax: null
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
+#knitr::opts_knit$set(base.dir = "~/Projects/proteomicsDIA/")
+knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F)
+options(width = 10000)
+# Load packages -----------------------------------------------------------
+library(knitr)
+library(devtools)
+library(htmlwidgets)
+load_all()
+```
+
+```{css, echo=FALSE}
+.main-container {
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+```
+
+```{r logo, fig.align="left", out.width="40%"}
+knitr::include_graphics(path = "~/Projects/proteomicsDIA/for_testing/logo_higherres.png", rel_path = F)
+```
+
+
+```{r, cache = T}
+# Get all the stuff that would be input in our function
+
+ext_reb <- extract_data(file = "for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv",
+                       pipe = "DIA",
+                       enrich = "protein")
+target_reb <- make_targets(file = "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv",
+                           sampleIDs = colnames(ext_reb$data),
+                           pipe = "DIA",
+                           enrich = "protein")
+
+sub_reb <- subset_targets(targets = target_reb,
+                          filter_list = list(group = "Pool"))
+norm_reb <- process_data(data = ext_reb$data,
+                         targets = sub_reb$targets,
+                         min.reps = 2,
+                         min.grps = 1)
+des_reb <- make_design(targets = norm_reb$targets,
+                           group_column = "group",
+                           factor_columns = NULL,
+                           paired_column = NULL)
+contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/contrasts.csv",
+                                    design = des_reb$design)
+fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
+                           design_obj = des_reb,
+                           contrasts_obj = contrasts_rebello)
+results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
+
+annotation <- ext_reb$annot[rownames(results_reb$data),]
+contrast <- names(results_reb$stats_by_contrast)[1]
+```
+
+### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
+
+# {.tabset .tabset-fade}
+
+```{r, results = "asis"}
+plot_list <- c("Volcano_raw_P",
+               "Volcano_adj_P",
+               "MD_raw_P",
+               "MD_adj_P")
+
+src <- lapply(plot_list, function(plot) {
+  knitr::knit_expand(file = paste0("for_testing/", plot, "_template.Rmd"))
+})
+
+res <- knitr::knit_child(text = unlist(src), quiet = TRUE)
+cat(res, sep = "\n")
+
+```
+
+# {-}
+
+Some issues: 
+
+* The default xlim minumum for the MD plot is 0. Unfortunately, I can't seem to change that with the functions I'm using. Glimma seems to have a few sets of functions: some save html files and/or launch interactive plots right in R, but those don't work for HTML output. Some output HTMLwidgets, and that's that we need. `glimmaXY()` outputs HTMLwidgets, but has fewer arguments/options for customization (e.g., no `xlim` argument). I think we may be able to get around this by using some of the more internal glimma functions. E.g., use `buildXYData()` to get everything all prepped, and then pass that to `glimmaXYWidget()` for output. 
+
+* A similar issue with the summary plots on the right: the ylim goes down to 0. This might be desirable behavior (truncating y-axes can be deceptive), but in our case seems like it might be better to have the ylim be dynamic based on the selected gene. 
+
+* The saved plots created by the Save Plot button above look bad/weird: I think because they're transparent? Might just be the way they display on my Linux machine. 
+
+* In the table, the stats columns it outputs are based on the x and y axes. Would be nice to have it output the raw and adjusted p-values on the regular scale, not the -log10 scale. We may want to have it output additional columns as well. 
+
+```{r, results = "asis", eval = F}
+# Set up the contrast pills
+
+for (contrast in names(results_reb$stats_by_contrast)) {
+  cat(paste0("## ", contrast))
+  cat("\n")
+  
+  cat("### {.tabset .tabset-fade}")
+  cat("\n\n")
+  
+  for (plot_type in c("Volcano", "MD")) {
+    cat(paste0("#### ", plot_type, "\n"))
+    cat("\n")
+    
+    data <- results_reb$stats_by_contrast[[contrast]]
+    data$negLog10P <- -log(data$P.Value, 10)
+    groups <- norm_reb$targets$group
+    data$sig.PVal <- ifelse(is.na(data$sig.PVal), 0, data$sig.PVal)  
+    if (plot_type == "Volcano") {
+      volcanoplot <- Glimma::glimmaXY(
+        x = data$logFC,
+        y = data$negLog10P,
+        counts = norm_reb$normList[["vsn"]],
+        groups = groups,
+        transform.counts = "none",
+        xlab = "logFC",
+        ylab = "negLog10P",
+        status = data$sig.PVal,
+        anno = ext_reb$annot[rownames(data), ],
+        display.columns = c("UniprotID", "Gene_name"),
+        main = " ")
+    }
+    cat(paste0("Put ", plot_type, "plot for contrast ", contrast, " here"))
+    cat("\n\n")
+  }
+  
+  cat("## {-}")
+  cat("\n\n")
+}
+```
+
+# {-}
+
+
+# {.tabset .tabset-dropdown}
+
+```{r echo=FALSE, result = "asis", eval = F}
+
+
+# And here is the other half of the equation. I loop to make the plots, but save them all in an html list, and then print the list. That works for displaying multiple plots, but not for making the tabset (which happens during the knitting from Rmd to md). 
+html <- list()
+for (contrast in names(results_reb$stats_by_contrast)) {
+  data <- results_reb$stats_by_contrast[[contrast]]
+    data$negLog10P <- -log(data$P.Value, 10)
+    groups <- norm_reb$targets$group
+    data$sig.PVal <- ifelse(is.na(data$sig.PVal), 0, data$sig.PVal)
+    volcanoplot <- Glimma::glimmaXY(
+        x = data$logFC,
+        y = data$negLog10P,
+        counts = norm_reb$normList[["vsn"]],
+        groups = groups,
+        transform.counts = "none",
+        xlab = "logFC",
+        ylab = "negLog10P",
+        status = data$sig.PVal,
+        anno = ext_reb$annot[rownames(data), ],
+        display.columns = c("UniprotID", "Gene_name"),
+        main = " ")
+  
+  html <- c(html, 
+            list(htmltools::h2(paste0("Plot for ", contrast)),
+                 volcanoplot 
+                 )
+            )
+}
+htmltools::tagList(html)
+```
+
+# {-}
+
+```{r, eval = F }
+# Other ideas from across stackoverflow:
+# 
+# Combining knit expand and knit child
+# https://bookdown.org/yihui/rmarkdown-cookbook/knit-expand.html
+# 
+# Doing it with custom HTML
+# https://stackoverflow.com/questions/37008600/dynamically-loop-through-htmlwidgets-and-add-knitr-formatting-for-rmarkdown
+
+```
+
