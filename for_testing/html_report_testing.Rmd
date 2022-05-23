@@ -3,6 +3,8 @@ title: " "
 output: 
   html_document:
     mathjax: null
+    self_contained: false
+    lib_dir: libs
 editor_options: 
   chunk_output_type: console
 ---
@@ -65,16 +67,26 @@ contrast <- names(results_reb$stats_by_contrast)[1]
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
 
-# {.tabset .tabset-fade}
+# {.tabset .tabset-fade .tabset-pills}
 
 ```{r, results = "asis"}
-plot_list <- c("Volcano_raw_P",
-               "Volcano_adj_P",
-               "MD_raw_P",
-               "MD_adj_P")
+data <- results_reb$stats_by_contrast[[contrast]]
+data$negLog10rawP <- -log(data$P.Value, 10)
+data$negLog10adjP <- -log(data$adj.P.Val, 10)
+data$sig.PVal <- ifelse(is.na(data$sig.PVal), 0, data$sig.PVal) 
+data$sig.FDR <- ifelse(is.na(data$sig.FDR), 0, data$sig.FDR)  
+groups <- norm_reb$targets$group
+height <- 1000
+width <- 1000
+
+plot_list <- c("Volcano raw P",
+               "Volcano adjusted P",
+               "MD raw P",
+               "MD adjusted P")
 
 src <- lapply(plot_list, function(plot) {
-  knitr::knit_expand(file = paste0("for_testing/", plot, "_template.Rmd"))
+  plot <- deparse(plot)
+  knitr::knit_expand(file = "for_testing/glimma_xy_plot.Rmd")
 })
 
 res <- knitr::knit_child(text = unlist(src), quiet = TRUE)
@@ -172,7 +184,81 @@ for (contrast in names(results_reb$stats_by_contrast)) {
 htmltools::tagList(html)
 ```
 
+
 # {-}
+
+## glimmaVolcano()
+
+```{r}
+Glimma::glimmaVolcano(x = fit_reb$eBayes_fit,
+                      coef = "NRBC_1d_vs_Control_untreated",
+                      counts = norm_reb$normList[["vsn"]],
+                      transform.counts = "none",
+                      status = data$sig.FDR,
+                      groups = groups,
+                      height = height,
+                      width = width)
+
+```
+
+## glimmaMD()
+
+```{r}
+Glimma::glimmaMD(x = fit_reb$eBayes_fit,
+                      coef = "NRBC_1d_vs_Control_untreated",
+                      counts = norm_reb$normList[["vsn"]],
+                      transform.counts = "none",
+                      status = data$sig.FDR,
+                      groups = groups,
+                      height = height,
+                      width = width)
+```
+
+
+## Volcano with glXYPlot()
+
+First, made a plot with glXYPlot() and saved in an html file.
+
+```{r}
+Glimma::glXYPlot(
+  x = data$AveExpr,
+  y = data$logFC,
+  counts = norm_reb$normList[["vsn"]],
+  groups = groups,
+  samples = colnames(norm_reb$normList[["vsn"]]),
+  status = data$negLog10adjP,
+  transform = FALSE,
+  anno = ext_reb$annot[rownames(data), ],
+  display.columns = c("UniprotID", "Gene_name"),
+  xlab = "AveExpr",
+  ylab = "logFC",
+  side.main = "Gene_name",
+  side.xlab = "Group",
+  side.ylab = "Normalized Intensity",
+  side.log = FALSE,
+  sample.cols = colorGroup2(groups)[groups],
+  cols = c("#00bfff", "#858585", "#ff3030"),
+  jitter = 10,
+  folder = "for_testing/glimma_cache/",
+  html = "MD_with_glXY",
+  launch = F
+)
+```
+
+Then, can try importing it?? First, with `htmltools::includehtml()`:
+
+```{r}
+htmltools::includeHTML("for_testing/glimma_cache/MD_with_glXY.html")
+```
+
+Then, with a weird set of code I found here: https://bookdown.org/yihui/rmarkdown-cookbook/include-html.html:
+
+````{=html}
+```{r, echo=FALSE, results='asis'}
+xfun::file_string('for_testing/glimma_cache/MD_with_glXY.html')
+```
+````
+
 
 ```{r, eval = F }
 # Other ideas from across stackoverflow:

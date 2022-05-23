@@ -11,12 +11,15 @@ for_testing/Email_rmd/
 for_testing/*_cache/
 for_testing/*.html
 for_testing/Example Data
+for_testing/libs/
 Kinter_DIA_022521_Samples_Report_BQ.csv
 logs/*
 *_BQ*
 targets*.csv
 protein_analysis/
 phospho_analysis/
+
+
 
 
 
