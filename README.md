@@ -164,6 +164,18 @@ See the GitHub issue tracker for other ideas
     after we decide on whether we want to do much re-writing and
     reformatting of the code.
 
+### Software license
+
+Depending on when and how we release this to the public, may need to
+pick a new software license. To be able to reformat the Glimma plots, I
+had to copy-paste some of their code into our package and slightly
+modify it. They use a copyleft license, GPL3, which means it is fine for
+us to do this internally, but if we release our package we need to
+release it under the same GPL3 license. Right now, for no particular
+reason, we’re using the MIT license (which is more permissive and
+imposes no restrictions on anyone who might use our software in the
+future). But we could switch to GPL3, makes no real difference to me.
+
 ### Progress tracker
 
 I’m working my way through the “top-level” functions in the example DIA

@@ -3,8 +3,7 @@ title: " "
 output: 
   html_document:
     mathjax: null
-    self_contained: false
-    lib_dir: libs
+    self_contained: true
 editor_options: 
   chunk_output_type: console
 ---
@@ -71,6 +70,8 @@ contrast <- names(results_reb$stats_by_contrast)[1]
 
 ```{r, results = "asis"}
 data <- results_reb$stats_by_contrast[[contrast]]
+data$`P value` <- data$P.Value
+data$`Adjusted P value` <- data$adj.P.Val
 data$negLog10rawP <- -log(data$P.Value, 10)
 data$negLog10adjP <- -log(data$adj.P.Val, 10)
 data$sig.PVal <- ifelse(is.na(data$sig.PVal), 0, data$sig.PVal) 
@@ -98,176 +99,12 @@ cat(res, sep = "\n")
 
 Some issues: 
 
-* The default xlim minumum for the MD plot is 0. Unfortunately, I can't seem to change that with the functions I'm using. Glimma seems to have a few sets of functions: some save html files and/or launch interactive plots right in R, but those don't work for HTML output. Some output HTMLwidgets, and that's that we need. `glimmaXY()` outputs HTMLwidgets, but has fewer arguments/options for customization (e.g., no `xlim` argument). I think we may be able to get around this by using some of the more internal glimma functions. E.g., use `buildXYData()` to get everything all prepped, and then pass that to `glimmaXYWidget()` for output. 
-
-* A similar issue with the summary plots on the right: the ylim goes down to 0. This might be desirable behavior (truncating y-axes can be deceptive), but in our case seems like it might be better to have the ylim be dynamic based on the selected gene. 
+* Fixed the issues of the x-axis limits for the MD plots and expression plots. 
 
 * The saved plots created by the Save Plot button above look bad/weird: I think because they're transparent? Might just be the way they display on my Linux machine. 
 
-* In the table, the stats columns it outputs are based on the x and y axes. Would be nice to have it output the raw and adjusted p-values on the regular scale, not the -log10 scale. We may want to have it output additional columns as well. 
-
-```{r, results = "asis", eval = F}
-# Set up the contrast pills
-
-for (contrast in names(results_reb$stats_by_contrast)) {
-  cat(paste0("## ", contrast))
-  cat("\n")
-  
-  cat("### {.tabset .tabset-fade}")
-  cat("\n\n")
-  
-  for (plot_type in c("Volcano", "MD")) {
-    cat(paste0("#### ", plot_type, "\n"))
-    cat("\n")
-    
-    data <- results_reb$stats_by_contrast[[contrast]]
-    data$negLog10P <- -log(data$P.Value, 10)
-    groups <- norm_reb$targets$group
-    data$sig.PVal <- ifelse(is.na(data$sig.PVal), 0, data$sig.PVal)  
-    if (plot_type == "Volcano") {
-      volcanoplot <- Glimma::glimmaXY(
-        x = data$logFC,
-        y = data$negLog10P,
-        counts = norm_reb$normList[["vsn"]],
-        groups = groups,
-        transform.counts = "none",
-        xlab = "logFC",
-        ylab = "negLog10P",
-        status = data$sig.PVal,
-        anno = ext_reb$annot[rownames(data), ],
-        display.columns = c("UniprotID", "Gene_name"),
-        main = " ")
-    }
-    cat(paste0("Put ", plot_type, "plot for contrast ", contrast, " here"))
-    cat("\n\n")
-  }
-  
-  cat("## {-}")
-  cat("\n\n")
-}
-```
-
-# {-}
+* In the table, the stats columns it outputs are based on the x and y axes. Would be nice to have it output the raw and adjusted p-values on the regular scale, not the -log10 scale. We may want to have it output additional columns as well. Still need to fix this. 
 
 
-# {.tabset .tabset-dropdown}
 
-```{r echo=FALSE, result = "asis", eval = F}
-
-
-# And here is the other half of the equation. I loop to make the plots, but save them all in an html list, and then print the list. That works for displaying multiple plots, but not for making the tabset (which happens during the knitting from Rmd to md). 
-html <- list()
-for (contrast in names(results_reb$stats_by_contrast)) {
-  data <- results_reb$stats_by_contrast[[contrast]]
-    data$negLog10P <- -log(data$P.Value, 10)
-    groups <- norm_reb$targets$group
-    data$sig.PVal <- ifelse(is.na(data$sig.PVal), 0, data$sig.PVal)
-    volcanoplot <- Glimma::glimmaXY(
-        x = data$logFC,
-        y = data$negLog10P,
-        counts = norm_reb$normList[["vsn"]],
-        groups = groups,
-        transform.counts = "none",
-        xlab = "logFC",
-        ylab = "negLog10P",
-        status = data$sig.PVal,
-        anno = ext_reb$annot[rownames(data), ],
-        display.columns = c("UniprotID", "Gene_name"),
-        main = " ")
-  
-  html <- c(html, 
-            list(htmltools::h2(paste0("Plot for ", contrast)),
-                 volcanoplot 
-                 )
-            )
-}
-htmltools::tagList(html)
-```
-
-
-# {-}
-
-## glimmaVolcano()
-
-```{r}
-Glimma::glimmaVolcano(x = fit_reb$eBayes_fit,
-                      coef = "NRBC_1d_vs_Control_untreated",
-                      counts = norm_reb$normList[["vsn"]],
-                      transform.counts = "none",
-                      status = data$sig.FDR,
-                      groups = groups,
-                      height = height,
-                      width = width)
-
-```
-
-## glimmaMD()
-
-```{r}
-Glimma::glimmaMD(x = fit_reb$eBayes_fit,
-                      coef = "NRBC_1d_vs_Control_untreated",
-                      counts = norm_reb$normList[["vsn"]],
-                      transform.counts = "none",
-                      status = data$sig.FDR,
-                      groups = groups,
-                      height = height,
-                      width = width)
-```
-
-
-## Volcano with glXYPlot()
-
-First, made a plot with glXYPlot() and saved in an html file.
-
-```{r}
-Glimma::glXYPlot(
-  x = data$AveExpr,
-  y = data$logFC,
-  counts = norm_reb$normList[["vsn"]],
-  groups = groups,
-  samples = colnames(norm_reb$normList[["vsn"]]),
-  status = data$negLog10adjP,
-  transform = FALSE,
-  anno = ext_reb$annot[rownames(data), ],
-  display.columns = c("UniprotID", "Gene_name"),
-  xlab = "AveExpr",
-  ylab = "logFC",
-  side.main = "Gene_name",
-  side.xlab = "Group",
-  side.ylab = "Normalized Intensity",
-  side.log = FALSE,
-  sample.cols = colorGroup2(groups)[groups],
-  cols = c("#00bfff", "#858585", "#ff3030"),
-  jitter = 10,
-  folder = "for_testing/glimma_cache/",
-  html = "MD_with_glXY",
-  launch = F
-)
-```
-
-Then, can try importing it?? First, with `htmltools::includehtml()`:
-
-```{r}
-htmltools::includeHTML("for_testing/glimma_cache/MD_with_glXY.html")
-```
-
-Then, with a weird set of code I found here: https://bookdown.org/yihui/rmarkdown-cookbook/include-html.html:
-
-````{=html}
-```{r, echo=FALSE, results='asis'}
-xfun::file_string('for_testing/glimma_cache/MD_with_glXY.html')
-```
-````
-
-
-```{r, eval = F }
-# Other ideas from across stackoverflow:
-# 
-# Combining knit expand and knit child
-# https://bookdown.org/yihui/rmarkdown-cookbook/knit-expand.html
-# 
-# Doing it with custom HTML
-# https://stackoverflow.com/questions/37008600/dynamically-loop-through-htmlwidgets-and-add-knitr-formatting-for-rmarkdown
-
-```
 

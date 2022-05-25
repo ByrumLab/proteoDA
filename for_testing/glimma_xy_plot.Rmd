@@ -30,8 +30,8 @@ if ({{plot}} == "Volcano raw P") {
   stop("Invalid plot option")
 }
 
-# make plot
-Glimma::glimmaXY(
+
+uams_glimmaXY(
         x = x,
         y = y,
         counts = norm_reb$normList[["vsn"]],
@@ -47,4 +47,7 @@ Glimma::glimmaXY(
         main = " ",
         width = width,
         height = height)
+
+
+
 ```

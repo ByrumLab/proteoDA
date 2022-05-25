@@ -1,0 +1,210 @@
+.plotContainer {
+	display: inline-grid;
+	grid-column-gap: 2rem;
+}
+
+/* MDS plots */
+.mdsContainer {
+	grid-column-start: 1;
+	grid-column-end: 2;
+}
+
+.eigenContainer {
+	grid-column-start: 2;
+	grid-column-end: 3;
+}
+
+/* XY plots */
+.xyContainerSingle {
+	grid-column-start: 1;
+	grid-column-end: 3;
+}
+
+.xyContainer {
+	grid-column-start: 1;
+	grid-column-end: 2;
+}
+
+.expressionContainer {
+	grid-column-start: 2;
+	grid-column-end: 3;
+}
+
+/* contains everything that is not a plot */
+
+.controlContainer {
+	padding: 10px;
+	display: block;
+	font-family: sans-serif;
+	color: #353535;
+	font-size: 9;
+}
+
+/* container for vega signal inputs */
+
+.vega-bind {
+	display: inline-block;
+}
+
+/* custom styling for some inputs */
+
+.separator_signal {
+	display: block;
+	visibility: hidden;
+	height: 5px;
+}
+
+/* custom styling for some inputs */
+
+.display-block {
+	display: block;
+}
+
+/* text for dropdown */
+
+.vega-bind-name {
+	margin-right: 2px;
+	margin-bottom: 5px;
+	font-size: 12px;
+	font-family: sans-serif;
+	color: #404040;
+}
+
+/* dropdown controls */
+
+.vega-bind select {
+	margin-bottom: 7px;
+	margin-right: 7px;
+}
+
+/* Datatables button container styling */
+.buttonContainer {
+	display: inline-block;
+}
+
+button.save-button {
+    box-sizing: border-box;
+    margin-top: 0.333em;
+    margin-right: 0.333em;
+    margin-bottom: 0.333em;
+    padding: 0.3em 0.5em;
+    font-size: 9pt;
+    border: 1px solid #888888;
+    border-radius: 2px;
+    cursor: pointer;
+    line-height: 1.6em;
+    color: #4c4c4c;
+    white-space: nowrap;
+    overflow: hidden;
+    background-color: #ffffff;
+    background-image: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    user-select: none;
+    text-decoration: none;
+    outline: none;
+    text-overflow: ellipsis;
+}
+button.save-button:hover 
+{
+    background-color: #888888;
+    color: white;
+    border-color: #888888;
+}
+button.save-button:active {
+    color: rgba(255, 255, 255, 1);
+    box-shadow: 0px 0px 5px rgb(31 31 31 / 40%);
+}
+
+/* The container <div> - needed to position the dropdown content */
+
+.dropdown {
+	position: relative;
+	display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+
+.dropdown-content {
+	display: none;
+	position: absolute;
+	background-color: #f1f1f1;
+	min-width: 160px;
+	box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+	z-index: 1;
+	border-radius: 4px;
+}
+
+/* Links inside the dropdown */
+
+.dropdown-content a {
+	padding: 12px 16px;
+	text-decoration: none;
+	display: block;
+    font-size: 11px;
+    color: #383838;
+	font-family: sans-serif;
+	border-radius: 4px;
+}
+
+/* Change color of dropdown links on hover */
+
+.dropdown-content a:hover {
+	background-color: #ddd
+}
+
+/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+
+.show {
+	display: block;
+}
+
+
+
+.alertBox 
+{
+	display: inline;
+	margin-left: 10px;
+	font-family: sans-serif;
+	padding: 1px 1px;
+	font-size: 10pt;
+	color: #383d41;
+	background-color: #e2e3e5;
+	border: 1px solid #d6d8db;
+	border-radius: .25rem;
+}
+.danger 
+{
+	color: #721c24;
+	background-color: #f8d7da;
+	border: 1px solid #f5c6cb;
+}
+.invisible 
+{
+	display: none;
+}
+.warning
+{
+	display: inline-block;
+	margin-left: 0px;
+	color: #721c24;
+	background-color: #f8d7da;
+	border: 1px solid #f5c6cb;
+}
+
+/* vega max y axis setting */
+input.max_y_axis
+{
+	margin-bottom: 5px;
+	margin-right: 10px;
+	border: solid 1px #b5b5b5;
+	border-radius: 2px;
+	display: block;
+}
+
+select
+{
+	display: block;
+}
