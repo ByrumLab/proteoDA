@@ -4,6 +4,8 @@ pagetitle: "`r contrast`"
 output: 
   html_document:
     mathjax: null
+    self_contained: false
+    lib_dir: resources
 editor_options: 
   chunk_output_type: console
 ---
@@ -11,6 +13,7 @@ editor_options:
 ```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
 knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F)
 #options(width = 10000)
+
 # Load packages -----------------------------------------------------------
 library(knitr)
 library(devtools)
@@ -27,8 +30,7 @@ library(proteomicsDIA)
 ```
 
 ```{r logo, fig.align="left", out.width="40%"}
-knitr::include_graphics(path = system.file("report_templates/logo_higherres.png",
-                                           package = "proteomicsDIA"), rel_path = F)
+knitr::include_graphics(path = "resources/logo_higherres.png")
 ```
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
@@ -42,9 +44,7 @@ plot_list <- c("Volcano raw P",
                "MD adjusted P")
 src <- lapply(plot_list, function(plot) {
   plot <- deparse(plot)
-  knitr::knit_expand(file = system.file("report_templates/glimma_xy_plot.Rmd",
-                     package = "proteomicsDIA"))
-
+  knitr::knit_expand(file = "plot_template.Rmd")
 })
 
 res <- knitr::knit_child(text = unlist(src), quiet = TRUE, options = list(root.dir = getwd()))

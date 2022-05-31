@@ -7,6 +7,8 @@ make_limma_reports <- function(model_results = NULL,
                                width = 1000,
                                overwrite = F) {
 
+  # TODO: add checks
+
   if (is.null(output_dir)) {
     output_dir <- "test_output"
   }
@@ -17,34 +19,35 @@ make_limma_reports <- function(model_results = NULL,
   # But, for now, we might be able to get around this differently, and possibly get around some
   # of the working directory issues.
 
-  # if (!dir.exists(output_dir)) {
-  #   dir.create(output_dir)
-  # }
-  # file.copy(from = system.file("report_templates/glimma_xy_plot.Rmd",
-  #                              package = "proteomicsDIA"),
-  #           to = file.path(output_dir, ))
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir)
+  }
 
+  old_wd <- getwd()
+  on.exit(expr = setwd(old_wd), add = T)
 
-
-  # system.file("report_templates/limma_report_per_contrast.Rmd",
-  #             package = "proteomicsDIA", mustWork = T)
-
-  # Could try:
-  # create output directory structure
-  # copy templates and resources in.
-  # set wd to output
-  # do all knitting
-  # remove intermediates and templates
-  # return to old wd on exit
-
-
-
-
-  resources <- "resources"
-  contrast_count <- 1
-  num_contrasts <- length(names(model_results$stats_by_contrast))
   cli::cli_rule()
 
+  cli::cli_inform("Setting working directory to {.path {file.path(old_wd, output_dir)}}")
+  setwd(output_dir)
+
+  cli::cli_inform("Copying resources to output directory {.path {output_dir}}")
+  if (!dir.exists("resources")) {
+    dir.create("resources")
+  }
+
+  file.copy(from = system.file("report_templates/glimma_xy_plot.Rmd",
+                               package = "proteomicsDIA"),
+            to = "plot_template.Rmd", overwrite = T)
+  file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
+                               package = "proteomicsDIA"),
+            to = "report_template.Rmd", overwrite = T)
+  file.copy(from = system.file("report_templates/logo_higherres.png",
+                               package = "proteomicsDIA"),
+            to = "resources/logo_higherres.png", overwrite = T)
+
+  contrast_count <- 1
+  num_contrasts <- length(names(model_results$stats_by_contrast))
   for (contrast in names(model_results$stats_by_contrast)) {
     data <- model_results$stats_by_contrast[[contrast]]
     data$`P value` <- data$P.Value
@@ -58,22 +61,22 @@ make_limma_reports <- function(model_results = NULL,
     anno <- annotation[rownames(data), ]
 
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
-    # Need to suppress warnings, otherwise warned about empty title (which we want, so the logo can be first)
-    # and changing workding directories during kniting (which works fine, but I can't figure out how to stop
-    # the warning)
-    suppressWarnings(rmarkdown::render(system.file("report_templates/limma_report_per_contrast.Rmd",
-                                  package = "proteomicsDIA", mustWork = T),
+    rmarkdown::render("report_template.Rmd",
                       knit_root_dir = getwd(),
-                      output_dir = output_dir,
                       intermediates_dir = tmp_dir,
                       output_file = paste0(contrast, "_DE_report.html"),
-                      quiet = T))
+                      quiet = T)
     contrast_count <- contrast_count + 1
   }
 
+  # Clean up and exit
 
-  # remove temporary directory.
+  # TODO: add checks that files exist?
 
+  cli::cli_inform("Removing temporary files from {.path {output_dir}}")
+  unlink(c("logo_higherres.png", "plot_template.Rmd", "report_template.Rmd", tmp_dir), recursive = T)
+  cli::cli_inform("Returning working directory to {.path {old_wd}}")
+  setwd(old_wd)
   cli::cli_rule()
   cli::cli_inform(c("v" = "Success"))
 
