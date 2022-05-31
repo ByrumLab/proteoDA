@@ -15,7 +15,7 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
     let samplecols_signal = { "name": "samplecols_active" };
 
     /* must match counts term in processExpression */
-    expColumns.push("count");
+    expColumns.push("normalized intensity");
     let tooltip = makeVegaTooltip(expColumns);
     return {
         "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -48,19 +48,20 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
                     },
                     sampleColours == -1 ? colourscheme_signal : samplecols_signal
                 ],
-        "data": [ {"name": "table"} ],
+        "data": {"name": "table"},
+        //"transform": {"type": "formula", "as": "random", "expr": ""},
         "scales":
         [
             {
                 "name": "x",
-                "type": "band",
-                "padding":1,
+                "type": "point",
+                "padding": 0.8,
                 "domain": {"data": "table", "field": "group"},
                 "range": "width"
             },
             {
                 "name": "y",
-                "domain": {"data": "table", "field": "count"},
+                "domain": {"data": "table", "field": "normalized intensity"},
                 "range": "height",
                 "zero": false,
                 "domainMax": {"signal": "max_y"}
@@ -87,7 +88,7 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
                 "grid": true,
                 "orient": "left",
                 "titlePadding": 5,
-                "title": "expression"
+                "title": "normalized intensity"
             }
         ],
         "marks":
@@ -97,8 +98,14 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
                 "from": {"data": "table"},
                 "encode": {
                     "update": {
+                        // Have tried a bunch of things to jitter the X axis.
+                        // Tried adding transformation in many parts of the spec,
+                        // then adding an offset in the "x" section, calling that col.
+                        // But, according to the vega schema, I think the offset can only
+                        // be a single number, not a field or column. So far,
+                        // I've only been able to have a constant offset.
                         "x": {"scale": "x", "field": "group"},
-                        "y": {"scale": "y", "field": "count"},
+                        "y": {"scale": "y", "field": "normalized intensity"},
                         "shape": {"value": "circle"},
                         "fill": { "scale": "color", "field": sampleColours == -1 ? "group" : "sample" },
                         "strokeWidth": {"value": 1},
@@ -112,3 +119,5 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
     };
 
 }
+
+

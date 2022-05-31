@@ -341,6 +341,32 @@ write_limma_results(model_results = results_zhan,
 
 
 
+# testing report making ---------------------------------------------------
+make_limma_reports(model_results = results_reb,
+                   annotation = ext_reb$annot,
+                   groups = norm_reb$targets$group,
+                   output_dir = "output_rebello")
+
+
+make_limma_reports(model_results = results_lupashin,
+                   annotation = ext_lupashin$annot,
+                   groups = norm_lupashin$targets$group,
+                   output_dir = "output_lupashin")
+
+
+make_limma_reports(model_results = results_ndu_brain,
+                   annotation = ext_ndu$annot,
+                   groups = norm_ndu$targets$group,
+                   output_dir = "output_ndu_brain")
+
+
+make_limma_reports(model_results = results_zhan,
+                   annotation = ext_zhan$annot,
+                   groups = norm_zhan$targets$group,
+                   output_dir = "output_zhan")
+
+
+
 
 # Testing phospho ---------------------------------------------------------
 # extract data

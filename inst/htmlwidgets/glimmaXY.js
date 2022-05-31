@@ -4,7 +4,7 @@ HTMLWidgets.widget({
 
   type: 'output',
 
-  factory: function(el, width, height) 
+  factory: function(el, width, height)
   {
 
     var plotContainer = document.createElement("div");
@@ -18,9 +18,9 @@ HTMLWidgets.widget({
 
     return {
 
-      renderValue: function(x) 
+      renderValue: function(x)
       {
-        
+
         console.log(x);
         var handler = new vegaTooltip.Handler();
 
@@ -81,7 +81,7 @@ HTMLWidgets.widget({
         }
       },
 
-      resize: function(width, height) 
+      resize: function(width, height)
       {}
 
     };
@@ -101,7 +101,7 @@ class State {
     this.graphMode = false;
     this._selected = [];
   }
-  
+
   /**
    * Returns current selection of genes
    * @return {Array} Array of currently selected genes
@@ -126,7 +126,7 @@ class State {
     $(this.data.controlContainer.getElementsByClassName("clearSubset")[0])
       .html(`Clear (${selected.length})`);
   }
-  
+
   /**
    * Adds a gene to the selection if it's not already selected, or remove it otherwise
    * @param  {Gene} gene Gene data object which has been clicked on
@@ -136,7 +136,7 @@ class State {
     this.selected = loc >= 0 ? remove(this.selected, loc) : this.selected.concat(gene);
     this._expressionUpdateHandler(loc < 0, gene);
   }
-  
+
   /**
    * Manages updates to the expression plot based on the most recently selected gene
    * @param {Boolean} selectionOccurred True if a gene was selected, false if it was de-selected
@@ -172,7 +172,7 @@ function setupXYInteraction(data)
   datatableEl.setAttribute("class", "dataTable");
   data.controlContainer.appendChild(datatableEl);
 
-  $(document).ready(function() 
+  $(document).ready(function()
   {
     var datatable = $(datatableEl).DataTable(
       {
@@ -193,7 +193,7 @@ function setupXYInteraction(data)
                       action: () => clearTableListener(datatable, state, data),
                       attr: {class: 'save-button clearSubset'}
                     },
-                    { 
+                    {
                       text: 'Save Data',
                       action: () => showDataDropdown(),
                       attr: {class: 'save-button saveSubset'}
@@ -233,7 +233,7 @@ function clearTableListener(datatable, state, data)
   state.graphMode = false;
   state.selected = [];
   datatable.rows('.selected').nodes().to$().removeClass('selected');
-  datatable.search('').columns().search('').draw();       
+  datatable.search('').columns().search('').draw();
   data.xyView.data("selected_points", state.selected);
   data.xyView.runAsync();
   clearExpressionPlot(data);
@@ -294,10 +294,10 @@ function XYSignalListener(datatable, state, datum, data)
  */
 function clearExpressionPlot(data)
 {
-  
+
   if (!data.expressionView)
     return;
-  
+
   data.expressionView.data("table", []);
   data.expressionView.signal("title_signal", "");
   data.expressionView.signal("max_count", 0);
@@ -317,14 +317,15 @@ function updateExpressionPlot(countsRow, data, geneName)
   let samples = data.groups.sample;
   let levels = data.levels;
   let result = [];
-  for (col in countsRow) 
+  for (col in countsRow)
   {
     if (!samples.includes(col)) continue;
     let curr = {};
     let group = groups[samples.indexOf(col)];
     curr["group"] = group;
     curr["sample"] = col;
-    curr["count"] = countsRow[col];
+    curr["normalized intensity"] = countsRow[col];
+    curr["random"] = 10; //tried adding this to get the random col to be present in the data that gets processed in expressionView, no dice.
     result.push(curr);
   }
   if (levels != null) {
@@ -347,7 +348,7 @@ function addAxisMessage(data)
   var bindings = data.expressionContainer.getElementsByClassName("vega-bindings")[0];
   var alertBox = document.createElement("div");
   alertBox.setAttribute("class", "alertBox invisible");
-  data.expressionView.addSignalListener('max_y_axis', 
+  data.expressionView.addSignalListener('max_y_axis',
     function(name, value) { updateAxisMessage(data) });
   bindings.appendChild(alertBox);
 }
@@ -388,7 +389,7 @@ function containsGene(arr, datum)
     {
       loc = i;
       break;
-    } 
+    }
   }
   return loc;
 }

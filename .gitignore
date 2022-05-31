@@ -18,11 +18,4 @@ logs/*
 targets*.csv
 protein_analysis/
 phospho_analysis/
-
-
-
-
-
-
-
-
+output_*/
