@@ -58,6 +58,8 @@ make_limma_reports <- function(model_results = NULL,
     data$sig.FDR <- ifelse(is.na(data$sig.FDR), 0, data$sig.FDR)
 
     counts <- model_results$data[rownames(data),]
+    counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting
+
     anno <- annotation[rownames(data), ]
 
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")

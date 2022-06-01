@@ -325,8 +325,9 @@ function updateExpressionPlot(countsRow, data, geneName)
     curr["group"] = group;
     curr["sample"] = col;
     curr["normalized intensity"] = countsRow[col];
-    curr["random"] = 10; //tried adding this to get the random col to be present in the data that gets processed in expressionView, no dice.
-    result.push(curr);
+    if (!Object.values(curr).includes(-9)) { // if -9, which we're using as misisng, don't push result
+       result.push(curr);
+    }
   }
   if (levels != null) {
     result.sort((a, b) => levels.indexOf(a.group) - levels.indexOf(b.group));
