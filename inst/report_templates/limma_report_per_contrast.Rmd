@@ -11,7 +11,7 @@ editor_options:
 ---
 
 ```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
-knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F)
+knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, cache = F)
 #options(width = 10000)
 
 # Load packages -----------------------------------------------------------
