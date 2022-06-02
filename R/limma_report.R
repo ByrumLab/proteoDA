@@ -67,11 +67,11 @@ make_limma_reports <- function(model_results = NULL,
     # make and save static plots
     for (type in c("raw", "adjusted")) {
       volcano <- static_volcano_plot(data,
-                                     lfc.thresh = model_results$min.lfc,
-                                     pval.thresh = model_results$min.pval,
+                                     lfc.thresh = model_results$lfc.thresh,
+                                     pval.thresh = model_results$pval.thresh,
                                      contrast = contrast, pval.type = type)
       MD <- static_MD_plot(data,
-                           lfc.thresh = model_results$min.lfc,
+                           lfc.thresh = model_results$lfc.thresh,
                            contrast = contrast, pval.type = type)
       ggsave(filename = file.path("static_plots", paste0(paste(contrast, "volcano", type, "pval", sep = "-"), ".pdf")),
              plot = volcano,
@@ -240,11 +240,13 @@ static_pval_histogram <- function(data, contrast) {
   output <- with(data, {
   ggplot(data) +
       geom_histogram(aes(x = P.Value), binwidth = 0.025, color = "black", na.rm = T) +
+      xlim(c(-0.05,1.05)) +
       theme_bw() +
       xlab("raw P value") +
       theme(panel.border = element_rect(fill = NA, color = "grey30")) +
       ggplot(data) +
       geom_histogram(aes(x = adj.P.Val), binwidth = 0.025, color = "black", na.rm = T) +
+      xlim(c(-0.05,1.05)) +
       theme_bw() +
       xlab("adjusted P value") +
       theme(panel.border = element_rect(fill = NA, color = "grey30")) +

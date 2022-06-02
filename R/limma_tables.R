@@ -1,3 +1,27 @@
+#' Title
+#'
+#' TBD
+#'
+#' @param model_results TBD
+#' @param annotation TBD
+#' @param ilab TBD
+#' @param out_dir TBD
+#' @param norm.method TBD
+#' @param enrich TBD
+#' @param pipe TBD
+#' @param overwrite TBD
+#' @param contrasts_subdir TBD
+#' @param summary_csv TBD
+#' @param combined_file_csv TBD
+#' @param BQ_csv TBD
+#' @param spreadsheet_xlsx TBD
+#' @param add_filter TBD
+#'
+#' @return TBD
+#' @export
+#'
+#' @examples
+#' # No examples yet
 write_limma_results <- function(model_results,
                                 annotation,
                                 ilab,
@@ -86,8 +110,8 @@ write_limma_results <- function(model_results,
                      lapply(X = names(statlist),
                             FUN = summarize_contrast_DE,
                             contrast_res_list = statlist))
-  summary$pval_thresh <- model_results$min.pval
-  summary$lfc_thresh <- model_results$min.lfc
+  summary$pval_thresh <- model_results$pval.thresh
+  summary$lfc_thresh <- model_results$lfc.thresh
   summary$p_adj_method <- model_results$adj.method
 
 
@@ -175,8 +199,8 @@ write_limma_results <- function(model_results,
                     annotation = annotation,
                     data = data,
                     norm.method = norm.method,
-                    min.pval = model_results$min.pval,
-                    min.lfc = model_results$min.lfc,
+                    pval.thresh = model_results$pval.thresh,
+                    lfc.thresh = model_results$lfc.thresh,
                     pipe = pipe,
                     enrich = enrich,
                     add_filter = add_filter)
@@ -245,7 +269,7 @@ write_per_contrast_csvs <- function(annotation_df,
 
 
 write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
-                              min.pval, min.lfc, pipe, enrich, add_filter) {
+                              pval.thresh, lfc.thresh, pipe, enrich, add_filter) {
 
 
   # Maybe some argument processing
@@ -507,12 +531,12 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
     normStyle <- openxlsx::createStyle(fontColour="#000000", bgFill="#FFFFFF")
 
     fc.col    <- grep("logFC", colnames(stats)) + stat.start - 1
-    fc.rule1  <- paste0(">=", min.lfc)
-    fc.rule2  <- paste0("<=", -min.lfc)
+    fc.rule1  <- paste0(">=", lfc.thresh)
+    fc.rule2  <- paste0("<=", -lfc.thresh)
     fdr.col   <- grep("adj.P.Val", colnames(stats)) + stat.start - 1
-    fdr.rule  <- paste0("<=", min.pval)
+    fdr.rule  <- paste0("<=", pval.thresh)
     pval.col  <- grep("P.Value", colnames(stats)) + stat.start - 1
-    pval.rule <- paste0("<=", min.pval)
+    pval.rule <- paste0("<=", pval.thresh)
 
 
     openxlsx::conditionalFormatting(wb, sheet = sheetName,

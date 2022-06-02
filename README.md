@@ -93,6 +93,29 @@ design <- make_design(targets=norm$targets,
 contrasts <- make_contrasts(file = "path/to/contrasts/file.csv",
                             design = design$design)
 
+# Fit the model
+fit <- fit_limma_model(data = norm$normList[["vsn"]], # choose your normalization method
+                       design_obj = design,
+                       contrasts_obj = contrasts)
+
+# Extract the differential expression results
+results <- extract_limma_DE_results(limma_fit = fit)
+
+# Save the tables of results- NOT DOCUMENTED YET
+write_limma_results(model_results = results,
+                    norm.method = "vsn",
+                    annotation = extracted_data$annot,
+                    ilab = "example_1234",
+                    enrich = "protein")
+# And save the plots and interactive report- NOT DOCUMENTED YET
+make_limma_reports(model_results = results,
+                   annotation =  extracted_data$annot,
+                   groups = norm$targets$group,
+                   output_dir = "example_1234")
+
+
+
+
 # Functions are documented, check them out:
 ?extract_data
 ?make_targets
@@ -102,6 +125,8 @@ contrasts <- make_contrasts(file = "path/to/contrasts/file.csv",
 ?make_qc_report
 ?make_design
 ?make_contrasts
+?fit_limma_model
+?extract_limma_DE_results
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -210,10 +235,10 @@ tests as well. Maybe better to just do it once.
 | `make_qc_report`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_design`              | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_contrasts`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `fit_limmma_model`         | :heavy_minus_sign: | :x:                | :x:                |
-| `extract_limma_DE_results` | :heavy_minus_sign: | :x:                | :x:                |
+| `fit_limmma_model`         | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
+| `extract_limma_DE_results` | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
 | `write_limma_results`      | :heavy_minus_sign: | :x:                | :x:                |
-| `make_limma_report`        | :x:                | :x:                | :x:                |
+| `make_limma_reports`       | :x:                | :x:                | :x:                |
 
 The final steps in the pipeline, for the limma analysis, are being
 reworked a little. Originally, there were two functions:
@@ -228,5 +253,5 @@ functionality into independent functions. Now, we have:
     contrast from the list of limma model fits.
 -   `write_limma_results`- Output the various .csv and excel files of
     results.
--   TBD- `make_limma_report`- Which will output the GLIMMA plots and
-    html report for end users.
+-   `make_limma_reports`- Which outputs the interactive HTML reports and
+    static plots for the end end user.

@@ -1,24 +1,47 @@
-## ---------------------------
-##  LIMMA EBAYES (NORMAL)
-## ---------------------------
-## paired==FALSE is used for group comparisons,
-## group comparisons correcting for e.g. batch or gender effect
-## group comparisons for paired samples etc.
-
-
-
-## ---------------------------------
-##  LIMMA EBAYES (MIXED EFFECTS)
-## ---------------------------------
-## paired==TRUE is used for group comparisons,
-## when comparing within (paired samples) and across (groups)
-## subjects
+#' Fit the limma differential expression model
+#'
+#' Fits the limma differential expresison model to the expression data, following
+#' the specified design and contrasts matrices. When paired = T, first estimates
+#' the inter-duplicate correlation across paired samples with
+#' \code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}}. Then,
+#' uses \code{\link[limma:lmFit]{limma::lmFit}} to fit the initial model,
+#' \code{\link[limma:contrasts.fit]{limma::contrasts.fit}} to re-parameterize
+#' the results in terms of your desired contrasts, and then recomputes moderated
+#' statistic following limma's empirical Bayes  model with
+#' \code{\link[limma:eBayes]{limma::eBayes}}.
+#'
+#' @param data The data on which to fit the limma model. In our pipeline,
+#'   this should be a single normalized dataset from the normalized data.
+#' @param design_obj A list object output from \code{\link{make_design}} which
+#'   specifies the statistical design.
+#' @param contrasts_obj A list object output from \code{\link{make_contrasts}}
+#'   which specifies
+#' @param paired Is the statistical design paired (TRUE) or not (FALSE)? Default
+#'   is FALSE.
+#'
+#' @return A list with either six or seven slots: \enumerate{
+#'   \item "eBayes_fit"- The results returned from \code{\link[limma:eBayes]{limma::eBayes}}.
+#'   \item "contrasts_fit"- The results returned from
+#'     \code{\link[limma:contrasts.fit]{limma::contrasts.fit}}.
+#'   \item "lm_fit"- The results returned from
+#'     \code{\link[limma:lmFit]{limma::lmFit}}.
+#'   \item "data"- A data frame of the data that were input into the limma DE model.
+#'   \item "design" - The design matrix used for model fitting.
+#'   \item "contrasts"- The contrasts matrix used for model fitting.
+#'   \item "corr_fit"- When paired == TRUE, output includes the results returned
+#'     by \code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}}.
+#' }
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
 
 fit_limma_model <- function(data,
                             design_obj,
                             contrasts_obj,
                             paired = FALSE) {
-  # Original fxn had a check that rownames in the data equaled rownames in the
+  # Original fxn had a check that rownames in the data equalled rownames in the
   # annotation. Took that out for now, and removed annotation as an argument,
   # since we don't actually need the annotation to fit the model. But may want
   # to put that back in. We definitely need to check that at some point (maybe in
@@ -127,7 +150,33 @@ fit_limma_model <- function(data,
 
 
 
-extract_limma_DE_results <- function(limma_fit, min.pval = 0.055, min.lfc = 1, adj.method = "BH") {
+#' Extract differential expression results from a model fit
+#'
+#' Extracts statistical results describing differential expression from a results
+#' object created by \code{\link{fit_limma_model}}.
+#'
+#' @param limma_fit A results object from the \code{\link{fit_limma_model}}
+#'   function.
+#' @param pval.thresh The p-value threshold used to determine significance
+#'   (significant when p < pval.thresh). Default is 0.055.
+#' @param lfc.thresh The logFC threshold used to determine significance
+#'   (significant when |logFC| > lfc.tresh). Default is 1. LogFC are base 2.
+#' @param adj.method The method used for adjusting P-values. Default is "BH",
+#'   for the Benjamini-Hochberg correction
+#'
+#' @return A list with five slots \enumerate{
+#'   \item "stats_by_contrast"- A list with length equal to the number of contrasts.
+#'     Each element in the list is a data frame giving the DE results for that contrast.
+#'   \item "data"- A data frame of the data that were input into the limma DE model.
+#'   \item "pval.thresh"- The p-value threshold used to determine significance.
+#'   \item "lfc.thresh"- The logFC threshold used to determine significance.
+#'   \item "adj.method"- The p-value adjustment method used.
+#' }
+#' @export
+#'
+#' @examples
+#' # No examples yet
+extract_limma_DE_results <- function(limma_fit, pval.thresh = 0.055, lfc.thresh = 1, adj.method = "BH") {
 
   # check args
   adj.method <- rlang::arg_match(
@@ -144,11 +193,11 @@ extract_limma_DE_results <- function(limma_fit, min.pval = 0.055, min.lfc = 1, a
   contrast_names <- colnames(efit$coefficients)
 
   # Get dfs where 0 = insig, -1 is sig downregulated, and 1 is sig upregulated
-  outcomes_table_rawp <- as.data.frame(limma::decideTests(efit, adjust.method = "none", p.value = min.pval, lfc = min.lfc))
-  outcomes_table_adjp <- as.data.frame(limma::decideTests(efit, adjust.method = adj.method, p.value = min.pval, lfc = min.lfc))
+  outcomes_table_rawp <- as.data.frame(limma::decideTests(efit, adjust.method = "none", p.value = pval.thresh, lfc = lfc.thresh))
+  outcomes_table_adjp <- as.data.frame(limma::decideTests(efit, adjust.method = adj.method, p.value = pval.thresh, lfc = lfc.thresh))
 
-  perc_sig_rawp <- check_DE_perc(outcomes_table_rawp, min.pval = min.pval, min.lfc = min.lfc, adj.method = "none")
-  perc_sig_adjp <- check_DE_perc(outcomes_table_adjp, min.pval = min.pval, min.lfc = min.lfc, adj.method = adj.method)
+  perc_sig_rawp <- check_DE_perc(outcomes_table_rawp, pval.thresh = pval.thresh, lfc.thresh = lfc.thresh, adj.method = "none")
+  perc_sig_adjp <- check_DE_perc(outcomes_table_adjp, pval.thresh = pval.thresh, lfc.thresh = lfc.thresh, adj.method = adj.method)
 
   # Make statlist, for use in later functions
   # A list where length is number of contrasts
@@ -168,22 +217,37 @@ extract_limma_DE_results <- function(limma_fit, min.pval = 0.055, min.lfc = 1, a
 
   list(stats_by_contrast = results_per_contrast,
        data = limma_fit$data,
-       min.pval = min.pval,
-       min.lfc = min.lfc,
+       pval.thresh = pval.thresh,
+       lfc.thresh = lfc.thresh,
        adj.method = adj.method) # just passing data through
 }
 
 
-
-# utility function used in extract_limma_DE_results
-check_DE_perc <- function(DE_outcomes_table, threshold = 0.2, min.pval, min.lfc, adj.method) {
+#' Check percentage of DE genes
+#'
+#' Internal utility function, used in \code{\link{extract_limma_DE_results}} to
+#' check if assumptions are met.
+#'
+#' @param DE_outcomes_table DE results dataframe. Should be the output of
+#' \code{\link[limma:decideTests]{limma::decideTests}}, coerced to a dataframe.
+#' @param DE_warn_threshold Proporion of DE genes at which we warn user.
+#' @param pval.thresh P-value threshold used.
+#' @param lfc.thresh logFC threshold used.
+#' @param adj.method P-value adjustment method used.
+#'
+#' @return A vector of numeric values giving the % of significant DE proteins within
+#'   each contrast.
+#'
+#' @examples
+#' # No examples yet
+check_DE_perc <- function(DE_outcomes_table, DE_warn_threshold = 0.2, pval.thresh, lfc.thresh, adj.method) {
   perc_sig <- colSums(DE_outcomes_table != 0, na.rm = T)/colSums(!is.na(DE_outcomes_table))
 
-  if (any(perc_sig > threshold)) {
-    above_thresh <- names(perc_sig)[perc_sig > threshold]
-    thresh_perc <- threshold*100
+  if (any(perc_sig > DE_warn_threshold)) {
+    above_thresh <- names(perc_sig)[perc_sig > DE_warn_threshold]
+    thresh_perc <- DE_warn_threshold*100
     cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is DE in {cli::qty(length(above_thresh))} {?a/some} contrast{?s}",
-                      "!" = "Criteria for DE: min.lfc > {.val {min.lfc}}, min.pval < {.val {min.pval}}, p.value adjustment = {.val {adj.method}}",
+                      "!" = "Criteria for DE: |logFC| > {.val {lfc.thresh}}, p-value < {.val {pval.thresh}}, p.value adjustment = {.val {adj.method}}",
                       "!" = "{cli::qty(length(above_thresh))} Problematic contrast{?s}: {.val {above_thresh}}",
                       "!" = "Assumption that most genes/proteins/phospho are not DE may be violated"))
   }
