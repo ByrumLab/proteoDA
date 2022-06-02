@@ -14,3 +14,4 @@
 ^test_workflow.R$
 ^protein_analysis
 ^phospho_analysis
+^output_\\*

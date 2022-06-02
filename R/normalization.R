@@ -117,10 +117,10 @@ normalize_data <- function(data, targets) {
 #'     \code{\link[limma:normalizeCyclicLoess]{limma::normalizeCyclicLoess}}
 #'     function.
 #'   \item rlrNorm- Global linear regression normalization, inspired by the
-#'     \code{\link[NormalyzerDE:performGlobalRLRNormalization]{NormalyzerDE::performGlobalRLRNormalization}}
+#'     \code{NormalyzerDE::performGlobalRLRNormalization}
 #'     function, but with a slightly different implementation.
 #'   \item giNorm- Global intensity normalization, inspired by the
-#'     \code{\link[NormalyzerDE:globalIntensityNormalization]{NormalyzerDE::globalIntensityNormalization}}
+#'     \code{NormalyzerDE::globalIntensityNormalization}
 #'     function, but with a slightly different implementation. In brief,
 #'     normalizes each sample/column by dividing by the total intensity for the
 #'     sample and multiplying by the median of per-sample intensities. Thus,

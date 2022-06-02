@@ -1,3 +1,19 @@
+#' Title
+#'
+#' @param model_results TBD
+#' @param annotation TBD
+#' @param groups TBD
+#' @param output_dir TBD
+#' @param tmp_dir TBD
+#' @param height TBD
+#' @param width TBD
+#' @param overwrite TBD
+#'
+#' @return TBD
+#' @export
+#' @import ggplot2
+#' @examples
+#' # No examples yet
 make_limma_reports <- function(model_results = NULL,
                                annotation = NULL,
                                groups = NULL,
@@ -79,6 +95,15 @@ make_limma_reports <- function(model_results = NULL,
            units = "in")
     rm(pval_hist)
 
+
+    # Appease R CMD check
+    # Right now, all the knitr function calls are in my .Rmd templates
+    # so R CMD check thinks I'm importing knitr for no reason.
+    # Making a dummy function call here, might be a better way to get around this
+    # TODO: find better way.
+    x <- knitr::rand_seed
+    rm(x)
+
     # make and save report
     rmarkdown::render("report_template.Rmd",
                       knit_root_dir = getwd(),
@@ -148,21 +173,25 @@ static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.ty
     ggtitle(paste0(stringr::str_replace(contrast, "_vs_", " vs "), ", ", pval.type, " p-value"))
 
   if (pval.type == "raw") {
-    final <- base +
-      geom_point(aes(x = logFC,
+    final <- with(data, { # with is just to appease R CMD check for global variables
+      base +
+      geom_point(aes_string(x = logFC,
                      y = -log10(P.Value),
                      color = sig.pval.fct,
                      alpha = sig.pval.fct), na.rm = T) +
       scale_y_continuous(breaks = seq(from = 0, to = ceiling(max(-log10(data$P.Value), na.rm = T)) + 1, by = 1)) +
       ylab("-log10(P)")
+    })
   } else if (pval.type == "adjusted") {
-    final <- base +
+    final <- with(data, {
+      base +
       geom_point(aes(x = logFC,
                      y = -log10(adj.P.Val),
                      color = sig.FDR.fct,
                      alpha = sig.FDR.fct), na.rm = T) +
       scale_y_continuous(breaks = seq(from = 0, to = ceiling(max(-log10(data$adj.P.Val), na.rm = T)) + 1, by = 1)) +
       ylab("-log10(adjP)")
+    })
   } else{
     stop("invalid value for pval.type")
   }
@@ -188,40 +217,42 @@ static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
     ggtitle(paste0(stringr::str_replace(contrast, "_vs_", " vs "), ", ", pval.type, " p-value"))
 
   if (pval.type == "raw") {
-    final <- base +
+    final <- with(data, {
+      base +
       geom_point(aes(x = AveExpr,
                      y = logFC,
                      color = sig.pval.fct,
                      alpha = sig.pval.fct), na.rm = T)
+    })
   } else if (pval.type == "adjusted") {
-    final <- base +
+    final <- with(data, {base +
       geom_point(aes(x = AveExpr,
                      y = logFC,
                      color = sig.FDR.fct,
                      alpha = sig.FDR.fct), na.rm = T)
+    })
   } else{
     stop("invalid value for pval.type")
   }
   final
 }
-
 static_pval_histogram <- function(data, contrast) {
-  raw <- ggplot(data) +
-    geom_histogram(aes(x = P.Value), binwidth = 0.025, color = "black", na.rm = T) +
-    theme_bw() +
-    xlab("raw P value") +
-    theme(panel.border = element_rect(fill = NA, color = "grey30"))
-  adjusted <- ggplot(data) +
-    geom_histogram(aes(x = adj.P.Val), binwidth = 0.025, color = "black", na.rm = T) +
-    theme_bw() +
-    xlab("adjusted P value") +
-    theme(panel.border = element_rect(fill = NA, color = "grey30"))
-
-  result <- raw + adjusted + patchwork::plot_annotation(
-    title = stringr::str_replace(contrast, "_vs_", " vs ")
-  )
-
-  result
+  output <- with(data, {
+  ggplot(data) +
+      geom_histogram(aes(x = P.Value), binwidth = 0.025, color = "black", na.rm = T) +
+      theme_bw() +
+      xlab("raw P value") +
+      theme(panel.border = element_rect(fill = NA, color = "grey30")) +
+      ggplot(data) +
+      geom_histogram(aes(x = adj.P.Val), binwidth = 0.025, color = "black", na.rm = T) +
+      theme_bw() +
+      xlab("adjusted P value") +
+      theme(panel.border = element_rect(fill = NA, color = "grey30")) +
+      patchwork::plot_annotation(
+        title = stringr::str_replace(contrast, "_vs_", " vs ")
+        )
+  })
+ output
 }
 
 
