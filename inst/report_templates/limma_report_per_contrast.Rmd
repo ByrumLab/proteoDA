@@ -6,8 +6,6 @@ output:
     mathjax: null
     self_contained: false
     lib_dir: resources
-editor_options: 
-  chunk_output_type: console
 ---
 
 ```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
@@ -30,7 +28,7 @@ knitr::include_graphics(path = "resources/logo_higherres.png")
 
 # {.tabset .tabset-fade .tabset-pills}
 
-```{r, results = "asis"}
+```{r chunk1, results = "asis", fig.keep='none'}
 plot_list <- c("Volcano raw P",
                "Volcano adjusted P",
                "MD raw P",
