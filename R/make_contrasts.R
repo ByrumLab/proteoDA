@@ -1,8 +1,8 @@
 #' Prepare limma contrasts matrix
 #'
 #' Create the contrasts matrix, for use in limma. Calls
-#' \code{\link{extract_contrast_groups}} and \code{\link{make_log}} as
-#' subfunctions.
+#' \code{\link{extract_contrast_groups}} \code{\link{validate_contrasts}}
+#' and \code{\link{make_log}} as subfunctions.
 #'
 #' @param file The path to the contrasts file listing the desired contrasts.
 #'   Must be a .csv, .tsv, or .txt file.
@@ -51,17 +51,17 @@ make_contrasts <- function(file = NULL,
   if (filext == "txt" | filext=="tsv") {sep= "\t"}
   if (filext == "csv") {sep=","}
 
+  cli::cli_rule()
   ## imports contrast file
-  ## TODO: From Duah's experience that one time, when she had a minus sign instead
-  # of an equals sign: might be good
-  # to do more checking of the format of this file
-  # frankly, there shouldn't be any more than one columns:
-  # should probably through an error if there is.
-  contrast.vec <- utils::read.delim(file = file,
+  contrast.tbl <- utils::read.delim(file = file,
                                     sep = sep,
                                     stringsAsFactors = F,
                                     header = F)
-  contrast.vec <- contrast.vec[,1]
+  cli::cli_inform("Contrast file imported, checking format...")
+  validate_contrasts(contrast.tbl)
+  cli::cli_inform("Contrast file passed formatting checks")
+
+  contrast.vec <- contrast.tbl[,1, drop = T]
   contrast.vec <-gsub(" ", "", contrast.vec)
 
   ## extract groups included in each contrast
@@ -72,13 +72,10 @@ make_contrasts <- function(file = NULL,
   if (!all(unique(unlist(contrast.grps)) %in% colnames(design))) {
     invalidGroups <- unique(unlist(contrast.grps))[unique(unlist(contrast.grps)) %notin% colnames(design)]
 
-    cli::cli_inform(cli::col_yellow("Some groups present in contrast file do not match design matrix"))
-    cli::cli_inform("{cli::qty(length(invalidGroups))} Contrast group{?s} {.val {invalidGroups}} not found in design matrix")
-    cli::cli_inform("Returning the imported contrast.vec for additional processing")
-    cli::cli_inform("Define contrasts manually using the {.fn limma::makeContrasts} function, e.g.:")
-    cli::cli_inform(c("{.code contrasts <- makeContrasts(contrasts=contrast.vec, levels=design)}",
-                      "{.code colnames(contrasts) <- gsub('=.*','',colnames(contrasts))}"))
-    return(contrast.vec)
+    cli::cli_abort(c("Some groups present in contrast file are not present in the design matrix",
+                     "!" = "{cli::qty(length(invalidGroups))} Contrast group{?s} {.val {invalidGroups}} not found in the colnames of the design matrix",
+                     "i" = "Check for typos of group names in the contrast file,",
+                     "i" = "And make sure all groups for which you define contrasts are included in the statistical design."))
   }
   ## define contrasts
   contrasts <- limma::makeContrasts(contrasts = contrast.vec, levels = design)
@@ -86,7 +83,7 @@ make_contrasts <- function(file = NULL,
   colnames(contrasts) <- gsub("=.*", "", colnames(contrasts))
 
 
-  #TODO: add in a check on rank of matrix (see the F1000 paper Charity sent)
+  #TODO: add in a check on rank of matrix? (see the F1000 paper Charity sent)
 
   # Write logs
   param[["file"]] <- file
@@ -96,12 +93,71 @@ make_contrasts <- function(file = NULL,
                    title = "CONTRASTS",
                    save = TRUE)
 
+  cli::cli_inform("Contrasts imported successfully")
+  cli::cli_rule()
+  cli::cli_inform(c("v" = "Success"))
+
   # return data
   list(contrasts = contrasts,
        contrast.vec = contrast.vec,
        param = logs$param,
        stats = logs$stats)
 }
+
+
+#' Validate contrasts format
+#'
+#' Internal function that checks the format of the imported contrasts
+#' and provides informative error messages about issues.
+#'
+#' @param contrast.tbl The imported data frame of contrasts.
+#'
+#' @return If all checks pass, invisible(TRUE).
+#'
+#' @examples
+#' # No examples yet
+validate_contrasts <- function(contrast.tbl) {
+
+  # Check that there's only one column
+  if (ncol(contrast.tbl) != 1) {
+    cli::cli_abort(c("Imported contrasts file contains more than one column",
+                     "i" = "Check the formatting of your contrasts file"))
+  }
+
+  # Check that the contrast definition has an equals sign in it
+  if (any(stringr::str_detect(contrast.tbl[,1], "=", negate = T))) {
+    problem_rows <- which(stringr::str_detect(contrast.tbl[,1], "=", negate = T))
+    cli::cli_abort(c("Formatting issue in contrast file",
+                    "!" = "{cli::qty(length(problem_rows))} Line{?s} {.val {problem_rows}} {?do/does} not contain an {.val =}"))
+  }
+
+  # Check that the contrast definition only has one equals sign
+  if (any(stringr::str_count(contrast.tbl[,1], "=") > 1)) {
+    problem_rows <- which(stringr::str_count(contrast.tbl[,1], "=") > 1)
+    cli::cli_abort(c("Formatting issue in contrast file",
+                     "!" = "{cli::qty(length(problem_rows))} Line{?s} {.val {problem_rows}} {?contain/contains} more than one {.val =}"))
+  }
+
+
+  # Check that the names portion of the contrast definition includes a "_vs_"
+  contrast_names <- vapply(contrast.tbl[,1],
+                           function(x) {
+                             stringr::str_split(x, "=")[[1]][1]
+                             },
+                           FUN.VALUE = "text",
+                           USE.NAMES = F)
+  if (any(stringr::str_detect(contrast_names, "_vs_", negate = T))) {
+    problem_rows <- which(stringr::str_detect(contrast_names, "_vs_", negate = T))
+    cli::cli_abort(c("Formatting issue in contrast file",
+                     "!" = "The name portion of the contrast (before the \"=\")",
+                     "!" = "in {cli::qty(length(problem_rows))} line{?s} {.val {problem_rows}} does not contain {.val _vs_}"))
+  }
+
+  # If we pass all checks, return true invisibly
+  invisible(TRUE)
+}
+
+
 
 #' Extract groups from a vector of contrasts
 #'
@@ -148,6 +204,5 @@ extract_contrast_groups <- function(contrast.vec) {
     output_list[[i]] <- unique(tmp_split[[i]])
   }
   names(output_list) <- contrast_names
-  cli::cli_inform("Contrast file imported successfully.")
   output_list
 }
