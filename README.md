@@ -127,6 +127,7 @@ make_limma_reports(model_results = results,
 ?make_contrasts
 ?fit_limma_model
 ?extract_limma_DE_results
+?write_limma_results
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -237,8 +238,8 @@ tests as well. Maybe better to just do it once.
 | `make_contrasts`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `fit_limmma_model`         | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
 | `extract_limma_DE_results` | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
-| `write_limma_results`      | :heavy_minus_sign: | :x:                | :x:                |
-| `make_limma_reports`       | :x:                | :x:                | :x:                |
+| `write_limma_results`      | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
+| `make_limma_reports`       | :heavy_minus_sign: | :x:                | :x:                |
 
 The final steps in the pipeline, for the limma analysis, are being
 reworked a little. Originally, there were two functions:

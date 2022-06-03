@@ -1,23 +1,50 @@
-#' Title
+#' Write tables of limma results
 #'
-#' TBD
+#' This wrapper function prepares and then saves a number of tables of results:
+#' \enumerate{
+#'   \item A .csv summarizing the number of direction of differentially
+#'     expressed genes for each contrast.
+#'   \item An Excel spreadsheet of the normalized expression and
+#'     statistical results for all contrasts.
+#'   \item A results .csv file with the same data as the Excel spreadsheet,
+#'     but without all the formatting.
+#'   \item A results .csv for importing into BiqQuery. This is the same as the
+#'     other results .csv, but with all missing data covnerted to 0.
+#'   \item A folder of results .csv file which contain the results for each
+#'     contrast.
+#' }
 #'
-#' @param model_results TBD
-#' @param annotation TBD
-#' @param ilab TBD
-#' @param out_dir TBD
-#' @param norm.method TBD
-#' @param enrich TBD
-#' @param pipe TBD
-#' @param overwrite TBD
-#' @param contrasts_subdir TBD
-#' @param summary_csv TBD
-#' @param combined_file_csv TBD
-#' @param BQ_csv TBD
-#' @param spreadsheet_xlsx TBD
-#' @param add_filter TBD
+#' @param model_results A model results object returned by
+#'   \code{\link{extract_limma_DE_results}}.
+#' @param annotation A dataframe containing annotation data for this analysis.
+#'   In our pipeline, usually the "annot" slot from the object returned by
+#'   \code{\link{extract_data}}.
+#' @param ilab The ilab identifier for this project.
+#' @param out_dir The directory in which to output tables. If not specified,
+#'   will construct a directory based on the ilab name and type of analysis.
+#' @param norm.method The method that was used to normalize the data for the
+#'   statistical model being output.
+#' @param enrich The type of analysis being run. Options are "protein" and "phospho".
+#' @param pipe The analysis pipeline being run. Options are "DIA", "TMT",
+#'   "phosphoTMT", and "LF".
+#' @param overwrite Should results files be overwritten? Default is F.
+#' @param contrasts_subdir The subdirectory within out_dir to write the per-contrast
+#'   result .csv files. If not specified, will be "per_contrast_results".
+#' @param summary_csv The filename of the csv file giving a summary of the number
+#'   of DE genes per contrast. If not specified, will be "DE_summary.csv".
+#' @param combined_file_csv The filename of the combined results csv file. If
+#'   not specified, will be combined_results.csv.
+#' @param BQ_csv The filename of the BiqQuery results csv file. If not specified,
+#'   will construct a name based on the ilab identifier.
+#' @param spreadsheet_xlsx The filename of the Excel spreadsheet containing the
+#'   results. If not specified, will construct a name based on the ilab identifier.
+#' @param add_filter Should per-column filters be added to the spreadsheet?
+#'   Default is TRUE. These can sometimes cause unstable spreadsheet files,
+#'   try setting to FALSE if you're having issues with the Excel output.
 #'
-#' @return TBD
+#'
+#' @return Invisibly returns a dataframe with the combined results.
+#'
 #' @export
 #'
 #' @examples
@@ -134,7 +161,7 @@ write_limma_results <- function(model_results,
   contrast_csv_success <- write_per_contrast_csvs(annotation_df = annotation,
                                                   data = data,
                                                   results_statlist = statlist,
-                                                  output_dir = file.path(out_dir, contrasts_subdir))
+                                                  output_dir = per_contrast_dir)
   if (!all(contrast_csv_success)) {
     failed <- names(contrast_csv_success)[!contrast_csv_success]
     cli::cli_abort(c("Failed to write {.path .csv} results for
@@ -219,6 +246,19 @@ write_limma_results <- function(model_results,
 }
 
 
+
+#' Summarize the number of DE proteins in a contrast
+#'
+#' Internal function to summarize the number of DE genes/proteins for a given
+#' contrast.
+#'
+#' @param contrast_name The name of the contrast to summarize
+#' @param contrast_res_list A list of per-contrast DE results
+#'
+#' @return A data frame summarizing DE for the given contrast
+#'
+#' @examples
+#' # No examples yet
 summarize_contrast_DE <- function(contrast_name, contrast_res_list) {
   tmp <- contrast_res_list[[contrast_name]][,c("sig.PVal", "sig.FDR")]
 
@@ -231,6 +271,21 @@ summarize_contrast_DE <- function(contrast_name, contrast_res_list) {
 }
 
 
+#' Write per-contrast results csvs
+#'
+#' Internal function used to write per-contrast statistical results to a .csv
+#' file.
+#'
+#' @param annotation_df A dataframe of annotation data for each gene/protein.
+#' @param data A dataframe of average expression data for each sample.
+#' @param results_statlist A list of per-contrast DE results.
+#' @param output_dir The directory in which to save the per-contrast csv files.
+#'
+#' @return A logical vector indicting whether each contrast file was
+#'   successfully written.
+#'
+#' @examples
+#' # No examples yet
 write_per_contrast_csvs <- function(annotation_df,
                                     data,
                                     results_statlist,
@@ -268,6 +323,30 @@ write_per_contrast_csvs <- function(annotation_df,
 }
 
 
+#' Write an .xlsx file of limma results
+#'
+#' Internal function for creating a nicely formatted Excel spreadsheet of
+#' differential expression results.
+#'
+#' @param filename The filename of the Excel spreadsheet to be saved.
+#' @param statlist A list of the per-contrast statistical results.
+#' @param annotation A dataframe of annotation date for each protein.
+#' @param data A dataframe containing the average expression data for each sample.
+#' @param norm.method The method that was used to normalize the data for the
+#'   statistical model being output.
+#' @param pval.thresh The p-value threshold that was used to determine significance.
+#' @param lfc.thresh The logFC threshold that was used to determine significance.
+#' @param pipe The analysis pipeline being run. Options are "DIA", "TMT",
+#'   "phosphoTMT", and "LF".
+#' @param enrich The type of analysis being run. Options are "protein" and "phospho".
+#' @param add_filter Should per-column filters be added to the spreadsheet?
+#'
+#' @return Invisibly returns a list, where the first element is the filename
+#'   of the saved Excel spreadsheet and the second element is the openxlsx
+#'   workbook object.
+#'
+#' @examples
+#' # No examples yet
 write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
                               pval.thresh, lfc.thresh, pipe, enrich, add_filter) {
 
@@ -586,6 +665,20 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
                  wb = wb))
 }
 
+
+#' Make hyperlinks for an excel column
+#'
+#' Internal functions to add hyperlinks to a column in a data frame to
+#' be exported to an excel file. Implicitly, works only on one column.
+#'
+#' @param data The data frame in which to add hyperlinks
+#' @param url.col The name of the column to add hyperlinks to
+#' @param url The url that will be prepended to the info in the column
+#'
+#' @return The original dataframe, now with hyperlinks in the desired column
+#'
+#' @examples
+#' # No examples yet
 make_excel_hyperlinks <- function(data, url.col, url) {
 
   ids <- data[,url.col]

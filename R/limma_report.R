@@ -23,6 +23,7 @@ make_limma_reports <- function(model_results = NULL,
                                width = 1000,
                                overwrite = F) {
 
+  # TODO: add output filename validation once we decide on directory format
   if (!dir.exists(output_dir)) {
     dir.create(output_dir)
   }
@@ -55,8 +56,10 @@ make_limma_reports <- function(model_results = NULL,
 
   contrast_count <- 1
   num_contrasts <- length(names(model_results$stats_by_contrast))
+
   # Loop over contrasts, making static plots and reports for each
   for (contrast in names(model_results$stats_by_contrast)) {
+
     # Prep data
     data <- prep_plot_model_data(model_results, contrast)
     counts <- model_results$data[rownames(data),]
@@ -151,6 +154,9 @@ prep_plot_model_data <- function(model_results, contrast) {
 
   data
 }
+
+
+
 static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.type) {
 
   base <- ggplot(data = data) +
@@ -197,6 +203,7 @@ static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.ty
   }
   final
 }
+
 static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
 
   base <- ggplot(data = data) +
@@ -236,6 +243,7 @@ static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
   }
   final
 }
+
 static_pval_histogram <- function(data, contrast) {
   output <- with(data, {
   ggplot(data) +

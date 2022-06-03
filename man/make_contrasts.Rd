@@ -25,8 +25,8 @@ contrasts file
 }
 \description{
 Create the contrasts matrix, for use in limma. Calls
-\code{\link{extract_contrast_groups}} and \code{\link{make_log}} as
-subfunctions.
+\code{\link{extract_contrast_groups}} \code{\link{validate_contrasts}}
+and \code{\link{make_log}} as subfunctions.
 }
 \examples{
 # No examples yet

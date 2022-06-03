@@ -2,7 +2,7 @@
 % Please edit documentation in R/limma_tables.R
 \name{write_limma_results}
 \alias{write_limma_results}
-\title{Title}
+\title{Write tables of limma results}
 \usage{
 write_limma_results(
   model_results,
@@ -22,39 +22,64 @@ write_limma_results(
 )
 }
 \arguments{
-\item{model_results}{TBD}
+\item{model_results}{A model results object returned by
+\code{\link{extract_limma_DE_results}}.}
 
-\item{annotation}{TBD}
+\item{annotation}{A dataframe containing annotation data for this analysis.
+In our pipeline, usually the "annot" slot from the object returned by
+\code{\link{extract_data}}.}
 
-\item{ilab}{TBD}
+\item{ilab}{The ilab identifier for this project.}
 
-\item{out_dir}{TBD}
+\item{out_dir}{The directory in which to output tables. If not specified,
+will construct a directory based on the ilab name and type of analysis.}
 
-\item{norm.method}{TBD}
+\item{norm.method}{The method that was used to normalize the data for the
+statistical model being output.}
 
-\item{enrich}{TBD}
+\item{enrich}{The type of analysis being run. Options are "protein" and "phospho".}
 
-\item{pipe}{TBD}
+\item{pipe}{The analysis pipeline being run. Options are "DIA", "TMT",
+"phosphoTMT", and "LF".}
 
-\item{overwrite}{TBD}
+\item{overwrite}{Should results files be overwritten? Default is F.}
 
-\item{contrasts_subdir}{TBD}
+\item{contrasts_subdir}{The subdirectory within out_dir to write the per-contrast
+result .csv files. If not specified, will be "per_contrast_results".}
 
-\item{summary_csv}{TBD}
+\item{summary_csv}{The filename of the csv file giving a summary of the number
+of DE genes per contrast. If not specified, will be "DE_summary.csv".}
 
-\item{combined_file_csv}{TBD}
+\item{combined_file_csv}{The filename of the combined results csv file. If
+not specified, will be combined_results.csv.}
 
-\item{BQ_csv}{TBD}
+\item{BQ_csv}{The filename of the BiqQuery results csv file. If not specified,
+will construct a name based on the ilab identifier.}
 
-\item{spreadsheet_xlsx}{TBD}
+\item{spreadsheet_xlsx}{The filename of the Excel spreadsheet containing the
+results. If not specified, will construct a name based on the ilab identifier.}
 
-\item{add_filter}{TBD}
+\item{add_filter}{Should per-column filters be added to the spreadsheet?
+Default is TRUE. These can sometimes cause unstable spreadsheet files,
+try setting to FALSE if you're having issues with the Excel output.}
 }
 \value{
-TBD
+Invisibly returns a dataframe with the combined results.
 }
 \description{
-TBD
+This wrapper function prepares and then saves a number of tables of results:
+\enumerate{
+\item A .csv summarizing the number of direction of differentially
+expressed genes for each contrast.
+\item An Excel spreadsheet of the normalized expression and
+statistical results for all contrasts.
+\item A results .csv file with the same data as the Excel spreadsheet,
+but without all the formatting.
+\item A results .csv for importing into BiqQuery. This is the same as the
+other results .csv, but with all missing data covnerted to 0.
+\item A folder of results .csv file which contain the results for each
+contrast.
+}
 }
 \examples{
 # No examples yet

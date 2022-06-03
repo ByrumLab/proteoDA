@@ -118,6 +118,7 @@ make_limma_reports(model_results = results,
 ?make_contrasts
 ?fit_limma_model
 ?extract_limma_DE_results
+?write_limma_results
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -178,8 +179,8 @@ On the test side, I started writing some unit tests for the data extraction func
 | `make_contrasts`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `fit_limmma_model`         | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
 | `extract_limma_DE_results` | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
-| `write_limma_results`      | :heavy_minus_sign: | :x:                | :x:                |  
-| `make_limma_reports`       | :x:                | :x:                | :x:                |  
+| `write_limma_results`      | :heavy_minus_sign: | :heavy_check_mark: | :x:                |  
+| `make_limma_reports`       | :heavy_minus_sign: | :x:                | :x:                |  
 
 The final steps in the pipeline, for the limma analysis, are being reworked a little. Originally, there were two functions: `run_limma_analysis` fit the model, extracted data, saved some .csv files, and made the glimma plots. `add_limma_results` added limma results to an excel spreadsheet. I'm working to separate out some of the functionality into independent functions. Now, we have:
 
