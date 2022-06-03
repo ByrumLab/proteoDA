@@ -101,7 +101,7 @@ fit <- fit_limma_model(data = norm$normList[["vsn"]], # choose your normalizatio
 # Extract the differential expression results
 results <- extract_limma_DE_results(limma_fit = fit)
 
-# Save the tables of results- NOT DOCUMENTED YET
+# Save the tables of results
 write_limma_results(model_results = results,
                     norm.method = "vsn",
                     annotation = extracted_data$annot,
