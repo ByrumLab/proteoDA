@@ -30,7 +30,6 @@ Imports:
     rlang,
     rmarkdown,
     stringr,
-    tools,
     vioplot,
     vsn
 Depends: 

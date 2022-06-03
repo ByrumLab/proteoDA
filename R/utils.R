@@ -211,12 +211,29 @@ validate_filename <- function(filename, allowed_exts, check_space = T) {
   }
 
   # check extension:
-  if (tools::file_ext(filename) %notin% allowed_exts) {
+  if (file_extension(filename) %notin% allowed_exts) {
     cli::cli_abort(c("Invalid file name supplied: {.path {filename}}",
-                     "x" = "File name cannot end in {.path {tools::file_ext(filename)}}",
+                     "x" = "File name cannot end in {.path {file_extension(filename)}}",
                      "i" = "Permitted file {cli::qty(length(allowed_exts))} extension{?s}: {.val {allowed_exts}}"))
 
   }
 
   invisible(TRUE)
 }
+
+#' Get the file extension from a file
+#'
+#' @param filepath The filepath from which to extract the exxtension
+#'
+#' @return A string of the file extension. When no extension was detected, an empty string.
+#'
+#' @examples
+#' # No examples yet
+file_extension <- function(filepath) {
+  ext <- stringr::str_extract(filepath, "\\.[0-9A-Za-z]+$") %>%
+    stringr::str_remove_all("\\.")
+  if (is.na(ext)) ext <- ""
+  ext
+}
+
+

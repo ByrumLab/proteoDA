@@ -142,7 +142,7 @@ extract_data <- function(file = NULL,
     }
     bn <- basename(file)
     bn <- gsub("Samples Report of ", "", bn)
-    ilab <- gsub(paste0(".", tools::file_ext(bn)), "", bn)
+    ilab <- gsub(paste0(".", file_extension(bn)), "", bn)
     ## save DIA Big Query Input File
     filename <- paste0(ilab, "_Samples_Report_BQ.csv")
     utils::write.csv(bqData, file.path(".", filename), row.names = FALSE)
@@ -357,7 +357,7 @@ import_data <-function(file,
 
 
   ## check that the file is a csv, tsv, or text file
-  filext <- tools::file_ext(file)
+  filext <- file_extension(file)
   if (filext %notin% c("csv","txt","tsv")) {
     cli::cli_abort(c("Problem with input file",
                      "x" = "Input file must end in {.file .csv}, {.file .tsv}, or {.file .txt}"))

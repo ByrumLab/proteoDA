@@ -167,26 +167,26 @@
 #' @examples
 #' # No examples yet
 #'
-make_new_filename <- function(x, dir) {
-  # Parse input filename and get current file list
-  ext <- tools::file_ext(x)
-  base_name <- stringr::str_remove(x, paste0(".", ext))
-  current_files <- list.files(path=dir)
-
-  # Loop setup
-  attempt <- 0
-  success <- FALSE
-  # Start looping
-  while (!success) {
-    if (attempt >= 50) {
-      cli::cli_abort("Could not create new unique filename to replace {.path {x}} after {.val {attempt}} tries. ")
-    }
-    attempt <- attempt + 1
-
-    suffix <- stringr::str_pad(as.character(attempt), width = 2, side = "left", pad = "0")
-    new_name <- paste0(base_name, "_", suffix, ".", ext)
-    success <- new_name %notin% current_files
-  }
-
-  new_name
-}
+# make_new_filename <- function(x, dir) {
+#   # Parse input filename and get current file list
+#   ext <- tools::file_ext(x)
+#   base_name <- stringr::str_remove(x, paste0(".", ext))
+#   current_files <- list.files(path=dir)
+#
+#   # Loop setup
+#   attempt <- 0
+#   success <- FALSE
+#   # Start looping
+#   while (!success) {
+#     if (attempt >= 50) {
+#       cli::cli_abort("Could not create new unique filename to replace {.path {x}} after {.val {attempt}} tries. ")
+#     }
+#     attempt <- attempt + 1
+#
+#     suffix <- stringr::str_pad(as.character(attempt), width = 2, side = "left", pad = "0")
+#     new_name <- paste0(base_name, "_", suffix, ".", ext)
+#     success <- new_name %notin% current_files
+#   }
+#
+#   new_name
+# }
