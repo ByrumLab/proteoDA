@@ -2,41 +2,49 @@
 % Please edit documentation in R/limma_report.R
 \name{make_limma_reports}
 \alias{make_limma_reports}
-\title{Title}
+\title{Make interactive reports on DE}
 \usage{
 make_limma_reports(
   model_results = NULL,
   annotation = NULL,
   groups = NULL,
   output_dir = NULL,
-  tmp_dir = "tmp",
+  tmp_subdir = "tmp",
   height = 1000,
-  width = 1000,
-  overwrite = F
+  width = 1000
 )
 }
 \arguments{
-\item{model_results}{TBD}
+\item{model_results}{A model results object returned by
+\code{\link{extract_limma_DE_results}}.}
 
-\item{annotation}{TBD}
+\item{annotation}{A dataframe containing annotation data for this analysis.
+In our pipeline, usually the "annot" slot from the object returned by
+\code{\link{extract_data}}.}
 
-\item{groups}{TBD}
+\item{groups}{A vector describing the groups to which each sample belongs. Used
+for grouping expression data in the interactive expression plot.}
 
-\item{output_dir}{TBD}
+\item{output_dir}{The directory in which to create the reports and save the
+plot files. No defaults, must be specified.}
 
-\item{tmp_dir}{TBD}
+\item{tmp_subdir}{The subdirectory within the output directory in which to
+store temporary files. Deleted by default. Default is "tmp".}
 
-\item{height}{TBD}
+\item{height}{The height of the interactive report objects, in pixels.
+Default is 1000.}
 
-\item{width}{TBD}
-
-\item{overwrite}{TBD}
+\item{width}{The width of the interactive report objects, in pixels.
+Default is 1000.}
 }
 \value{
-TBD
+If successful, invisible(TRUE).
 }
 \description{
-Title
+A wrapper function that creates and saves interactive HTML reports summarizing
+differential expression analyses for each contrast. Creates one HTML report
+for each contrast. Also creates and saves a set of static .pdf plots. Current
+behavior is to overwrite any previous reports or other files with the same name.
 }
 \examples{
 # No examples yet

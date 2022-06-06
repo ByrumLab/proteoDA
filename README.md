@@ -107,7 +107,7 @@ write_limma_results(model_results = results,
                     annotation = extracted_data$annot,
                     ilab = "example_1234",
                     enrich = "protein")
-# And save the plots and interactive report- NOT DOCUMENTED YET
+# And save the plots and interactive report
 make_limma_reports(model_results = results,
                    annotation =  extracted_data$annot,
                    groups = norm$targets$group,
@@ -128,6 +128,7 @@ make_limma_reports(model_results = results,
 ?fit_limma_model
 ?extract_limma_DE_results
 ?write_limma_results
+?make_limma_reports
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -239,7 +240,7 @@ tests as well. Maybe better to just do it once.
 | `fit_limmma_model`         | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
 | `extract_limma_DE_results` | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
 | `write_limma_results`      | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
-| `make_limma_reports`       | :heavy_minus_sign: | :x:                | :x:                |
+| `make_limma_reports`       | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
 
 The final steps in the pipeline, for the limma analysis, are being
 reworked a little. Originally, there were two functions:
@@ -254,5 +255,5 @@ functionality into independent functions. Now, we have:
     contrast from the list of limma model fits.
 -   `write_limma_results`- Output the various .csv and excel files of
     results.
--   `make_limma_reports`- Which outputs the interactive HTML reports and
-    static plots for the end end user.
+-   `make_limma_reports`- Outputs the interactive HTML reports and
+    static plots for the end user.
