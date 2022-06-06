@@ -237,3 +237,42 @@ file_extension <- function(filepath) {
 }
 
 
+
+#' Calculate per-row variances of a numeric array
+#'
+#' Have done testing, gives same results as the genefilter::rowVars() function.
+#'
+#' @param x The array for which to calculate per-row variances
+#' @param ... Additional arguments to be passed to internal functions.
+#'   Meant for na.rm
+#'
+#' @return A numeric vector of appropriate length, named if input was named, with
+#'   per-row variances.
+#'
+#' @examples
+#' # No examples yet.
+rowVars <- function(x, ...) {
+  # Get variance of each row by vectorized subtraction of rowmeans
+  # This is much faster than, e.g., applying the built-in var() function over the rows of a matrix
+  rowSums((x - rowMeans(x, ...))^2, ...)/(rowSums(!is.na(x)) - 1)
+}
+
+
+#' Calculate per-row standard deviations of a numeric array
+#'
+#' Have done testing, gives same results as the genefilter::rowSds() function.
+#'
+#' @param x The array for which to calculate per-row Sds
+#' @param ... Additional arguments to be passed to internal functions.
+#'   Meant for na.rm.
+#'
+#' @return A numeric vector of appropriate length, named if input was named, with
+#'   per-row standard deviations
+#'
+#' @examples
+#' # No examples yet.
+rowSds <- function(x, ...) {
+  sqrt(rowVars(x, ...))
+}
+
+

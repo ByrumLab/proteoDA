@@ -201,7 +201,12 @@ qc_pca_plot <- function(data,
 
   # Get top variable proteins
   data <- data[!apply(is.na(data), 1, any), ]
-  o <- order(matrixStats::rowVars(as.matrix(data)), decreasing = TRUE)
+  o_new <- order(rowVars(as.matrix(data)), decreasing = TRUE)
+  o_old <- order(matrixStats::rowVars(as.matrix(data)), decreasing = TRUE)
+  if (!all.equal(o_new, o_old)) {
+    stop("Variance sorting different between old and new")
+  }
+  o <- o_new
   data <- data[o, ]
   top <- ifelse(nrow(data) >= top, top, nrow(data))
   data <- data[1:top, ]
@@ -361,7 +366,12 @@ qc_dendrogram <- function(data, groups = NULL, sampleLabels = NULL,
   groups <- make_factor(x = groups)
 
   # Get top variable proteins
-  o <- order(matrixStats::rowVars(data), decreasing = TRUE)
+  o_new <- order(rowVars(as.matrix(data)), decreasing = TRUE)
+  o_old <- order(matrixStats::rowVars(as.matrix(data)), decreasing = TRUE)
+  if (!all.equal(o_new, o_old)) {
+    stop("Variance sorting different between old and new")
+  }
+  o <- o_new
   data <- data[o, ]
   top <- ifelse(nrow(data) >= top, top, nrow(data))
   data <- data[1:top, ]
