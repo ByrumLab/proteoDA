@@ -63,7 +63,14 @@ PMAD <- function(data, groups) {
   PMAD <- NULL
   for (group in unique(groups)) {
     tempData <- as.matrix(data[, groups %in% group])
-    MAD <- matrixStats::rowMads(tempData, na.rm = FALSE)
+    MAD_old <- matrixStats::rowMads(tempData, na.rm = FALSE)
+    MAD_new <- rowMads(tempData, na.rm = F)
+    MAD_new_nonames <- MAD_new; names(MAD_new_nonames) <- NULL
+    if (!all.equal(MAD_old, MAD_new_nonames)) {
+      stop("MADs different between old and new fxns")
+    }
+
+    MAD <- MAD_new
     PMAD[group] <- mean(MAD, na.rm = T)
   }
   return(PMAD)
