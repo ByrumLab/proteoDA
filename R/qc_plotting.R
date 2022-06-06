@@ -476,7 +476,10 @@ qc_corr_hm <- function(data,
   hm_corr <- ComplexHeatmap::Heatmap(cor_mat,
     name = "Pearson correlation", border = TRUE,
     col = circlize::colorRamp2(seq(min(cor_mat), 1, ((1 - min(cor_mat)) / 7)),
-      colors = RColorBrewer::brewer.pal(8, "Blues"),
+      colors = c("#F7FBFF", "#DEEBF7",
+                 "#C6DBEF", "#9ECAE1",
+                 "#6BAED6", "#4292C6",
+                 "#2171B5", "#084594"), # originally from RColorBrewer::brewer.pal(8, "Blues")
       transparency = 0.6
     ),
     heatmap_legend_param = list(
