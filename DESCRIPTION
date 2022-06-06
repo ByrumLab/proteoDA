@@ -11,7 +11,6 @@ Imports:
     ClassDiscovery,
     cli,
     ComplexHeatmap,
-    genefilter,
     ggplot2,
     grDevices,
     grid,

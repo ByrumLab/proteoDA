@@ -49,12 +49,7 @@ PCV <- function(data, groups) {
   PCV <- NULL
   for (group in unique(groups)) {
     tempData <- as.matrix(data[, groups %in% group])
-    CVs_new <- rowSds(tempData, na.rm = FALSE)/rowMeans(tempData, na.rm = FALSE)
-    CVs_old <- genefilter::rowSds(tempData, na.rm = FALSE)/rowMeans(tempData, na.rm = FALSE)
-    if (!all.equal(CVs_new, CVs_old)) {
-      stop("Old and new CVs not equal")
-    }
-    CVs <- CVs_new
+    CVs <- rowSds(tempData, na.rm = FALSE)/rowMeans(tempData, na.rm = FALSE)
     PCV[group] <- mean(CVs, na.rm = T)
   }
   return(PCV)
@@ -85,12 +80,7 @@ PEV <- function(data, groups) {
     tempData <- as.matrix(data[, groups %in% group])
 
     rowNonNACnt <- rowSums(!is.na(tempData)) - 1
-    EV_new <- rowNonNACnt * rowVars(tempData, na.rm = FALSE)
-    EV_old <- rowNonNACnt * matrixStats::rowVars(tempData, na.rm = FALSE)
-    if (!all.equal(EV_new, EV_old)) {
-      stop("Old and new EV not equal")
-    }
-    EV <- EV_new
+    EV <- rowNonNACnt * rowVars(tempData, na.rm = FALSE)
     PEV[group] <- sum(EV, na.rm = TRUE)/sum(rowNonNACnt, na.rm = TRUE)
   }
   return(PEV)

@@ -156,7 +156,7 @@ make_proteinorm_report(normList=norm_lupashin$normList, groups = norm_lupashin$t
 
 # Zhan
 tic()
-make_proteinorm_report(normList = norm_zhan$normList, groups = norm_zhan$targets$group, file = "zhan.pdf")
+make_proteinorm_report(normList = norm_zhan$normList, groups = norm_zhan$targets$group, file = "zhan.pdf", overwrite = T)
 toc()
 
 make_proteinorm_report(normList = norm_reb$normList, groups = norm_reb$targets$group, file = "rebello.pdf", overwrite = T)
