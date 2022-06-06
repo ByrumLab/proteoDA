@@ -18,7 +18,7 @@ per-row medians
 }
 \description{
 Have done testing, gives same results as the matrixStats::rowMedians() function
-it replaces, though it is much slower (the matrxiStats version uses C code).
+it replaces, though it is much slower (the matrixStats version uses C code).
 }
 \examples{
 # No examples yet.

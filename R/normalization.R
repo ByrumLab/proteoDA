@@ -224,28 +224,13 @@ rlrNorm <- function(logDat) {
   }
 
   # Median intensities across samples are the predictors for the rlm
-  row_medians_old <- matrixStats::rowMedians(logDat, na.rm = TRUE)
-  row_medians_new <- rowMedians(logDat, na.rm = TRUE)
-  new_nonames <- row_medians_new
-  names(new_nonames) <- NULL
-  if (!all.equal(row_medians_old, new_nonames)) {
-    stop("Row medians not equal")
-  }
+  row_medians <- rowMedians(logDat, na.rm = TRUE)
 
   # Apply the one-col function across the input matrix cols
-  coefficients_old <- t(apply(X = logDat,
+  coefficients <- t(apply(X = logDat,
                         MARGIN = 2,
                         FUN = get_rlm_coeffs_and_slopes,
-                        predictors = row_medians_old))
-  coefficients_new <- t(apply(X = logDat,
-                          MARGIN = 2,
-                          FUN = get_rlm_coeffs_and_slopes,
-                          predictors = row_medians_new))
-  if (!all.equal(coefficients_old, coefficients_new)) {
-    stop("Row coefficients not equal")
-  }
-
-  coefficients <- coefficients_new
+                        predictors = row_medians))
   stopifnot(nrow(t(logDat)) == nrow(coefficients))
   # Do the normalization: subtract the intercept from each point, then divide
   # by slope

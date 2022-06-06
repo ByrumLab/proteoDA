@@ -20,7 +20,6 @@ Imports:
     limma,
     magrittr,
     MASS,
-    matrixStats,
     openxlsx,
     patchwork,
     png,
