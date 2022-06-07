@@ -347,6 +347,13 @@ make_limma_reports(model_results = results_reb,
                    groups = norm_reb$targets$group,
                    output_dir = "output_rebello")
 
+make_limma_reports(model_results = results_reb,
+                   annotation = ext_reb$annot,
+                   groups = norm_reb$targets$group,
+                   output_dir = "output_rebello_wide",
+                   width = 1500,
+                   height = 1500)
+
 
 make_limma_reports(model_results = results_lupashin,
                    annotation = ext_lupashin$annot,
@@ -364,6 +371,18 @@ make_limma_reports(model_results = results_zhan,
                    annotation = ext_zhan$annot,
                    groups = norm_zhan$targets$group,
                    output_dir = "output_zhan")
+
+make_limma_reports(model_results = results_zhan,
+                   annotation = ext_zhan$annot,
+                   groups = norm_zhan$targets$group,
+                   output_dir = "output_zhan_narrow",
+                   width = 400)
+
+make_limma_reports(model_results = results_zhan,
+                   annotation = ext_zhan$annot,
+                   groups = norm_zhan$targets$group,
+                   output_dir = "output_zhan_wide",
+                   width = 2000)
 
 
 

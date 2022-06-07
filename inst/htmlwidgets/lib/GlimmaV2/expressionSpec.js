@@ -55,7 +55,7 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
             {
                 "name": "x",
                 "type": "point",
-                "padding": 0.8,
+                "padding": 1,
                 "domain": {"data": "table", "field": "group"},
                 "range": "width"
             },
@@ -104,7 +104,7 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
                         // But, according to the vega schema, I think the offset can only
                         // be a single number, not a field or column. So far,
                         // I've only been able to have a constant offset.
-                        "x": {"scale": "x", "field": "group"},
+                        "x": {"scale": "x", "field": "group", "offset": {"field": "offset"}},
                         "y": {"scale": "y", "field": "normalized intensity"},
                         "shape": {"value": "circle"},
                         "fill": { "scale": "color", "field": sampleColours == -1 ? "group" : "sample" },

@@ -71,7 +71,8 @@ HTMLWidgets.widget({
           cols: x.data.cols,
           groups: x.data.groups,
           levels: x.data.levels,
-          expressionContainer: expressionContainer
+          expressionContainer: expressionContainer,
+          width: width
         };
 
         setupXYInteraction(data);
@@ -314,6 +315,7 @@ function clearExpressionPlot(data)
 function updateExpressionPlot(countsRow, data, geneName)
 {
   let groups = data.groups.group;
+  let numUniqueGroups = [...new Set(groups)].length;
   let samples = data.groups.sample;
   let levels = data.levels;
   let result = [];
@@ -325,6 +327,21 @@ function updateExpressionPlot(countsRow, data, geneName)
     curr["group"] = group;
     curr["sample"] = col;
     curr["normalized intensity"] = countsRow[col];
+    // Get an offset for jittering
+    // First, randomly sample the sign
+    Math.random() < 0.5 ? sign = -1 : sign = 1;
+    // Then, calculate a jitter width scaling.
+    // Vega is using point scale with a padding of 1,
+    // So space between points is the total pixel width
+    // divided by number of groups + 1
+    // So, the maximum we can jitter in wither direction is half of that.
+    // Will say we can jitter within 60% of that max right now.
+    // But might want to adjust that by number of groups: e.g., jitter even less
+    // when there are more groups.
+    jit_width = (data.width*0.4)/(numUniqueGroups + 1)/2*0.60;
+    // Then, get the offset. Pretty simple: get a random number between 0 and 1, scale
+    // by width, and then multiple by the randomly generated sign
+    curr["offset"] = Math.random()*jit_width*sign;
     if (!Object.values(curr).includes(-9)) { // if -9, which we're using as misisng, don't push result
        result.push(curr);
     }
@@ -332,6 +349,8 @@ function updateExpressionPlot(countsRow, data, geneName)
   if (levels != null) {
     result.sort((a, b) => levels.indexOf(a.group) - levels.indexOf(b.group));
   }
+  // Uncomment next line to log the results to the console for debugging
+  //console.log(JSON.parse(JSON.stringify(result)));
   data.expressionView.data("table", result);
   data.expressionView.signal("title_signal", "Gene " + geneName.toString());
   let max_value = Math.max(...result.map(x => x.count));
