@@ -342,7 +342,7 @@ function updateExpressionPlot(countsRow, data, geneName)
     // Then, get the offset. Pretty simple: get a random number between 0 and 1, scale
     // by width, and then multiple by the randomly generated sign
     curr["offset"] = Math.random()*jit_width*sign;
-    if (!Object.values(curr).includes(-9)) { // if -9, which we're using as misisng, don't push result
+    if (!Object.values(curr).includes(-9)) { // if -9, which we're using as missing, don't push result
        result.push(curr);
     }
   }
@@ -350,10 +350,10 @@ function updateExpressionPlot(countsRow, data, geneName)
     result.sort((a, b) => levels.indexOf(a.group) - levels.indexOf(b.group));
   }
   // Uncomment next line to log the results to the console for debugging
-  //console.log(JSON.parse(JSON.stringify(result)));
+  console.log(JSON.parse(JSON.stringify(result)));
   data.expressionView.data("table", result);
   data.expressionView.signal("title_signal", "Gene " + geneName.toString());
-  let max_value = Math.max(...result.map(x => x.count));
+  let max_value = Math.max(...result.map(x => x["normalized intensity"]));
   data.expressionView.signal("max_count", Math.round(max_value*100)/100 );
   data.expressionView.runAsync();
   updateAxisMessage(data);

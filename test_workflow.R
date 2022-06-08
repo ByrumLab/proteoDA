@@ -372,11 +372,6 @@ make_limma_reports(model_results = results_zhan,
                    groups = norm_zhan$targets$group,
                    output_dir = "output_zhan")
 
-make_limma_reports(model_results = results_zhan,
-                   annotation = ext_zhan$annot,
-                   groups = norm_zhan$targets$group,
-                   output_dir = "output_zhan_narrow",
-                   width = 400)
 
 make_limma_reports(model_results = results_zhan,
                    annotation = ext_zhan$annot,
