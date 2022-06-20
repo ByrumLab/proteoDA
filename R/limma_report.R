@@ -313,6 +313,8 @@ static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
 #'
 #' @return A ggplot object
 #'
+#' @importFrom patchwork ggplot_add
+#'
 #' @examples
 #' # No examples yet
 static_pval_histogram <- function(data, contrast) {
