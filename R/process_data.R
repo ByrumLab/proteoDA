@@ -176,8 +176,13 @@ filter_data <- function(data,
   stopifnot(rownames(targets) == colnames(data_in_targets))
 
   num_removed_samples  <- ncol(data) - ncol(data_in_targets)
+  removed_samples <- colnames(data)[colnames(data) %notin% colnames(data_in_targets)]
 
-  cli::cli_inform("{num_removed_samples} sample{?s} were removed from the data matrix because they were not listed in the targets")
+
+  cli::cli_inform("Removing {num_removed_samples} sample{?s} from the data matrix that {?is/are} not listed in the targets")
+  cli::cli_inform("{cli::qty(num_removed_samples)} Sample{?s} removed:")
+  cli::cli_inform("{.val {removed_samples}}")
+
 
   ## change data column names and targets row names
   ## to sample name i.e. sample column in targets

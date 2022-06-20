@@ -95,7 +95,9 @@ subset_targets <- function(targets, filter_list, ignore.case = TRUE) {
   logs <- make_log(param = param, stats = stats, title = "test", save=TRUE)
 
   # print messages
-  cli::cli_inform("Removed {nrow(tar_removed)} of the {nrow(targets)} sample{?s} {cli::qty(nrow(targets))} from the targets file")
+  cli::cli_inform("Removed {nrow(tar_removed)} of the {nrow(targets)} {cli::qty(nrow(targets))} sample{?s}  from the targets file")
+  cli::cli_inform("{cli::qty(nrow(tar_removed))} Sample{?s} removed:")
+  print(tar_removed)
   cli::cli_rule()
   cli::cli_inform(c("v" = "Success"))
 
