@@ -313,7 +313,7 @@ static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
 #'
 #' @return A ggplot object
 #'
-#' @importFrom patchwork ggplot_add
+#' @import patchwork
 #'
 #' @examples
 #' # No examples yet
