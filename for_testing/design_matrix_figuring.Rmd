@@ -22,7 +22,7 @@ As I implement the model fitting parts of the R package, I've been working to be
 
 Charity sent [this helpful paper](https://f1000research.com/articles/9-1444/v1), which is good background for this. There is one important issue from that paper in particular: intercept- vs. no-intercept parameterizations of categorical models. Consider a experiment with a control group and a treatment group, for which we want to find DE. In the intercept parameterization, we'd estimate the intercept as the mean expression for the "default" group (probably the control), and for the non-default group we'd estimate the difference/offset from the default group. So, we're directly estimating the quantity we're interested in (differential expression). 
 
-In the no-intercept parameterization, we estimate the mean expression for each group, and neither is the default. Then, to calculate differential expression, we need to supply a contrast matrix, telling limma how to add/subtract the per-group means to calculate differential expression (e.g., treatment- control). This might seem like extra steps, but it is really useful in cases where the predictor variable has multiple levels (e.g., A, B, and C). In the no-intercept model, we can just compare the per-group means for each pairwise comparison ($B-A$, $B-C$, etc.), which is easy to programmatically specify. In the intercept model, this is a little more complicated: comparisons against the default (say, A) are just the estimated coefficients, while comparisons between the non-default categories have to be subtracted (e.g., the B-A contrast is just $B$, but the C-B contrast is $C-B$). 
+In the no-intercept parameterization, we estimate the mean expression for each group, and neither is the default. Then, to calculate differential expression, we need to supply a contrast matrix, telling limma how to add/subtract the per-group means to calculate differential expression (e.g., treatment minus control). This might seem like extra steps, but it is useful in cases where the predictor variable has multiple levels (e.g., A, B, and C). In the no-intercept model, we can just compare the per-group means for each pairwise comparison ($B-A$, $B-C$, etc.), which is easy to specify. In the intercept model, this is a little more complicated: comparisons against the default (say, A) are just the estimated coefficients, while comparisons between the non-default categories have to be subtracted (e.g., the B-A contrast is just $B$, but the C-B contrast is $C-B$). 
 
 ## Multiple predictors of interest
 
@@ -118,9 +118,9 @@ This does lead to one issue: R's design matrices only do no-intercept encoding f
 head(design_groupfirst$design)
 ```
 
-As a side note, attempts to get around this (e.g., by making a custom design matrix with 4 columns, instead of three) lead to a matrix that is not of full rank such that limma can't fit a model. 
+Attempts to get around this (e.g., by making a custom design matrix with 4 columns, instead of three) lead to a matrix that is not of full rank such that limma can't fit a model. 
 
-So, we have our two predictors encoded slightly differently: experimental group with no-intercept encoding, but gender with intercept encoding. This is implicitly an additive model: the effect of female is constant across treatments. 
+So, we have our two predictors encoded slightly differently: experimental group with no-intercept encoding, while gender has intercept encoding. This is implicitly an additive model: the effect of female is constant across treatments. 
 
 Here, we don't actually need to set up contrasts for the effect of sex: they're already estimated by the model (the female term in the model is giving the contrast against the default of "male"). So, we don't actually need to specify contrasts to look at the effect of sex, we can just extract the DE results. I'll use the same code as what we do within our package functions: 
 
@@ -296,8 +296,7 @@ all.equal(results_genderfirst_contrasts$stats_by_contrast$HCV.HCC_vs_Control_1,
           results_intercept$stats_by_contrast$groupHCV_HCC) 
 ```
 
-So, assuming the intercept model is "correct", in the two-factor no-intercept models, the **second** factor is the one that is being calculated correctly. 
-
+So, assuming the intercept model is "correct" (which may be wrong, but seems reasonable given that order doesn't matter for it), in the two-factor no-intercept models, the **second** factor is the one that is being calculated correctly. 
 
 Can confirm by looking at gender:
 
@@ -315,26 +314,143 @@ all.equal(results_groupfirst_contrasts$stats_by_contrast$male_vs_female_1,
           results_intercept$stats_by_contrast$genderfemale) 
 ```
 
-So, why is this happening? I don't really know. These result tables that we're comparing are just calculated/extracted from the limma eBayes fit object. So I compared the eBayes fit objects for the two orders of the no-intercept model. They seem to be almost exactly the same, besides the differences in column order. The difference that seems to matter is the prior for the variance for each contrast. Those are slightly different:
+So, why do we get slightly different CIs, t- and B-statistics, and P.Values when we specify the order differently, even though we get the same point estimates of logFC? Let's dive into the model fitting objects to try and figure this out. 
 
+These result tables that we're comparing are just calculated/extracted from the limma eBayes fit object. So, I compared the eBayes fit objects for the two different orders of the no-intercept model element-by-element to look for differences (while accounting for differences in column order):
 
 ```{r}
-# Get prior variance in groupfirst
-groupfirst_prior_var <- fit_groupfirst_contrasts$eBayes_fit$var.prior
-names(groupfirst_prior_var) <- colnames(fit_groupfirst_contrasts$eBayes_fit)
+# Coefficients:
+# colnames differ, but otherwise the same
+tmp <- waldo::compare(fit_groupfirst_contrasts$eBayes_fit$coefficients[,c(1,3)],
+               fit_genderfirst_contrasts$eBayes_fit$coefficients[,c(2,1)], 
+               tolerance = 1e-12)
+# std.unscaled
+# differences in a bunch of rows, but most the same
+tmp <- waldo::compare(fit_groupfirst_contrasts$eBayes_fit$stdev.unscaled[,c(1,3)],
+               fit_genderfirst_contrasts$eBayes_fit$stdev.unscaled[,c(2,1)], 
+               tolerance = 1e-12)
+# sigma: the same
+tmp <- waldo::compare(fit_groupfirst_contrasts$eBayes_fit$sigma,
+                      fit_genderfirst_contrasts$eBayes_fit$sigma, 
+                      tolerance = 1e-12)
+# df.residual: the same
+tmp <- waldo::compare(fit_groupfirst_contrasts$eBayes_fit$df.residual,
+                      fit_genderfirst_contrasts$eBayes_fit$df.residual, 
+                      tolerance = 1e-12)
 
-# Get prior varaince in genderfirst
-genderfirst_prior_var <- fit_genderfirst_contrasts$eBayes_fit$var.prior
-names(genderfirst_prior_var) <- colnames(fit_genderfirst_contrasts$eBayes_fit)
+# cov.coefficients: have to look at manual, but the same values
+#fit_groupfirst_contrasts$eBayes_fit$cov.coefficients,
+#fit_genderfirst_contrasts$eBayes_fit$cov.coefficients, 
 
+# pivot, rank, Amean, method all the same
+# design and cotnrasts are different, as expected. 
 
-print(groupfirst_prior_var)
-print(genderfirst_prior_var)
+# df.prior and s2.prior are the same
+
+# var.prior are slightly different
+tmp <- waldo::compare(fit_groupfirst_contrasts$eBayes_fit$var.prior[c(1,3)],
+               fit_genderfirst_contrasts$eBayes_fit$var.prior[c(2,1)], 
+               tolerance = 1e-12)
+
+# proportion the same
+# s2.post the same
+
+# t statistics are only different in the same rows with different
+# unscaled std devs
+tmp <- waldo::compare(fit_groupfirst_contrasts$eBayes_fit$t[,c(1,3)],
+               fit_genderfirst_contrasts$eBayes_fit$t[,c(2,1)], 
+               tolerance = 1e-12)
+
+# df.total the same
+
+# p vals different, in same rows as above
+tmp <- waldo::compare(fit_groupfirst_contrasts$eBayes_fit$p.value[,c(1,3)],
+               fit_genderfirst_contrasts$eBayes_fit$p.value[,c(2,1)], 
+               tolerance = 1e-12)
+
+# Lods different in every row 
+
+# F different in same rows as above
+tmp <- waldo::compare(as.matrix(fit_groupfirst_contrasts$eBayes_fit$`F`),
+               as.matrix(fit_genderfirst_contrasts$eBayes_fit$`F`), 
+               tolerance = 1e-4)
+
+# p-values not the same, but are all so close to 0 (e.g., 1e-70) that it doesn't
+# matter
+tmp <- waldo::compare(fit_groupfirst_contrasts$eBayes_fit$F.p.value,
+               fit_genderfirst_contrasts$eBayes_fit$F.p.value, 
+               tolerance = 1e-12)
+
+# Get the indices of rows where things are different:
+problem_rows <- tibble(a = unname(fit_groupfirst_contrasts$eBayes_fit$stdev.unscaled[,1]),
+                       b = unname(fit_genderfirst_contrasts$eBayes_fit$stdev.unscaled[,2])) %>% 
+  mutate(diff = abs(b -a) > 1e-12) %>% 
+  pull(diff) %>% 
+  which(.)
 ```
 
-And that leads to all the slight downstream differences (in CIs, P-values, statistics, etc). I know with empirical Bayes the priors are derived from the means/variances/etc. of the sample data, but in our case we use the robust = TRUE option, so the prior variances and degrees of freedom aren't the same as the naive ones (and I think limma might do some further variance squishing). So, its a little hard to replicate exactly why the prior variances are different when the order of the model switches. My guess is it has to do with how variances are calculated across different levels within the same predictor: some difference in how variance is pooled across treatment levels and combinations? Or maybe sometimes the variance is only calculated within one category? Would have to dive deeper into the limma code to figure this out for sure. 
+So, some differences are specific to certain rows (std. deviations, t-stats, and F-stats), and some (the lods) are different for every row. The priors for variance are also different. Together, all these differences lead to the very slight downstream differences (in CIs, P-values, statistics, etc). 
 
-This does seem to be mostly a minor issue, as these differences don't lead to wildly different inferences (at least, in the Kaul test data they don't).
+We can spot check the data in all these rows. In brief, we find that these are rows where some samples have missing data. So, that seems to give us the cause of the issue. In the presence of missing data, limma calculates the unscaled standard deviations slightly differently, leading to slight differences in a bunch of other stats as well. We can test this to be sure: if we remove all the rows with any missing data, we should get the same answers:
+
+```{r}
+vec_has_na <- function(vector) {
+  TRUE %in% unique(is.na(vector))
+}
+  
+no_miss <- norm$normList[["vsn"]][which(!apply(norm$normList[["vsn"]], 
+                                               MARGIN = 1, 
+                                               FUN = vec_has_na)), ]
+
+fit_groupfirst_no_miss <- fit_limma_model(no_miss, 
+                                            design_obj = design_groupfirst, 
+                                            contrasts_obj = contrasts_groupfirst)
+results_groupfirst_no_miss <- extract_limma_DE_results(fit_groupfirst_no_miss)
+
+
+fit_genderfirst_no_miss <- fit_limma_model(no_miss, 
+                                           design_obj = design_genderfirst, 
+                                           contrasts_obj = contrasts_genderfirst)
+results_genderfirst_no_miss <- extract_limma_DE_results(fit_genderfirst_no_miss)
+
+
+all.equal(results_groupfirst_no_miss$stats_by_contrast$HCV.HCC_vs_Control,
+          results_genderfirst_no_miss$stats_by_contrast$HCV.HCC_vs_Control_1)
+all.equal(results_groupfirst_no_miss$stats_by_contrast$male_vs_female_1,
+          results_genderfirst_no_miss$stats_by_contrast$male_vs_female)
+```
+
+
+And they are the same, as expected. So, what exactly is going on with limma such that, in the presence of missing data, it calculates slightly different standard deviations based on the order of model paramterization? I looked through the limma code to try to figure this out. It seems like, for each gene, limma fits a robust linear model with `MASS::rlm()`. The coefficients from that rlm are the coefficients that are output by limma (which are the same no matter the order), while the unscaled standard deviations are calculated with: `sqrt(diag(chol2inv(out$qr$qr)))`, where `out` is the object returned from `MASS::rlm()`, the `qr` element is the QR decomposition of the model matrix, and `chol2inv()` gets you the inverse of a matrix from its Cholesky decomposition. I can do the rlm fitting for a single gene where there is missing data, and recapitulate that we get different unscaled standard deviations:
+
+```{r}
+# genderfirst
+data <- results_genderfirst_contrasts$data
+y <- as.vector(data[problem_rows[1],])
+obs <- is.finite(y)
+design <- design_genderfirst$design
+X <- design[obs, , drop = FALSE]
+y <- y[obs]
+w <- rep_len(1, length(y))
+out <- MASS::rlm(x = X, y = y, weights = w)
+sqrt(diag(chol2inv(out$qr$qr)))
+
+
+
+# group first
+y2 <- as.vector(data[problem_rows[1],])
+obs2 <- is.finite(y2)
+design2 <- design_groupfirst$design
+X2 <- design2[obs2, , drop = FALSE]
+y2 <- y2[obs2]
+w2 <- rep_len(1, length(y2))
+out2 <- MASS::rlm(x = X2, y = y2, weights = w2)
+sqrt(diag(chol2inv(out2$qr$qr)))
+```
+
+I could try going a little further down the rabbit hole and look at the MASS code for fitting rlm, but once we get to Cholesky decomposition I feel like I've reached my limit on linear algebra for the day. 
+
+So, to sum up this section: when using the no-intercept parameterization with multiple factors, if there's missing data than the order of the statistical factors matters for calculating statistics and results. This does seem to be a relatively minor issue, in the sense that it won't lead to wildly different CIs and p-values. 
 
 ### Additive vs interactive models
 
@@ -457,47 +573,19 @@ all.equal(results_noInt$stats_by_contrast,
 
 And again, things are ever so slightly not equal. It looks like the contrasts involving the control group, which was our intercept in the model, are all the same. However, the other comparisons have subtle differences. As before, these aren't in the estimates of average expression, but rather the CIs (and thus the corresponding test statistics and p-values). In this case, they don't lead to any differences in significance for individual proteins, but in theory they could.
 
-Above, the issue with this seemed to be in the calculation of the prior variance: they were slightly different across the different parameterizations. From doing some deep dives, here the issue seems to be with the unscaled standard deviations, and specifically for proteins that have some missing data. For some reason, we get slightly different unscaled SDs for those genes across our different parameterizations: genes with no missing data are the same.
 
-Again, I'm not 100% sure how limma is dealing with this, would be good to dive in further and figure out what is "right". 
-
-
-```{r, eval = F}
-# Figuring out what is different. Seems to be the 
-# Unscaled st deviation that is driving the differences:
-waldo::compare(fit_noInt$eBayes_fit,
-               efit)
-# When we look at one of the rows where they are different:
-waldo::compare(fit_noInt$eBayes_fit$stdev.unscaled,
-               efit$stdev.unscaled)
-# E.g., row 1987
-rbind(fit_noInt$eBayes_fit$stdev.unscaled[1987,],
-      efit$stdev.unscaled[1987,])
-# We see differences in the SD for any comparison involving groups 3d and 5d
-# When we look at the data for that row:
-fit_noInt$data[1987,]
-
-# Samples from 3d and 5d have missing data.
-# Results from non-control comparisons that don't involve groups 3d or 5d are the same:
-# basically the same: the main stats are all the same, though the adjusted Ps are a little
-# different (since they depend on all the other p values)
-all.equal(results_intercept$stats_by_contrast$NRBC_7d_vs_NRBC_1d[1987,],
-          results_noInt$stats_by_contrast$NRBC_7d_vs_NRBC_1d[1987,])
-
-# So, it just seems to be an issue around missing data. 
-```
+In going through and doing some spot checking, the issue again seems to be missing data: unscaled standard deviations are different between the intercept- and no-intercept parameterizations for rows/proteins that have missing data. I won't go all the way down the stack here, but I assume this is once again due to differences in the QR decomposition of matrices during the rlm fitting. 
 
 
 ## Conclusions
 
 So, some of these model specification issues make a difference. In brief:
 
-* The order of specifying model terms matters in the no-intercept model. 
+* When there is no missing expression data, neither the parameterization nor the order of specifying factors seems to matter.
 
-* For models with only one factor, the choice of model parameterization seems to matter only in cases where there is missing data: scaled standard deviations are calculated slightly differently. 
+* With missing data, however, both of these factors matter. In the no-intercept parameterization with multiple factors, you will get slightly different results fitting the same model in different orders. When there is only one factor with multiple levels, the choice of parameterization will affect the calculation of CIs and statistics.
 
 * Need to be careful when specifying 2x2 vs 1x4 (or other higher-level) designs: need to think about when we want to include interactions, and when we don't.
 
-* As it is now, the default parameterization in our pipeline/R package is the no-intercept one. I think we should probably keep it that way as the default, but maybe add in an option in the `make_design()` function to allow easy switching to the intercept parameterization for projects where that makes more sense. 
-
+* As it is now, the default parameterization in our pipeline/R package is the no-intercept one. This perhaps makes specifying contrasts easier, but does mean that, for any project with missing data (which I'm sure is basically all projects), the statistics might be a little different from the intercept parameterization (which I am assuming is the "correct" one, given that it is order-invariant in the multi-factor models). These differences are small and shouldn't really affect our inference much, but they're something to keep in mind. And perhaps it would be worth it to add an option in the `make_design()` function to allow easy switching between parameterizations.  
 
