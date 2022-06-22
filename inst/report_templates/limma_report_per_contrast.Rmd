@@ -4,8 +4,7 @@ pagetitle: "`r contrast`"
 output: 
   html_document:
     mathjax: null
-    self_contained: false
-    lib_dir: resources
+    self_contained: true
 ---
 
 ```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
@@ -21,7 +20,8 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 ```
 
 ```{r logo, fig.align="left", out.width="40%"}
-knitr::include_graphics(path = "resources/logo_higherres.png")
+knitr::include_graphics(path = system.file("report_templates/logo_higherres.png",
+                                           package = "proteomicsDIA"), rel_path = F)
 ```
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
@@ -29,10 +29,10 @@ knitr::include_graphics(path = "resources/logo_higherres.png")
 # {.tabset .tabset-fade .tabset-pills}
 
 ```{r chunk1, results = "asis", fig.keep='none'}
-plot_list <- c("Volcano raw P",
-               "Volcano adjusted P",
-               "MD raw P",
-               "MD adjusted P")
+plot_list <- c("Volcano adjusted P",
+               "Volcano raw P",
+               "MD adjusted P",
+               "MD raw P")
 src <- lapply(plot_list, function(plot) {
   plot <- deparse(plot)
   knitr::knit_expand(file = "plot_template.Rmd")
