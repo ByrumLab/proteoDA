@@ -50,9 +50,6 @@ make_limma_reports <- function(model_results = NULL,
   setwd(output_dir)
 
   cli::cli_inform("Copying resources to output directory {.path {output_dir}}")
-  if (!dir.exists("resources")) {
-    dir.create("resources")
-  }
   if (!dir.exists("static_plots")) {
     dir.create("static_plots")
   }
@@ -63,9 +60,6 @@ make_limma_reports <- function(model_results = NULL,
   file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
                                package = "proteomicsDIA"),
             to = "report_template.Rmd", overwrite = T)
-  file.copy(from = system.file("report_templates/logo_higherres.png",
-                               package = "proteomicsDIA"),
-            to = "resources/logo_higherres.png", overwrite = T)
 
   contrast_count <- 1
   num_contrasts <- length(names(model_results$stats_by_contrast))
