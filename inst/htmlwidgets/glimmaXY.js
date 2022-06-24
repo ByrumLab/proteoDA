@@ -21,7 +21,7 @@ HTMLWidgets.widget({
       renderValue: function(x)
       {
 
-        console.log(x);
+        //console.log(x);
         var handler = new vegaTooltip.Handler();
 
         // create container elements
@@ -238,7 +238,7 @@ function clearTableListener(datatable, state, data)
   data.xyView.data("selected_points", state.selected);
   data.xyView.runAsync();
   clearExpressionPlot(data);
-  console.log(state);
+  //console.log(state);
 }
 
 /**
