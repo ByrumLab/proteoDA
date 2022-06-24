@@ -107,7 +107,7 @@ button.save-button {
     outline: none;
     text-overflow: ellipsis;
 }
-button.save-button:hover 
+button.save-button:hover
 {
     background-color: #888888;
     color: white;
@@ -163,9 +163,9 @@ button.save-button:active {
 
 
 
-.alertBox 
+.alertBox
 {
-	display: inline;
+	display: block;
 	margin-left: 10px;
 	font-family: sans-serif;
 	padding: 1px 1px;
@@ -175,13 +175,13 @@ button.save-button:active {
 	border: 1px solid #d6d8db;
 	border-radius: .25rem;
 }
-.danger 
+.danger
 {
 	color: #721c24;
 	background-color: #f8d7da;
 	border: 1px solid #f5c6cb;
 }
-.invisible 
+.invisible
 {
 	display: none;
 }
@@ -195,7 +195,17 @@ button.save-button:active {
 }
 
 /* vega max y axis setting */
-input.max_y_axis
+input.ylim_max
+{
+	margin-bottom: 5px;
+	margin-right: 10px;
+	border: solid 1px #b5b5b5;
+	border-radius: 2px;
+	display: block;
+}
+
+/* vega max y axis setting */
+input.ylim_min
 {
 	margin-bottom: 5px;
 	margin-right: 10px;

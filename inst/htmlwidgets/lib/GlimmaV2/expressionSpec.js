@@ -31,25 +31,40 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
                         "value": ""
                     },
                     {
-                        "name": "max_y_axis",
-                        "value": null,
-                        "bind": {
-                                  "input": "number",
-                                  "class": "max_y_axis"
-                                }
+                      "name": "ylim_min",
+                      "value": null,
+                      "bind": {
+                                "input": "number",
+                                "class": "ylim_min"
+                              }
+                    },
+                    {
+                      "name": "ylim_max",
+                      "value": null,
+                      "bind": {
+                                "input": "number",
+                                "class": "ylim_max"
+                              }
+                    },
+                    {
+                      "name": "min_count",
+                      "value": null
                     },
                     {
                         "name": "max_count",
                         "value": 0
                     },
                     {
+                        "name": "min_y",
+                        "update": " (ylim_min === null || ylim_min == \"\") ? null : (ylim_min > min_count) ? null : ylim_min"
+                    },
+                    {
                         "name": "max_y",
-                        "update": " (max_y_axis < max_count) ? null : max_y_axis"
+                        "update": " (ylim_max < max_count) ? null : ylim_max"
                     },
                     sampleColours == -1 ? colourscheme_signal : samplecols_signal
                 ],
         "data": {"name": "table"},
-        //"transform": {"type": "formula", "as": "random", "expr": ""},
         "scales":
         [
             {
@@ -64,6 +79,7 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
                 "domain": {"data": "table", "field": "normalized intensity"},
                 "range": "height",
                 "zero": false,
+                "domainMin": {"signal": "min_y"},
                 "domainMax": {"signal": "max_y"}
             },
             {
@@ -98,12 +114,6 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
                 "from": {"data": "table"},
                 "encode": {
                     "update": {
-                        // Have tried a bunch of things to jitter the X axis.
-                        // Tried adding transformation in many parts of the spec,
-                        // then adding an offset in the "x" section, calling that col.
-                        // But, according to the vega schema, I think the offset can only
-                        // be a single number, not a field or column. So far,
-                        // I've only been able to have a constant offset.
                         "x": {"scale": "x", "field": "group", "offset": {"field": "offset"}},
                         "y": {"scale": "y", "field": "normalized intensity"},
                         "shape": {"value": "circle"},

@@ -350,11 +350,13 @@ function updateExpressionPlot(countsRow, data, geneName)
     result.sort((a, b) => levels.indexOf(a.group) - levels.indexOf(b.group));
   }
   // Uncomment next line to log the results to the console for debugging
-  console.log(JSON.parse(JSON.stringify(result)));
+  //console.log(JSON.parse(JSON.stringify(result)));
   data.expressionView.data("table", result);
   data.expressionView.signal("title_signal", "Gene " + geneName.toString());
   let max_value = Math.max(...result.map(x => x["normalized intensity"]));
+  let min_value = Math.min(...result.map(x => x["normalized intensity"]));
   data.expressionView.signal("max_count", Math.round(max_value*100)/100 );
+  data.expressionView.signal("min_count", Math.round(min_value*100)/100 );
   data.expressionView.runAsync();
   updateAxisMessage(data);
 }
@@ -368,7 +370,9 @@ function addAxisMessage(data)
   var bindings = data.expressionContainer.getElementsByClassName("vega-bindings")[0];
   var alertBox = document.createElement("div");
   alertBox.setAttribute("class", "alertBox invisible");
-  data.expressionView.addSignalListener('max_y_axis',
+  data.expressionView.addSignalListener('ylim_max',
+    function(name, value) { updateAxisMessage(data) });
+  data.expressionView.addSignalListener('ylim_min',
     function(name, value) { updateAxisMessage(data) });
   bindings.appendChild(alertBox);
 }
@@ -380,15 +384,27 @@ function addAxisMessage(data)
 function updateAxisMessage(data)
 {
   var alertBox = data.expressionContainer.getElementsByClassName("alertBox")[0];
+  let minCount = data.expressionView.signal("min_count");
   let maxCount = data.expressionView.signal("max_count");
-  let userValue = data.expressionView.signal("max_y_axis");
-  if (userValue == null || userValue == "" || Number(userValue) >= maxCount)
+  let userMax = data.expressionView.signal("ylim_max");
+  let userMin = data.expressionView.signal("ylim_min");
+
+  max_OK = userMax == null || userMax == "" || Number(userMax) >= maxCount;
+  min_OK = userMin == null || userMin == "" || Number(userMin) <= minCount;
+  if (max_OK && min_OK)
   {
     alertBox.setAttribute("class", "alertBox invisible");
   }
   else
   {
-    alertBox.innerHTML = `Max count value is ${maxCount}`;
+    if (!max_OK)
+    {
+      alertBox.innerHTML = `Max normalized intensity is ${maxCount}`;
+    }
+    else
+    {
+      alertBox.innerHTML = `Min normalized intensity is ${minCount}`;
+    }
     alertBox.setAttribute("class", "alertBox danger");
   }
 }
