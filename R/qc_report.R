@@ -142,7 +142,7 @@ make_qc_report <- function(normList,
     # Check that the filename is a pdf
     validate_filename(file, allowed_exts = c("pdf"))
 
-    # Check if filename already exists, remake it if so
+    # Check if filename already exists
     if (file.exists(file.path(out_dir, file))) {
       if (overwrite) {
         cli::cli_inform("{.path {file}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
