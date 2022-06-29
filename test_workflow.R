@@ -28,7 +28,7 @@ ext_ndu <- extract_data("for_testing/Example Data/NDu_030822_DIA/input_files/Sam
              enrich = "protein") # Worked
 
 
-ext_kintler <- extract_data(file = "for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv",
+ext_kinter <- extract_data(file = "for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv",
                             pipe = "DIA",
                             enrich = "protein") # Worked
 
