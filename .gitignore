@@ -19,3 +19,4 @@ targets*.csv
 protein_analysis/
 phospho_analysis/
 output_*/
+feature
