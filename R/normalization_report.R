@@ -280,121 +280,152 @@ make_proteinorm_report <- function(normList,
 
 
 
-#' Make boxplot of a proteinorm metric
-#'
-#' Makes, and optionally saves, a boxplot showing the selected normalization
-#' metric across samples. See \code{\link{norm_metrics}} for info on
-#' the available metrics.
-#'
-#' @inheritParams make_proteinorm_report
-#' @param groups A character or factor vector, listing the group(s) the samples
-#'   belong to.
-#' @param metric The normalization metric to calculate and plot. Can be "PCV",
-#'   "PMAD", "PEV", or "COR". See \code{\link{norm_metrics}}.
-#' @param dir The directory in which to save the plot, if saving. Default is the
-#'   current working directory.
-#' @param save Should the plot be saved (as a .png)? Default is FALSE.
-#'
-#' @return A list, giving the results of applying the given normalization metric
-#'   to the input normList.
-#' @export
-#'
-#' @seealso \code{\link{norm_metrics}}
-#'
-#' @examples
-#' # No examples yet
-#'
-proteinormMetricBoxplot <- function(normList,
-                                    metric = c("PCV", "PMAD", "PEV", "COR"),
-                                    groups,
-                                    batch = NULL,
-                                    dir = ".",
-                                    save = FALSE) {
+
+
+# Process the normlist into a data frame for plotting
+eval_pn_metric_for_plot <- function(normList,
+                           metric = c("PCV", "PMAD", "PEV", "COR"),
+                           grouping) {
 
   # check args
   metric <- rlang::arg_match(metric)
 
-  if (is.null(batch)) {
-    batch <- c(rep("1", ncol(normList[[1]])))
+  plotData <- NULL
+  for (norm_method in names(normList)) {
+    metric_results <- do.call(what = metric, args= list(data = as.data.frame(normList[norm_method]), groups = grouping))
+    x <- data.frame(method = norm_method,
+                    group = names(metric_results),
+                    value = metric_results, row.names = NULL)
+
+    plotData <- rbind(plotData, x)
   }
 
-  # coerce group and batch to factor???
-  # Not sure we need to do this
-  # these are either (1) already a factor,
-  # and/or (2) the functions of make use of these don't require them to be factors?
-  #groups <- make_factor(as.character(groups))
-  #batch <- make_factor(as.character(batch), prefix = NULL)
-  # So far, seems to work just fine without any coercion happening here.
+  plotData$method <- factor(plotData$method, levels = names(normList))
 
-  # Set up the titles, filenames, etc. that we'll use for each metric
-  plot_labelling <- data.frame(type = c("PCV", "PMAD", "PEV", "COR"),
-                               basefile = paste0(c("PCV", "PMAD", "PEV", "COR"), "plot.png"),
-                               main = c("PCV", "PMAD", "PEV", "COR"),
-                               yaxis = c("Pooled Coefficient of Variation",
-                                         "Median Absolute Deviation",
-                                         "Pooled Estimate of Variance",
-                                         "Intragroup Correlation"))
-  type <- NULL
-  labels <- base::subset(plot_labelling, type == metric)
-
-
-  # If saving, make sure directory exists then open the plotting device
-  if (save) {
-    if (!dir.exists(dir)) {
-      dir.create(dir, recursive = TRUE)
-    }
-    grDevices::png(filename = file.path(dir, labels$basefile),
-        units = "px",
-        width = 650,
-        height = 650,
-        pointsize = 15)
-  }
-
-
-  # Collect current par() options that we're going to change,
-  # and set them back on exit
-  old_mar <- graphics::par()$mar
-  on.exit(graphics::par(mar = old_mar), add = TRUE)
-
-  # Get plot data by applying our metric function across
-  # the input normlist
-  plotData <- base::lapply(normList, FUN = metric, groups = groups)
-
-  # Make the plot
-  graphics::par(mar = c(8, 6, 4, 3))
-  # main plot
-  graphics::boxplot(x = plotData,
-          main = labels$main,
-          las = 2,
-          col = binfcolors[1:length(normList)],
-          boxlwd = 1,
-          yaxt = "n",
-          xaxt = "n",
-          cex.main = 1.5)
-  # Y axis
-  graphics::axis(side = 2, cex.axis = 1.2, las = 2)
-  # X axis
-  graphics::axis(side = 1,
-       at = seq_along(names(normList)),
-       labels = names(normList),
-       cex.axis = 1.3,
-       las = 2)
-  # Y axis text
-  graphics::mtext(side = 2,
-        text = labels$yaxis,
-        line = 4.5,
-        cex = ifelse(save, 1.2, 0.9))
-  # Points
-  graphics::points(rep(seq_along(normList),
-             each = length(plotData[[1]])),
-         unlist(plotData),
-         pch = "*",
-         cex = 1)
-
-  if (save) grDevices::dev.off()
-
-  return(invisible(plotData))
+  return(plotData)
 }
+
+# Genetic plotting functions
+#  to make different types of
+pn_raw_mean_plot <- function(plotData) {
+
+  means <- aggregate(value ~ method, data = plotData, mean)
+  sds <- aggregate(value ~ method, data = plotData, sd)
+  ns <- aggregate(value ~ method, data = plotData, FUN = length)
+
+  summary <- data.frame(method = means$method,
+                        mean = means$value,
+                        se = sds$value/sqrt(ns$value))
+
+  # make the plot
+  result <- plotData  %>%
+    ggplot(aes(col = method)) +
+    geom_point(aes(x = method, y = value),
+               size = 1.5,
+               position = position_nudge(x = -0.1)) +
+    geom_pointrange(aes(x = method, y = mean,
+                        ymin = mean - se,
+                        ymax = mean + se),
+                    pch = 18,
+                    size = 1.15,
+                    position = position_nudge(x = 0.1),
+                    data = summary) +
+    scale_color_manual(values = unname(proteomicsDIA::binfcolors)) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5),
+          axis.title.x = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          legend.position = "none",
+          panel.grid = element_blank())
+
+  return(result)
+}
+
+pn_violin_plot <- function(plotData) {
+  # make the plot
+  result <- plotData  %>%
+    ggplot(aes(fill = method)) +
+    geom_violin(aes(x = method, y = value),
+                draw_quantiles = c(0.5),
+                col = "black") +
+    #scale_color_manual(values = unname(proteomicsDIA::binfcolors)) +
+    scale_fill_manual(values = unname(proteomicsDIA::binfcolors)) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5),
+          axis.title.x = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          legend.position = "none",
+          panel.grid = element_blank())
+
+  return(result)
+}
+
+
+# Specific functions for plotting each metric,
+# which make use of the above generic functions
+# to make specfic plots for each one.
+# Hopefully will make it easier to tweak each as needed
+pn_plot_PCV <- function(normList, grouping) {
+  eval_pn_metric_for_plot(normList,
+                          grouping,
+                          metric = "PCV") %>%
+    pn_raw_mean_plot(.) +
+    ylab("Pooled Coefficient of Variation") +
+    ggtitle("PCV")
+}
+
+pn_plot_PMAD <- function(normList, grouping) {
+  eval_pn_metric_for_plot(normList,
+                          grouping,
+                          metric = "PMAD") %>%
+    pn_raw_mean_plot(.) +
+    ylab("Median Absolute Deviation") +
+    ggtitle("PMAD")
+}
+
+pn_plot_PEV <- function(normList, grouping) {
+  eval_pn_metric_for_plot(normList,
+                          grouping,
+                          metric = "PEV") %>%
+    pn_raw_mean_plot(.) +
+    ylab("Pooled Estimate of Variance") +
+    ggtitle("PEV")
+}
+
+pn_plot_COR <- function(normList, grouping) {
+  eval_pn_metric_for_plot(normList,
+                          grouping,
+                          metric = "COR") %>%
+    pn_violin_plot(.) +
+    ylab("Intragroup Correlation") +
+    ggtitle("COR")
+}
+
+
+a <- pn_plot_PCV(normList = norm_higgs$normList,
+                 grouping = norm_higgs$targets$group)
+b <- pn_plot_PMAD(normList = norm_higgs$normList,
+                  grouping = norm_higgs$targets$group)
+c <- pn_plot_PEV(normList = norm_higgs$normList,
+                  grouping = norm_higgs$targets$group)
+d <- pn_plot_COR(normList = norm_higgs$normList,
+                 grouping = norm_higgs$targets$group)
+
+
+a + b + c + d +
+  plot_layout(ncol = 3)
+ggsave(filename = "protein_analysis/01_quality_control/higgs_update.pdf", height = 8.7, width = 11, units = "in")
+
+
+
+
+
+
+
 
 
 
