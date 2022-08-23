@@ -3,10 +3,7 @@
 #'
 #' A set of functions that take in normalized sample data and a grouping factor
 #' and calculate some metric of of variability, error, etc., that we can use
-#' to evaluate normalization methods. The functions/metrics:
-#'
-#' A set of functions that normalize sample data (in columns of a data frame
-#' or matrix), according to various methods: \itemize{
+#' to evaluate normalization methods. The functions/metrics: \itemize{
 #'   \item PCV- Calculated the pooled coefficient of variation (CV, standard
 #'     deviation divided by the mean) for all proteins within a group. That is,
 #'     the average (mean) of the per-protein CVs.
