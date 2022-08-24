@@ -17,7 +17,7 @@ pn_plot_PEV(normList, grouping)
 
 pn_plot_COR(normList, grouping)
 
-pn_plot_log2ratio(normList, grouping, zoom = F)
+pn_plot_log2ratio(normList, grouping, zoom = F, legend = T)
 }
 \arguments{
 \item{normList}{A named list of normalized data matrices. Generally, the "normList"
@@ -28,6 +28,8 @@ belong to.}
 
 \item{zoom}{Should the plot cover the full range of log2ratios, or zoom
 in around 0? Default is FALSE.}
+
+\item{legend}{Should the plot include the legend? Default is TRUE.}
 }
 \value{
 A ggplot object of the plot.

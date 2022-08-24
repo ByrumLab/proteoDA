@@ -7,15 +7,11 @@
 make_proteinorm_report(
   normList,
   groups = NULL,
-  batch = NULL,
-  sampleLabels = NULL,
   enrich = c("protein", "phospho"),
-  save = TRUE,
-  overwrite = FALSE,
   dir = NULL,
   file = NULL,
-  keep.png = FALSE,
-  showAllProteins = FALSE
+  overwrite = FALSE,
+  suppress_zoom_legend = FALSE
 )
 }
 \arguments{
@@ -27,22 +23,9 @@ group each sample belongs to. Generally, the "group" column in the targets
 data frame output by \code{\link{process_data}}. If not supplied, will
 warn the user and treat all samples as belonging to the same group.}
 
-\item{batch}{Optional, a vector describing what batch each sample belongs to.
-If not supplied, will treat all samples as being from the same batch.}
-
-\item{sampleLabels}{Optional, a set of sample labels to use, in the same order as
-the columns in the normList. If not supplied, defaults to using the column
-names in the normList.}
-
 \item{enrich}{What type of analysis is this for? Options are
 "protein" and "phospho". Only used for making output dir name when one isn't
 supplied.}
-
-\item{save}{Should the report be saved as a PDF? Default is TRUE. If FALSE,
-will print all plots to the R or RStudio graphics device.}
-
-\item{overwrite}{Should report file be overwritten if it already exists?
-Default is FALSE.}
 
 \item{dir}{The directory in which to save the report. If not provided,
 will default to either "protein_analysis/01_quality_control" or
@@ -52,58 +35,26 @@ directory, depending on the enrich argument.}
 \item{file}{The file name of the report to be saved. Must end in .pdf. Will
 default to "proteiNorm_Report.pdf" if no filename is provided.}
 
-\item{keep.png}{Keep the individual .png files of each plot? Default is FALSE.}
+\item{overwrite}{Should report file be overwritten if it already exists?
+Default is FALSE.}
 
-\item{showAllProteins}{For missing data heatmaps, show all proteins (including
-ones with no missing data)? Default is FALSE.}
+\item{suppress_zoom_legend}{Should the legend be removed from the zoomed
+log2ratio plot? Default is FALSE}
 }
 \value{
-Invisibly, returns a list with nine slots:
-\enumerate{
-\item "pcv"- A list, equal in length to the input normList, where each
-element of the list gives the results of the \code{\link{PCV}} function
-for a given normaliztion method.
-\item "pmad"- A list, equal in length to the input normList, where each
-element of the list gives the results of the \code{\link{PMAD}} function
-for a given normaliztion method.
-\item "pev"- A list, equal in length to the input normList, where each
-element of the list gives the results of the \code{\link{PEV}} function
-for a given normaliztion method.
-\item "cor"- A list, equal in length to the input normList, where each
-element of the list gives the results of the \code{\link{COR}} function
-for a given normaliztion method.
-\item "lograt"- A list, equal in length to the input normList, where each
-element of the list is the density object of the log2ratio density for a
-given normalization method. See \code{\link{plotLogRatioDensity}} and
-\code{\link{log2ratio}}.
-\item "nahm"- A list of length 4, where the first element is the missing data
-matrix and the next three are the ComplexHeatmap plot objects.
-\item "totint"- A list, equal in length to the input normList, where each
-element of the list gives the total intensity for each sample for a
-given normaliztation method.
-\item "dir"- The directory for the report to be saved in.
-\item "file"- The file for the report to be saved in.
-}
+Invisibly, the filename of the created report
 }
 \description{
-Creates, and optionally saves as a PDF report, a bunch of plots which give
-information about the performance of different normalization metrics and
-amount of missing data. A wrapper that calls many subfunctions: \itemize{
-\item Makes boxplots
-of some normalization metrics with \code{\link{proteinormMetricBoxplot}}.
-\item Makes density plots of the log2ratio between groups with
-\code{\link{plotLogRatioDensity}}.
-\item Plots total sample intensity with \code{\link{plotTotInten}}.
-\item  Makes missing value heatmaps with \code{\link{plotHeatmapsForReport}}
-} Each of these functions has further subfunctions, see their documentation.
+Creates and saves as a PDF report a variety of plots which give
+information about the performance of different normalization metrics.
 }
 \examples{
 # No examples yet
 
 }
 \seealso{
-\code{\link{proteinormMetricBoxplot}},
-\code{\link{plotLogRatioDensity}}, \code{\link{plotTotInten}},
-\code{\link{plotHeatmapsForReport}},
 \code{\link{norm_metrics}},
+\code{\link{eval_pn_metric_for_plot}},
+\code{\link{pn_plots_generic}},
+\code{\link{pn_plots}},
 }

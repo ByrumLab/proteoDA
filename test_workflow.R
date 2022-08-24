@@ -147,24 +147,31 @@ norm_reb <- process_data(data = ext_reb$data,
 
 # Normalization report ----------------------------------------------------
 # Higgs
-make_proteinorm_report(normList = norm_higgs$normList, groups = norm_higgs$targets$group, file = "higgs.pdf", overwrite = T)
+make_proteinorm_report(normList = norm_higgs$normList,
+                       groups = norm_higgs$targets$group,
+                       file = "higgs_update.pdf", overwrite = T)
 
 # Ndu
-make_proteinorm_report(normList = norm_ndu$normList, groups = norm_ndu$targets$group, file = "ndu.pdf", overwrite = T)
+make_proteinorm_report(normList = norm_ndu$normList,
+                       groups = norm_ndu$targets$group,
+                       file = "ndu_update.pdf", overwrite = T)
 
 # Lupashin
-make_proteinorm_report(normList=norm_lupashin$normList, groups = norm_lupashin$targets$group, file = "lupashin.pdf",
-                       overwrite = T)
-make_proteinorm_report(normList=norm_lupashin$normList, groups = norm_lupashin$targets$group, save = F)
-
+make_proteinorm_report(normList=norm_lupashin$normList,
+                       groups = norm_lupashin$targets$group,
+                       file = "lupashin_update.pdf", overwrite = T, suppress_zoom_legend = T)
 # Zhan
 tic()
-make_proteinorm_report(normList = norm_zhan$normList, groups = norm_zhan$targets$group, file = "zhan.pdf", overwrite = T)
+make_proteinorm_report(normList = norm_zhan$normList,
+                       groups = norm_zhan$targets$group,
+                       file = "zhan_update.pdf", overwrite = T)
 toc()
 
-make_proteinorm_report(normList = norm_reb$normList, groups = norm_reb$targets$group, file = "rebello.pdf", overwrite = T)
-
-
+# Rebello
+make_proteinorm_report(normList = norm_reb$normList,
+                       groups = norm_reb$targets$group,
+                       file = "rebello_update.pdf",
+                       overwrite = T)
 
 # Make QC report ----------------------------------------------------------
 make_qc_report(normList = norm_higgs$normList, norm.method = "vsn",

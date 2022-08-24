@@ -37,12 +37,8 @@ group each sample belongs to. Generally, the "group" column in the targets
 data frame output by \code{\link{process_data}}. If not supplied, will
 warn the user and treat all samples as belonging to the same group.}
 
-\item{batch}{Optional, a vector describing what batch each sample belongs to.
-If not supplied, will treat all samples as being from the same batch.}
-
-\item{sampleLabels}{Optional, a set of sample labels to use, in the same order as
-the columns in the normList. If not supplied, defaults to using the column
-names in the normList.}
+\item{sampleLabels}{Optional, a vector of sample labels to use. If not supplied,
+defaults to using the column names in the data.}
 
 \item{norm.method}{The normalization method for which to perform the QC analysis.
 Should be a name of one of the datasets in normList.}
@@ -59,13 +55,8 @@ directory, depending on the enrich argument.}
 \item{file}{The file name of the report to be saved. Must end in .pdf. Will
 default to "QC_Report.pdf" if no filename is provided.}
 
-\item{save}{Should the report be saved as a PDF? Default is TRUE. If FALSE,
-will print all plots to the R or RStudio graphics device.}
-
 \item{overwrite}{Should report file be overwritten if it already exists?
 Default is FALSE.}
-
-\item{keep.png}{Keep the individual .png files of each plot? Default is FALSE.}
 
 \item{legend}{Include legends in the plots within the report? Default is TRUE.}
 
