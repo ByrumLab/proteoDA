@@ -46,7 +46,6 @@ eval_pn_metric_for_plot <- function(normList,
 }
 
 
-
 #' Generic plotting functions for normalization report
 #'
 #' An internal set of functions that take in processed data ready for plotting and
@@ -84,7 +83,7 @@ pn_mean_plot <- function(plotData) {
                         ymax = mean + se),
                     pch = 18,
                     size = 1.15) +
-    scale_color_manual(values = unname(proteomicsDIA::binfcolors)) +
+    scale_color_manual(values = unname(binfcolors)) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
@@ -106,7 +105,7 @@ pn_violin_plot <- function(plotData) {
     geom_violin(aes(x = method, y = value),
                 draw_quantiles = c(0.5),
                 col = "black") +
-    scale_fill_manual(values = unname(proteomicsDIA::binfcolors)) +
+    scale_fill_manual(values = unname(binfcolors)) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
@@ -124,11 +123,13 @@ pn_violin_plot <- function(plotData) {
 pn_density_plot <- function(plotData) {
   # make the plot
   result <- plotData  %>%
-    ggplot(aes(color = method)) +
+    ggplot(aes(color = method, group = method)) +
     geom_vline(aes(xintercept = 0), col = "grey80") +
     geom_line(aes(x = value),
-              stat = "density") +
-    scale_color_manual(values = unname(proteomicsDIA::binfcolors)) +
+              stat = "density",
+              na.rm = T,
+              trim = T) + # need trim = T for the density calculation to happen per-group
+    scale_color_manual(values = unname(binfcolors)) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5),
           panel.grid = element_blank())
@@ -147,6 +148,7 @@ pn_density_plot <- function(plotData) {
 #' @inheritParams eval_pn_metric_for_plot
 #' @param zoom Should the plot cover the full range of log2ratios, or zoom
 #'   in around 0? Default is FALSE.
+#' @param legend Should the plot include the legend? Default is TRUE.
 #' @return A ggplot object of the plot.
 #'
 #' @name pn_plots
@@ -206,7 +208,7 @@ pn_plot_COR <- function(normList, grouping) {
 #' @rdname pn_plots
 #' @export
 #'
-pn_plot_log2ratio <- function(normList, grouping, zoom = F) {
+pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
 
   # Get plot data
   plotData <- eval_pn_metric_for_plot(normList,
@@ -223,7 +225,7 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F) {
   # Build base plot
   base <- plotData %>%
     pn_density_plot(.) +
-    xlab("Log2 ratio") +
+    xlab("") +
     ylab("Density") +
     ggtitle("Log2 ratio")
 
@@ -237,13 +239,21 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F) {
       coord_cartesian(xlim = c(min_xlim, max_xlim))
   }
 
-  # Output baseplot with moved legend
-  base +
-    theme(legend.justification = c(1,1), # sets upper-right corner as locating point
-          legend.position = c(0.99, 0.99),
-          legend.title = element_blank(),
-          legend.text = element_text(size = 8),
-          legend.key.size = unit(0.35, "cm")) # puts locating point in upper-right corner
+  # Output baseplot with or without legend
+  if (legend) {
+    result <- base +
+      theme(legend.justification = c(1,1), # sets upper-right corner as locating point
+            legend.position = c(0.99, 0.99), # puts locating point in upper-right corner
+            legend.title = element_blank(),
+            legend.text = element_text(size = 8),
+            legend.key.size = unit(0.35, "cm"),
+            legend.background = element_rect(fill = NULL))
+  } else {
+    result <- base +
+      theme(legend.position = "none")
+  }
+
+  result
 }
 
 
