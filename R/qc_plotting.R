@@ -89,66 +89,37 @@ qc_boxplot <- function(data,
 #' @examples
 #' # No examples yet
 qc_violin_plot <- function(data,
-                       groups = NULL, sampleLabels = NULL,
-                       title = NULL, legend = TRUE) {
-  if (is.null(sampleLabels)) {
-    sampleLabels <- as.character(colnames(data))
-  }
-  if (is.null(groups)) {
-    groups <- c(rep("group", ncol(data)))
-  }
-  groups <- make_factor(x = as.character(groups), prefix = NULL)
+                           groups = NULL,
+                           sample_labels = colnames(data)) {
 
-  ## convert data data.frame to a named list
-  plotData <- list()
-  for (k in 1:ncol(data)) {
-    plotData[[k]] <- data[, k]
-  }
-  names(plotData) <- colnames(data)
-
-  # Reorder group affiliations
-  # Since groups is an ordered factor (see make_factor()),
-  # this puts them in the order of their levels, then sorts by name.
-  # Does not necessarily sort alphabetically.
+  # Get alphabetical order of groups
   group_order <- sort.int(groups, index.return = T)$ix
 
-  # Then, reorder the input data and groups
-  plotData <- plotData[group_order]
-  sampleLabels <- sampleLabels[group_order]
-  groups <- groups[group_order]
 
-  # Get original graphics pars
-  orig_par <- graphics::par(no.readonly = TRUE)
-  # Schedule them to be reset when we exit the function
-  on.exit(graphics::par(orig_par), add = TRUE)
+  # Rename column names to sample names provided
+  colnames(data) <- sample_labels
 
-  ## plot margins
-  b_mar <- left_margin(x = sampleLabels)
-  r_mar <- right_margin(x = groups)
-  if (!legend) r_mar <- 1
+  # Match sample names to groups, for coloring
+  sample_group_info <- data.frame(ind = colnames(data)[group_order],
+                                  group = groups[group_order])
 
-  # Setup graphics parameters:
-  graphics::par(mar = c(b_mar, 6, 3, r_mar),
-                oma = c(0.5, 0, 0.5, r_mar/2 + 3))
-
-
-
-  # Make the plot
-  vio <- vioplot::vioplot(plotData,
-                          col = colorGroup2(groups)[groups], names = sampleLabels,
-                          main = "", ylab = "", xlab = "",
-                          las = 2, font = 1, cex.axis = 1, cex.labs = 1, cex = 1
-  )
-  graphics::mtext(side = 2, text = "Normalized Intensity", line = 3, cex = 1.2)
-  title(main = ifelse(is.null(title), "", title), font.main = 1, cex.main = 1.3, line = 1.1)
-  if (legend) {
-    legend(graphics::par("usr")[2], graphics::par("usr")[4],
-           bty = "n", xpd = NA, legend = levels(groups), pch = 22, cex = 1,
-           box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg = colorGroup2(groups),
-           col = colorGroup2(groups), pt.cex = 1.2, pt.lwd = 0, inset = 0.02, horiz = F, ncol = 1)
-  }
-
-  invisible(vio)
+  # make and return plot
+  # Must merge with sample info first, to get order correct
+  merge(sample_group_info,
+        stack(as.data.frame(data))) %>%
+    ggplot(aes(x = ind, y = values, fill = group)) +
+    geom_violin(draw_quantiles = c(0.5),
+                na.rm = T,
+                col = "black") +
+    scale_fill_manual(values = unname(binfcolors), name = NULL) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5),
+          axis.title.x = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          panel.grid = element_blank()) +
+    ylab("Normalized intensity")
 }
 
 

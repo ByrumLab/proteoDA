@@ -50,6 +50,161 @@
 #'
 #' @examples
 #' # No examples yet
+#'
+#'
+
+# processed_data <- norm_lupashin
+# grouping_column <- "group"
+# chosen_norm_method <- "vsn"
+# enrich <- "protein"
+# label_column <- NULL
+# out_dir <- NULL
+# file <- NULL
+# overwrite <- NULL
+
+write_qc_report <- function(processed_data,
+                            chosen_norm_method = NULL,
+                            grouping_column = NULL,
+                            label_column = NULL,
+                            enrich = c("protein", "phospho"),
+                            out_dir = NULL,
+                            file = NULL,
+                            overwrite = FALSE,
+                            top_proteins = 500,
+                            standardize = TRUE,
+                            pca_axes = c(1,2),
+                            clust_metric = "euclidean",
+                            clust_method = "complete") {
+
+  cli::cli_rule()
+
+  #################
+  ## Check args  ##
+  #################
+
+  # Check that processed_data has expected list structure
+  if (!all(c("normList", "targets", "filt", "param", "stats") %in% names(processed_data))) {
+    cli::cli_abort(c("{.arg processed_data} does not have expected structure:",
+                     "i" = "Is it the object created by running {.code process_data()}?."))
+  }
+
+  # enrich: possible values encoded in function def
+  enrich <- rlang::arg_match(enrich)
+
+  # chosen_norm_method
+  chosen_norm_method <- rlang::arg_match(
+    arg = chosen_norm_method,
+    values = unique(c(
+      names(processed_data$normList), "log2", "median", "mean", "vsn", "quantile",
+      "cycloess", "rlr", "gi"
+    )), multiple = FALSE
+  )
+
+  # If provided, check that grouping column exists in the target dataframe
+  # And set it
+  if (!is.null(grouping_column)) {
+    if (length(grouping_column) != 1) {
+      cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
+                       "i" = "Only specify one column name for {.arg grouping_column}"))
+
+    }
+    if (grouping_column %notin% colnames(processed_data$targets)) {
+      cli::cli_abort(c("Column {.arg {grouping_column}} not found in the targets dataframe of  in {.arg processed_data}",
+                       "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
+    }
+    groups <- processed_data$targets[,grouping_column]
+  } else { # If no groups provided, set them but warn user
+    groups <- rep("group", ncol(processed_data$normList[[chosen_norm_method]]))
+    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples/columns in {.arg processed_data} as one group."))
+  }
+
+  # If provided, check that label column is present in the target dataframe
+  # and set it
+  if (!is.null(label_column)) {
+    if (length(label_column) != 1) {
+      cli::cli_abort(c("Length of {.arg label_column} does not equal 1",
+                       "i" = "Only specify one column name for {.arg label_column}"))
+
+    }
+    if (label_column %notin% colnames(processed_data$targets)) {
+      cli::cli_abort(c("Column {.arg {label_column}} not found in the targets dataframe of  in {.arg processed_data}",
+                       "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
+    }
+    sample_labels <- processed_data$targets[,label_column]
+  } else { # Use colnames of the normlist if not provided
+    sample_labels <- colnames(processed_data$normList[[chosen_norm_method]])
+  }
+
+  ############
+  ## SET UP ##
+  ############
+
+  # Set default dir if not provided
+  if (is.null(out_dir)) {
+    out_dir <- file.path(paste0(enrich, "_analysis"), "01_quality_control")
+    cli::cli_inform(cli::col_yellow("{.arg dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
+  }
+
+  # Set default report name if not provided
+  if (is.null(file)) {
+    file <- "QC_Report.pdf"
+    cli::cli_inform(cli::col_yellow("{.arg file} argument is empty. Saving report to: {.path {out_dir}/{file}}"))
+  }
+
+  # Make directory if it doesn't exist
+  if (!dir.exists(out_dir)) {
+    dir.create(out_dir, recursive = T)
+  }
+
+  # Check that the filename is a pdf
+  validate_filename(file, allowed_exts = c("pdf"))
+
+  # Check if filename already exists
+  if (file.exists(file.path(out_dir, file))) {
+    if (overwrite) {
+      cli::cli_inform("{.path {file}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
+    } else {
+      cli::cli_abort(c("{.path {file}} already exists in {.path {out_dir}}",
+                       "!" = "and {.arg overwrite} == {.val {overwrite}}",
+                       "i" = "Give {.arg file} a unique name or set {.arg overwrite} to {.val TRUE}"))
+    }
+  }
+
+
+  # Select data from chosen normalization method for further use
+  norm_data <- processed_data$normList[[chosen_norm_method]]
+
+  #######################
+  ## MAKE PLOT OBJECTS ##
+  #######################
+
+  # Violin plot
+  violin <- qc_violin_plot(data = norm_data,
+                           groups = groups,
+                           sample_labels = sample_labels) +
+    ggtitle(paste0("Grouped by ", grouping_column))
+
+
+
+  # PCA
+
+  # dendrogram
+
+  # correlation heatmap
+
+  # missing data heatmap - clustering and grouping by grouping column
+
+
+  ###############################
+  ## Save plots, check, return ##
+  ###############################
+
+  violin
+}
+
+
+
+
 make_qc_report <- function(normList,
                            groups = NULL, batch = NULL, sampleLabels = NULL,
                            norm.method = NULL, enrich = c("protein", "phospho"),
@@ -64,112 +219,7 @@ make_qc_report <- function(normList,
                            clust.label.cex = 1
                            ) {
 
-  cli::cli_rule()
 
-  #################
-  ## Check args  ##
-  #################
-  # enrich: possible values encoded in function def
-  enrich <- rlang::arg_match(enrich)
-
-  # Here, possibilities are defined by use, and whatever
-  # is available already in the normList.
-  norm.method <- rlang::arg_match(
-    arg = norm.method,
-    values = unique(c(
-      names(normList), "log2", "median", "mean", "vsn", "quantile",
-      "cycloess", "rlr", "gi"
-    )), multiple = FALSE
-  )
-
-  ##################
-  ## Set defaults ##
-  ##################
-
-  # TODO: see if this is needed?
-  # If we're not saving, override keep.png
-  if (!save) {
-    keep.png <- FALSE
-  }
-
-  # Sort out some defaults if arguments are not supplied
-  # Inform/alert user for groups, as this is semi-serious
-  if (is.null(groups)) {
-    groups <- rep("group", ncol(normList[[1]]))
-    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples/columns in {.arg normList} as one group."))
-  }
-
-  # Set default dir if not provided
-  if (is.null(dir)) {
-    out_dir <- file.path(paste0(enrich, "_analysis"), "01_quality_control")
-    if (save) { # but only print alert if we're saving
-      cli::cli_inform(cli::col_yellow("{.arg dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
-    }
-  } else {
-    out_dir <- dir
-  }
-  # Set default report name if not provided
-  if (is.null(file)) {
-    file <- "QC_Report.pdf"
-    if (save) { # but only print alert if we're saving
-      cli::cli_inform(cli::col_yellow("{.arg file} argument is empty. Saving report to: {.path {out_dir}/{file}}"))
-    }
-  }
-
-  # Set defaults silently for sampleLabels, expected to just grab them
-  # from the normList
-  if (is.null(sampleLabels)) {
-    sampleLabels <- colnames(normList[[1]])
-  }
-
-  # This code doesn't seem to matter:
-  # so far in testing, works the same when commented or uncommented?
-  groups <- make_factor(x = as.character(groups))
-  if (!is.null(batch)) {
-    batch <- make_factor(as.character(batch))
-  }
-
-
-  ###########################
-  ## If save, set up files ##
-  ###########################
-  if (save) {
-    # Make directory if it doesn't exist
-    if (!dir.exists(out_dir)) {
-      dir.create(out_dir, recursive = T)
-    }
-
-    # Check that the filename is a pdf
-    validate_filename(file, allowed_exts = c("pdf"))
-
-    # Check if filename already exists
-    if (file.exists(file.path(out_dir, file))) {
-      if (overwrite) {
-        cli::cli_inform("{.path {file}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
-      } else {
-        cli::cli_abort(c("{.path {file}} already exists in {.path {out_dir}}",
-                     "!" = "and {.arg overwrite} == {.val {overwrite}}",
-                     "i" = "Give {.arg file} a unique name or set {.arg overwrite} to {.val TRUE}"))
-      }
-    }
-
-    # Notify user of where tmp png files will be
-    cli::cli_inform("Temporarily saving {.path .png} files in {.path {out_dir}}")
-  }
-
-  ## NORMALIZED INTENSITY DATA
-  # TODO: figure out what exactly is going on here.
-  # Isn't the data always a list?
-  ## list object or dataframe/matrix of norm. intensities
-  if (any(class(normList) == "list")) {
-    data <- normList[[norm.method]]
-  }
-  if (any(class(normList) %in% "data.frame")) {
-    data <- as.matrix(normList)
-  }
-  if (any(class(normList) %in% "matrix")) {
-    data <- as.matrix(normList)
-  }
 
   ##################
   ## Create plots ##

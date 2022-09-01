@@ -101,9 +101,9 @@ make_proteinorm_report <- function(normList,
     }
   }
 
-  ####################
-  ## Make the plots ##
-  ####################
+  ###########################
+  ## Make the plot objects ##
+  ###########################
 
   a <- pn_plot_PCV(normList, groups)
   b <- pn_plot_PMAD(normList, groups)
@@ -116,9 +116,9 @@ make_proteinorm_report <- function(normList,
     plot_layout(ncol = 3)
 
 
-  ##############################
-  ## Save plot, check, return ##
-  ##############################
+  ###############################
+  ## Save plots, check, return ##
+  ###############################
 
   cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
   ggsave(combined, filename = file.path(out_dir, file), height = 8.5, width = 11, units = "in")

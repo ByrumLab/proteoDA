@@ -64,25 +64,21 @@ target_ndu <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input
                            pipe = "DIA",
                            enrich = "protein") # worked
 
-target_ndu2 <- make_targets(#file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                           sampleIDs = colnames(ext_ndu$data),
-                           pipe = "DIA",
-                           enrich = "protein")
-
-target_ndu3 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                           sampleIDs = c(colnames(ext_ndu$data), "sample_45"),
-                           pipe = "DIA",
-                           enrich = "protein") # Gave warning as expected
-
-target_ndu4 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                            sampleIDs = colnames(ext_higgs$data),
-                            pipe = "DIA",
-                            enrich = "protein") # Gave error as expected,
-                            # but need to improve the error message and figure this logic out
-
-target_kintler <- make_targets(sampleIDs = colnames(ext_kintler$data),
-                               pipe = "DIA",
-                               enrich = "protein") # error because of no "Sample" in ID
+# target_ndu2 <- make_targets(#file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+#                            sampleIDs = colnames(ext_ndu$data),
+#                            pipe = "DIA",
+#                            enrich = "protein")
+#
+# target_ndu3 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+#                            sampleIDs = c(colnames(ext_ndu$data), "sample_45"),
+#                            pipe = "DIA",
+#                            enrich = "protein") # Gave warning as expected
+#
+# target_ndu4 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+#                             sampleIDs = colnames(ext_higgs$data),
+#                             pipe = "DIA",
+#                             enrich = "protein") # Gave error as expected,
+#                             # but need to improve the error message and figure this logic out
 
 target_lupashin <- make_targets(file = "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv",
                                 sampleIDs = colnames(ext_lupashin$data),
@@ -174,15 +170,41 @@ make_proteinorm_report(normList = norm_reb$normList,
                        overwrite = T)
 
 # Make QC report ----------------------------------------------------------
-make_qc_report(normList = norm_higgs$normList, norm.method = "vsn",
-               groups = norm_higgs$targets$group,
-               batch = norm_higgs$targets$group,
-               enrich = "protein", save = TRUE, file = "higgs_qc.pdf", overwrite = T)
+write_qc_report(processed_data = norm_higgs,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "higgs_qc_update.pdf",
+                overwrite = T)
 
-make_qc_report(normList = norm_higgs$normList, norm.method = "vsn",
-               groups = norm_higgs$targets$group,
-               batch = norm_higgs$targets$group,
-               enrich = "protein", save = FALSE)
+write_qc_report(processed_data = norm_ndu,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "ndu_qc_update.pdf",
+                overwrite = T)
+
+write_qc_report(processed_data = norm_lupashin,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "lupashin_qc_update.pdf",
+                overwrite = T)
+
+write_qc_report(processed_data = norm_zhan,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "zhan_qc_update.pdf",
+                overwrite = T)
+
+write_qc_report(processed_data = norm_reb,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "rebello_qc_update.pdf",
+                overwrite = T)
+
 
 
 make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
