@@ -3,6 +3,7 @@ title: "Normalization plot ideas"
 format: 
   html:
     toc: true
+    self-contained: true
 code-fold: true
 editor: visual
 editor_options: 
@@ -428,8 +429,7 @@ pn_MD_plot(norm_lupashin$normList,
            norm_lupashin$targets$group) 
 ```
 
-
-Here, the red line is at 0 and the blue line is a linear model in ggplot. I zoomed in on the -2.5 to 2.5 region in the y-axis, but we could plot the whole thing. I think these look pretty good, and useful. I didn't plot the Zhan data for this one: the data are bigger for the Zhan project, and I'll need to write up a nicer/faster function (the implementation I wrote quickly is slow). 
+Here, the red line is at 0 and the blue line is a linear model in ggplot. I zoomed in on the -2.5 to 2.5 region in the y-axis, but we could plot the whole thing. I think these look pretty good, and useful. I didn't plot the Zhan data for this one: the data are bigger for the Zhan project, and I'll need to write up a nicer/faster function (the implementation I wrote quickly is slow).
 
 ### Averaging across pairwise comparisons?
 
