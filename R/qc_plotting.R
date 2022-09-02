@@ -4,7 +4,8 @@
 #' argument on the x-axis.
 #'
 #' @param data A data frame of intensity data, likely normalized. Rows should be
-#'   proteins and columns should be samples.
+#'   proteins and columns should be samples. Generally, a single element in the
+#'   normList slot of the object returned by \code{\link{process_data}}.
 #' @param groups A character or factor vector, listing the group(s) the samples
 #'   belong to.
 #' @param sample_labels Optional, a vector of sample labels to use. If not supplied,
@@ -33,7 +34,7 @@ qc_violin_plot <- function(data,
   # make and return plot
   # Must merge with sample info first, to get order correct
   merge(sample_group_info,
-        stack(as.data.frame(data)), sort = F) %>%
+        utils::stack(as.data.frame(data)), sort = F) %>%
     ggplot(aes(x = as.factor(ind), y = values, fill = group)) +
     geom_violin(draw_quantiles = c(0.5),
                 na.rm = T,
@@ -113,6 +114,7 @@ qc_pca_plot <- function(data,
     geom_point() +
     scale_color_manual(values = colorGroup2(groups)[groups], name = NULL) +
     theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5)) +
     xlab(paste0("PC", pca_axes[1], " (", round(pca$summary["Proportion of Variance", pca_axes[1]] * 100, 2), " %)")) +
     ylab(paste0("PC", pca_axes[2], " (", round(pca$summary["Proportion of Variance", pca_axes[2]] * 100, 2), " %)"))
 
@@ -135,114 +137,71 @@ qc_pca_plot <- function(data,
 #' uses only the 500 most variable proteins for the analysis.
 #'
 #' @inheritParams qc_pca_plot
-#' @param clust.metric The cluster metric used to define distance. Default is
-#'   "euclidean". See
-#'   \code{\link[ClassDiscovery:distanceMatrix]{ClassDiscovery::distanceMatrix}}
-#'   for options.
-#' @param clust.method The agglomeration method to use for clustering. Default
+#' @param dist_metric The metric used to define distance for clustering. Default is
+#'   "euclidean". See \code{\link[stats:dist]{stats::hclust}} for options.
+#' @param clust_method The agglomeration method to use for clustering. Default
 #'   is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.
-#' @param cex.names Character expansion factor for sample labels. Default is 1.
 #'
-#' @return Invisibly returns a list with seven elements: \enumerate{
-#'   \item "hc"- The hclust object returned by
-#'     \code{\link[stats:hclust]{stats::hclust}}.
-#'   \item "dist"- The distance matrix returned by
-#'     \code{\link[ClassDiscovery:distanceMatrix]{ClassDiscovery::distanceMatrix}}.
-#'   \item "corr.data"- The data matrix that went into the correlation analysis.
-#'   \item "clust.method"- The clust.method argument used.
-#'   \item "clust.metric"- The clust.method argument used.
-#'   \item "stdize"- The stdize argument used.
-#'   \item "top"- The top argument used.
-#' }
+#' @return A ggplot object of the plot.
 #' @export
 #'
 #' @examples
 #' # No examples yet
 
-qc_dendrogram <- function(data, groups = NULL, sampleLabels = NULL,
-                           top = 500, stdize = TRUE,
-                           clust.metric = "euclidean", clust.method = "complete",
-                           cex.names = 1, title = NULL, legend = TRUE) {
+qc_dendro_plot <- function(data,
+                          groups = NULL,
+                          sample_labels = NULL,
+                          top_proteins = 500,
+                          standardize = TRUE,
+                          dist_metric = "euclidean",
+                          clust_method = "complete") {
 
   # Check arguments
-  clust.metric <- rlang::arg_match(
-    arg = clust.metric,
+  dist_metric <- rlang::arg_match(
+    arg = dist_metric,
     values = c(
-      "pearson", "sqrt pearson", "spearman", "absolute pearson",
-      "uncentered correlation", "weird", "cosine", "euclidean",
-      "maximum", "manhattan", "canberra", "binary", "minkowski"
+      "euclidean", "maximum", "manhattan",
+      "canberra", "binary", "minkowski"
     ),
     multiple = FALSE
   )
 
-  clust.method <- rlang::arg_match(
-    arg = clust.method,
+  clust_method <- rlang::arg_match(
+    arg = clust_method,
     values = c(
-      "ward.D", "ward.D2", "single", "complete", "average", "mcquitty",
+      "ward.D", "ward.D2", "single",
+      "complete", "average", "mcquitty",
       "median", "centroid"
     ), multiple = FALSE
   )
 
-  if (is.null(sampleLabels)) {
-    sampleLabels <- colnames(data)
-  }
-  if (is.null(groups)) {
-    groups <- c(rep("group", ncol(data)))
-  }
-  groups <- make_factor(x = groups)
-
   # Get top variable proteins
   o <- order(rowVars(as.matrix(data)), decreasing = TRUE)
   data <- data[o, ]
-  top <- ifelse(nrow(data) >= top, top, nrow(data))
+  top <- ifelse(nrow(data) >= top_proteins, top_proteins, nrow(data))
   data <- data[1:top, ]
 
   ## center/scale rows (proteins) mean=0;stdev=1
-  if (stdize) {
+  if (standardize) {
     data <- t(scale(x = t(data), center = TRUE, scale = TRUE))
   }
 
+  # Do clustering
+  hc <- stats::hclust(stats::dist(t(data), method = dist_metric), method = clust_method)
 
+  # Get sample info for colors
+  sample_group_info <- data.frame(label = colnames(data),
+                                  group = groups)
 
-  # Get original graphics pars
-  orig_par <- graphics::par(no.readonly = TRUE)
-  # Schedule them to be reset when we exit the function
-  on.exit(graphics::par(orig_par), add = TRUE)
+  # Make plot
+  ggtree::ggtree(hc) %<+% sample_group_info +
+    ggtree::layout_dendrogram() +
+    ggtree::geom_tippoint(aes(color = group)) +
+    ggtree::geom_tiplab(aes(color = group), angle=90, hjust=1, offset = -0.5, show.legend=FALSE) +
+    scale_color_manual(values = colorGroup2(groups)[groups], name = NULL) +
+    theme_dendrogram(plot.margin=margin(6,6,80,6)) +
+    theme(plot.title = element_text(hjust = 0.5))
 
-  b_mar <- left_margin(x = sampleLabels)
-  r_mar <- right_margin(x = groups)
-  if (!legend) r_mar <- 1
-
-
-
-  # Set up graphics params
-  graphics::par(xpd = T,
-                mar = c(b_mar, 6, 5, r_mar),
-                oma = c(0.5, 0, 0.5, r_mar/2 + 3))
-
-  d <- ClassDiscovery::distanceMatrix(dataset = data, metric = clust.metric)
-  hc <- stats::hclust(d, method = clust.method)
-  ClassDiscovery::plotColoredClusters(hc,
-                                      labs = sampleLabels, cols = colorGroup2(groups)[groups],
-                                      lwd = 1.5, las = 2, cex.axis = 1.2,
-                                      xlab = "", ylab = "",
-                                      font = 1, cex = cex.names,
-                                      line = -0.6)
-  title(main = ifelse(is.null(title), "", title), font.main = 1, line = 2.5, cex = 1.5)
-  if (legend) {
-    legend(graphics::par("usr")[2], graphics::par("usr")[4],
-           bty = "n", xpd = NA, legend = levels(groups), pch = 22, cex = 1,
-           box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg = colorGroup2(groups),
-           col = colorGroup2(groups), pt.cex = 1.2, pt.lwd = 0, inset = 0.02, horiz = F, ncol = 1
-    )
-  }
-
-  data2 <- list(hc = hc, dist = d,
-                corr.data = data,
-                clust.method = clust.method, clust.metric = clust.metric,
-                stdize = stdize, top = top)
-
-  invisible(data2)
 }
 
 

@@ -186,7 +186,6 @@ write_qc_report(processed_data = norm_ndu,
 
 write_qc_report(processed_data = norm_ndu,
                 chosen_norm_method = "vsn",
-                grouping_column = "batch",
                 enrich = "protein",
                 file = "ndu_qc_update_batch.pdf",
                 overwrite = T)

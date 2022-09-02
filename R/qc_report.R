@@ -5,39 +5,30 @@
 #' across samples for the chosen normalization method. By default, the PCA and
 #' clustering analyses are performed on the top 500 most variable proteins. This
 #' function is a wrapper that calls many subfunctions: \itemize{
-#'   \item Makes boxplots of per-sample intensities
-#'     with \code{\link{qc_boxplot}}.
 #'   \item Makes violin plots of per-sample intensities
 #'     with \code{\link{qc_violin_plot}}.
 #'   \item Performs and plots a PCA with \code{\link{qc_pca_plot}}.
 #'   \item Does hierarchical clustering and plots a dendrogram with
-#'     \code{\link{qc_dendrogram}}.
+#'     \code{\link{qc_dendro_plot}}.
 #'   \item Plots a correlation heatmap with \code{\link{qc_corr_hm}}.
 #' } See the documentation of these subfunctions for more info.
 #'
 #'
 #' @inheritParams make_proteinorm_report
-#' @param norm.method The normalization method for which to perform the QC analysis.
+#' @param chosen_norm_method The normalization method for which to perform the QC analysis.
 #'   Should be a name of one of the datasets in normList.
+#' @param label_column Optional. The name of column within the targets data frame
+#'   which contains labels to use for plotting figures. When not supplied,
+#'   defaults to using the column names of the data in processed_data.
 #' @param file The file name of the report to be saved. Must end in .pdf. Will
 #'   default to "QC_Report.pdf" if no filename is provided.
-#' @param legend Include legends in the plots within the report? Default is TRUE.
-#' @param top.proteins The number of most variable proteins to use for the analysis.
+#' @param top_proteins The number of most variable proteins to use for the analysis.
 #'   Default is 500.
-#' @param stdize Should input data be standardized to a mean of 0 and std.dev of
+#' @param standardize Should input data be standardized to a mean of 0 and std.dev of
 #'   1? If input data are not yet standardized, should be TRUE. Default is TRUE.
-#' @param pca.axes  A numeric vector of length 2 which lists the PC axes to plot.
+#' @param pca_axes  A numeric vector of length 2 which lists the PC axes to plot.
 #'   Default is c(1,2), to plot the first two principal components.
-#' @param pca.xlim Optional. Custom x-axis limits of the PCA plot. By default,
-#'   the min is 10% below the min PC score on the x-axis, and the max is above
-#'   the max PC score on the x-axis, with some padding for sample labels.
-#' @param pca.ylim Optional. Custom y-axis limits of the PCA plot. Default is
-#'   10% above and below the min/max PC score on the y-axis.
-#' @param pca.dot Character expansion factor for the size of the points in the
-#'   PCA plot. Default is 2.
-#' @inheritParams qc_dendrogram
-#' @param clust.label.cex Character expansion factor for sample labels in the
-#'   dendrogram. Default is 1.
+#' @inheritParams qc_dendro_plot
 #'
 #' @return Invisibly returns a list with three slots: \enumerate{
 #'   \item "plots"- A large list, where each element in the list is the returned
@@ -73,7 +64,7 @@ write_qc_report <- function(processed_data,
                             top_proteins = 500,
                             standardize = TRUE,
                             pca_axes = c(1,2),
-                            clust_metric = "euclidean",
+                            dist_metric = "euclidean",
                             clust_method = "complete") {
 
   cli::cli_rule()
@@ -185,6 +176,7 @@ write_qc_report <- function(processed_data,
     ggtitle(paste0("Grouped by ", grouping_column))
 
 
+  # PCA
   pca_plot <- qc_pca_plot(data = norm_data,
                           groups = groups,
                           sample_labels = sample_labels,
@@ -193,22 +185,36 @@ write_qc_report <- function(processed_data,
                           pca_axes = pca_axes) +
     ggtitle(paste0("PCA, colored by ", grouping_column))
 
-  # PCA
 
   # dendrogram
+  dendro_plot <- qc_dendro_plot(data = norm_data,
+                                groups = groups,
+                                sample_labels = sample_labels,
+                                top_proteins = top_proteins,
+                                standardize = standardize,
+                                dist_metric = dist_metric,
+                                clust_method = clust_method) +
+    ggtitle(paste0("Cluster method: ", clust_method, "\n",
+                   "Distance metric: ", dist_metric, "\n",
+                   "Colored by: ", grouping_column))
 
   # correlation heatmap
 
   # missing data heatmap - clustering and grouping by grouping column
 
-  combined <- violin_plot + pca_plot
+
+  # Will need to figure out the best options for combining
+  # Probably want to do it dynamically by sample number.
+  # Or, don't combine and just to multi-page PDFs
+  # which I still need to figure out with ggplot.
+  combined <- violin_plot + pca_plot + dendro_plot
 
   ###############################
   ## Save plots, check, return ##
   ###############################
 
   cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
-  ggsave(combined, filename = file.path(out_dir, file), height = 8.5, width = 11, units = "in")
+  ggsave(combined, filename = file.path(out_dir, file), height = 8.5, width = 24, units = "in")
 
   if (!file.exists(file.path(out_dir, file))) {
     cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))

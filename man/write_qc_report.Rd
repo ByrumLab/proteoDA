@@ -16,7 +16,7 @@ write_qc_report(
   top_proteins = 500,
   standardize = TRUE,
   pca_axes = c(1, 2),
-  clust_metric = "euclidean",
+  dist_metric = "euclidean",
   clust_method = "complete"
 )
 }
@@ -24,9 +24,16 @@ write_qc_report(
 \item{processed_data}{The output of the \code{\link{process_data}} function:
 a list object containing processed data and sample information..}
 
+\item{chosen_norm_method}{The normalization method for which to perform the QC analysis.
+Should be a name of one of the datasets in normList.}
+
 \item{grouping_column}{The name of column within the targets data frame which
-gives information on how to group samples for normalization. If not supplied,
-will warn the user and treat all samples as belonging to the same group.}
+gives information on how to group samples for normalization. Must be supplied:
+some metrics can't be calculated for only one group.}
+
+\item{label_column}{Optional. The name of column within the targets data frame
+which contains labels to use for plotting figures. When not supplied,
+defaults to using the column names of the data in processed_data.}
 
 \item{enrich}{What type of analysis is this for? Options are
 "protein" and "phospho". Only used for making output dir name when one isn't
@@ -43,32 +50,20 @@ default to "QC_Report.pdf" if no filename is provided.}
 \item{overwrite}{Should report file be overwritten if it already exists?
 Default is FALSE.}
 
-\item{norm.method}{The normalization method for which to perform the QC analysis.
-Should be a name of one of the datasets in normList.}
-
-\item{legend}{Include legends in the plots within the report? Default is TRUE.}
-
-\item{top.proteins}{The number of most variable proteins to use for the analysis.
+\item{top_proteins}{The number of most variable proteins to use for the analysis.
 Default is 500.}
 
-\item{stdize}{Should input data be standardized to a mean of 0 and std.dev of
+\item{standardize}{Should input data be standardized to a mean of 0 and std.dev of
 1? If input data are not yet standardized, should be TRUE. Default is TRUE.}
 
-\item{pca.axes}{A numeric vector of length 2 which lists the PC axes to plot.
+\item{pca_axes}{A numeric vector of length 2 which lists the PC axes to plot.
 Default is c(1,2), to plot the first two principal components.}
 
-\item{pca.xlim}{Optional. Custom x-axis limits of the PCA plot. By default,
-the min is 10\% below the min PC score on the x-axis, and the max is above
-the max PC score on the x-axis, with some padding for sample labels.}
+\item{dist_metric}{The metric used to define distance for clustering. Default is
+"euclidean". See \code{\link[stats:dist]{stats::hclust}} for options.}
 
-\item{pca.ylim}{Optional. Custom y-axis limits of the PCA plot. Default is
-10\% above and below the min/max PC score on the y-axis.}
-
-\item{pca.dot}{Character expansion factor for the size of the points in the
-PCA plot. Default is 2.}
-
-\item{clust.label.cex}{Character expansion factor for sample labels in the
-dendrogram. Default is 1.}
+\item{clust_method}{The agglomeration method to use for clustering. Default
+is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.}
 }
 \value{
 Invisibly returns a list with three slots: \enumerate{
@@ -84,13 +79,11 @@ information on the distribution, clustering, and correlation of protein intensit
 across samples for the chosen normalization method. By default, the PCA and
 clustering analyses are performed on the top 500 most variable proteins. This
 function is a wrapper that calls many subfunctions: \itemize{
-\item Makes boxplots of per-sample intensities
-with \code{\link{qc_boxplot}}.
 \item Makes violin plots of per-sample intensities
 with \code{\link{qc_violin_plot}}.
 \item Performs and plots a PCA with \code{\link{qc_pca_plot}}.
 \item Does hierarchical clustering and plots a dendrogram with
-\code{\link{qc_dendrogram}}.
+\code{\link{qc_dendro_plot}}.
 \item Plots a correlation heatmap with \code{\link{qc_corr_hm}}.
 } See the documentation of these subfunctions for more info.
 }

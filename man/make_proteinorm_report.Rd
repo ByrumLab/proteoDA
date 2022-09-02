@@ -19,8 +19,8 @@ make_proteinorm_report(
 a list object containing processed data and sample information..}
 
 \item{grouping_column}{The name of column within the targets data frame which
-gives information on how to group samples for normalization. If not supplied,
-will warn the user and treat all samples as belonging to the same group.}
+gives information on how to group samples for normalization. Must be supplied:
+some metrics can't be calculated for only one group.}
 
 \item{enrich}{What type of analysis is this for? Options are
 "protein" and "phospho". Only used for making output dir name when one isn't

@@ -67,9 +67,9 @@ eval_pn_metric_for_plot <- function(normList,
 #'
 pn_mean_plot <- function(plotData) {
 
-  means <- aggregate(value ~ method, data = plotData, mean)
-  sds <- aggregate(value ~ method, data = plotData, sd)
-  ns <- aggregate(value ~ method, data = plotData, FUN = length)
+  means <- stats::aggregate(value ~ method, data = plotData, mean)
+  sds <- stats::aggregate(value ~ method, data = plotData, sd)
+  ns <- stats::aggregate(value ~ method, data = plotData, FUN = length)
 
   summary <- data.frame(method = means$method,
                         mean = means$value,
@@ -218,9 +218,9 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
   # Find max density
   # and min/max of ratios
   # for zooming later
-  maxY <- max(aggregate(value ~ method, data = plotData, FUN = function(x) max(stats::density(x, na.rm = T)$y))$value)
-  min_xlim <- 0.5 * min(aggregate(value ~ method, data = plotData, FUN = function(x) min(stats::density(x, na.rm = T)$x))$value)
-  max_xlim <- 0.5 * max(aggregate(value ~ method, data = plotData, FUN = function(x) max(stats::density(x, na.rm = T)$x))$value)
+  maxY <- max(stats::aggregate(value ~ method, data = plotData, FUN = function(x) max(stats::density(x, na.rm = T)$y))$value)
+  min_xlim <- 0.5 * min(stats::aggregate(value ~ method, data = plotData, FUN = function(x) min(stats::density(x, na.rm = T)$x))$value)
+  max_xlim <- 0.5 * max(stats::aggregate(value ~ method, data = plotData, FUN = function(x) max(stats::density(x, na.rm = T)$x))$value)
 
   # Build base plot
   base <- plotData %>%
