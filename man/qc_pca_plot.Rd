@@ -7,15 +7,10 @@
 qc_pca_plot(
   data,
   groups = NULL,
-  sampleLabels = NULL,
-  title = NULL,
-  legend = TRUE,
-  top = 500,
-  stdize = TRUE,
-  dims = c(1, 2),
-  cex.dot = 2,
-  xlim = NULL,
-  ylim = NULL
+  sample_labels = colnames(data),
+  top_proteins = 500,
+  standardize = TRUE,
+  pca_axes = c(1, 2)
 )
 }
 \arguments{
@@ -25,37 +20,20 @@ proteins and columns should be samples.}
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
 
-\item{sampleLabels}{Optional, a vector of sample labels to use. If not supplied,
+\item{sample_labels}{Optional, a vector of sample labels to use. If not supplied,
 defaults to using the column names in the data.}
 
-\item{title}{Optional, a plot title.}
-
-\item{legend}{Include a legend in the plot? Default is TRUE.}
-
-\item{top}{The number of most variable proteins to use for the analysis.
+\item{top_proteins}{The number of most variable proteins to use for the analysis.
 Default is 500.}
 
-\item{stdize}{Should input data be standardized to a mean of 0 and std.dev of
+\item{standardize}{Should input data be standardized to a mean of 0 and std.dev of
 1? If input data are not yet standardized, should be TRUE. Default is TRUE.}
 
-\item{dims}{A numeric vector of length 2 which lists the PC axes to plot.
+\item{pca_axes}{A numeric vector of length 2 which lists the PC axes to plot.
 Default is c(1,2), to plot the first two principal components.}
-
-\item{cex.dot}{Character expansion factor for plotting points. Default is 2.}
-
-\item{xlim}{Optional. Custom x-axis limits of the plot. By default, the min is
-10\% below the min PC score on the x-axis, and the max is above the max PC
-score on the x-axis, with some padding for sample labels.}
-
-\item{ylim}{Optional. Custom y-axis limits of the plot. Default is 10\% above
-and below the min/max PC score on the y-axis.}
 }
 \value{
-Invisibly returns a list with two elements: \enumerate{
-\item "pca"- The list returned by
-\code{\link[stats:princomp]{stats::princomp}}.
-\item "pca.data"- The data matrix that went into the PCA.
-}
+A ggplot object of the plot.
 }
 \description{
 Performs and then plots a principal component analysis of sample intensities.

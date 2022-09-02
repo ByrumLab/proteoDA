@@ -24,15 +24,6 @@ proteins and columns should be samples.}
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
 
-\item{sampleLabels}{Optional, a vector of sample labels to use. If not supplied,
-defaults to using the column names in the data.}
-
-\item{top}{The number of most variable proteins to use for the analysis.
-Default is 500.}
-
-\item{stdize}{Should input data be standardized to a mean of 0 and std.dev of
-1? If input data are not yet standardized, should be TRUE. Default is TRUE.}
-
 \item{clust.metric}{The cluster metric used to define distance. Default is
 "euclidean". See
 \code{\link[ClassDiscovery:distanceMatrix]{ClassDiscovery::distanceMatrix}}
@@ -42,10 +33,6 @@ for options.}
 is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.}
 
 \item{cex.names}{Character expansion factor for sample labels. Default is 1.}
-
-\item{title}{Optional, a plot title.}
-
-\item{legend}{Include a legend in the plot? Default is TRUE.}
 }
 \value{
 Invisibly returns a list with seven elements: \enumerate{

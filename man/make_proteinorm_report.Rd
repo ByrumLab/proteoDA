@@ -5,29 +5,28 @@
 \title{Create proteinorm report}
 \usage{
 make_proteinorm_report(
-  normList,
-  groups = NULL,
+  processed_data,
+  grouping_column = NULL,
   enrich = c("protein", "phospho"),
-  dir = NULL,
+  out_dir = NULL,
   file = NULL,
   overwrite = FALSE,
   suppress_zoom_legend = FALSE
 )
 }
 \arguments{
-\item{normList}{A list of normalized data matrices. Generally, the "normList"
-slot of the list that is output by \code{\link{process_data}}.}
+\item{processed_data}{The output of the \code{\link{process_data}} function:
+a list object containing processed data and sample information..}
 
-\item{groups}{Optional, a vector describing what experimental or treatment
-group each sample belongs to. Generally, the "group" column in the targets
-data frame output by \code{\link{process_data}}. If not supplied, will
-warn the user and treat all samples as belonging to the same group.}
+\item{grouping_column}{The name of column within the targets data frame which
+gives information on how to group samples for normalization. If not supplied,
+will warn the user and treat all samples as belonging to the same group.}
 
 \item{enrich}{What type of analysis is this for? Options are
 "protein" and "phospho". Only used for making output dir name when one isn't
 supplied.}
 
-\item{dir}{The directory in which to save the report. If not provided,
+\item{out_dir}{The directory in which to save the report. If not provided,
 will default to either "protein_analysis/01_quality_control" or
 "phospho_analysis/01_quality_control" within the current working
 directory, depending on the enrich argument.}

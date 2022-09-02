@@ -15,9 +15,6 @@ belong to.}
 
 \item{batch}{A character or factor vector, listing the batch(es) the samples
 belong to.}
-
-\item{sampleLabels}{Optional, a vector of sample labels to use. If not supplied,
-defaults to using the column names in the data.}
 }
 \value{
 Invisibly returns the correlation matrix created by

@@ -12,6 +12,7 @@ Imports:
     cli,
     ComplexHeatmap,
     ggplot2,
+    ggrepel,
     grDevices,
     grid,
     gridExtra,

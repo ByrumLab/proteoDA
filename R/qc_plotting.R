@@ -1,89 +1,16 @@
-#' Boxplot for QC report
+#' Violin plot for QC report
 #'
-#' Makes a boxplot of per-sample intensities. Samples are grouped by the "groups"
-#' argument on the x-axis. Colors are determined by the \code{\link{colorGroup2}}
-#' function.
+#' Makes a violin plot of per-sample intensities. Samples are grouped by the "groups"
+#' argument on the x-axis.
 #'
 #' @param data A data frame of intensity data, likely normalized. Rows should be
 #'   proteins and columns should be samples.
 #' @param groups A character or factor vector, listing the group(s) the samples
 #'   belong to.
-#' @param sampleLabels Optional, a vector of sample labels to use. If not supplied,
+#' @param sample_labels Optional, a vector of sample labels to use. If not supplied,
 #'   defaults to using the column names in the data.
-#' @param title Optional, a plot title.
-#' @param legend Include a legend in the plot? Default is TRUE.
 #'
-#' @return Invisibly returns the list object created by
-#'   \code{\link[graphics:boxplot]{graphics::boxplot}}.
-#' @export
-#'
-#' @examples
-#' # No examples yet
-qc_boxplot <- function(data,
-                       groups = NULL, sampleLabels = NULL,
-                       title = NULL, legend = TRUE) {
-  if (is.null(sampleLabels)) {
-    sampleLabels <- as.character(colnames(data))
-  }
-  if (is.null(groups)) {
-    groups <- c(rep("group", ncol(data)))
-  }
-  groups <- make_factor(x = as.character(groups), prefix = NULL)
-
-  # Reorder group affiliations
-  # Since groups is an ordered factor (see make_factor()),
-  # this puts them in the order of their levels, then sorts by name.
-  # Does not necessarily sort alphabetically.
-  group_order <- sort.int(groups, index.return = T)$ix
-
-  # Then, reorder the input data and groups
-  data <- data[,group_order]
-  sampleLabels <- sampleLabels[group_order]
-  groups <- groups[group_order]
-
-  # Get original graphics pars
-  orig_par <- graphics::par(no.readonly = TRUE)
-  # Schedule them to be reset when we exit the function
-  on.exit(graphics::par(orig_par), add = TRUE)
-
-  ## plot margins
-  b_mar <- left_margin(x = sampleLabels)
-  r_mar <- right_margin(x = groups)
-  if (!legend) r_mar <- 1
-
-
-  # Setup graphics parameters:
-  graphics::par(mar = c(b_mar, 6, 3, r_mar),
-                oma = c(0.5, 0, 0.5, r_mar/2 + 3))
-
-  # Make the plot
-  box <- graphics::boxplot(data,
-                           col = colorGroup2(groups)[groups], names = sampleLabels,
-                           notch = FALSE, horizontal = FALSE, outline = FALSE,
-                           las = 2, cex.axis = 1, cex.labs = 1, cex = 1
-  )
-  graphics::mtext(side = 2, text = "Normalized Intensity", font = 1, line = 3, cex = 1.2)
-  title(main = ifelse(is.null(title), "", title), font.main = 1, cex.main = 1.3, line = 1.1)
-  if (legend) {
-    legend(graphics::par("usr")[2], graphics::par("usr")[4],
-           bty = "n", xpd = NA, legend = levels(groups), pch = 22, cex = 1,
-           box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg = colorGroup2(groups),
-           col = colorGroup2(groups), pt.cex = 1.2, pt.lwd = 0, inset = 0.02, horiz = F, ncol = 1)
-  }
-
-  invisible(box)
-}
-
-#' Violin plot for QC report
-#'
-#' Makes a violin plot of per-sample intensities. Samples are grouped by the "groups"
-#' argument on the x-axis. Colors are determined by the \code{\link{colorGroup2}}
-#' function.
-#'
-#' @inheritParams qc_boxplot
-#'
-#' @return  Invisibly returns the list object created by
-#'   \code{\link[vioplot:vioplot]{vioplot::vioplot}}.
+#' @return A ggplot object of the plot.
 #' @export
 #'
 #' @examples
@@ -100,18 +27,18 @@ qc_violin_plot <- function(data,
   colnames(data) <- sample_labels
 
   # Match sample names to groups, for coloring
-  sample_group_info <- data.frame(ind = colnames(data)[group_order],
-                                  group = groups[group_order])
+  sample_group_info <- data.frame(ind = factor(x = colnames(data)[group_order], levels = colnames(data)[group_order]),
+                                  group = as.factor(groups[group_order]))
 
   # make and return plot
   # Must merge with sample info first, to get order correct
   merge(sample_group_info,
-        stack(as.data.frame(data))) %>%
-    ggplot(aes(x = ind, y = values, fill = group)) +
+        stack(as.data.frame(data)), sort = F) %>%
+    ggplot(aes(x = as.factor(ind), y = values, fill = group)) +
     geom_violin(draw_quantiles = c(0.5),
                 na.rm = T,
                 col = "black") +
-    scale_fill_manual(values = unname(binfcolors), name = NULL) +
+    scale_fill_manual(values = colorGroup2(sample_group_info$group), name = NULL) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
@@ -131,139 +58,72 @@ qc_violin_plot <- function(data,
 #' determined by the \code{\link{colorGroup2}} function. By default, uses
 #' only the 500 most variable proteins for the analysis.
 #'
-#' @inheritParams qc_boxplot
-#' @param top The number of most variable proteins to use for the analysis.
+#' @inheritParams qc_violin_plot
+#' @param top_proteins The number of most variable proteins to use for the analysis.
 #'   Default is 500.
-#' @param stdize Should input data be standardized to a mean of 0 and std.dev of
+#' @param standardize Should input data be standardized to a mean of 0 and std.dev of
 #'   1? If input data are not yet standardized, should be TRUE. Default is TRUE.
-#' @param dims A numeric vector of length 2 which lists the PC axes to plot.
+#' @param pca_axes A numeric vector of length 2 which lists the PC axes to plot.
 #'   Default is c(1,2), to plot the first two principal components.
-#' @param cex.dot Character expansion factor for plotting points. Default is 2.
-#' @param xlim Optional. Custom x-axis limits of the plot. By default, the min is
-#'   10% below the min PC score on the x-axis, and the max is above the max PC
-#'   score on the x-axis, with some padding for sample labels.
-#' @param ylim Optional. Custom y-axis limits of the plot. Default is 10% above
-#'   and below the min/max PC score on the y-axis.
 #'
-#' @return Invisibly returns a list with two elements: \enumerate{
-#'   \item "pca"- The list returned by
-#'     \code{\link[stats:princomp]{stats::princomp}}.
-#'   \item "pca.data"- The data matrix that went into the PCA.
-#' }
+#' @return A ggplot object of the plot.
 #' @export
 #'
 #' @examples
 #' # No examples yet
 qc_pca_plot <- function(data,
-                    groups = NULL, sampleLabels = NULL,
-                    title = NULL, legend = TRUE,
-                    top = 500, stdize = TRUE,
-                    dims = c(1, 2), cex.dot = 2,
-                    xlim = NULL, ylim = NULL) {
+                        groups = NULL,
+                        sample_labels = colnames(data),
+                        top_proteins = 500,
+                        standardize = TRUE,
+                        pca_axes = c(1, 2)) {
 
-  if (is.null(sampleLabels)) {
-    sampleLabels <- as.character(colnames(data))
-  }
-  if (is.null(groups)) {
-    groups <- c(rep("group", ncol(data)))
-  }
-  groups <- make_factor(x = as.character(groups), prefix = NULL)
+  # Rename column names to sample names provided
+  colnames(data) <- sample_labels
 
+  # Match sample names to groups, for coloring
+  sample_group_info <- data.frame(ind = colnames(data),
+                                  group = groups)
 
   # Get top variable proteins
-  data <- data[!apply(is.na(data), 1, any), ]
-  o <- order(rowVars(as.matrix(data)), decreasing = TRUE)
-  data <- data[o, ]
-  top <- ifelse(nrow(data) >= top, top, nrow(data))
-  data <- data[1:top, ]
+  pca_data <- data[!apply(is.na(data), 1, any), ]
+  o <- order(rowVars(as.matrix(pca_data)), decreasing = TRUE)
+  pca_data <- pca_data[o, ]
+  top <- ifelse(nrow(pca_data) >= top_proteins, top_proteins, nrow(pca_data))
+  pca_data <- pca_data[1:top, ]
 
   ## center/scale rows (proteins) mean=0;stdev=1
-  if (stdize) {
-    data <- t(scale(x = t(data), center = TRUE, scale = TRUE))
+  if (standardize) {
+    pca_data <- t(scale(x = t(pca_data), center = TRUE, scale = TRUE))
   }
 
-  ## PCA
-  pca <- stats::prcomp(t(data), scale = FALSE)
+  ## Run the PCA
+  pca <- stats::prcomp(t(pca_data), scale = FALSE)
   pca$summary <- summary(pca)$importance
 
+  # Prep the data needed for plotting
+  plot_data <- as.data.frame(pca$x[, pca_axes])
+  plot_data$ind <- rownames(plot_data)
+  colnames(plot_data) <- c("x", "y", "ind")
 
-  # Get original graphics pars
-  orig_par <- graphics::par(no.readonly = TRUE)
-  # Schedule them to be reset when we exit the function
-  on.exit(graphics::par(orig_par), add = TRUE)
+  # Make the plot
+  plot <- merge(plot_data,
+        sample_group_info) %>%
+    ggplot(aes(x = x, y = y, color = group, label = ind)) +
+    geom_point() +
+    scale_color_manual(values = colorGroup2(groups)[groups], name = NULL) +
+    theme_bw() +
+    xlab(paste0("PC", pca_axes[1], " (", round(pca$summary["Proportion of Variance", pca_axes[1]] * 100, 2), " %)")) +
+    ylab(paste0("PC", pca_axes[2], " (", round(pca$summary["Proportion of Variance", pca_axes[2]] * 100, 2), " %)"))
 
-  # Set plot margins
-  b_mar <- left_margin(x = sampleLabels)
-  r_mar <- right_margin(x = groups)
-  if (!legend) r_mar <- 1
-
-  graphics::par(mar = c(b_mar, 6, 3, r_mar),
-                oma = c(0.5, 0, 0.5, r_mar/2 + 3))
-
-  # Set plot limits
-  longest_label <- max(nchar(sampleLabels))
-  label_cex <- ifelse(longest_label <= 10, 1, 0.8)
-
-  if (is.null(xlim)) { # if not already given
-    # 10% lower than min x
-    xmin <- min(pca$x[, dims[1]])*1.1
-    # Xmax is based on length of the labels when we are adding labels
-    # (when there are less than 50 points)
-    if (ncol(data) <= 50) {
-      offset <- 0.6 * ((longest_label / 10) * label_cex)
-    } else {
-      offset <- 0.05
-    }
-    xmax <- max(pca$x[, dims[1]]) * (1 + offset)
-    xlim <- c(xmin, xmax)
+  # When fewer than 50 points,
+  # add labels
+  if (nrow(plot_data) < 50) {
+    plot <- plot +
+      ggrepel::geom_label_repel(show.legend = F, label.size = NA, fill = NA)
   }
 
-  ## ylim
-  if (is.null(ylim)) { # if not already given
-    ymin <- min(pca$x[,dims[2]])*1.1
-    ymax <- max(pca$x[,dims[2]])*1.1
-    ylim <- c(ymin, ymax)
-  }
-  # make plot
-  plot(NULL,
-       xlim = xlim, ylim = ylim,
-       xlab = paste0("PC ", dims[1], " (", round(pca$summary["Proportion of Variance", dims[1]] * 100, 2), " %)"),
-       ylab = paste0("PC ", dims[2], " (", round(pca$summary["Proportion of Variance", dims[2]] * 100, 2), " %)"))
-  title(main = ifelse(is.null(title), "", title), font.main = 1, cex.main = 1.3, line = 1.2)
-  graphics::grid(col = "grey65") # add the grid UNDER the points
-  graphics::points(
-    x = pca$x[, dims[1]], y = pca$x[, dims[2]],
-    pch = 21, bg = colorGroup2(groups)[groups], col = colorGroup2(groups)[groups],
-    cex = cex.dot, lwd = 1, las = 1, cex.axis = 1.2, cex.lab = 1.3
-  )
-
-  # When points less than 50, add labels
-  if (ncol(data) <= 50) {
-    if (longest_label < 3) {
-      adjust <- -0.6
-    } else if (longest_label < 5) {
-      adjust <- -0.4
-    } else {
-      adjust <- -0.2
-    }
-    graphics::text(
-      x = pca$x[, dims[1]], y = pca$x[, dims[2]],
-      labels = sampleLabels, cex = label_cex,
-      adj = adjust,
-      col = colorGroup2(groups)[as.character(groups)]
-    )
-  }
-
-  if (legend) {
-    legend(graphics::par("usr")[2], graphics::par("usr")[4],
-           bty = "n", xpd = NA, legend = levels(groups), pch = 22, cex = 1,
-           box.col = "transparent", box.lwd = 1, bg = "transparent", pt.bg = colorGroup2(groups),
-           col = colorGroup2(groups), pt.cex = 1.2, pt.lwd = 0, inset = 0.02, horiz = F, ncol = 1)
-  }
-
-  data2 <- list(pca = pca, pca.data = data)
-
-  invisible(data2)
+  plot
 }
 
 

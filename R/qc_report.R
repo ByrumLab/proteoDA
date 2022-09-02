@@ -112,7 +112,7 @@ write_qc_report <- function(processed_data,
       cli::cli_abort(c("Column {.arg {grouping_column}} not found in the targets dataframe of  in {.arg processed_data}",
                        "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
     }
-    groups <- processed_data$targets[,grouping_column]
+    groups <- as.character(processed_data$targets[,grouping_column])
   } else { # If no groups provided, set them but warn user
     groups <- rep("group", ncol(processed_data$normList[[chosen_norm_method]]))
     cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples/columns in {.arg processed_data} as one group."))
@@ -179,12 +179,19 @@ write_qc_report <- function(processed_data,
   #######################
 
   # Violin plot
-  violin <- qc_violin_plot(data = norm_data,
+  violin_plot <- qc_violin_plot(data = norm_data,
                            groups = groups,
                            sample_labels = sample_labels) +
     ggtitle(paste0("Grouped by ", grouping_column))
 
 
+  pca_plot <- qc_pca_plot(data = norm_data,
+                          groups = groups,
+                          sample_labels = sample_labels,
+                          top_proteins = top_proteins,
+                          standardize = standardize,
+                          pca_axes = pca_axes) +
+    ggtitle(paste0("PCA, colored by ", grouping_column))
 
   # PCA
 
@@ -194,12 +201,22 @@ write_qc_report <- function(processed_data,
 
   # missing data heatmap - clustering and grouping by grouping column
 
+  combined <- violin_plot + pca_plot
 
   ###############################
   ## Save plots, check, return ##
   ###############################
 
-  violin
+  cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
+  ggsave(combined, filename = file.path(out_dir, file), height = 8.5, width = 11, units = "in")
+
+  if (!file.exists(file.path(out_dir, file))) {
+    cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
+  }
+  cli::cli_rule()
+  cli::cli_inform(c("v" = "Success"))
+
+  invisible(file.path(out_dir, file))
 }
 
 
