@@ -13,8 +13,8 @@
 #' @param processed_data The output of the \code{\link{process_data}} function:
 #'   a list object containing processed data and sample information..
 #' @param grouping_column The name of column within the targets data frame which
-#'   gives information on how to group samples for normalization. If not supplied,
-#'   will warn the user and treat all samples as belonging to the same group.
+#'   gives information on how to group samples for normalization. Must be supplied:
+#'   some metrics can't be calculated for only one group.
 #' @param enrich What type of analysis is this for? Options are
 #'   "protein" and "phospho". Only used for making output dir name when one isn't
 #'   supplied.
@@ -65,7 +65,9 @@ make_proteinorm_report <- function(processed_data,
 
   # If provided, check that grouping column exists in the target dataframe
   # And set it
-  if (!is.null(grouping_column)) {
+  if (is.null(grouping_column)) { # If no groups provided, abort
+    cli::cli_abort("{.arg grouping_column} cannot be empty")
+  } else { # check that grouping column exists in the target dataframe
     if (length(grouping_column) != 1) {
       cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
                        "i" = "Only specify one column name for {.arg grouping_column}"))
@@ -75,19 +77,15 @@ make_proteinorm_report <- function(processed_data,
       cli::cli_abort(c("Column {.arg {grouping_column}} not found in the targets dataframe of  in {.arg processed_data}",
                        "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
     }
-    groups <- processed_data$targets[,grouping_column]
-  } else { # If no groups provided, set them but warn user
-    groups <- rep("group", ncol(processed_data$normList[[1]]))
-    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples/columns in {.arg processed_data} as one group."))
+    # And set it
+    groups <- as.character(processed_data$targets[,grouping_column])
+    # And give error if there's only one group
+    if (length(unique(groups)) < 2) {
+      cli::cli_abort(c("Column {.arg {grouping_column}} does not contain at least two different groups",
+                       "!" = "Cannot calculate all normaliztion metrics without at least two groups"))
+    }
   }
 
-  # Sort out some defaults if arguments are not supplied
-  # Inform/alert user for groups, as this is semi-serious
-  if (is.null(groups)) {
-    groups <- rep("group", ncol(normList[[1]]))
-    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples/columns in {.arg normList} as one group."))
-
-  }
   # Set default dir if not provided
   if (is.null(out_dir)) {
     out_dir <- file.path(paste0(enrich, "_analysis"), "01_quality_control")
