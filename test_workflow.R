@@ -143,30 +143,30 @@ norm_reb <- process_data(data = ext_reb$data,
 
 # Normalization report ----------------------------------------------------
 # Higgs
-make_proteinorm_report(normList = norm_higgs$normList,
-                       groups = norm_higgs$targets$group,
-                       file = "higgs_update.pdf", overwrite = T)
+make_proteinorm_report(processed_data = norm_higgs,
+                       grouping_column = "group",
+                       file = "higgs_update_2.pdf", overwrite = T)
 
 # Ndu
-make_proteinorm_report(normList = norm_ndu$normList,
-                       groups = norm_ndu$targets$group,
-                       file = "ndu_update.pdf", overwrite = T)
+make_proteinorm_report(processed_data = norm_ndu,
+                       grouping_column = "group",
+                       file = "ndu_update_2.pdf", overwrite = T)
 
 # Lupashin
-make_proteinorm_report(normList=norm_lupashin$normList,
-                       groups = norm_lupashin$targets$group,
-                       file = "lupashin_update.pdf", overwrite = T, suppress_zoom_legend = T)
+make_proteinorm_report(processed_data = norm_lupashin,
+                       grouping_column = "group",
+                       file = "lupashin_update_2.pdf", overwrite = T, suppress_zoom_legend = T)
 # Zhan
 tic()
-make_proteinorm_report(normList = norm_zhan$normList,
-                       groups = norm_zhan$targets$group,
-                       file = "zhan_update.pdf", overwrite = T)
+make_proteinorm_report(processed_data = norm_zhan,
+                       grouping_column = "group",
+                       file = "zhan_update_2.pdf", overwrite = T)
 toc()
 
 # Rebello
-make_proteinorm_report(normList = norm_reb$normList,
-                       groups = norm_reb$targets$group,
-                       file = "rebello_update.pdf",
+make_proteinorm_report(processed_data = norm_reb,
+                       grouping_column = "group",
+                       file = "rebello_update_2.pdf",
                        overwrite = T)
 
 # Make QC report ----------------------------------------------------------
@@ -204,35 +204,6 @@ write_qc_report(processed_data = norm_reb,
                 enrich = "protein",
                 file = "rebello_qc_update.pdf",
                 overwrite = T)
-
-
-
-make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
-               groups = norm_ndu$targets$group,
-               enrich = "protein", save = TRUE, file = "ndu_qc.pdf", overwrite = T)
-
-make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
-               groups = norm_ndu$targets$group, legend = F,
-               enrich = "protein", save = TRUE, file = "ndu_qc_no_legend.pdf", overwrite = T)
-
-
-make_qc_report(normList = norm_lupashin$normList, norm.meth = "vsn",
-               groups = norm_lupashin$targets$group,
-               enrich = "protein", save = TRUE, file = "lupashin_qc.pdf", overwrite = T)
-
-
-make_qc_report(normList = norm_zhan$normList, norm.meth = "vsn",
-               groups = norm_zhan$targets$group,
-               enrich = "protein", save = TRUE, file = "zhan_qc.pdf", overwrite = T)
-
-
-make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
-               groups = norm_reb$targets$group,
-               enrich = "protein", save = TRUE, file = "rebello_qc.pdf", overwrite = T)
-
-make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
-               groups = norm_reb$targets$group,
-               enrich = "protein", save = F)
 
 
 # Make design -------------------------------------------------------------

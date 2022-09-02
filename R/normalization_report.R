@@ -10,18 +10,17 @@
 #' Creates and saves as a PDF report a variety of plots which give
 #' information about the performance of different normalization metrics.
 #'
-#' @param normList A list of normalized data matrices. Generally, the "normList"
-#'   slot of the list that is output by \code{\link{process_data}}.
-#' @param groups Optional, a vector describing what experimental or treatment
-#'   group each sample belongs to. Generally, the "group" column in the targets
-#'   data frame output by \code{\link{process_data}}. If not supplied, will
-#'   warn the user and treat all samples as belonging to the same group.
+#' @param processed_data The output of the \code{\link{process_data}} function:
+#'   a list object containing processed data and sample information..
+#' @param grouping_column The name of column within the targets data frame which
+#'   gives information on how to group samples for normalization. If not supplied,
+#'   will warn the user and treat all samples as belonging to the same group.
 #' @param enrich What type of analysis is this for? Options are
 #'   "protein" and "phospho". Only used for making output dir name when one isn't
 #'   supplied.
 #' @param overwrite Should report file be overwritten if it already exists?
 #'   Default is FALSE.
-#' @param dir The directory in which to save the report. If not provided,
+#' @param out_dir The directory in which to save the report. If not provided,
 #'   will default to either "protein_analysis/01_quality_control" or
 #'   "phospho_analysis/01_quality_control" within the current working
 #'   directory, depending on the enrich argument.
@@ -42,10 +41,10 @@
 #' @examples
 #' # No examples yet
 #'
-make_proteinorm_report <- function(normList,
-                                   groups = NULL,
+make_proteinorm_report <- function(processed_data,
+                                   grouping_column = NULL,
                                    enrich = c("protein", "phospho"), #TODO: only used for making dir name...
-                                   dir = NULL,
+                                   out_dir = NULL,
                                    file = NULL,
                                    overwrite = FALSE,
                                    suppress_zoom_legend = FALSE) {
@@ -55,7 +54,32 @@ make_proteinorm_report <- function(normList,
   #################################
   ## Check args and set defaults ##
   #################################
+
+  # Check that processed_data has expected list structure
+  if (!all(c("normList", "targets", "filt", "param", "stats") %in% names(processed_data))) {
+    cli::cli_abort(c("{.arg processed_data} does not have expected structure:",
+                     "i" = "Is it the object created by running {.code process_data()}?."))
+  }
+
   enrich <- rlang::arg_match(enrich)
+
+  # If provided, check that grouping column exists in the target dataframe
+  # And set it
+  if (!is.null(grouping_column)) {
+    if (length(grouping_column) != 1) {
+      cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
+                       "i" = "Only specify one column name for {.arg grouping_column}"))
+
+    }
+    if (grouping_column %notin% colnames(processed_data$targets)) {
+      cli::cli_abort(c("Column {.arg {grouping_column}} not found in the targets dataframe of  in {.arg processed_data}",
+                       "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
+    }
+    groups <- processed_data$targets[,grouping_column]
+  } else { # If no groups provided, set them but warn user
+    groups <- rep("group", ncol(processed_data$normList[[1]]))
+    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples/columns in {.arg processed_data} as one group."))
+  }
 
   # Sort out some defaults if arguments are not supplied
   # Inform/alert user for groups, as this is semi-serious
@@ -65,11 +89,9 @@ make_proteinorm_report <- function(normList,
 
   }
   # Set default dir if not provided
-  if (is.null(dir)) {
+  if (is.null(out_dir)) {
     out_dir <- file.path(paste0(enrich, "_analysis"), "01_quality_control")
-    cli::cli_inform(cli::col_yellow("{.arg dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
-  } else {
-    out_dir <- dir
+    cli::cli_inform(cli::col_yellow("{.arg out_dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
   }
   # Set default report name if not provided
   if (is.null(file)) {
@@ -77,6 +99,8 @@ make_proteinorm_report <- function(normList,
     cli::cli_inform(cli::col_yellow("{.arg file} argument is empty. Saving report to: {.path {out_dir}/{file}}"))
   }
 
+  # Extract normList from input data
+  normList <- processed_data$normList
 
   ##################
   ## Set up files ##
