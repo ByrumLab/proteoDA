@@ -7,6 +7,7 @@
 \alias{pn_plot_PEV}
 \alias{pn_plot_COR}
 \alias{pn_plot_log2ratio}
+\alias{pn_plot_MD}
 \title{Functions for plotting normalization metrics}
 \usage{
 pn_plot_PCV(normList, grouping)
@@ -18,6 +19,8 @@ pn_plot_PEV(normList, grouping)
 pn_plot_COR(normList, grouping)
 
 pn_plot_log2ratio(normList, grouping, zoom = F, legend = T)
+
+pn_plot_MD(normList, grouping)
 }
 \arguments{
 \item{normList}{A named list of normalized data matrices. Generally, the "normList"

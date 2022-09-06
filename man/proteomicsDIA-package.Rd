@@ -6,7 +6,7 @@
 \alias{proteomicsDIA-package}
 \title{proteomicsDIA: UAMS Internal Proteomics Package}
 \description{
-Functions for performing DIA proteomics analysis.
+A package for the differential proteomics anaalysis with DIA data.
 }
 \author{
 \strong{Maintainer}: Timothy Thurman \email{tthurman@uams.edu}

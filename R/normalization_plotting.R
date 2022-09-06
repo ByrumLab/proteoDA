@@ -59,6 +59,12 @@ eval_pn_metric_for_plot <- function(normList,
 #'
 #' @name pn_plots_generic
 #'
+#' @importFrom ggplot2 ggplot aes
+#' @importFrom ggplot2 geom_pointrange geom_violin geom_vline geom_line geom_point geom_hline geom_smooth
+#' @importFrom ggplot2 scale_fill_manual scale_color_manual
+#' @importFrom ggplot2 theme_bw theme element_text element_blank element_rect
+#' @importFrom ggplot2 xlab ylab ggtitle coord_cartesian unit facet_wrap
+#'
 #' @examples
 #' # No examples yet
 #'
@@ -68,7 +74,7 @@ eval_pn_metric_for_plot <- function(normList,
 pn_mean_plot <- function(plotData) {
 
   means <- stats::aggregate(value ~ method, data = plotData, mean)
-  sds <- stats::aggregate(value ~ method, data = plotData, sd)
+  sds <- stats::aggregate(value ~ method, data = plotData, stats::sd)
   ns <- stats::aggregate(value ~ method, data = plotData, FUN = length)
 
   summary <- data.frame(method = means$method,
@@ -77,10 +83,10 @@ pn_mean_plot <- function(plotData) {
 
   # make the plot
   result <- summary  %>%
-    ggplot(aes(col = method)) +
-    geom_pointrange(aes(x = method, y = mean,
-                        ymin = mean - se,
-                        ymax = mean + se),
+    ggplot(aes(col = .data$method)) +
+    geom_pointrange(aes(x = .data$method, y = .data$mean,
+                        ymin = .data$mean - .data$se,
+                        ymax = .data$mean + .data$se),
                     pch = 18,
                     size = 1.15) +
     scale_color_manual(values = unname(binfcolors)) +
@@ -101,8 +107,8 @@ pn_mean_plot <- function(plotData) {
 pn_violin_plot <- function(plotData) {
   # make the plot
   result <- plotData  %>%
-    ggplot(aes(fill = method)) +
-    geom_violin(aes(x = method, y = value),
+    ggplot(aes(fill = .data$method)) +
+    geom_violin(aes(x = .data$method, y = .data$value),
                 draw_quantiles = c(0.5),
                 col = "black") +
     scale_fill_manual(values = unname(binfcolors)) +
@@ -123,12 +129,12 @@ pn_violin_plot <- function(plotData) {
 pn_density_plot <- function(plotData) {
   # make the plot
   result <- plotData  %>%
-    ggplot(aes(color = method, group = method)) +
+    ggplot(aes(color = .data$method, group = .data$method)) +
     geom_vline(aes(xintercept = 0), col = "grey80") +
-    geom_line(aes(x = value),
-              stat = "density",
-              na.rm = T,
-              trim = T) + # need trim = T for the density calculation to happen per-group
+    geom_line(aes(x = .data$value),
+                  stat = .data$density,
+                  na.rm = T,
+                  trim = T) + # need trim = T for the density calculation to happen per-group
     scale_color_manual(values = unname(binfcolors)) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5),
@@ -164,7 +170,7 @@ pn_plot_PCV <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
                           metric = "PCV") %>%
-    pn_mean_plot(.) +
+    pn_mean_plot(.data) +
     ylab("Pooled Coefficient of Variation") +
     ggtitle("PCV")
 }
@@ -176,7 +182,7 @@ pn_plot_PMAD <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
                           metric = "PMAD") %>%
-    pn_mean_plot(.) +
+    pn_mean_plot(.data) +
     ylab("Median Absolute Deviation") +
     ggtitle("PMAD")
 }
@@ -188,7 +194,7 @@ pn_plot_PEV <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
                           metric = "PEV") %>%
-    pn_mean_plot(.) +
+    pn_mean_plot(.data) +
     ylab("Pooled Estimate of Variance") +
     ggtitle("PEV")
 }
@@ -200,7 +206,7 @@ pn_plot_COR <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
                           metric = "COR") %>%
-    pn_violin_plot(.) +
+    pn_violin_plot(.data) +
     ylab("Intragroup Correlation") +
     ggtitle("COR")
 }
@@ -224,7 +230,7 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
 
   # Build base plot
   base <- plotData %>%
-    pn_density_plot(.) +
+    pn_density_plot(.data) +
     xlab("") +
     ylab("Density") +
     ggtitle("Log2 ratio")
@@ -257,131 +263,42 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
 }
 
 
+#' @rdname pn_plots
+#' @export
+#'
+pn_plot_MD <- function(normList, grouping) {
+
+  # Assemble data for plotting
+  log2ratios <- NULL
+  for (norm_method in names(normList)) {
+    metric_results <- do.call(what = "log2ratio", args= list(data = as.data.frame(normList[norm_method]),
+                                                             groups = grouping, keep_protein_ID = T))
+
+    long <- utils::stack(metric_results)
+    long$protein  <- rep(rownames(metric_results), times = ncol(metric_results))
+    long$method <- norm_method
+
+    log2ratios <- rbind(log2ratios, long)
+  }
+
+  # Merge together the log2ratios for each pairwise comparison
+  # and their average intensities
+  plotData <- merge(log2ratios,
+                    data.frame(mean_intensity = rowMeans(normList$log2, na.rm = T),
+                               protein = rownames(normList$log2)))
+  plotData$method <- factor(plotData$method, levels = names(normList))
+
+  # make plot
+  plotData %>%
+  ggplot(aes(x = .data$mean_intensity, y = .data$values)) +
+    geom_point(alpha = 0.3, na.rm = T) +
+    geom_hline(yintercept = 0, color = "dodgerblue3") +
+    geom_smooth(method = "lm", formula = "y ~ x", na.rm = T, color = "darkorange") +
+    facet_wrap("method", ncol = 4) +
+    ylab("logFC") +
+    xlab("mean intensity (log2)") +
+    theme_bw() +
+    theme(panel.grid = element_blank())
+}
 
 
-
-
-
-
-
-
-
-# Make plots of total intensity for each sample
-#
-# Makes, and optionally saves, a set of plot showing the total intensity for
-# each sample across the normalization methods.
-#
-# @inheritParams proteinormMetricBoxplot
-# @param sampleLabels Optional, a set of sample labels to use. If not supplied,
-#   defaults to using the column names in the normList.
-# @param dir The directory in which to save the plot, if saving. Default is the
-#   current working directory.
-# @param save Should the plot be saved (as a .png)? Default is FALSE.
-#
-# @return A list, equal in length to the input normList, where each
-#       element of the list gives total intensity for each sample for a
-#       given normalization method.
-#
-# @export
-#
-# @examples
-# # No examples yet
-
-# plotTotInten <- function(normList,
-#                          groups,
-#                          batch = NULL,
-#                          sampleLabels = NULL,
-#                          dir = ".",
-#                          save = FALSE) {
-#   # Prep args
-#   # Again, not sure we need to coerce to factor here
-#   groups <- make_factor(groups)
-#   if (is.null(batch)) {
-#     batch <- c(rep("1",ncol(normList[[1]])))
-#   }
-#   batch <- make_factor(as.character(batch), prefix = NULL)
-#   if (is.null(sampleLabels)) {
-#     sampleLabels <- colnames(normList[[1]])
-#   }
-#
-#   # Set up plotting area, variably by number of samples
-#   if (length(groups) < 100) {
-#     width <- round(0.0871*length(groups)^2 + 24.375*length(groups) + 473.02, 0)
-#     height <- 800
-#     ncols <- 3
-#   } else {
-#     width <- round(0.0035*length(groups)^2 + 10.035*length(groups) + 146.15, 0)
-#     height <- 2400
-#     ncols <- 1
-#   }
-#
-#
-#   # If saving, set up files
-#   if (save) {
-#     if (!dir.exists(dir)) {
-#       dir.create(dir, recursive = TRUE)
-#     }
-#     grDevices::png(filename = file.path(dir, "TotIntenPlot.png"),
-#                    units = "px",
-#                    width = width,
-#                    height = height,
-#                    pointsize = 15)
-#   }
-#
-#   # Collect current par() options that we're going to change,
-#   # and set them back on exit
-#   old_mar <- graphics::par()$mar
-#   old_oma <- graphics::par()$oma
-#   on.exit(graphics::par(mar = old_mar), add = TRUE)
-#   on.exit(graphics::par(oma = old_oma), add = TRUE)
-#   on.exit(graphics::layout(matrix(1)), add = TRUE)
-#
-#   # Set up plotting parameters
-#   # Have to do this twice, can't have the pars above the png making
-#   if (length(groups) < 100) {
-#     graphics::par(oma = c(2, 1, 1, 1),
-#                   mar = c(8, 5, 5, 2))
-#   } else {
-#     graphics::par(oma = c(1, 5, 5, 5),
-#                   mar = c(8, 2, 2, 2))
-#   }
-#
-#
-#   # Reorder group affiliations
-#   # Since groups is an ordered factor (see make_factor()),
-#   # this puts them in the order of their levels, then sorts by name.
-#   # Does not necessarily sort alphabetically.
-#   group_order <- sort.int(groups, index.return = T)$ix
-#
-#   # Then, reorder the sample labels and groups
-#   sampleLabels <- sampleLabels[group_order]
-#   groups <- groups[group_order]
-#   # Cols in data reordered below
-#
-#
-#   # Make a plot for each element of normList
-#   graphics::layout(matrix(1:9, ncol = ncols, byrow = TRUE))
-#   barList <- NULL
-#   for (i in names(normList)) {
-#     barList[[i]] <- colSums(normList[[i]], na.rm = T)
-#     graphics::barplot(barList[[i]][group_order],
-#                       main = "",
-#                       las = 2,
-#                       yaxt = "n",
-#                       cex.main = 1.5,
-#                       cex.lab = 1.2,
-#                       col = colorGroup2(groups)[groups],
-#                       names.arg = sampleLabels)
-#     graphics::title(main = i, font.main = 1, cex.main = 1.5, line = 2)
-#     graphics::axis(side = 2, cex.axis = 1.2, las = 2)
-#     if (i == "VSN") {
-#       graphics::mtext(side = 2, text = "Total Intensity", line = 6, cex = 1.5)
-#     }
-#   }
-#   names(barList) <- names(normList)
-#
-#
-#   if (save) grDevices::dev.off()
-#
-#   return(invisible(barList))
-# }

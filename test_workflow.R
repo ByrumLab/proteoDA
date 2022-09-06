@@ -16,9 +16,9 @@ CreatePackageReport("proteomicsDIA")
 
 # extract_data on a bunch of files --------------------------------
 
-ext_bart <- extract_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv",
-             pipe = "DIA",
-             enrich = "protein") # Missing exclusivity col
+# ext_bart <- extract_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv",
+#              pipe = "DIA",
+#              enrich = "protein") # Missing exclusivity col
 
 
 ext_higgs <- extract_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv",

@@ -17,7 +17,7 @@ PEV(data, groups)
 
 COR(data, groups)
 
-log2ratio(data, groups)
+log2ratio(data, groups, keep_protein_ID = F)
 }
 \arguments{
 \item{data}{A numeric data frame, where each row is a protein and columns
@@ -25,13 +25,18 @@ are densities. For most uses, these are probably normalized data.}
 
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
+
+\item{keep_protein_ID}{Should protein ID information be retained? Default is False,
+in which case \code{keep_protein_ID}}
 }
 \value{
 For PCV, PMAD, and PEV: a named vector, with length equal to the
 number of groups, giving the metric for each group. For COR, a named vector
-giving all within-group pairwise correlations between samples. For log2ratio,
-a non-named vector giving all possible between-group log2 ratios for each
-protein.
+giving all within-group pairwise correlations between samples. For log2ratio
+with keep_protein_ID = FALSE (the default), a non-named vector giving all
+possible between-group log2 ratios for each protein. For log2ratio with
+keep_protein_ID = TRUE, a dataframe in which rows are proteins, columns are
+are the log2ratio for a pairwise comparisons, and rownames give protein ID.
 }
 \description{
 A set of functions that take in normalized sample data and a grouping factor

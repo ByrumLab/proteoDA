@@ -31,6 +31,8 @@
 #'
 #' @return Invisibly, the filename of the created report
 #'
+#' @importFrom ggplot2 ggsave
+#'
 #' @export
 #'
 #' @seealso \code{\link{norm_metrics}},
@@ -41,7 +43,7 @@
 #' @examples
 #' # No examples yet
 #'
-make_proteinorm_report <- function(processed_data,
+write_proteinorm_report <- function(processed_data,
                                    grouping_column = NULL,
                                    enrich = c("protein", "phospho"), #TODO: only used for making dir name...
                                    out_dir = NULL,
@@ -127,6 +129,7 @@ make_proteinorm_report <- function(processed_data,
   ## Make the plot objects ##
   ###########################
 
+  # First page: all the combined plotting metrics
   a <- pn_plot_PCV(normList, groups)
   b <- pn_plot_PMAD(normList, groups)
   c <- pn_plot_PEV(normList, groups)
@@ -134,16 +137,31 @@ make_proteinorm_report <- function(processed_data,
   e <- pn_plot_log2ratio(normList, groups)
   f <- pn_plot_log2ratio(normList, groups, zoom = T, legend = !suppress_zoom_legend)
 
-  combined <- a + b + c + d + e + f +
+
+
+  page_1 <- a + b + c + d + e + f +
     plot_layout(ncol = 3)
 
+  # Second page: the faceted MD plots
+  page_2 <- pn_plot_MD(normList, groups)
 
   ###############################
   ## Save plots, check, return ##
   ###############################
 
+  # To save over multiple PDF pages
+  # Make a list of plots
+  # Need to convert page 1 from a patchwork object
+  # into a Grob
+  plots_list <-  list(patchworkGrob(page_1), page_2)
+
+  # Then save
   cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
-  ggsave(combined, filename = file.path(out_dir, file), height = 8.5, width = 11, units = "in")
+  ggsave(file.path(out_dir, file),
+         plot = gridExtra::marrangeGrob(grobs = plots_list, nrow = 1, ncol = 1, top = NA),
+         height = 8.5,
+         width = 11,
+         units = "in")
 
   if (!file.exists(file.path(out_dir, file))) {
     cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
