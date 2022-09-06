@@ -12,6 +12,8 @@
 #'   defaults to using the column names in the data.
 #'
 #' @return A ggplot object of the plot.
+#'
+#' @importFrom ggplot2 ggplot aes geom_violin scale_fill_manual theme_bw theme element_text element_blank ylab
 #' @export
 #'
 #' @examples
@@ -35,7 +37,7 @@ qc_violin_plot <- function(data,
   # Must merge with sample info first, to get order correct
   merge(sample_group_info,
         utils::stack(as.data.frame(data)), sort = F) %>%
-    ggplot(aes(x = as.factor(ind), y = values, fill = group)) +
+    ggplot(aes(x = as.factor(.data$ind), y = .data$values, fill = .data$group)) +
     geom_violin(draw_quantiles = c(0.5),
                 na.rm = T,
                 col = "black") +
@@ -69,6 +71,8 @@ qc_violin_plot <- function(data,
 #'
 #' @return A ggplot object of the plot.
 #' @export
+#'
+#' @importFrom ggplot2 ggplot aes geom_point scale_color_manual theme_bw theme xlab ylab element_text
 #'
 #' @examples
 #' # No examples yet
@@ -110,7 +114,7 @@ qc_pca_plot <- function(data,
   # Make the plot
   plot <- merge(plot_data,
         sample_group_info) %>%
-    ggplot(aes(x = x, y = y, color = group, label = ind)) +
+    ggplot(aes(x = .data$x, y = .data$y, color = .data$group, label = .data$ind)) +
     geom_point() +
     scale_color_manual(values = colorGroup2(groups)[groups], name = NULL) +
     theme_bw() +
@@ -144,6 +148,9 @@ qc_pca_plot <- function(data,
 #'
 #' @return A ggplot object of the plot.
 #' @export
+#'
+#' @importFrom ggplot2 aes theme element_text margin
+#' @importFrom ggtree %<+%
 #'
 #' @examples
 #' # No examples yet
@@ -196,10 +203,10 @@ qc_dendro_plot <- function(data,
   # Make plot
   ggtree::ggtree(hc) %<+% sample_group_info +
     ggtree::layout_dendrogram() +
-    ggtree::geom_tippoint(aes(color = group)) +
-    ggtree::geom_tiplab(aes(color = group), angle=90, hjust=1, offset = -0.5, show.legend=FALSE) +
+    ggtree::geom_tippoint(aes(color = .data$group)) +
+    ggtree::geom_tiplab(aes(color = .data$group), angle=90, hjust=1, offset = -0.5, show.legend=FALSE) +
     scale_color_manual(values = colorGroup2(groups)[groups], name = NULL) +
-    theme_dendrogram(plot.margin=margin(6,6,80,6)) +
+    ggtree::theme_dendrogram(plot.margin=margin(6,6,80,6)) +
     theme(plot.title = element_text(hjust = 0.5))
 
 }

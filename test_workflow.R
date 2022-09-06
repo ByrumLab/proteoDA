@@ -143,28 +143,28 @@ norm_reb <- process_data(data = ext_reb$data,
 
 # Normalization report ----------------------------------------------------
 # Higgs
-make_proteinorm_report(processed_data = norm_higgs,
+write_proteinorm_report(processed_data = norm_higgs,
                        grouping_column = "group",
                        file = "higgs_update_2.pdf", overwrite = T)
 
 # Ndu
-make_proteinorm_report(processed_data = norm_ndu,
+write_proteinorm_report(processed_data = norm_ndu,
                        grouping_column = "group",
                        file = "ndu_update_2.pdf", overwrite = T)
 
 # Lupashin
-make_proteinorm_report(processed_data = norm_lupashin,
+write_proteinorm_report(processed_data = norm_lupashin,
                        grouping_column = "group",
                        file = "lupashin_update_2.pdf", overwrite = T, suppress_zoom_legend = T)
 # Zhan
 tic()
-make_proteinorm_report(processed_data = norm_zhan,
+write_proteinorm_report(processed_data = norm_zhan,
                        grouping_column = "group",
                        file = "zhan_update_2.pdf", overwrite = T)
 toc()
 
 # Rebello
-make_proteinorm_report(processed_data = norm_reb,
+write_proteinorm_report(processed_data = norm_reb,
                        grouping_column = "group",
                        file = "rebello_update_2.pdf",
                        overwrite = T)
@@ -424,9 +424,9 @@ norm_phospho <- process_data(data = thomas_phospho$data, targets = sub_phospho$t
                           min.reps = 3, min.grps = 2)
 
 
-make_proteinorm_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
+write_proteinorm_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
                        enrich = "protein", file = "thomas_protein.pdf", overwrite = T)
-make_proteinorm_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
+write_proteinorm_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
                        enrich = "phospho", file = "thomas_phospho.pdf", overwrite = T)
 
 make_qc_report(normList = norm_prot$normList, groups = norm_prot$targets$group,

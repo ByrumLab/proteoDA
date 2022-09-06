@@ -14,7 +14,7 @@
 #' } See the documentation of these subfunctions for more info.
 #'
 #'
-#' @inheritParams make_proteinorm_report
+#' @inheritParams write_proteinorm_report
 #' @param chosen_norm_method The normalization method for which to perform the QC analysis.
 #'   Should be a name of one of the datasets in normList.
 #' @param label_column Optional. The name of column within the targets data frame
@@ -38,6 +38,8 @@
 #' }
 #'
 #' @export
+#'
+#' @importFrom ggplot2 ggsave
 #'
 #' @examples
 #' # No examples yet
@@ -228,281 +230,281 @@ write_qc_report <- function(processed_data,
 
 
 
-make_qc_report <- function(normList,
-                           groups = NULL, batch = NULL, sampleLabels = NULL,
-                           norm.method = NULL, enrich = c("protein", "phospho"),
-                           dir = NULL, file = NULL, save = TRUE,
-                           overwrite = FALSE, keep.png = FALSE,
-                           legend = TRUE,
-                           top.proteins = 500, # Number of top variable proteins to include in PCA and dendrogram
-                           stdize = TRUE,
-                           pca.axes = c(1, 2),
-                           pca.xlim = NULL, pca.ylim = NULL, pca.dot = 2,
-                           clust.metric = "euclidean", clust.method = "complete",
-                           clust.label.cex = 1
-                           ) {
-
-
-
-  ##################
-  ## Create plots ##
-  ##################
-
-  # Set up widths
-  # Will make individual for now, so we can fine tune if needed
-  if (save) {
-    width_box <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
-    width_vio <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
-    width_pca <- 750
-    width_dendro <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
-    if (length(groups) < 100) {
-      width_cor <- round(0.0871 * length(groups)^2 + 24.375 * length(groups) + 473.02, 0)
-    } else {
-      width_cor <- round((0.0035 * length(groups)^2 + 10.035 * length(groups) + 146.15)*1.3, 0)
-    }
-  }
-
-  ####
-  ## BOXPLOT(S)
-  ####
-
-  if (save) {
-    # Open Graphics device for main plot
-    grDevices::png(
-      filename = file.path(out_dir, "BoxPlot.png"), units = "px",
-      width = width_box, height = 750, pointsize = 15
-    )
-  }
-  # Group boxplot
-  box <- qc_boxplot(data = data,
-                    groups = groups,
-                    sampleLabels = sampleLabels,
-                    title = "Grouped by group",
-                    legend = legend)
-  if (save) grDevices::dev.off()
-
-  # If plotting by batch
-  if (!is.null(batch)) {
-    if (save) {
-      grDevices::png(
-        filename = file.path(out_dir, "BoxPlot2.png"), units = "px",
-        width = width_box, height = 750, pointsize = 15
-      )
-    }
-    box2 <- qc_boxplot(data = data,
-                       groups = batch,
-                       sampleLabels = sampleLabels,
-                       title = "Grouped by batch",
-                       legend = legend)
-    if (save) grDevices::dev.off()
-  }
-
-  ####
-  ## VIOLIN PLOT(S)
-  ####
-  if (save) {
-    grDevices::png(
-      filename = file.path(out_dir, "ViolinPlot.png"), units = "px",
-      width = width_vio, height = 750, pointsize = 15)
-  }
-  # Main group plot
-  vio <- qc_violin_plot(data,
-                        groups = groups,
-                        sampleLabels,
-                        title = "Grouped by group",
-                        legend)
-  if (save) grDevices::dev.off()
-
-  if (!is.null(batch)) {
-    if (save) {
-      grDevices::png(filename = file.path(out_dir, "ViolinPlot2.png"),
-          units = "px", width = width_vio, height = 750, pointsize = 15)
-    }
-    vio2 <- qc_violin_plot(data = data,
-                           groups = batch,
-                           sampleLabels = sampleLabels,
-                           title = "Grouped by batch",
-                           legend = legend)
-    if (save) grDevices::dev.off()
-  }
-
-
-  ####
-  ## PCA PLOT(S)
-  ####
-  if (save) {
-    grDevices::png(filename = file.path(out_dir, "PCAplot.png"), units = "px",
-      width = width_pca, height = 650, pointsize = 15)
-  }
-  pca <- qc_pca_plot(
-    data = data, groups = groups, sampleLabels = sampleLabels,
-    title = "PCA, colored by group",
-    top = top.proteins, stdize = stdize, dims = pca.axes,
-    cex.dot = pca.dot, xlim = pca.xlim, ylim = pca.ylim,
-    legend = legend)
-  if (save) grDevices::dev.off()
-
-
-  if (!is.null(batch)) {
-    if (save) {
-      grDevices::png(filename = file.path(out_dir, "PCAplot2.png"), units = "px",
-                     width = width_pca, height = 650, pointsize = 15)
-    }
-    pca2 <- qc_pca_plot(
-      data = data, groups = batch, sampleLabels = sampleLabels,
-      title = "PCA, colored by batch",
-      top = top.proteins, stdize = stdize, dims = pca.axes,
-      cex.dot = pca.dot, xlim = pca.xlim, ylim = pca.ylim,
-      legend = legend)
-    if (save) grDevices::dev.off()
-  }
-
-  ####
-  ## DENDROGRAM(S)
-  ####
-  if (save) {
-    grDevices::png(filename = file.path(out_dir, "Dendrogram.png"), units = "px",
-      width = width_dendro, height = 650, pointsize = 15)
-  }
-  dendro <- qc_dendrogram(
-    data = data, groups = groups, sampleLabels = sampleLabels,
-    top = top.proteins, stdize = stdize,
-    clust.metric = clust.metric, clust.method = clust.method,
-    cex.names = clust.label.cex,
-    title = paste0("Method: ", clust.method, ". Metric: ", clust.metric, "\nColored by group"),
-    legend = legend
-  )
-  if (save) grDevices::dev.off()
-  if (!is.null(batch)) {
-    if (save) {
-      grDevices::png(filename = file.path(out_dir, "Dendrogram2.png"), units = "px",
-                     width = width_dendro, height = 650, pointsize = 15)
-    }
-    dendro2 <- qc_dendrogram(
-      data = data, groups = batch, sampleLabels = sampleLabels,
-      top = top.proteins, stdize = stdize,
-      clust.metric = clust.metric, clust.method = clust.method,
-      cex.names = clust.label.cex,
-      title = paste0("Method: ", clust.method, ". Metric: ", clust.metric, "\nColored by batch"),
-      legend = legend
-      )
-    if (save) grDevices::dev.off()
-  }
-
-  ####
-  ## HEATMAP(S)
-  ####
-  if (save) {
-    grDevices::png(filename = file.path(out_dir, "CorrHeatmap.png"), units = "px",
-      width = width_cor, height = width_cor, pointsize = 15)
-  }
-  corhm <- qc_corr_hm(data = data,
-                     groups = groups, batch = batch, sampleLabels = sampleLabels)
-  if (save) grDevices::dev.off()
-
-
-  ##################
-  ## Save report  ##
-  ##################
-  if (save) {
-
-    cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
-
-    ##  MAKE PDF FILE
-    grDevices::pdf(file.path(out_dir, file), paper = "USr", pagecentre = TRUE, pointsize = 15, width = 12, height = 8)
-
-    if (is.null(batch)) {
-      files <- c("BoxPlot.png", "ViolinPlot.png", "PCAplot.png", "Dendrogram.png", "CorrHeatmap.png")
-    } else {
-      files <- c("BoxPlot.png", "BoxPlot2.png", "ViolinPlot.png",
-                 "ViolinPlot2.png", "PCAplot.png", "PCAplot2.png",
-                 "Dendrogram.png", "Dendrogram2.png", "CorrHeatmap.png")
-    }
-
-    # Collect pngs as plot objects
-    pnglist <- paste0(paste0(file.path(out_dir), "/"), files)
-    thePlots <- lapply(1:length(pnglist), function(i) {
-      grid::rasterGrob(png::readPNG(pnglist[i], native = F))
-    })
-
-    if (ncol(data) <= 50) { # When project is small enough
-        # Put first 4 plots onto the first page
-        gridExtra::grid.arrange(grobs = thePlots[1:4], ncol = 2)
-        # And plot the next 4 plots on another page when batch
-        if (!is.null(batch)) {
-          gridExtra::grid.arrange(grobs = thePlots[5:8], ncol = 2)
-        }
-    }
-
-    # Print all plots on their own page
-    lapply(X = thePlots, FUN = gridExtra::grid.arrange, ncol = 1)
-    grDevices::dev.off()
-
-    # Deal with the .png files
-    if (!keep.png) { # Delete
-      unlink(pnglist)
-      cli::cli_inform("Temporary {.path .png} files removed from {.path {out_dir}} ")
-    } else { # Move to a new png directory
-      # Setup dir name
-      pngdir <- gsub(".pdf", "_pngs", file)
-      # Create if it doesn't exist
-      if (!dir.exists(file.path(out_dir, pngdir))) {
-        dir.create(file.path(out_dir, pngdir), recursive = TRUE)
-      }
-      # Move files
-      lapply(pnglist, function(x) {
-        file.copy(from = x, to = file.path(out_dir, pngdir, basename(x)))
-        file.remove(x)
-      })
-    }
-  }
-
-  ##############
-  ## Logging  ##
-  ##############
-  param <- stats <- list()
-  param[["norm.method"]] <- norm.method
-  param[["batch"]] <- ifelse(is.null(batch), "NULL", paste(unique(batch), collapse = ", "))
-  param[["stdize"]] <- stdize
-  param[["top.proteins"]] <- top.proteins
-  param[["dims"]] <- paste(pca.axes, collapse = ", ")
-  param[["clust.metric"]] <- clust.metric
-  param[["clust.method"]] <- clust.method
-  param[["dir"]] <- ifelse(save, out_dir, NA)
-  param[["file"]] <- ifelse(save, file, NA)
-  param[["png.dir"]] <- ifelse(keep.png, pngdir, NA)
-  param[["enrich"]] <- enrich
-
-  stats[["num_samples"]] <- ncol(data)
-  stats[["num_groups"]] <- length(unique(groups))
-  stats[["num_batches"]] <- ifelse(is.null(batch), 0, length(unique(batch)))
-  stats[["total_num_rows"]] <- nrow(data)
-  stats[["top_num_rows"]] <- top.proteins
-
-  logs <- make_log(param, stats, title = "QC REPORT", save = TRUE)
-
-
-  ###############
-  ## Returning ##
-  ###############
-  if (is.null(batch)) {
-    plotList <- list(
-      box = box, violin = vio, pca = pca, dendro = dendro, corr_hm = corhm
-    )
-  } else {
-    plotList <- list(
-      box_group = box, box_batch = box2,
-      violin_group = vio, violin_batch = vio2,
-      pca_group = pca, pca_batch = pca2,
-      dendro_group = dendro, dendro_batch = dendro2,
-      corr_hm = corhm
-    )
-  }
-
-  output_data <- list(plots = plotList, stats = logs$stats, param = logs$param)
-
-  cli::cli_rule()
-  cli::cli_inform(c("v" = "Success"))
-
-  invisible(output_data)
-}
+# make_qc_report <- function(normList,
+#                            groups = NULL, batch = NULL, sampleLabels = NULL,
+#                            norm.method = NULL, enrich = c("protein", "phospho"),
+#                            dir = NULL, file = NULL, save = TRUE,
+#                            overwrite = FALSE, keep.png = FALSE,
+#                            legend = TRUE,
+#                            top.proteins = 500, # Number of top variable proteins to include in PCA and dendrogram
+#                            stdize = TRUE,
+#                            pca.axes = c(1, 2),
+#                            pca.xlim = NULL, pca.ylim = NULL, pca.dot = 2,
+#                            clust.metric = "euclidean", clust.method = "complete",
+#                            clust.label.cex = 1
+#                            ) {
+#
+#
+#
+#   ##################
+#   ## Create plots ##
+#   ##################
+#
+#   # Set up widths
+#   # Will make individual for now, so we can fine tune if needed
+#   if (save) {
+#     width_box <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
+#     width_vio <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
+#     width_pca <- 750
+#     width_dendro <- round(0.0191 * length(groups)^2 + 12.082 * length(groups) + 671.75, 0)
+#     if (length(groups) < 100) {
+#       width_cor <- round(0.0871 * length(groups)^2 + 24.375 * length(groups) + 473.02, 0)
+#     } else {
+#       width_cor <- round((0.0035 * length(groups)^2 + 10.035 * length(groups) + 146.15)*1.3, 0)
+#     }
+#   }
+#
+#   ####
+#   ## BOXPLOT(S)
+#   ####
+#
+#   if (save) {
+#     # Open Graphics device for main plot
+#     grDevices::png(
+#       filename = file.path(out_dir, "BoxPlot.png"), units = "px",
+#       width = width_box, height = 750, pointsize = 15
+#     )
+#   }
+#   # Group boxplot
+#   box <- qc_boxplot(data = data,
+#                     groups = groups,
+#                     sampleLabels = sampleLabels,
+#                     title = "Grouped by group",
+#                     legend = legend)
+#   if (save) grDevices::dev.off()
+#
+#   # If plotting by batch
+#   if (!is.null(batch)) {
+#     if (save) {
+#       grDevices::png(
+#         filename = file.path(out_dir, "BoxPlot2.png"), units = "px",
+#         width = width_box, height = 750, pointsize = 15
+#       )
+#     }
+#     box2 <- qc_boxplot(data = data,
+#                        groups = batch,
+#                        sampleLabels = sampleLabels,
+#                        title = "Grouped by batch",
+#                        legend = legend)
+#     if (save) grDevices::dev.off()
+#   }
+#
+#   ####
+#   ## VIOLIN PLOT(S)
+#   ####
+#   if (save) {
+#     grDevices::png(
+#       filename = file.path(out_dir, "ViolinPlot.png"), units = "px",
+#       width = width_vio, height = 750, pointsize = 15)
+#   }
+#   # Main group plot
+#   vio <- qc_violin_plot(data,
+#                         groups = groups,
+#                         sampleLabels,
+#                         title = "Grouped by group",
+#                         legend)
+#   if (save) grDevices::dev.off()
+#
+#   if (!is.null(batch)) {
+#     if (save) {
+#       grDevices::png(filename = file.path(out_dir, "ViolinPlot2.png"),
+#           units = "px", width = width_vio, height = 750, pointsize = 15)
+#     }
+#     vio2 <- qc_violin_plot(data = data,
+#                            groups = batch,
+#                            sampleLabels = sampleLabels,
+#                            title = "Grouped by batch",
+#                            legend = legend)
+#     if (save) grDevices::dev.off()
+#   }
+#
+#
+#   ####
+#   ## PCA PLOT(S)
+#   ####
+#   if (save) {
+#     grDevices::png(filename = file.path(out_dir, "PCAplot.png"), units = "px",
+#       width = width_pca, height = 650, pointsize = 15)
+#   }
+#   pca <- qc_pca_plot(
+#     data = data, groups = groups, sampleLabels = sampleLabels,
+#     title = "PCA, colored by group",
+#     top = top.proteins, stdize = stdize, dims = pca.axes,
+#     cex.dot = pca.dot, xlim = pca.xlim, ylim = pca.ylim,
+#     legend = legend)
+#   if (save) grDevices::dev.off()
+#
+#
+#   if (!is.null(batch)) {
+#     if (save) {
+#       grDevices::png(filename = file.path(out_dir, "PCAplot2.png"), units = "px",
+#                      width = width_pca, height = 650, pointsize = 15)
+#     }
+#     pca2 <- qc_pca_plot(
+#       data = data, groups = batch, sampleLabels = sampleLabels,
+#       title = "PCA, colored by batch",
+#       top = top.proteins, stdize = stdize, dims = pca.axes,
+#       cex.dot = pca.dot, xlim = pca.xlim, ylim = pca.ylim,
+#       legend = legend)
+#     if (save) grDevices::dev.off()
+#   }
+#
+#   ####
+#   ## DENDROGRAM(S)
+#   ####
+#   if (save) {
+#     grDevices::png(filename = file.path(out_dir, "Dendrogram.png"), units = "px",
+#       width = width_dendro, height = 650, pointsize = 15)
+#   }
+#   dendro <- qc_dendrogram(
+#     data = data, groups = groups, sampleLabels = sampleLabels,
+#     top = top.proteins, stdize = stdize,
+#     clust.metric = clust.metric, clust.method = clust.method,
+#     cex.names = clust.label.cex,
+#     title = paste0("Method: ", clust.method, ". Metric: ", clust.metric, "\nColored by group"),
+#     legend = legend
+#   )
+#   if (save) grDevices::dev.off()
+#   if (!is.null(batch)) {
+#     if (save) {
+#       grDevices::png(filename = file.path(out_dir, "Dendrogram2.png"), units = "px",
+#                      width = width_dendro, height = 650, pointsize = 15)
+#     }
+#     dendro2 <- qc_dendrogram(
+#       data = data, groups = batch, sampleLabels = sampleLabels,
+#       top = top.proteins, stdize = stdize,
+#       clust.metric = clust.metric, clust.method = clust.method,
+#       cex.names = clust.label.cex,
+#       title = paste0("Method: ", clust.method, ". Metric: ", clust.metric, "\nColored by batch"),
+#       legend = legend
+#       )
+#     if (save) grDevices::dev.off()
+#   }
+#
+#   ####
+#   ## HEATMAP(S)
+#   ####
+#   if (save) {
+#     grDevices::png(filename = file.path(out_dir, "CorrHeatmap.png"), units = "px",
+#       width = width_cor, height = width_cor, pointsize = 15)
+#   }
+#   corhm <- qc_corr_hm(data = data,
+#                      groups = groups, batch = batch, sampleLabels = sampleLabels)
+#   if (save) grDevices::dev.off()
+#
+#
+#   ##################
+#   ## Save report  ##
+#   ##################
+#   if (save) {
+#
+#     cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
+#
+#     ##  MAKE PDF FILE
+#     grDevices::pdf(file.path(out_dir, file), paper = "USr", pagecentre = TRUE, pointsize = 15, width = 12, height = 8)
+#
+#     if (is.null(batch)) {
+#       files <- c("BoxPlot.png", "ViolinPlot.png", "PCAplot.png", "Dendrogram.png", "CorrHeatmap.png")
+#     } else {
+#       files <- c("BoxPlot.png", "BoxPlot2.png", "ViolinPlot.png",
+#                  "ViolinPlot2.png", "PCAplot.png", "PCAplot2.png",
+#                  "Dendrogram.png", "Dendrogram2.png", "CorrHeatmap.png")
+#     }
+#
+#     # Collect pngs as plot objects
+#     pnglist <- paste0(paste0(file.path(out_dir), "/"), files)
+#     thePlots <- lapply(1:length(pnglist), function(i) {
+#       grid::rasterGrob(png::readPNG(pnglist[i], native = F))
+#     })
+#
+#     if (ncol(data) <= 50) { # When project is small enough
+#         # Put first 4 plots onto the first page
+#         gridExtra::grid.arrange(grobs = thePlots[1:4], ncol = 2)
+#         # And plot the next 4 plots on another page when batch
+#         if (!is.null(batch)) {
+#           gridExtra::grid.arrange(grobs = thePlots[5:8], ncol = 2)
+#         }
+#     }
+#
+#     # Print all plots on their own page
+#     lapply(X = thePlots, FUN = gridExtra::grid.arrange, ncol = 1)
+#     grDevices::dev.off()
+#
+#     # Deal with the .png files
+#     if (!keep.png) { # Delete
+#       unlink(pnglist)
+#       cli::cli_inform("Temporary {.path .png} files removed from {.path {out_dir}} ")
+#     } else { # Move to a new png directory
+#       # Setup dir name
+#       pngdir <- gsub(".pdf", "_pngs", file)
+#       # Create if it doesn't exist
+#       if (!dir.exists(file.path(out_dir, pngdir))) {
+#         dir.create(file.path(out_dir, pngdir), recursive = TRUE)
+#       }
+#       # Move files
+#       lapply(pnglist, function(x) {
+#         file.copy(from = x, to = file.path(out_dir, pngdir, basename(x)))
+#         file.remove(x)
+#       })
+#     }
+#   }
+#
+#   ##############
+#   ## Logging  ##
+#   ##############
+#   param <- stats <- list()
+#   param[["norm.method"]] <- norm.method
+#   param[["batch"]] <- ifelse(is.null(batch), "NULL", paste(unique(batch), collapse = ", "))
+#   param[["stdize"]] <- stdize
+#   param[["top.proteins"]] <- top.proteins
+#   param[["dims"]] <- paste(pca.axes, collapse = ", ")
+#   param[["clust.metric"]] <- clust.metric
+#   param[["clust.method"]] <- clust.method
+#   param[["dir"]] <- ifelse(save, out_dir, NA)
+#   param[["file"]] <- ifelse(save, file, NA)
+#   param[["png.dir"]] <- ifelse(keep.png, pngdir, NA)
+#   param[["enrich"]] <- enrich
+#
+#   stats[["num_samples"]] <- ncol(data)
+#   stats[["num_groups"]] <- length(unique(groups))
+#   stats[["num_batches"]] <- ifelse(is.null(batch), 0, length(unique(batch)))
+#   stats[["total_num_rows"]] <- nrow(data)
+#   stats[["top_num_rows"]] <- top.proteins
+#
+#   logs <- make_log(param, stats, title = "QC REPORT", save = TRUE)
+#
+#
+#   ###############
+#   ## Returning ##
+#   ###############
+#   if (is.null(batch)) {
+#     plotList <- list(
+#       box = box, violin = vio, pca = pca, dendro = dendro, corr_hm = corhm
+#     )
+#   } else {
+#     plotList <- list(
+#       box_group = box, box_batch = box2,
+#       violin_group = vio, violin_batch = vio2,
+#       pca_group = pca, pca_batch = pca2,
+#       dendro_group = dendro, dendro_batch = dendro2,
+#       corr_hm = corhm
+#     )
+#   }
+#
+#   output_data <- list(plots = plotList, stats = logs$stats, param = logs$param)
+#
+#   cli::cli_rule()
+#   cli::cli_inform(c("v" = "Success"))
+#
+#   invisible(output_data)
+# }
