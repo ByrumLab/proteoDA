@@ -153,7 +153,7 @@ write_proteinorm_report <- function(processed_data,
   # Make a list of plots
   # Need to convert page 1 from a patchwork object
   # into a Grob
-  plots_list <-  list(patchworkGrob(page_1), page_2)
+  plots_list <-  list(patchwork::patchworkGrob(page_1), page_2)
 
   # Then save
   cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")

@@ -154,14 +154,13 @@ qc_pca_plot <- function(data,
 #'
 #' @examples
 #' # No examples yet
-
 qc_dendro_plot <- function(data,
-                          groups = NULL,
-                          sample_labels = NULL,
-                          top_proteins = 500,
-                          standardize = TRUE,
-                          dist_metric = "euclidean",
-                          clust_method = "complete") {
+                           groups = NULL,
+                           sample_labels = NULL,
+                           top_proteins = 500,
+                           standardize = TRUE,
+                           dist_metric = "euclidean",
+                           clust_method = "complete") {
 
   # Check arguments
   dist_metric <- rlang::arg_match(
@@ -220,25 +219,22 @@ qc_dendro_plot <- function(data,
 #' labels colored by group and batch.
 #'
 #' @inheritParams qc_pca_plot
-#' @param batch A character or factor vector, listing the batch(es) the samples
-#'   belong to.
 #'
-#' @return Invisibly returns the correlation matrix created by
-#'   \code{\link[stats:cor]{stats::cor}}.
+#' @return A \code{\link[grid:gTree]{grid::gTree}} object of the ComplexHeatmap,
+#'   which can be plotted with \code{\link[grid:grid.draw]{grid::grid.draw}}.
 #' @export
 #'
 #' @examples
 #' # No examples yet
 qc_corr_hm <- function(data,
-                      groups, batch = NULL, sampleLabels = NULL) {
+                       groups,
+                       sample_labels = NULL) {
 
   groups <- make_factor(groups)
-  if (is.null(batch)) {
-    batch <- c(rep("1", ncol(data)))
-  }
-  batch <- make_factor(as.character(batch), prefix = NULL)
-  if (is.null(sampleLabels)) {
-    sampleLabels <- colnames(data)
+
+
+  if (is.null(sample_labels)) {
+    sample_labels <- colnames(data)
   }
 
   # Calculate correlation matrix
@@ -256,19 +252,13 @@ qc_corr_hm <- function(data,
       )
     )
   )
-  # Get row annotations
-  RowAnn <- ComplexHeatmap::rowAnnotation(
-    Batch = batch, col = list(Batch = colorBatch(batch)),
-    annotation_legend_param = list(
-      Batch = list(
-        title = "Batch",
-        at = levels(batch),
-        labels = paste("Batch", levels(batch))
-      )
-    )
-  )
 
+  # Do some changing of font sizes and plot size based on the
+  # number of samples
   fontsize <- ifelse(length(groups) < 100, 12, 10)
+  # TODO: plot size. Needs to sync with the report sizes.
+
+
   # make the complex heatmap plot object
   hm_corr <- ComplexHeatmap::Heatmap(cor_mat,
     name = "Pearson correlation", border = TRUE,
@@ -288,22 +278,21 @@ qc_corr_hm <- function(data,
     column_names_gp = grid::gpar(fontsize = fontsize),
     row_names_gp = grid::gpar(fontsize = fontsize),
     top_annotation = ColAnn,
-    left_annotation = RowAnn,
-    column_labels = sampleLabels,
-    row_labels = sampleLabels,
-
+    left_annotation = NULL,
+    column_labels = sample_labels,
+    row_labels = sample_labels,
+    width = grid::unit(6, "in"),
+    height = grid::unit(6, "in")
   )
 
-  # Get original graphics pars
-  orig_par <- graphics::par(no.readonly = TRUE)
-  # Schedule them to be reset when we exit the function
-  on.exit(graphics::par(orig_par), add = TRUE)
-
-  # Set params, draw plot
-  graphics::par(mar = c(10, 10, 10, 10))
-  ComplexHeatmap::draw(hm_corr, heatmap_legend_side = "top",
-                       ht_gap = grid::unit(2, "cm"))
-
-  invisible(cor_mat)
+  # Output the Heatmap as a gTree object,
+  # Similar to our other plotting fxns, which output
+  # ggplot objects
+  grid::grid.grabExpr(
+    ComplexHeatmap::draw(
+      hm_corr, heatmap_legend_side = "top",
+      ht_gap = grid::unit(2, "cm")
+    )
+  )
 }
 

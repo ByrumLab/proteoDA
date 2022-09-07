@@ -201,6 +201,9 @@ write_qc_report <- function(processed_data,
                    "Colored by: ", grouping_column))
 
   # correlation heatmap
+  correlation_heatmap <- qc_corr_hm(data = norm_data,
+                                    groups = groups,
+                                    sample_labels = sample_labels)
 
   # missing data heatmap - clustering and grouping by grouping column
 
@@ -211,12 +214,28 @@ write_qc_report <- function(processed_data,
   # which I still need to figure out with ggplot.
   combined <- violin_plot + pca_plot + dendro_plot
 
+
   ###############################
   ## Save plots, check, return ##
   ###############################
 
+  # To save over multiple PDF pages
+  # Make a list of plots
+  # Need to convert page 1 from a patchwork object
+  # into a Grob
+  plots_list <-  list(patchwork::patchworkGrob(combined), correlation_heatmap)
+
+  # Then save
   cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
-  ggsave(combined, filename = file.path(out_dir, file), height = 8.5, width = 24, units = "in")
+  ggsave(file.path(out_dir, file),
+         plot = gridExtra::marrangeGrob(grobs = plots_list, nrow = 1, ncol = 1, top = NA),
+         height = 8.5,
+         width = 22,
+         units = "in")
+
+
+
+
 
   if (!file.exists(file.path(out_dir, file))) {
     cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
