@@ -17,7 +17,8 @@ write_qc_report(
   standardize = TRUE,
   pca_axes = c(1, 2),
   dist_metric = "euclidean",
-  clust_method = "complete"
+  clust_method = "complete",
+  show_all_proteins = F
 )
 }
 \arguments{
@@ -64,6 +65,9 @@ Default is c(1,2), to plot the first two principal components.}
 
 \item{clust_method}{The agglomeration method to use for clustering. Default
 is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.}
+
+\item{show_all_proteins}{Should all proteins be shown in missing value heatmap,
+of only those with missing data? Default is F (only those with missing data).}
 }
 \value{
 Invisibly returns a list with three slots: \enumerate{

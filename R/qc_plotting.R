@@ -181,6 +181,10 @@ qc_dendro_plot <- function(data,
     ), multiple = FALSE
   )
 
+  if (is.null(sample_labels)) {
+    sample_labels <- colnames(data)
+  }
+
   # Get top variable proteins
   o <- order(rowVars(as.matrix(data)), decreasing = TRUE)
   data <- data[o, ]
@@ -196,7 +200,7 @@ qc_dendro_plot <- function(data,
   hc <- stats::hclust(stats::dist(t(data), method = dist_metric), method = clust_method)
 
   # Get sample info for colors
-  sample_group_info <- data.frame(label = colnames(data),
+  sample_group_info <- data.frame(label = sample_labels,
                                   group = groups)
 
   # Make plot
@@ -296,3 +300,110 @@ qc_corr_hm <- function(data,
   )
 }
 
+
+
+
+#' Create a missing values heatmap
+#'
+#' Makes a ComplexHeatmap object showing a heatmap of missing values in the
+#' input data.
+#'
+#' @inheritParams qc_pca_plot
+#' @param column_sort How should the columns of the heatmap be sorted? Options
+#'   are: "cluster"- sort by similarity in missing values, "group"- sort samples
+#'   by the grouping variable.
+#' @param group_var_name The name of the variable being used for group sorting.
+#' @param show_all_proteins Should all proteins be shown in missing value heatmap,
+#'  of only those with missing data? Default is F (only those with missing data).
+#'
+#' @return A \code{\link[grid:gTree]{grid::gTree}} object of the ComplexHeatmap,
+#'   which can be plotted with \code{\link[grid:grid.draw]{grid::grid.draw}}.
+#' @export
+#'
+#' @examples
+#' # No examples yet.
+#'
+qc_missing_hm <- function(data,
+                          groups,
+                          sample_labels = NULL,
+                          column_sort = c("cluster", "group"),
+                          group_var_name = "",
+                          show_all_proteins = F) {
+  # Check args
+  column_sort <- rlang::arg_match(column_sort)
+
+  if (is.null(sample_labels)) {
+    sample_labels <- colnames(data)
+  }
+
+  # Set up the column ordering for the different options
+  if (column_sort == "cluster") {
+    # If clustering just order things as they are
+    cluster <- T
+    order <- seq_along(groups)
+    title <- "Sorted by similarity"
+  } else if (column_sort == "group") {
+    # If ordering by group, sort by group
+    cluster <- F
+    order <- order(groups)
+    title <- paste0("Sorted by ", group_var_name)
+  } else {
+    cli::cli_abort("Invalid value for {.arg column_sort}: cannot be {.val {column_sort}}")
+  }
+
+  #Prepare data
+  missing <- !is.na(data)
+  if (!show_all_proteins) {
+    complete = apply(missing, 1, all)
+    completeNA = apply(!missing, 1, all)
+    missing <- missing[!complete & !completeNA,]
+  }
+
+  # Then order the groups/batches/etc
+  sorted_groups <- groups[order]
+  sorted_labels <- sample_labels[order]
+  ordered_data <- missing[,order]
+
+  # Set up heatmap annotation
+  ColAnn <- ComplexHeatmap::HeatmapAnnotation(
+    sample = sorted_groups,
+    col = list(sample = colorGroup2(groups)),
+    annotation_legend_param = list(sample = list(title = "Group",
+                                                 at = unique(sorted_groups),
+                                                 labels = paste("", unique(sorted_groups)))),
+    show_legend = T
+  )
+  # Plot heatmap
+  hm_clust <- ComplexHeatmap::Heatmap(
+    ordered_data + 0,
+    col = c("white", "black"),
+    column_names_side = "top",
+    column_title = title,
+    show_row_names = FALSE,
+    show_column_names = TRUE,
+    name = "Status",
+    column_names_gp = grid::gpar(fontsize=7),
+    heatmap_legend_param = list(at = c(0, 1),
+                                labels = c("Missing", "Valid")),
+    show_heatmap_legend = T,
+    top_annotation = ColAnn,
+    cluster_columns = cluster,
+    column_labels = sorted_labels,
+    width = grid::unit(6, "in"),
+    height = grid::unit(6, "in")
+  )
+
+
+  # Output the Heatmap as a gTree object,
+  # Similar to our other plotting fxns, which output
+  # ggplot objects
+  grid::grid.grabExpr(
+    ComplexHeatmap::draw(
+      hm_clust,
+      heatmap_legend_side = "right",
+      annotation_legend_side = "right",
+      ht_gap = grid::unit(2, "cm"),
+      column_title = "Missing Values"
+      )
+    )
+}

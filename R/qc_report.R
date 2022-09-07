@@ -29,6 +29,7 @@
 #' @param pca_axes  A numeric vector of length 2 which lists the PC axes to plot.
 #'   Default is c(1,2), to plot the first two principal components.
 #' @inheritParams qc_dendro_plot
+#' @inheritParams qc_missing_hm
 #'
 #' @return Invisibly returns a list with three slots: \enumerate{
 #'   \item "plots"- A large list, where each element in the list is the returned
@@ -67,7 +68,8 @@ write_qc_report <- function(processed_data,
                             standardize = TRUE,
                             pca_axes = c(1,2),
                             dist_metric = "euclidean",
-                            clust_method = "complete") {
+                            clust_method = "complete",
+                            show_all_proteins = F) {
 
   cli::cli_rule()
 
@@ -205,7 +207,21 @@ write_qc_report <- function(processed_data,
                                     groups = groups,
                                     sample_labels = sample_labels)
 
-  # missing data heatmap - clustering and grouping by grouping column
+  # missing data heatmap - cluster by similarity
+  miss_heatmap_cluster <- qc_missing_hm(data = norm_data,
+                                        groups = groups,
+                                        sample_labels = sample_labels,
+                                        column_sort = "cluster",
+                                        group_var_name = grouping_column,
+                                        show_all_proteins = show_all_proteins)
+
+  # missing value heatmap <- cluster by grouping column
+  miss_heatmap_groups <- qc_missing_hm(data = norm_data,
+                                        groups = groups,
+                                        sample_labels = sample_labels,
+                                        column_sort = "group",
+                                        group_var_name = grouping_column,
+                                        show_all_proteins = show_all_proteins)
 
 
   # Will need to figure out the best options for combining
@@ -223,7 +239,10 @@ write_qc_report <- function(processed_data,
   # Make a list of plots
   # Need to convert page 1 from a patchwork object
   # into a Grob
-  plots_list <-  list(patchwork::patchworkGrob(combined), correlation_heatmap)
+  plots_list <-  list(patchwork::patchworkGrob(combined),
+                      correlation_heatmap,
+                      miss_heatmap_cluster,
+                      miss_heatmap_groups)
 
   # Then save
   cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
@@ -232,8 +251,6 @@ write_qc_report <- function(processed_data,
          height = 8.5,
          width = 22,
          units = "in")
-
-
 
 
 
