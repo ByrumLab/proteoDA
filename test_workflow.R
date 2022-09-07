@@ -177,6 +177,14 @@ write_qc_report(processed_data = norm_higgs,
                 file = "higgs_qc_update.pdf",
                 overwrite = T)
 
+write_qc_report(processed_data = norm_higgs,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                label_column = "sampleIDs",
+                enrich = "protein",
+                file = "higgs_qc_update_samplelabs.pdf",
+                overwrite = T)
+
 write_qc_report(processed_data = norm_ndu,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",

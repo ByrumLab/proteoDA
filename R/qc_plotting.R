@@ -183,6 +183,8 @@ qc_dendro_plot <- function(data,
 
   if (is.null(sample_labels)) {
     sample_labels <- colnames(data)
+  } else {
+    colnames(data) <- sample_labels
   }
 
   # Get top variable proteins
@@ -200,7 +202,7 @@ qc_dendro_plot <- function(data,
   hc <- stats::hclust(stats::dist(t(data), method = dist_metric), method = clust_method)
 
   # Get sample info for colors
-  sample_group_info <- data.frame(label = sample_labels,
+  sample_group_info <- data.frame(text = sample_labels,
                                   group = groups)
 
   # Make plot
@@ -257,10 +259,17 @@ qc_corr_hm <- function(data,
     )
   )
 
-  # Do some changing of font sizes and plot size based on the
-  # number of samples
+  # Adjust plot size based on number of samples
+  # This also occurs in the write_qc_report function and qc_corr_hm function.
+  # If you make changes here, make corresponding changes in those functions
   fontsize <- ifelse(length(groups) < 100, 12, 10)
-  # TODO: plot size. Needs to sync with the report sizes.
+  if (ncol(data) > 50) {
+    height <- 15
+    width <- 15
+  } else {
+    height <- 6
+    width <- 6
+  }
 
 
   # make the complex heatmap plot object
@@ -285,8 +294,8 @@ qc_corr_hm <- function(data,
     left_annotation = NULL,
     column_labels = sample_labels,
     row_labels = sample_labels,
-    width = grid::unit(6, "in"),
-    height = grid::unit(6, "in")
+    width = grid::unit(width, "in"),
+    height = grid::unit(height, "in")
   )
 
   # Output the Heatmap as a gTree object,
@@ -359,6 +368,17 @@ qc_missing_hm <- function(data,
     missing <- missing[!complete & !completeNA,]
   }
 
+  # Adjust plot size based on number of samples
+  # This also occurs in the write_qc_report function and qc_corr_hm function.
+  # If you make changes here, make corresponding changes in those functions
+  if (ncol(data) > 50) {
+    height <- 15
+    width <- 15
+  } else {
+    height <- 6
+    width <- 6
+  }
+
   # Then order the groups/batches/etc
   sorted_groups <- groups[order]
   sorted_labels <- sample_labels[order]
@@ -389,8 +409,8 @@ qc_missing_hm <- function(data,
     top_annotation = ColAnn,
     cluster_columns = cluster,
     column_labels = sorted_labels,
-    width = grid::unit(6, "in"),
-    height = grid::unit(6, "in")
+    width = grid::unit(width, "in"),
+    height = grid::unit(height, "in")
   )
 
 

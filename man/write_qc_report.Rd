@@ -94,5 +94,4 @@ with \code{\link{qc_violin_plot}}.
 \examples{
 # No examples yet
 
-
 }
