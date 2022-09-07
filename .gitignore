@@ -9,6 +9,7 @@ for_testing/logo_higherres.png
 for_testing/logo.png
 for_testing/Email_rmd/
 for_testing/*_cache/
+for_testing/*_files/
 for_testing/*.html
 for_testing/Example Data
 for_testing/libs/

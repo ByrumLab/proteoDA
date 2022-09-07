@@ -3,10 +3,7 @@
 #'
 #' A set of functions that take in normalized sample data and a grouping factor
 #' and calculate some metric of of variability, error, etc., that we can use
-#' to evaluate normalization methods. The functions/metrics:
-#'
-#' A set of functions that normalize sample data (in columns of a data frame
-#' or matrix), according to various methods: \itemize{
+#' to evaluate normalization methods. The functions/metrics: \itemize{
 #'   \item PCV- Calculated the pooled coefficient of variation (CV, standard
 #'     deviation divided by the mean) for all proteins within a group. That is,
 #'     the average (mean) of the per-protein CVs.
@@ -29,9 +26,11 @@
 #'
 #' @return For PCV, PMAD, and PEV: a named vector, with length equal to the
 #'   number of groups, giving the metric for each group. For COR, a named vector
-#'   giving all within-group pairwise correlations between samples. For log2ratio,
-#'   a non-named vector giving all possible between-group log2 ratios for each
-#'   protein.
+#'   giving all within-group pairwise correlations between samples. For log2ratio
+#'   with keep_protein_ID = FALSE (the default), a non-named vector giving all
+#'   possible between-group log2 ratios for each protein. For log2ratio with
+#'   keep_protein_ID = TRUE, a dataframe in which rows are proteins, columns are
+#'   are the log2ratio for a pairwise comparisons, and rownames give protein ID.
 #'
 #'
 #' @name norm_metrics
@@ -113,11 +112,13 @@ COR <- function(data, groups) {
 
 
 #' @rdname norm_metrics
+#' @param keep_protein_ID Should protein ID information be retained? Default is False,
+#'   in which case \code{keep_protein_ID}
 #' @export
 #'
 # log2ratio
 
-log2ratio <- function(data, groups) {
+log2ratio <- function(data, groups, keep_protein_ID = F) {
 
   # calculate mean intensity for each group
   # Original implementation by charity was a nested for loop that ended up calculating group
@@ -137,10 +138,23 @@ log2ratio <- function(data, groups) {
   # Then, calculate all pairwise differences across cols/groups
   # Assuming these are all log2 normalized, the difference is the ratio
   # uses a custom function, all_pw_diffs (in utils), to apply this.
-  pw_diffs_per_gene <- as.data.frame(t(apply(X = mean_prot_by_group, MARGIN = 1, FUN = all_pw_diffs)))
+  # Need simplify = F and some ugly type conversion and transposition
+  # To get this in the format we want (rows = proteins, cols = pw comparisons)
+  # If simplify = T, cases with only 1 pw comparison are simplified to vectors.
+  pw_diffs_per_gene <- as.data.frame(t(as.data.frame(apply(X = mean_prot_by_group, MARGIN = 1, FUN = all_pw_diffs, simplify = F))))
+
 
   # The result is a data frame, where each row is a gene and each col is the difference in one
   # pw comparison.
-  # To mimic other functions, will just return as a vector
-  unlist(pw_diffs_per_gene, use.names = F)
+  # For the log2ratio plots, want to collapse protein info and just return
+  # a vector like the other plots.
+  # For the MD/MA plots, need to maintain protein info in a data frame
+  if (keep_protein_ID) {
+    output <- pw_diffs_per_gene
+  } else {
+    output <- unlist(pw_diffs_per_gene, use.names = F)
+  }
+
+  output
 }
+

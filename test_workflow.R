@@ -16,9 +16,9 @@ CreatePackageReport("proteomicsDIA")
 
 # extract_data on a bunch of files --------------------------------
 
-ext_bart <- extract_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv",
-             pipe = "DIA",
-             enrich = "protein") # Missing exclusivity col
+# ext_bart <- extract_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv",
+#              pipe = "DIA",
+#              enrich = "protein") # Missing exclusivity col
 
 
 ext_higgs <- extract_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv",
@@ -64,25 +64,21 @@ target_ndu <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input
                            pipe = "DIA",
                            enrich = "protein") # worked
 
-target_ndu2 <- make_targets(#file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                           sampleIDs = colnames(ext_ndu$data),
-                           pipe = "DIA",
-                           enrich = "protein")
-
-target_ndu3 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                           sampleIDs = c(colnames(ext_ndu$data), "sample_45"),
-                           pipe = "DIA",
-                           enrich = "protein") # Gave warning as expected
-
-target_ndu4 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                            sampleIDs = colnames(ext_higgs$data),
-                            pipe = "DIA",
-                            enrich = "protein") # Gave error as expected,
-                            # but need to improve the error message and figure this logic out
-
-target_kintler <- make_targets(sampleIDs = colnames(ext_kintler$data),
-                               pipe = "DIA",
-                               enrich = "protein") # error because of no "Sample" in ID
+# target_ndu2 <- make_targets(#file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+#                            sampleIDs = colnames(ext_ndu$data),
+#                            pipe = "DIA",
+#                            enrich = "protein")
+#
+# target_ndu3 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+#                            sampleIDs = c(colnames(ext_ndu$data), "sample_45"),
+#                            pipe = "DIA",
+#                            enrich = "protein") # Gave warning as expected
+#
+# target_ndu4 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+#                             sampleIDs = colnames(ext_higgs$data),
+#                             pipe = "DIA",
+#                             enrich = "protein") # Gave error as expected,
+#                             # but need to improve the error message and figure this logic out
 
 target_lupashin <- make_targets(file = "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv",
                                 sampleIDs = colnames(ext_lupashin$data),
@@ -147,63 +143,82 @@ norm_reb <- process_data(data = ext_reb$data,
 
 # Normalization report ----------------------------------------------------
 # Higgs
-make_proteinorm_report(normList = norm_higgs$normList, groups = norm_higgs$targets$group, file = "higgs.pdf", overwrite = T)
+write_proteinorm_report(processed_data = norm_higgs,
+                       grouping_column = "group",
+                       file = "higgs_update_2.pdf", overwrite = T)
 
 # Ndu
-make_proteinorm_report(normList = norm_ndu$normList, groups = norm_ndu$targets$group, file = "ndu.pdf", overwrite = T)
+write_proteinorm_report(processed_data = norm_ndu,
+                       grouping_column = "group",
+                       file = "ndu_update_2.pdf", overwrite = T)
 
 # Lupashin
-make_proteinorm_report(normList=norm_lupashin$normList, groups = norm_lupashin$targets$group, file = "lupashin.pdf",
-                       overwrite = T)
-make_proteinorm_report(normList=norm_lupashin$normList, groups = norm_lupashin$targets$group, save = F)
-
+write_proteinorm_report(processed_data = norm_lupashin,
+                       grouping_column = "group",
+                       file = "lupashin_update_2.pdf", overwrite = T, suppress_zoom_legend = T)
 # Zhan
 tic()
-make_proteinorm_report(normList = norm_zhan$normList, groups = norm_zhan$targets$group, file = "zhan.pdf", overwrite = T)
+write_proteinorm_report(processed_data = norm_zhan,
+                       grouping_column = "group",
+                       file = "zhan_update_2.pdf", overwrite = T)
 toc()
 
-make_proteinorm_report(normList = norm_reb$normList, groups = norm_reb$targets$group, file = "rebello.pdf", overwrite = T)
-
-
+# Rebello
+write_proteinorm_report(processed_data = norm_reb,
+                       grouping_column = "group",
+                       file = "rebello_update_2.pdf",
+                       overwrite = T)
 
 # Make QC report ----------------------------------------------------------
-make_qc_report(normList = norm_higgs$normList, norm.method = "vsn",
-               groups = norm_higgs$targets$group,
-               batch = norm_higgs$targets$group,
-               enrich = "protein", save = TRUE, file = "higgs_qc.pdf", overwrite = T)
+write_qc_report(processed_data = norm_higgs,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "higgs_qc_update.pdf",
+                overwrite = T)
 
-make_qc_report(normList = norm_higgs$normList, norm.method = "vsn",
-               groups = norm_higgs$targets$group,
-               batch = norm_higgs$targets$group,
-               enrich = "protein", save = FALSE)
+write_qc_report(processed_data = norm_higgs,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                label_column = "sampleIDs",
+                enrich = "protein",
+                file = "higgs_qc_update_samplelabs.pdf",
+                overwrite = T)
+
+write_qc_report(processed_data = norm_ndu,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "ndu_qc_update.pdf",
+                overwrite = T)
+
+write_qc_report(processed_data = norm_ndu,
+                chosen_norm_method = "vsn",
+                enrich = "protein",
+                file = "ndu_qc_update_batch.pdf",
+                overwrite = T)
 
 
-make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
-               groups = norm_ndu$targets$group,
-               enrich = "protein", save = TRUE, file = "ndu_qc.pdf", overwrite = T)
+write_qc_report(processed_data = norm_lupashin,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "lupashin_qc_update.pdf",
+                overwrite = T)
 
-make_qc_report(normList = norm_ndu$normList, norm.meth = "vsn",
-               groups = norm_ndu$targets$group, legend = F,
-               enrich = "protein", save = TRUE, file = "ndu_qc_no_legend.pdf", overwrite = T)
+write_qc_report(processed_data = norm_zhan,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "zhan_qc_update.pdf",
+                overwrite = T)
 
-
-make_qc_report(normList = norm_lupashin$normList, norm.meth = "vsn",
-               groups = norm_lupashin$targets$group,
-               enrich = "protein", save = TRUE, file = "lupashin_qc.pdf", overwrite = T)
-
-
-make_qc_report(normList = norm_zhan$normList, norm.meth = "vsn",
-               groups = norm_zhan$targets$group,
-               enrich = "protein", save = TRUE, file = "zhan_qc.pdf", overwrite = T)
-
-
-make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
-               groups = norm_reb$targets$group,
-               enrich = "protein", save = TRUE, file = "rebello_qc.pdf", overwrite = T)
-
-make_qc_report(normList = norm_reb$normList, norm.meth = "vsn",
-               groups = norm_reb$targets$group,
-               enrich = "protein", save = F)
+write_qc_report(processed_data = norm_reb,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein",
+                file = "rebello_qc_update.pdf",
+                overwrite = T)
 
 
 # Make design -------------------------------------------------------------
@@ -417,9 +432,9 @@ norm_phospho <- process_data(data = thomas_phospho$data, targets = sub_phospho$t
                           min.reps = 3, min.grps = 2)
 
 
-make_proteinorm_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
+write_proteinorm_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
                        enrich = "protein", file = "thomas_protein.pdf", overwrite = T)
-make_proteinorm_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
+write_proteinorm_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
                        enrich = "phospho", file = "thomas_phospho.pdf", overwrite = T)
 
 make_qc_report(normList = norm_prot$normList, groups = norm_prot$targets$group,

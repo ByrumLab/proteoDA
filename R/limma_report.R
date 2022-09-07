@@ -22,9 +22,9 @@
 #'   Default is 1000.
 #'
 #' @return If successful, invisible(TRUE).
-#' @export
 #'
-#' @import ggplot2
+#' @importFrom ggplot2 ggsave
+#' @export
 #'
 #' @examples
 #' # No examples yet
@@ -191,6 +191,8 @@ prep_plot_model_data <- function(model_results, contrast) {
 #' @param contrast The contrast being plotted. Used for generating the plot title.
 #' @param pval.type The type of p-value to plot. Can be "raw" or "adjusted".
 #'
+#' @importFrom ggplot2 scale_alpha_manual
+#'
 #' @return A ggplot object.
 #'
 #' @examples
@@ -254,6 +256,8 @@ static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.ty
 #' @param pval.type The type of p-value to plot. Can be "raw" or "adjusted".
 #'
 #' @return A ggplot object
+#'
+#' @importFrom ggplot2 scale_alpha_manual
 #'
 #' @examples
 #' # No examples yet

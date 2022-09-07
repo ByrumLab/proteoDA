@@ -8,10 +8,11 @@ License: MIT + file LICENSE
 biocViews:
 Imports:
     circlize,
-    ClassDiscovery,
     cli,
     ComplexHeatmap,
     ggplot2,
+    ggrepel,
+    ggtree,
     grDevices,
     grid,
     gridExtra,
@@ -22,12 +23,10 @@ Imports:
     MASS,
     openxlsx,
     patchwork,
-    png,
     preprocessCore,
     rlang,
     rmarkdown,
     stringr,
-    vioplot,
     vsn
 Depends: 
     R (>= 2.10)

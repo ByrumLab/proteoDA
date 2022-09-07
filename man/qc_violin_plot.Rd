@@ -4,36 +4,25 @@
 \alias{qc_violin_plot}
 \title{Violin plot for QC report}
 \usage{
-qc_violin_plot(
-  data,
-  groups = NULL,
-  sampleLabels = NULL,
-  title = NULL,
-  legend = TRUE
-)
+qc_violin_plot(data, groups = NULL, sample_labels = colnames(data))
 }
 \arguments{
 \item{data}{A data frame of intensity data, likely normalized. Rows should be
-proteins and columns should be samples.}
+proteins and columns should be samples. Generally, a single element in the
+normList slot of the object returned by \code{\link{process_data}}.}
 
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
 
-\item{sampleLabels}{Optional, a vector of sample labels to use. If not supplied,
+\item{sample_labels}{Optional, a vector of sample labels to use. If not supplied,
 defaults to using the column names in the data.}
-
-\item{title}{Optional, a plot title.}
-
-\item{legend}{Include a legend in the plot? Default is TRUE.}
 }
 \value{
-Invisibly returns the list object created by
-\code{\link[vioplot:vioplot]{vioplot::vioplot}}.
+A ggplot object of the plot.
 }
 \description{
 Makes a violin plot of per-sample intensities. Samples are grouped by the "groups"
-argument on the x-axis. Colors are determined by the \code{\link{colorGroup2}}
-function.
+argument on the x-axis.
 }
 \examples{
 # No examples yet
