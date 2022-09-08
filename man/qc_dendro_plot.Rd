@@ -43,7 +43,7 @@ A ggplot object of the plot.
 \description{
 Performs and then plots a hierarchical clustering analysis of sample intensities
 across samples. Sample labels are colored according to the "groups" argument,
-with colors determined by the \code{\link{colorGroup2}} function. By default,
+with colors determined by the \code{\link{colorGroup}} function. By default,
 uses only the 500 most variable proteins for the analysis.
 }
 \examples{

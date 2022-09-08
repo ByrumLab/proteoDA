@@ -41,7 +41,7 @@ qc_violin_plot <- function(data,
     geom_violin(draw_quantiles = c(0.5),
                 na.rm = T,
                 col = "black") +
-    scale_fill_manual(values = colorGroup2(sample_group_info$group), name = NULL) +
+    scale_fill_manual(values = colorGroup(sample_group_info$group), name = NULL) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
@@ -58,7 +58,7 @@ qc_violin_plot <- function(data,
 #'
 #' Performs and then plots a principal component analysis of sample intensities.
 #' Samples are colored according to the groups argument, with colors
-#' determined by the \code{\link{colorGroup2}} function. By default, uses
+#' determined by the \code{\link{colorGroup}} function. By default, uses
 #' only the 500 most variable proteins for the analysis.
 #'
 #' @inheritParams qc_violin_plot
@@ -116,7 +116,7 @@ qc_pca_plot <- function(data,
         sample_group_info) %>%
     ggplot(aes(x = .data$x, y = .data$y, color = .data$group, label = .data$ind)) +
     geom_point() +
-    scale_color_manual(values = colorGroup2(groups)[groups], name = NULL) +
+    scale_color_manual(values = colorGroup(groups)[groups], name = NULL) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5)) +
     xlab(paste0("PC", pca_axes[1], " (", round(pca$summary["Proportion of Variance", pca_axes[1]] * 100, 2), " %)")) +
@@ -137,7 +137,7 @@ qc_pca_plot <- function(data,
 #'
 #' Performs and then plots a hierarchical clustering analysis of sample intensities
 #' across samples. Sample labels are colored according to the "groups" argument,
-#' with colors determined by the \code{\link{colorGroup2}} function. By default,
+#' with colors determined by the \code{\link{colorGroup}} function. By default,
 #' uses only the 500 most variable proteins for the analysis.
 #'
 #' @inheritParams qc_pca_plot
@@ -210,7 +210,7 @@ qc_dendro_plot <- function(data,
     ggtree::layout_dendrogram() +
     ggtree::geom_tippoint(aes(color = .data$group)) +
     ggtree::geom_tiplab(aes(color = .data$group), angle=90, hjust=1, offset = -0.5, show.legend=FALSE) +
-    scale_color_manual(values = colorGroup2(groups)[groups], name = NULL) +
+    scale_color_manual(values = colorGroup(groups)[groups], name = NULL) +
     ggtree::theme_dendrogram(plot.margin=margin(6,6,80,6)) +
     theme(plot.title = element_text(hjust = 0.5))
 
@@ -249,7 +249,7 @@ qc_corr_hm <- function(data,
   # Get column annotations
   ColAnn <- ComplexHeatmap::HeatmapAnnotation(
     Sample = groups,
-    col = list(Sample = colorGroup2(groups)),
+    col = list(Sample = colorGroup(groups)),
     annotation_legend_param = list(
       Sample = list(
         title = "Groups",
@@ -387,7 +387,7 @@ qc_missing_hm <- function(data,
   # Set up heatmap annotation
   ColAnn <- ComplexHeatmap::HeatmapAnnotation(
     sample = sorted_groups,
-    col = list(sample = colorGroup2(groups)),
+    col = list(sample = colorGroup(groups)),
     annotation_legend_param = list(sample = list(title = "Group",
                                                  at = unique(sorted_groups),
                                                  labels = paste("", unique(sorted_groups)))),
