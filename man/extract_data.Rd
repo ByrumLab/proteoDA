@@ -58,8 +58,7 @@ data types (DIA, TMT, etc.), and does slightly different things for each one.
 The \code{extract_data} function is the main function, and it calls a number
 of other subfunctions to process and prepare the data. See the links to
 subfunctions for more info. Returns a list of data from maxquant, along with
-some stats and other info. Also has some side effects: creates a BigQuery
-report and some log files.
+some stats and other info. Also has some side effects: creates some log files.
 }
 \details{
 Subfunctions (DIA): \code{\link{import_data}}, \code{\link{remove_contaminants}},

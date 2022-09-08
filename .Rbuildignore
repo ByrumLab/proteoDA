@@ -4,7 +4,7 @@
 ^LICENSE\.md$
 ^bin$
 ^data-raw$
-^for_testing$
+^for_testing/*$
 ^logs/*$
 ^\\*BQ\.csv$
 ^notes\.md$
