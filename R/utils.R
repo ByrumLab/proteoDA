@@ -47,8 +47,6 @@ remove_commas <- function(x){ x<-as.numeric(gsub("\\,", "", x)) }
 #' @examples
 #' # No examples yet
 #'
-
-# TODO: check out forcats for this? how often do we use the prefix thing?
 make_factor <- function(x, prefix = "X") {
   if (is.numeric(x)) {
     x <- paste(prefix, x, sep = "")
@@ -81,29 +79,6 @@ all_pw_diffs <- function(vector) {
 }
 
 
-#' Get colors for batches
-#'
-#' Used to get colors for the batches in our missing value heatmaps.
-#'
-#' @param batch A vector of batch names.
-#'
-#' @return A vector of colors for each unique batch
-#' @export
-#'
-#' @examples
-#' # No examples yet
-#'
-colorBatch <- function(batch){
-
-  batchCol <- unlist(ifelse(length(unique(batch)) == 1, grDevices::rainbow(1, start=0.5),
-                            list(grDevices::rainbow(length(unique(batch))))))
-  names(batchCol) <- unique(batch)
-
-  return(batchCol)
-
-}
-
-
 #' Get colors for groups, function 2
 #'
 #' Used to get colors for the groups in our missing value heatmaps.
@@ -116,7 +91,7 @@ colorBatch <- function(batch){
 #' @examples
 #' # No examples yet
 #'
-colorGroup2 <- function(group) {
+colorGroup <- function(group) {
     blueberry <- "#1F5EDC";  cherry <- "#EE0010"
     apple     <- "#32CD32";  barbie <- "#FF1493"
     fanta     <- "#FF7F00";  grape  <- "#A342FC"
@@ -134,7 +109,10 @@ colorGroup2 <- function(group) {
       groupCol <- binfcolors[1:length(unique(group))]
       names(groupCol) <- unique(group)
     }
-    if(length(unique(group)) > 12) {
+    if(length(unique(group)) > 12) { # Rare
+      if (!requireNamespace("grDevices", quietly = TRUE)) {
+        cli::cli_abort(c("Package \"grDevices\" must be to to make plots for more than 12 groups"))
+      }
       groupCol <- c(grDevices::rainbow(length(unique(group))))
       names(groupCol) <- unique(group)
     }
@@ -152,37 +130,6 @@ colorGroup2 <- function(group) {
     }
     return(groupCol)
 }
-
-
-##------------------------------
-##  PLOT RIGHT MARGIN
-##------------------------------
-right_margin <- function(x) {
-  maxchar <- max(nchar(as.character(x))) + 10
-  right <- maxchar/5
-  return(right)
-}
-
-
-##------------------------------
-##  PLOT LEFT MARGIN
-##------------------------------
-left_margin <- function(x) {
-  maxchar <- max(nchar(as.character(x))) + 30
-  left <- maxchar/5
-  return(left)
-}
-
-
-##------------------------------
-##  PLOT HEIGHT
-##------------------------------
-plot_height <- function(x){
-  height <- (600/20)*length(x)
-  height <- ifelse(height > 1000, 1000, height)
-  return(height)
-}
-
 
 #' Validate filename
 #'
@@ -235,8 +182,6 @@ file_extension <- function(filepath) {
   if (is.na(ext)) ext <- ""
   ext
 }
-
-
 
 #' Calculate per-row variances of a numeric array
 #'

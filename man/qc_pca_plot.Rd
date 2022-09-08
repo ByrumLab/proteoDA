@@ -39,7 +39,7 @@ A ggplot object of the plot.
 \description{
 Performs and then plots a principal component analysis of sample intensities.
 Samples are colored according to the groups argument, with colors
-determined by the \code{\link{colorGroup2}} function. By default, uses
+determined by the \code{\link{colorGroup}} function. By default, uses
 only the 500 most variable proteins for the analysis.
 }
 \examples{
