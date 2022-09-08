@@ -101,13 +101,13 @@ fit <- fit_limma_model(data = norm$normList[["vsn"]], # choose your normalizatio
 results <- extract_limma_DE_results(limma_fit = fit)
 
 # Save the tables of results
-write_limma_results(model_results = results,
+write_limma_tables(model_results = results,
                     norm.method = "vsn",
                     annotation = extracted_data$annot,
                     ilab = "example_1234",
                     enrich = "protein")
 # And save the plots and interactive report
-make_limma_reports(model_results = results,
+write_limma_plots(model_results = results,
                    annotation =  extracted_data$annot,
                    groups = norm$targets$group,
                    output_dir = "example_1234")
@@ -126,8 +126,8 @@ make_limma_reports(model_results = results,
 ?make_contrasts
 ?fit_limma_model
 ?extract_limma_DE_results
-?write_limma_results
-?make_limma_reports
+?write_limma_tables
+?write_limma_plots
 
 # If you see any typos or things that aren't clear, let me know!
 ```
@@ -238,8 +238,8 @@ tests as well. Maybe better to just do it once.
 | `make_contrasts`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `fit_limmma_model`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `extract_limma_DE_results` | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `write_limma_results`      | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_limma_reports`       | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `write_limma_tables`       | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `write_limma_plots`        | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 
 The final steps in the pipeline, for the limma analysis, are being
 reworked a little. Originally, there were two functions:
@@ -252,7 +252,7 @@ functionality into independent functions. Now, we have:
     various model fit objects.
 -   `extract_limma_DE_results`- Extracts statistical results for each
     contrast from the list of limma model fits.
--   `write_limma_results`- Output the various .csv and excel files of
+-   `write_limma_tables`- Output the various .csv and excel files of
     results.
--   `make_limma_reports`- Outputs the interactive HTML reports and
-    static plots for the end user.
+-   `write_limma_plots`- Outputs the interactive HTML reports and static
+    plots for the end user.

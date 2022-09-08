@@ -8,8 +8,6 @@
 #'     statistical results for all contrasts.
 #'   \item A results .csv file with the same data as the Excel spreadsheet,
 #'     but without all the formatting.
-#'   \item A results .csv for importing into BiqQuery. This is the same as the
-#'     other results .csv, but with all missing data covnerted to 0.
 #'   \item A folder of results .csv file which contain the results for each
 #'     contrast.
 #' }
@@ -34,8 +32,6 @@
 #'   of DE genes per contrast. If not specified, will be "DE_summary.csv".
 #' @param combined_file_csv The filename of the combined results csv file. If
 #'   not specified, will be combined_results.csv.
-#' @param BQ_csv The filename of the BiqQuery results csv file. If not specified,
-#'   will construct a name based on the ilab identifier.
 #' @param spreadsheet_xlsx The filename of the Excel spreadsheet containing the
 #'   results. If not specified, will construct a name based on the ilab identifier.
 #' @param add_filter Should per-column filters be added to the spreadsheet?
@@ -49,20 +45,19 @@
 #'
 #' @examples
 #' # No examples yet
-write_limma_results <- function(model_results,
-                                annotation,
-                                ilab,
-                                out_dir = NULL,
-                                norm.method,
-                                enrich = c("protein", "phospho"),
-                                pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
-                                overwrite = F,
-                                contrasts_subdir = NULL,
-                                summary_csv = NULL,
-                                combined_file_csv = NULL,
-                                BQ_csv = NULL,
-                                spreadsheet_xlsx = NULL,
-                                add_filter = T) {
+write_limma_tables <- function(model_results,
+                               annotation,
+                               ilab,
+                               out_dir = NULL,
+                               norm.method,
+                               enrich = c("protein", "phospho"),
+                               pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
+                               overwrite = F,
+                               contrasts_subdir = NULL,
+                               summary_csv = NULL,
+                               combined_file_csv = NULL,
+                               spreadsheet_xlsx = NULL,
+                               add_filter = T) {
 
   # Check args ----------------------------------------------------
   pipe <- rlang::arg_match(pipe)
@@ -84,16 +79,12 @@ write_limma_results <- function(model_results,
     combined_file_csv <- "combined_results.csv"
   }
 
-  if (is.null(BQ_csv)) {
-    BQ_csv <- paste0(ilab, "_results_BQ.csv")
-  }
-
   if (is.null(spreadsheet_xlsx)) {
     spreadsheet_xlsx <- paste0(ilab, "_results.xlsx")
   }
 
   # Validate filenames
-  for (filename in c(summary_csv, combined_file_csv, BQ_csv)) {
+  for (filename in c(summary_csv, combined_file_csv)) {
     validate_filename(filename, allowed_exts = "csv")
   }
   validate_filename(spreadsheet_xlsx, allowed_exts = "xlsx")
@@ -194,24 +185,6 @@ write_limma_results <- function(model_results,
 
   if (!file.exists(combined_output_file)) {
     cli::cli_abort(c("Failed to write combined results {.path .csv} to {.path {combined_output_file}}"))
-  }
-
-  # Write combined BiqQuery CSV ---------------------------------------------
-  BQ_output_file <- file.path(out_dir, BQ_csv)
-  cli::cli_inform("Writing combined results table for BiqQuery to {.path {BQ_output_file}}")
-  BQ_output <- combined_results
-  BQ_output[is.na(BQ_output)] <- 0
-  BQ_output[BQ_output == ""] <- 0
-
-  # colnames can't begin with numbers?
-  col_beings_number <- stringr::str_detect(colnames(BQ_output), "^[:digit:]")
-  if (any(col_beings_number)) {
-    colnames(BQ_output)[col_beings_number] <- paste0("X", colnames(BQ_output)[col_beings_number])
-  }
-  utils::write.csv(BQ_output, file = BQ_output_file, row.names = F)
-
-  if (!file.exists(BQ_output_file)) {
-    cli::cli_abort(c("Failed to write BigQuery results {.path .csv} to {.path {BQ_output_file}}"))
   }
 
 

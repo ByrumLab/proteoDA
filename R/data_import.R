@@ -6,8 +6,7 @@
 #' The \code{extract_data} function is the main function, and it calls a number
 #' of other subfunctions to process and prepare the data. See the links to
 #' subfunctions for more info. Returns a list of data from maxquant, along with
-#' some stats and other info. Also has some side effects: creates a BigQuery
-#' report and some log files.
+#' some stats and other info. Also has some side effects: creates some log files.
 #'
 #'
 #' Subfunctions (DIA): \code{\link{import_data}}, \code{\link{remove_contaminants}},
@@ -124,30 +123,9 @@ extract_data <- function(file = NULL,
       diaData[, i] <- remove_commas(diaData[, i])
     }
 
-
-    ## SAVE BIG QUERY INPUT FILE
-    ## save a copy of samples report for upload into Big Query.
-    ## This file cannot contain NA or blank values, column names
-    ## cannot begin with a number, replace all NA and blank cells
-    ## with zeros. If column names begin with a number add X to
-    ## beginning of column name. change file name to ilab_Samples_Report_BQ.csv
-    bqData <- data.frame(diaData)
-    bqData[, ][is.na(bqData[, ])] <- 0
-    bqData[, ][bqData[, ] == ""] <- 0
-
-    ## if column names begin with a number append X to the start of each name.
-    testColumNumber <- substr(colnames(bqData), 1, 1)
-    if (length(grep("[[:digit:]]", testColumNumber)) > 0) {
-      colnames(bqData) <- paste0("X", colnames(bqData))
-    }
     bn <- basename(file)
     bn <- gsub("Samples Report of ", "", bn)
     ilab <- gsub(paste0(".", file_extension(bn)), "", bn)
-    ## save DIA Big Query Input File
-    filename <- paste0(ilab, "_Samples_Report_BQ.csv")
-    utils::write.csv(bqData, file.path(".", filename), row.names = FALSE)
-
-    cli::cli_inform("BigQuery samples report saved to {.file {filename}}")
     param[["ilab"]] <- ilab
 
 

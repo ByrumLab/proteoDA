@@ -129,12 +129,12 @@ norm_lupashin <- process_data(data = ext_lupashin$data,
                               min.reps = 1,
                               min.grps = 1)
 
-tic()
+# tic()
 norm_zhan <- process_data(data = ext_zhan$data,
                           targets = sub_zhan$targets,
                           min.reps = 13,
                           min.grps = 2)
-toc()
+# toc()
 
 norm_reb <- process_data(data = ext_reb$data,
                          targets = sub_reb$targets,
@@ -157,11 +157,11 @@ write_proteinorm_report(processed_data = norm_lupashin,
                        grouping_column = "group",
                        file = "lupashin_update_2.pdf", overwrite = T, suppress_zoom_legend = T)
 # Zhan
-tic()
+# tic()
 write_proteinorm_report(processed_data = norm_zhan,
                        grouping_column = "group",
                        file = "zhan_update_2.pdf", overwrite = T)
-toc()
+# toc()
 
 # Rebello
 write_proteinorm_report(processed_data = norm_reb,
@@ -261,8 +261,8 @@ contrasts_ndu_intestine <- make_contrasts(file = "for_testing/Example Data/NDu_0
                                           design = des_ndu$design)
 
 # Lupashin
-contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv",
-                                     design = des_lupashin$design)
+# contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv",
+#                                      design = des_lupashin$design)
 contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts.csv",
                                      design = des_lupashin$design)
 
@@ -317,7 +317,7 @@ results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
 
 
 # Write results -----------------------------------------------------------
-write_limma_results(model_results = results_lupashin,
+write_limma_tables(model_results = results_lupashin,
                     norm.method = "vsn",
                     annotation = ext_lupashin$annot,
                     ilab = "Lupashin_82928",
@@ -325,32 +325,32 @@ write_limma_results(model_results = results_lupashin,
                     overwrite = T)
 
 
-write_limma_results(model_results = results_ndu_brain,
+write_limma_tables(model_results = results_ndu_brain,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,
                     ilab = "ndu_brain_82928",
                     enrich = "protein")
 
-write_limma_results(model_results = results_ndu_intestine,
+write_limma_tables(model_results = results_ndu_intestine,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,
                     ilab = "ndu_intestine_82928",
                     enrich = "protein")
 
-write_limma_results(model_results = results_ndu_kidney,
+write_limma_tables(model_results = results_ndu_kidney,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,
                     ilab = "ndu_kidney_82928",
                     enrich = "protein")
 
-write_limma_results(model_results = results_reb,
+write_limma_tables(model_results = results_reb,
                     norm.method = "vsn",
                     annotation = ext_reb$annot,
                     ilab = "Rebello_82928",
                     enrich = "protein")
 
 
-write_limma_results(model_results = results_zhan,
+write_limma_tables(model_results = results_zhan,
                     norm.method = "vsn",
                     annotation = ext_zhan$annot,
                     ilab = "zhan_982974",
@@ -365,7 +365,7 @@ write_limma_plots(model_results = results_reb,
                    groups = norm_reb$targets$group,
                    output_dir = "output_rebello")
 
-make_limma_reports(model_results = results_reb,
+write_limma_plots(model_results = results_reb,
                    annotation = ext_reb$annot,
                    groups = norm_reb$targets$group,
                    output_dir = "output_rebello_wide",
@@ -373,25 +373,25 @@ make_limma_reports(model_results = results_reb,
                    height = 1500)
 
 
-make_limma_reports(model_results = results_lupashin,
+write_limma_plots(model_results = results_lupashin,
                    annotation = ext_lupashin$annot,
                    groups = norm_lupashin$targets$group,
                    output_dir = "output_lupashin")
 
 
-make_limma_reports(model_results = results_ndu_brain,
+write_limma_plots(model_results = results_ndu_brain,
                    annotation = ext_ndu$annot,
                    groups = norm_ndu$targets$group,
                    output_dir = "output_ndu_brain")
 
 
-make_limma_reports(model_results = results_zhan,
+write_limma_plots(model_results = results_zhan,
                    annotation = ext_zhan$annot,
                    groups = norm_zhan$targets$group,
                    output_dir = "output_zhan")
 
 
-make_limma_reports(model_results = results_zhan,
+write_limma_plots(model_results = results_zhan,
                    annotation = ext_zhan$annot,
                    groups = norm_zhan$targets$group,
                    output_dir = "output_zhan_wide",
