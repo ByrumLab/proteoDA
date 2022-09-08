@@ -433,7 +433,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   # Add annotation columns -----------------------------------------------------
 
   # Subset and rename
-  annot <- annotation[, annotCols]
+  annot <- annotation[1:nrow(data), annotCols]
   colnames(annot) <- newNames
   annot <- make_excel_hyperlinks(data = annot,
                                  url.col = "UniProt ID",

@@ -1,0 +1,512 @@
+---
+title: "Normalization plot ideas"
+format: 
+  html:
+    toc: true
+    self-contained: true
+code-fold: true
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  warning: false
+  message: false
+---
+
+We have a few open GitHub issues ([#19](https://github.com/ByrumLab/proteomicsDIA/issues/19), [#48](https://github.com/ByrumLab/proteomicsDIA/issues/48), [#60](https://github.com/ByrumLab/proteomicsDIA/issues/60), and [#62](https://github.com/ByrumLab/proteomicsDIA/issues/62)) on the normalization and QC reports. This report will focus on the normalization report, and the question: what are the most useful plot(s) to help us pick the best normalization option?
+
+We already have a few plots we want to keep (the PCV, PEV, PMAD, and intragroup correlation plots). We also probably want to keep our current log2 ratio density plots. But, there's an open issue ([#48](https://github.com/ByrumLab/proteomicsDIA/issues/48)) on possibly adding in MA/MD plots. And I'm not sure we want to keep the total intensity plots, or maybe not keep them in their current form.
+
+So, I wanted to make a report to test out some of the plotting ideas Duah, Jordan, Charity, and I have been discussing. I'm also using this as an opportunity to test out Quarto, RStudio's (well, Posit's) fancy new replacement for Rmarkdown (<https://quarto.org>).
+
+### Housekeeping
+
+First, a little housekeeping: we can load our R packages and prep some data. I'll use two data source: the Lupashin data and the Zhan data.
+
+```{r}
+#| output: false
+#| warning: false
+#| message: false
+library(devtools)
+load_all()
+library(tidyverse)
+```
+
+```{r}
+#| output: false
+#| warning: false
+#| message: false
+#| cache: true
+# set working directory, 
+# for now seems I can't render from the project level
+# as you could with Rmarkdown??
+setwd("/projects/tthurman/forks/proteomicsDIA")
+
+# Load data
+ext_lupashin <- extract_data(
+  file = "for_testing/Example Data/lupashin_030222/Samples Report of Lupashin_030222.csv",
+  pipe = "DIA",
+  enrich = "protein")
+
+ext_zhan <- extract_data(
+  file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Samples Report of Zhan_111821_Experiment.csv",
+  pipe = "DIA",
+  enrich = "protein")
+
+# Load targets
+target_lupashin <- make_targets(
+  file = "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv",
+  sampleIDs = colnames(ext_lupashin$data),
+  pipe = "DIA",
+  enrich = "protein")
+
+target_zhan <- make_targets(
+  file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv",
+  sampleIDs = colnames(ext_zhan$data),
+  pipe = "DIA",
+  enrich = "protein")
+
+# Subset targets
+sub_lupashin <- subset_targets(targets = target_lupashin,
+                               filter_list = list(group = c("Pool", "input")))
+
+sub_zhan <- subset_targets(targets = target_zhan,
+                           filter_list = list(group = "Pool"))
+
+# Process and normalize
+norm_lupashin <- process_data(data = ext_lupashin$data,
+                              targets = sub_lupashin$targets,
+                              min.reps = 1,
+                              min.grps = 1)
+
+norm_zhan <- process_data(data = ext_zhan$data,
+                          targets = sub_zhan$targets,
+                          min.reps = 13,
+                          min.grps = 2)
+```
+
+### preliminary plot ideas
+
+I didn't do a lot of plot prettifying for this, so consider many of the plots preliminary. We can always fix up themes and colors later, this is more about figuring out if the plots will even work or not.
+
+## log2 ratios: to fold or not?
+
+A lot of possible options for plots work from the log2ratio data. That is, we take the average log2 intensity for each group, and then do all pairwise comparisons across groups to calculate all possible logFC values. So, if we have gorups A, B, and C, we take the average expression for each group and then calculate the three logFC values: A-B, B-C, and A-C. One possible issue with this is that the sign of the logFC is arbitrary: e.g., A-B or B-A will give the same value but opposite signs. Since these comparisons are all happening on the unmodelled data and for all possible contrasts, the signs here are a bit arbitrary. So, in theory, we could fold the distribution by taking the absolute value.
+
+After some testing, I'm not sure that this is actually helpful, but we'll try some of the plots both ways to see.
+
+## log2ratio density plots
+
+Here's the current log2ratio plot we use, for the Lupashin data:
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Lupashin"
+full <- pn_plot_log2ratio(normList = norm_lupashin$normList,
+                          grouping = norm_lupashin$targets$group)
+zoom <- pn_plot_log2ratio(normList = norm_lupashin$normList,
+                          grouping = norm_lupashin$targets$group, 
+                          zoom = T)
+full + zoom 
+```
+
+And the Zhan data:
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Zhan"
+full <- pn_plot_log2ratio(normList = norm_zhan$normList,
+                          grouping = norm_zhan$targets$group)
+zoom <- pn_plot_log2ratio(normList = norm_zhan$normList,
+                          grouping = norm_zhan$targets$group, 
+                          zoom = T)
+full + zoom 
+```
+
+We could try folding these, since the sign is arbitrary:
+
+```{r}
+pn_plot_log2ratio_abs <- function(normList, grouping, zoom = F, legend = T) {
+
+  # Get plot data
+  plotData <- eval_pn_metric_for_plot(normList,
+                                      grouping,
+                                      metric = "log2ratio") %>% 
+    mutate(value = abs(value))
+
+  # Find max density
+  # and min/max of ratios
+  # for zooming later
+  maxY <- max(aggregate(value ~ method, data = plotData, FUN = function(x) max(stats::density(x, na.rm = T)$y))$value)
+  min_xlim <- 0.5 * min(aggregate(value ~ method, data = plotData, FUN = function(x) min(stats::density(x, na.rm = T)$x))$value)
+  max_xlim <- 0.5 * max(aggregate(value ~ method, data = plotData, FUN = function(x) max(stats::density(x, na.rm = T)$x))$value)
+
+  # Build base plot
+  base <- plotData %>%
+    pn_density_plot(.) +
+    xlab("") +
+    ylab("Density") +
+    ggtitle("Log2 ratio")
+
+  # Do zooming
+  if (zoom) {
+    base <- base +
+      coord_cartesian(xlim = c(-0.01, 0.3),
+                      ylim = c(maxY - (0.5*maxY), maxY + (0.2*maxY)))
+  } else {
+    base <- base +
+      coord_cartesian(xlim = c(min_xlim, max_xlim))
+  }
+
+  # Output baseplot with or without legend
+  if (legend) {
+    result <- base +
+      theme(legend.justification = c(1,1), # sets upper-right corner as locating point
+            legend.position = c(0.99, 0.99), # puts locating point in upper-right corner
+            legend.title = element_blank(),
+            legend.text = element_text(size = 8),
+            legend.key.size = unit(0.35, "cm"),
+            legend.background = element_rect(fill = NULL))
+  } else {
+    result <- base +
+      theme(legend.position = "none")
+  }
+
+  result
+}
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Lupashin"
+full <- pn_plot_log2ratio_abs(normList = norm_lupashin$normList,
+                          grouping = norm_lupashin$targets$group)
+zoom <- pn_plot_log2ratio_abs(normList = norm_lupashin$normList,
+                          grouping = norm_lupashin$targets$group, 
+                          zoom = T)
+full + zoom 
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Zhan"
+full <- pn_plot_log2ratio_abs(normList = norm_zhan$normList,
+                          grouping = norm_zhan$targets$group)
+zoom <- pn_plot_log2ratio_abs(normList = norm_zhan$normList,
+                          grouping = norm_zhan$targets$group, 
+                          zoom = T)
+full + zoom 
+```
+
+But, at least with the defaults, I'm not sure this is really helpful: even the normalization methods that seemed OK in the unfolded data don't have quite the profile you'd expect from a folded normal distribution (peak isn't at 0). I think it might be better to leave this unfolded?
+
+### log2ratio compared to normal distribution
+
+We could modify the above log2ratio density plots by comparing them against a normal distribution. Specifically, we could compare the density curve of the log2ratio against the density curve of a normal distribution with a mean of 0 and a standard deviation equal to the emprirical standard deviation of the log2ratios:
+
+```{r}
+compare_log2ratio_normal <- function(normlist, grouping) {
+  tmp <- eval_pn_metric_for_plot(normlist,
+                        grouping = grouping,
+                        metric = "log2ratio") %>% 
+    rename(empirical = value)
+
+  tmp_summ <- tmp %>%
+    dplyr::group_by(method) %>%
+    dplyr::summarize(mean = mean(empirical, na.rm = T),
+              sd = sd(empirical, na.rm = T))
+  
+  normals <- tmp_summ %>%
+    dplyr::mutate(normal = list(rnorm(n = 10000, mean = 0, sd = sd))) %>%
+    dplyr::select(method, normal) %>%
+    tidyr::unnest(cols = "normal")
+  
+  dplyr::bind_rows(tmp %>% tidyr::pivot_longer(empirical),
+                   normals %>% tidyr::pivot_longer(normal)) %>%
+    dplyr::mutate(abs = abs(value)) %>%
+    ggplot(aes(x = value, color = name, fill = name)) +
+    geom_density(trim = T, alpha = 0.5, position = "identity") +
+    facet_wrap(vars(method), scales = "free") +
+    geom_vline(xintercept = 0) +
+    xlim(c(-2.5, 2.5))
+}
+
+compare_log2ratio_normal_abs <- function(normlist, grouping) {
+  tmp <- eval_pn_metric_for_plot(normlist,
+                        grouping = grouping,
+                        metric = "log2ratio") %>% 
+    rename(empirical = value)
+
+  tmp_summ <- tmp %>%
+    dplyr::group_by(method) %>%
+    dplyr::summarize(mean = mean(empirical, na.rm = T),
+              sd = sd(empirical, na.rm = T))
+  
+  normals <- tmp_summ %>%
+    dplyr::mutate(normal = list(rnorm(n = 10000, mean = 0, sd = sd))) %>%
+    dplyr::select(method, normal) %>%
+    tidyr::unnest(cols = "normal")
+  
+  dplyr::bind_rows(tmp %>% tidyr::pivot_longer(empirical),
+                   normals %>% tidyr::pivot_longer(normal)) %>%
+    dplyr::mutate(abs = abs(value)) %>%
+    ggplot(aes(x = abs, color = name, fill = name)) +
+    geom_density(trim = T, alpha = 0.5, position = "identity") +
+    facet_wrap(vars(method), scales = "free") +
+    geom_vline(xintercept = 0) +
+    xlim(c(-0.01, 2.5))
+}
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Lupashin"
+compare_log2ratio_normal(norm_lupashin$normList, 
+                         norm_lupashin$targets$group)
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Zhan"
+compare_log2ratio_normal(norm_zhan$normList, 
+                         norm_zhan$targets$group)
+```
+
+These seem OK, I guess? I'm not sure if they're really any more useful than the plots above, that just compare across the normalization types. They do show that the empirical logFC data seem to be a bit more overdispersed than a true normal distribution (more weight in the centers and tails). And they also show the shift away from a mean of 0 logFC, but the density plots without the normal distribution show that as well.
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Lupashin"
+compare_log2ratio_normal_abs(norm_lupashin$normList, 
+                         norm_lupashin$targets$group)
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Zhan"
+compare_log2ratio_normal_abs(norm_zhan$normList, 
+                         norm_zhan$targets$group)
+```
+
+I'm not sure I like these. As before, the folded normal distribution seems to suffer from a weird issue where it's max density peak isn't right at 0, as you'd expect (something about the bandwidth or left-vs-right inclusion within bands during plotting).
+
+## Normal qqplot of log2ratio
+
+A different way of comparing the empirical logFC changes to a normal distribution would be to use qq plots, which we can either plot separately by method or group all together:
+
+```{r}
+qqplot_logFC <- function(normlist, grouping) {
+  tmp <- eval_pn_metric_for_plot(normlist,
+                        grouping = grouping,
+                        metric = "log2ratio") 
+  
+    tmp_summ <- tmp %>%
+    dplyr::group_by(method) %>%
+    dplyr::summarize(mean = 0,
+              sd = sd(value, na.rm = T))
+  
+  tmp %>%
+  ggplot(aes(color = method, group = method, sample = value)) +
+  geom_abline(aes(slope = sd,  intercept = mean, color = method), data = tmp_summ) +
+  stat_qq() 
+}
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Lupashin"
+qqplot_logFC(norm_lupashin$normList, 
+             norm_lupashin$targets$group) +
+  facet_wrap(vars(method), scales = "free")
+qqplot_logFC(norm_lupashin$normList, 
+             norm_lupashin$targets$group)
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Zhan"
+qqplot_logFC(norm_zhan$normList, 
+             norm_zhan$targets$group) +
+  facet_wrap(vars(method), scales = "free")
+qqplot_logFC(norm_zhan$normList, 
+             norm_zhan$targets$group)
+```
+
+I like these OK, but I'm not sure they're any better than the current log2ratio density plots we have.
+
+## Average expression against variability
+
+A common plot you see in some RNA-seq studies is plotting average expression against the variability in expression. We could try that (I'll just plot the loess smoothings for each normalization method, not the raw data):
+
+```{r}
+avg_var_plot <- function(normList) {
+  res <- NULL
+  for (method in names(normList)) {
+    x <- dplyr::tibble(mean = rowMeans(normList[[method]]),
+                       sd = rowSds(normList[[method]]),
+                       norm = method)
+
+    res <- dplyr::bind_rows(res, x)
+  }
+  res %>%
+    ggplot(aes(x = log(mean), y = sd, color = norm, group = norm)) +
+    geom_smooth(aes(group = norm, color = norm), method = "loess") +
+    ylim(c(0,3)) +
+    xlab("Average intensity (mean of the log2-transformed intensities)") +
+    ylab("Variation (sd of the log2-transformed intensities)")
+}
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Lupashin"
+avg_var_plot(norm_lupashin$normList)
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Zhan"
+avg_var_plot(norm_zhan$normList)
+```
+
+These seem kinda useful? Its relatively easy to see the divergence of the log2 data and the global-intensity normalization from all the other normalization methods.
+
+## MD/MA plot of logFC against expression
+
+Finally, let's look at the MD/MA plots. This will take a little recoding of our current log2ratio function, which does not preserve the protein information.
+
+```{r}
+data <- norm_lupashin$normList$log2
+groups <- grouping
+
+log2ratio_keep_genes <- function(data, groups) {
+  mean_prot_by_group <- as.data.frame(matrix(nrow = nrow(data),
+                                             ncol = length(unique(groups)),
+                                             dimnames = list(rownames(data),
+                                                             sort(unique(groups)))))
+  
+    for (group in sort(unique(groups))) {
+      one_group_data <- data[, groups == group]
+      mean_prot_by_group[, group] <- rowMeans(one_group_data, na.rm = T)
+    }
+  
+    pw_diffs_per_gene <- as.data.frame(t(apply(X = mean_prot_by_group, MARGIN = 1, FUN = all_pw_diffs))) %>% 
+      tibble::rownames_to_column(var = "protein")
+}
+
+
+
+normList <- norm_lupashin$normList
+grouping <- norm_lupashin$targets$group
+norm_method <- names(normList)[1]
+pn_MD_plot <- function(normList, grouping) {
+   plotData <- NULL
+   for (norm_method in names(normList)) {
+    metric_results <- do.call(what = "log2ratio_keep_genes", args= list(data = as.data.frame(normList[norm_method]), groups = grouping))
+
+      x <- metric_results %>% 
+        mutate(method = norm_method)
+      plotData <- bind_rows(plotData, x)
+   }
+   tibble(mean_intensity = rowMeans(normList$log2)) %>% 
+     mutate(protein = rownames(normList$log2)) %>% 
+     left_join(plotData) %>% 
+     pivot_longer(cols = contains("V")) %>% 
+  ggplot(aes(x = mean_intensity, y = value)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", fomulta = "y ~ x") +
+  geom_hline(yintercept = 0, color = "red") +
+  facet_wrap("method", scales = "free") +
+  ylab("logFC") +
+  ylim(c(-2.5, 2.5))
+}
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Lupashin"
+pn_MD_plot(norm_lupashin$normList,
+           norm_lupashin$targets$group) 
+```
+
+Here, the red line is at 0 and the blue line is a linear model in ggplot. I zoomed in on the -2.5 to 2.5 region in the y-axis, but we could plot the whole thing. I think these look pretty good, and useful. I didn't plot the Zhan data for this one: the data are bigger for the Zhan project, and I'll need to write up a nicer/faster function (the implementation I wrote quickly is slow).
+
+### Averaging across pairwise comparisons?
+
+One note for all of this, that Jordan brought up but I haven't had a change to fully implement: should we be averaging across all logFC pairwise comparisons, instead of plotting all three. That is, in our example with three groups (A, B and C) and thus three pairwise comparisons (A-B, B-C, A-C), should we be calculating the pairwise comparisons and then averaging them, and plotting those (instead of plotting all three pairwise comparisons)?
+
+## Total intensity plot
+
+One final plot to consider: the total intensity plot. These generally look very uniform, and for large projects (e.g., the Zhan data), having one bar for each sample makes for some very large and hard to read plots. It seems like these might benefit by summarizing the distribution of total intensities across samples.
+
+We could just do a violin plot of the total densities within a normalization method:
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Lupashin"
+sapply(norm_lupashin$normList, FUN = colSums, na.rm = T) %>% 
+  as_tibble(.) %>% 
+  pivot_longer(everything(), names_to = "method", values_to= "total_intensity") %>% 
+  ggplot(aes(x = method, y = total_intensity)) +
+   geom_violin(aes(x = method, y = total_intensity, fill = method),
+                draw_quantiles = c(0.5),
+                col = "black") +
+    scale_fill_manual(values = unname(binfcolors)) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5),
+          axis.title.x = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          legend.position = "none",
+          panel.grid = element_blank())
+
+```
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Zhan"
+sapply(norm_zhan$normList, FUN = colSums, na.rm = T) %>% 
+  as_tibble(.) %>% 
+  pivot_longer(everything(), names_to = "method", values_to= "total_intensity") %>% 
+  ggplot(aes(x = method, y = total_intensity)) +
+   geom_violin(aes(x = method, y = total_intensity, fill = method),
+                draw_quantiles = c(0.5),
+                col = "black") +
+    scale_fill_manual(values = unname(binfcolors)) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5),
+          axis.title.x = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          legend.position = "none",
+          panel.grid = element_blank())
+
+```
+
+Or maybe we could just plot some metric of the variability of total intensity, e.g., the IQR:
+
+```{r}
+#| fig-width: 9
+#| fig-cap: "Lupashin"
+sapply(norm_lupashin$normList, FUN = colSums, na.rm = T) %>% 
+  as_tibble(.) %>% 
+  pivot_longer(everything(), names_to = "method", values_to= "total_intensity") %>% 
+  group_by(method) %>% 
+  summarize(IQR = IQR(total_intensity), .groups = "drop") %>% 
+  ggplot(aes(x = method, y = IQR, color = method, label = as.integer(IQR))) +
+   geom_point() +
+    scale_color_manual(values = unname(binfcolors)) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5),
+          axis.title.x = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          legend.position = "none",
+          panel.grid = element_blank()) +
+  geom_label()
+```
+
+We could explore this more, I know there's also some occasions where the total intensity plots can be useful for spotting big differences in protein expression across batches..

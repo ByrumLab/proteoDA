@@ -73,16 +73,15 @@ norm <- process_data(data = extracted_data$data,
                      min.reps = 5,
                      min.grps = 3)
 # Make the proteinorm report
-make_proteinorm_report(normList = norm$normList,
-                       groups = norm$targets$group, 
-                       enrich = "protein")
+write_proteinorm_report(processed_data = norm,
+                        grouping_column = "group", 
+                        enrich = "protein")
 
 # Make the QC report
-make_qc_report(normList = norm$normList, 
-               norm.method = "vsn",
-               groups = norm$targets$group,
-               batch = norm$targets$group,
-               enrich = "protein")
+write_qc_report(processed_data = norm, 
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                enrich = "protein")
 
 # Make the design matrix
 design <- make_design(targets=norm$targets,
@@ -121,8 +120,8 @@ make_limma_reports(model_results = results,
 ?make_targets
 ?subset_targets
 ?process_data
-?make_proteinorm_report
-?make_qc_report
+?write_proteinorm_report
+?write_qc_report
 ?make_design
 ?make_contrasts
 ?fit_limma_model
@@ -184,7 +183,7 @@ how to manage workflows. That might be a topic for another day.
 See the GitHub issue tracker for other ideas
 
 -   Add a changelog.md file, to textually track/explain changes (with
-    version #s).
+    version \#s).
 
 -   Check out code coverage and CI tools, to automate testing. Some
     options in usethis. Might want to wait to do much testing until
@@ -233,14 +232,14 @@ tests as well. Maybe better to just do it once.
 | `make_targets`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `subset_targets`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `process_data`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_proteinorm_report`   | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_qc_report`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `write_proteinorm_report`  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `write_qc_report`          | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_design`              | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `make_contrasts`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `fit_limmma_model`         | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
-| `extract_limma_DE_results` | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
-| `write_limma_results`      | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
-| `make_limma_reports`       | :heavy_minus_sign: | :heavy_check_mark: | :x:                |
+| `fit_limmma_model`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `extract_limma_DE_results` | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `write_limma_results`      | :heavy_check_mark: | :heavy_check_mark: | :x:                |
+| `make_limma_reports`       | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 
 The final steps in the pipeline, for the limma analysis, are being
 reworked a little. Originally, there were two functions:

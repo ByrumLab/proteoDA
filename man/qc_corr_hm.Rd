@@ -4,24 +4,22 @@
 \alias{qc_corr_hm}
 \title{Correlation heatmap for QC report}
 \usage{
-qc_corr_hm(data, groups, batch = NULL, sampleLabels = NULL)
+qc_corr_hm(data, groups, sample_labels = NULL)
 }
 \arguments{
 \item{data}{A data frame of intensity data, likely normalized. Rows should be
-proteins and columns should be samples.}
+proteins and columns should be samples. Generally, a single element in the
+normList slot of the object returned by \code{\link{process_data}}.}
 
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
 
-\item{batch}{A character or factor vector, listing the batch(es) the samples
-belong to.}
-
-\item{sampleLabels}{Optional, a vector of sample labels to use. If not supplied,
+\item{sample_labels}{Optional, a vector of sample labels to use. If not supplied,
 defaults to using the column names in the data.}
 }
 \value{
-Invisibly returns the correlation matrix created by
-\code{\link[stats:cor]{stats::cor}}.
+A \code{\link[grid:gTree]{grid::gTree}} object of the ComplexHeatmap,
+which can be plotted with \code{\link[grid:grid.draw]{grid::grid.draw}}.
 }
 \description{
 Plots a ComplexHeatmap object showing the pairwise correlations of intensities
