@@ -1,9 +1,9 @@
 
-library(pkgnet)
-library(tictoc)
-library(microbenchmark)
+# library(pkgnet)
+# library(tictoc)
+# library(microbenchmark)
 library(devtools)
-library(profvis)
+# library(profvis)
 
 CreatePackageReport("proteomicsDIA")
 # source("bin/functions26_CURRENT_031022.r")
@@ -360,7 +360,7 @@ write_limma_results(model_results = results_zhan,
 
 
 # testing report making ---------------------------------------------------
-make_limma_reports(model_results = results_reb,
+write_limma_plots(model_results = results_reb,
                    annotation = ext_reb$annot,
                    groups = norm_reb$targets$group,
                    output_dir = "output_rebello")
