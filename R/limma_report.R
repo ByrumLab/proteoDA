@@ -28,7 +28,7 @@
 #'
 #' @examples
 #' # No examples yet
-make_super_awesome_limma_reports <- function(model_results = NULL,
+write_limma_plots <- function(model_results = NULL,
                                annotation = NULL,
                                groups = NULL,
                                output_dir = NULL,
