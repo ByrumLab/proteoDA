@@ -191,7 +191,7 @@ prep_plot_model_data <- function(model_results, contrast) {
 #' @param contrast The contrast being plotted. Used for generating the plot title.
 #' @param pval.type The type of p-value to plot. Can be "raw" or "adjusted".
 #'
-#' @importFrom ggplot2 scale_alpha_manual
+#' @importFrom ggplot2 scale_alpha_manual aes_string scale_y_continuous geom_histogram xlim ylim
 #'
 #' @return A ggplot object.
 #'
