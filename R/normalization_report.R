@@ -140,7 +140,7 @@ write_proteinorm_report <- function(processed_data,
 
 
   page_1 <- a + b + c + d + e + f +
-    plot_layout(ncol = 3)
+    patchwork::plot_layout(ncol = 3)
 
   # Second page: the faceted MD plots
   page_2 <- pn_plot_MD(normList, groups)

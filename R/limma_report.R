@@ -113,7 +113,6 @@ write_limma_plots <- function(model_results = NULL,
     # Right now, all the knitr function calls are in my .Rmd templates
     # so R CMD check thinks I'm importing knitr for no reason.
     # Making a dummy function call here, might be a better way to get around this
-    # TODO: find better way.
     x <- knitr::rand_seed
     rm(x)
 
@@ -139,8 +138,6 @@ write_limma_plots <- function(model_results = NULL,
 
   invisible(TRUE)
 }
-
-
 
 
 #' Prepare per-contrast model data for plotting
@@ -191,7 +188,7 @@ prep_plot_model_data <- function(model_results, contrast) {
 #' @param contrast The contrast being plotted. Used for generating the plot title.
 #' @param pval.type The type of p-value to plot. Can be "raw" or "adjusted".
 #'
-#' @importFrom ggplot2 scale_alpha_manual aes_string scale_y_continuous geom_histogram xlim ylim
+#' @importFrom ggplot2 ggplot geom_vline geom_hline geom_point aes xlab ylab scale_color_manual scale_alpha_manual theme_bw ggtitle scale_y_continuous
 #'
 #' @return A ggplot object.
 #'
@@ -219,25 +216,21 @@ static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.ty
     ggtitle(paste0(stringr::str_replace(contrast, "_vs_", " vs "), ", ", pval.type, " p-value"))
 
   if (pval.type == "raw") {
-    final <- with(data, { # with is just to appease R CMD check for global variables
-      base +
-      geom_point(aes_string(x = logFC,
-                     y = -log10(P.Value),
-                     color = sig.pval.fct,
-                     alpha = sig.pval.fct), na.rm = T) +
+    final <- base +
+      geom_point(aes(x = .data$logFC,
+                     y = -log10(.data$P.Value),
+                     color = .data$sig.pval.fct,
+                     alpha = .data$sig.pval.fct), na.rm = T) +
       scale_y_continuous(breaks = seq(from = 0, to = ceiling(max(-log10(data$P.Value), na.rm = T)) + 1, by = 1)) +
       ylab("-log10(P)")
-    })
   } else if (pval.type == "adjusted") {
-    final <- with(data, {
-      base +
-      geom_point(aes(x = logFC,
-                     y = -log10(adj.P.Val),
-                     color = sig.FDR.fct,
-                     alpha = sig.FDR.fct), na.rm = T) +
+    final <- base +
+      geom_point(aes(x = .data$logFC,
+                     y = -log10(.data$adj.P.Val),
+                     color = .data$sig.FDR.fct,
+                     alpha = .data$sig.FDR.fct), na.rm = T) +
       scale_y_continuous(breaks = seq(from = 0, to = ceiling(max(-log10(data$adj.P.Val), na.rm = T)) + 1, by = 1)) +
       ylab("-log10(adjP)")
-    })
   } else{
     stop("invalid value for pval.type")
   }
@@ -257,7 +250,7 @@ static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.ty
 #'
 #' @return A ggplot object
 #'
-#' @importFrom ggplot2 scale_alpha_manual
+#' @importFrom ggplot2 ggplot geom_hline geom_point aes xlab ylab theme_bw ggtitle scale_color_manual scale_alpha_manual
 #'
 #' @examples
 #' # No examples yet
@@ -281,20 +274,17 @@ static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
     ggtitle(paste0(stringr::str_replace(contrast, "_vs_", " vs "), ", ", pval.type, " p-value"))
 
   if (pval.type == "raw") {
-    final <- with(data, {
-      base +
-      geom_point(aes(x = AveExpr,
-                     y = logFC,
-                     color = sig.pval.fct,
-                     alpha = sig.pval.fct), na.rm = T)
-    })
+    final <- base +
+      geom_point(aes(x = .data$AveExpr,
+                     y = .data$logFC,
+                     color = .data$sig.pval.fct,
+                     alpha = .data$sig.pval.fct), na.rm = T)
   } else if (pval.type == "adjusted") {
-    final <- with(data, {base +
-      geom_point(aes(x = AveExpr,
-                     y = logFC,
-                     color = sig.FDR.fct,
-                     alpha = sig.FDR.fct), na.rm = T)
-    })
+    final <- base +
+      geom_point(aes(x = .data$AveExpr,
+                     y = .data$logFC,
+                     color = .data$sig.FDR.fct,
+                     alpha = .data$sig.FDR.fct), na.rm = T)
   } else{
     stop("invalid value for pval.type")
   }
@@ -311,34 +301,26 @@ static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
 #'
 #' @return A ggplot object
 #'
-#' @import patchwork
+#' @importFrom ggplot2 ggplot geom_histogram aes xlim theme_bw xlab theme element_rect
+#'
 #'
 #' @examples
 #' # No examples yet
 static_pval_histogram <- function(data, contrast) {
-  output <- with(data, {
-  ggplot(data) +
-      geom_histogram(aes(x = P.Value), binwidth = 0.025, color = "black", na.rm = T) +
-      xlim(c(-0.05,1.05)) +
-      theme_bw() +
-      xlab("raw P value") +
-      theme(panel.border = element_rect(fill = NA, color = "grey30")) +
-      ggplot(data) +
-      geom_histogram(aes(x = adj.P.Val), binwidth = 0.025, color = "black", na.rm = T) +
-      xlim(c(-0.05,1.05)) +
-      theme_bw() +
-      xlab("adjusted P value") +
-      theme(panel.border = element_rect(fill = NA, color = "grey30")) +
-      patchwork::plot_annotation(
-        title = stringr::str_replace(contrast, "_vs_", " vs ")
-        )
-  })
+  output <- ggplot(data) +
+    geom_histogram(aes(x = .data$P.Value), binwidth = 0.025, color = "black", na.rm = T) +
+    xlim(c(-0.05,1.05)) +
+    theme_bw() +
+    xlab("raw P value") +
+    theme(panel.border = element_rect(fill = NA, color = "grey30")) +
+    ggplot(data) +
+    geom_histogram(aes(x = .data$adj.P.Val), binwidth = 0.025, color = "black", na.rm = T) +
+    xlim(c(-0.05,1.05)) +
+    theme_bw() +
+    xlab("adjusted P value") +
+    theme(panel.border = element_rect(fill = NA, color = "grey30")) +
+    patchwork::plot_annotation(
+      title = stringr::str_replace(contrast, "_vs_", " vs ")
+      )
  output
 }
-
-
-
-
-
-
-
