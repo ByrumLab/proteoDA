@@ -68,7 +68,6 @@ eval_pn_metric_for_plot <- function(normList,
 #' @examples
 #' # No examples yet
 #'
-
 #' @rdname pn_plots_generic
 #'
 pn_mean_plot <- function(plotData) {

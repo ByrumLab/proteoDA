@@ -5,6 +5,11 @@
 library(devtools)
 # library(profvis)
 
+
+
+# For figuring out argument names
+#lsf.str("package:proteomicsDIA")
+
 CreatePackageReport("proteomicsDIA")
 # source("bin/functions26_CURRENT_031022.r")
 
@@ -396,9 +401,6 @@ write_limma_plots(model_results = results_zhan,
                    groups = norm_zhan$targets$group,
                    output_dir = "output_zhan_wide",
                    width = 2000)
-
-
-
 
 # Testing phospho ---------------------------------------------------------
 # extract data
