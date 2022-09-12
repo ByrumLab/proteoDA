@@ -52,9 +52,7 @@ features or making changes.
 library(proteomicsDIA)
 
 # Extract Maxquant data
-extracted_data <- extract_data("path/to/Samples Report of from Maxquant.csv",
-                               pipe = "DIA",
-                               enrich = "protein")
+extracted_data <- read_DIA_data("path/to/Samples Report of from Maxquant.csv")
 
 # make targets
 targets <- make_targets(file = "path/to/metdata.csv",
@@ -116,7 +114,7 @@ write_limma_plots(model_results = results,
 
 
 # Functions are documented, check them out:
-?extract_data
+?read_DIA_data
 ?make_targets
 ?subset_targets
 ?process_data
@@ -228,7 +226,7 @@ tests as well. Maybe better to just do it once.
 
 | Function                   | Code               | Document           | Test               |
 |----------------------------|--------------------|--------------------|--------------------|
-| `extract_data`             | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| `read_DIA_data`            | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | `make_targets`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `subset_targets`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `process_data`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |

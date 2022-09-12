@@ -9,7 +9,7 @@
 #'   \code{\link{extract_limma_DE_results}}.
 #' @param annotation A dataframe containing annotation data for this analysis.
 #'   In our pipeline, usually the "annot" slot from the object returned by
-#'   \code{\link{extract_data}}.
+#'   \code{\link{read_DIA_data}}.
 #' @param groups A vector describing the groups to which each sample belongs. Used
 #'   for grouping expression data in the interactive expression plot.
 #' @param output_dir The directory in which to create the reports and save the

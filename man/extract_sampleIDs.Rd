@@ -4,39 +4,25 @@
 \alias{extract_sampleIDs}
 \title{Extract sample IDs}
 \usage{
-extract_sampleIDs(
-  colNames,
-  sampleIDs = NULL,
-  pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
-  enrich = c("protein", "phospho")
-)
+extract_sampleIDs(colNames, sample_IDs = NULL)
 }
 \arguments{
 \item{colNames}{A list of column names.}
 
-\item{sampleIDs}{Optional: a list of sampleIDs to analyze. Default is NULL, in which
+\item{sample_IDs}{Optional: a vector of sample IDs to analyze. Default is NULL, in which
 case all sample IDs are analyzed. These are determined from column names.}
-
-\item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
-choose.}
-
-\item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
-Seems semi-redundant?: DIA, TMT, and LF seem to always be "protein" in the
-code. PhosphoTMT can be either protein or phospho, though that seems to vary
-across subfunctions a little?}
 }
 \value{
 A list, with a single slot. I think a vector of sample IDs.
 }
 \description{
-A subfunction called by \code{\link{extract_protein_data}}. For DIA, Sort of does two
-different things. In the "default" case, with sampleIDs=NULL, it takes in a
+A subfunction called by \code{\link{extract_protein_data}}. Does two
+different things. In the "default" case, with sample_IDs = NULL, it takes in a
 vector of column names (in our pipeline, these are the column names from
 \code{qfilterData$data}, which is the "data" slot of the result
 of the \code{\link{remove_contaminants}} output and is a data frame
 of both protein and intensity data). Then, it extracts sample names from those
-column names. If a vector of sampleIDs are supplied, it checks to see if those
+column names. If a vector of sample_IDs are supplied, it checks to see if those
 IDs are present in the column names. If so, it returns them. If not, gives an
 error.
 }

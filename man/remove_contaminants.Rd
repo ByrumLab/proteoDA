@@ -4,27 +4,14 @@
 \alias{remove_contaminants}
 \title{Remove protein contaminant rows}
 \usage{
-remove_contaminants(
-  data,
-  pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
-  enrich = c("protein", "phospho")
-)
+remove_contaminants(data)
 }
 \arguments{
 \item{data}{Raw Maxquant intensity data, from which contaminants need to be
-removed. Within the \code{\link{extract_data}} function, this is "diaData",
-which is the data object from the \code{\link{import_data}} function that has
+removed. Within the \code{\link{read_DIA_data}} function, this is "diaData",
+which is the data object from the \code{\link{read_maxquant_delim}} function that has
 gone through additional processing within the body of the
-\code{\link{extract_data}} function}
-
-\item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
-choose.}
-
-\item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
-Seems semi-redundant?: DIA, TMT, and LF seem to always be "protein" in the
-code. PhosphoTMT can be either protein or phospho, though that seems to vary
-across subfunctions a little?}
+\code{\link{read_DIA_data}} function}
 }
 \value{
 A list of data with contaminants removed, with three elements:
@@ -37,7 +24,7 @@ proteins, columns include both protein info and individual intensities.
 }
 }
 \description{
-The second subfunction called by \code{\link{extract_data}}. Removes
+The second subfunction called by \code{\link{read_DIA_data}}. Removes
 contaminant rows from the data.
 }
 \examples{

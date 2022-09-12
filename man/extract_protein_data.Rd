@@ -4,34 +4,19 @@
 \alias{extract_protein_data}
 \title{Extract protein data}
 \usage{
-extract_protein_data(
-  data,
-  sampleIDs = NULL,
-  pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
-  enrich = c("protein", "phospho")
-)
+extract_protein_data(data, sample_IDs = NULL)
 }
 \arguments{
 \item{data}{Data from which to extract protein data. In the
-\code{\link{extract_data}} function, this is \code{qfilterData$data}, which
+\code{\link{read_DIA_data}} function, this is \code{qfilterData$data}, which
 is the "data" slot of the result of the \code{\link{remove_contaminants}}
 output: the data frame of both protein and intensity data.}
 
-\item{sampleIDs}{Optional: a list of sampleIDs to analyze. Default is NULL, in which
+\item{sample_IDs}{Optional: a vector of sample IDs to analyze. Default is NULL, in which
 case all sample IDs are analyzed. These are determined from column names.}
-
-\item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT", and "LF". Output varies slightly based on the pipeline you
-choose.}
-
-\item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
-Seems semi-redundant?: DIA, TMT, and LF seem to always be "protein" in the
-code. PhosphoTMT can be either protein or phospho, though that seems to vary
-across subfunctions a little?}
 }
 \value{
-A list. Items in list vary depending on the pipeline used. For
-DIA/protein, a list with 9 slots:
+A list with 9 slots:
 \enumerate{
 \item "rawData": A dataframe, where each row is a proetin and each column
 is a sample. Not actually raw, I think(?): at this point in the pipeline,
@@ -48,8 +33,8 @@ Currently seems redundant: just ncol() of rawData slot. Maybe useful if we
 moved back to merging annotation and sample data?
 \item "num_extracted"- The number of proteins (nrow() of rawData slot).
 Redundant?
-\item "pipe"- The pipeline argument used.
-\item "enrich"- The enrich argument used.
+\item "pipe"- The pipeline used, "DIA".
+\item "enrich"- The enrichment type, "protein".
 \item "pattern"- Unclear what this is at the moment. Comes from the
 results of the \code{\link{extract_sampleIDs}} function. For DIA data, though,
 there is no "pattern" slot in the result list from
@@ -58,7 +43,7 @@ regex pattern that was used for getting sample IDs from columns?
 }
 }
 \description{
-Third subfunction called by \code{\link{extract_data}}. Processes the raw
+Third subfunction called by \code{\link{read_DIA_data}}. Processes the raw
 protein annotation strings to extract standard gene names,
 accession numbers, and Ids.
 }

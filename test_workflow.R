@@ -21,36 +21,19 @@ CreatePackageReport("proteomicsDIA")
 
 # extract_data on a bunch of files --------------------------------
 
-# ext_bart <- extract_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv",
-#              pipe = "DIA",
-#              enrich = "protein") # Missing exclusivity col
+ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv") # Missing exclusivity col
 
+ext_higgs <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") # Worked
 
-ext_higgs <- extract_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv",
-             pipe = "DIA",
-             enrich = "protein") # Worked
+ext_ndu <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") # Worked
 
+ext_kinter <- read_DIA_data("for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv") # Worked
 
-ext_ndu <- extract_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv",
-             pipe = "DIA",
-             enrich = "protein") # Worked
+ext_lupashin <- read_DIA_data("for_testing/Example Data/lupashin_030222/Samples Report of Lupashin_030222.csv") # Worked
 
+ext_zhan <- read_DIA_data("for_testing/Example Data/Zhan_DIA_217_samples/input_files/Samples Report of Zhan_111821_Experiment.csv")
 
-ext_kinter <- extract_data(file = "for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv",
-                            pipe = "DIA",
-                            enrich = "protein") # Worked
-
-ext_lupashin <- extract_data(file = "for_testing/Example Data/lupashin_030222/Samples Report of Lupashin_030222.csv",
-                             pipe = "DIA",
-                             enrich = "protein") # Worked
-
-ext_zhan <- extract_data(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Samples Report of Zhan_111821_Experiment.csv",
-                         pipe = "DIA",
-                         enrich = "protein")
-
-ext_reb <- extract_data(file = "for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv",
-                       pipe = "DIA",
-                       enrich = "protein")
+ext_reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv")
 
 # Make targets ------------------------------------------------------------
 

@@ -16,7 +16,7 @@
 #'   \code{\link{extract_limma_DE_results}}.
 #' @param annotation A dataframe containing annotation data for this analysis.
 #'   In our pipeline, usually the "annot" slot from the object returned by
-#'   \code{\link{extract_data}}.
+#'   \code{\link{read_DIA_data}}.
 #' @param ilab The ilab identifier for this project.
 #' @param out_dir The directory in which to output tables. If not specified,
 #'   will construct a directory based on the ilab name and type of analysis.

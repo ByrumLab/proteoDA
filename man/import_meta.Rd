@@ -11,7 +11,7 @@ import_meta(file, sampleIDs, pipe = c("DIA", "TMT", "phosphoTMT"))
 
 \item{sampleIDs}{A character vector of sample IDs, from which the targets
 file is constructed. In the DIA pipeline, these are the column names of the
-data slot in the object returned by \code{\link{extract_data}}, e.g.,
+data slot in the object returned by \code{\link{read_DIA_data}}, e.g.,
 \code{colnames(ext$data)}. Currently, these sampleIDs have a required format:
 "Pool" samples must include the regex pattern \code{[P/p]ool_[[:digit:]]} in
 the column name, and samples must contain the regex pattern

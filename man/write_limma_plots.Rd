@@ -20,7 +20,7 @@ write_limma_plots(
 
 \item{annotation}{A dataframe containing annotation data for this analysis.
 In our pipeline, usually the "annot" slot from the object returned by
-\code{\link{extract_data}}.}
+\code{\link{read_DIA_data}}.}
 
 \item{groups}{A vector describing the groups to which each sample belongs. Used
 for grouping expression data in the interactive expression plot.}
