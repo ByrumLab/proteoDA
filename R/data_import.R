@@ -336,7 +336,7 @@ extract_protein_data <- function(data,
   ## contain text 'Missing Value' if the protein does not have detectable expression.
   ## replace 'Missing Value' with zeros, remove comma's, convert data in each column
   ## to numeric values
-  rawData[,][rawData[,]=="Missing Value"] <- 0
+  rawData[,][rawData[,]=="Missing Value"] <- NA
   for(i in 1:ncol(rawData)){ rawData[,i] <- remove_commas(rawData[,i]) }
 
 

@@ -236,7 +236,7 @@ filter_data <- function(data,
   cli::cli_inform("Keeping only protein entries with intensity > 0 in at least {.val {min.reps}} sample{?s} {cli::qty(min.reps)} in at least {.val {min.grps}} group{?s} {cli::qty(min.grps)}")
 
   ## FILTERING
-  ## zeros are replaced with NA
+  ## zeros, if they exist, are replaced with NA
   tmpData <- data_in_targets
   tmpData[,][tmpData[,] == 0] <- NA
 
