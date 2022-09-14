@@ -37,54 +37,35 @@ ext_reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Reb
 
 # Make targets ------------------------------------------------------------
 
-target_higgs <- make_targets(file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
-                             sampleIDs = colnames(ext_higgs$data),
-                             pipe = "DIA",
-                             enrich = "protein") # worked
+target_higgs_metadata <- make_targets(input_file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
+                             sample_IDs = colnames(ext_higgs$data)) # worked
 
-target_higgs2 <- make_targets(#file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
-                             sampleIDs = colnames(ext_higgs$data),
-                             pipe = "DIA",
-                             enrich = "protein")
+target_higgs_IDs_only <- make_targets(#file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
+                             sample_IDs = colnames(ext_higgs$data))
 
-target_ndu <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                           sampleIDs = colnames(ext_ndu$data),
-                           pipe = "DIA",
-                           enrich = "protein") # worked
+target_ndu <- make_targets(input_file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+                           sample_IDs = colnames(ext_ndu$data)) # worked
 
-# target_ndu2 <- make_targets(#file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-#                            sampleIDs = colnames(ext_ndu$data),
-#                            pipe = "DIA",
-#                            enrich = "protein")
-#
-# target_ndu3 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-#                            sampleIDs = c(colnames(ext_ndu$data), "sample_45"),
-#                            pipe = "DIA",
-#                            enrich = "protein") # Gave warning as expected
-#
-# target_ndu4 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-#                             sampleIDs = colnames(ext_higgs$data),
-#                             pipe = "DIA",
-#                             enrich = "protein") # Gave error as expected,
-#                             # but need to improve the error message and figure this logic out
+target_ndu_IDs_only<- make_targets(#file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+                           sample_IDs = colnames(ext_ndu$data))
 
-target_lupashin <- make_targets(file = "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv",
-                                sampleIDs = colnames(ext_lupashin$data),
-                                pipe = "DIA",
-                                enrich = "protein") # Worked
+target_ndu_extra_IDs <- make_targets(input_file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+                           sample_IDs = c(colnames(ext_ndu$data), "sample_45")) # Gave warning as expected
 
-target_zhan <- make_targets(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv",
-                            sampleIDs = colnames(ext_zhan$data),
-                            pipe = "DIA",
-                            enrich = "protein")
+target_ndu_extra_meta<- make_targets(input_file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+                                     sample_IDs = colnames(ext_higgs$data))
 
-target_reb <- make_targets(file = "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv",
-                           sampleIDs = colnames(ext_reb$data),
-                           pipe = "DIA",
-                           enrich = "protein")
+target_lupashin <- make_targets(input_file = "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv",
+                                sample_IDs = colnames(ext_lupashin$data)) # Worked
+
+target_zhan <- make_targets(input_file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv",
+                            sample_IDs = colnames(ext_zhan$data))
+
+target_reb <- make_targets(input_file = "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv",
+                           sample_IDs = colnames(ext_reb$data))
 
 # Subset targets --------------------------------------------------------------
-sub_higgs <- subset_targets(targets = target_higgs,
+sub_higgs <- subset_targets(targets = target_higgs_metadata,
                             filter_list = list(group = "Pool"))
 
 sub_ndu <- subset_targets(targets = target_ndu,

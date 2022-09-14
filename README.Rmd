@@ -46,10 +46,12 @@ library(proteomicsDIA)
 extracted_data <- read_DIA_data("path/to/Samples Report of from Maxquant.csv")
 
 # make targets
-targets <- make_targets(file = "path/to/metdata.csv",
-                        sampleIDs = colnames(extracted_data$data),
-                        pipe = "DIA",
-                        enrich = "protein")
+targets <- make_targets(input_file = "path/to/metdata.csv",
+                        sample_IDs = colnames(extracted_data$data))
+
+# If you want, can save the generated targets dataframe for internal checking
+write.csv(targets, file = "targets.csv")
+
 
 # Subset targets
 sub <- subset_targets(targets = targets, 
