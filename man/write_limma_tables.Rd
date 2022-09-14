@@ -10,8 +10,6 @@ write_limma_tables(
   ilab,
   out_dir = NULL,
   norm.method,
-  enrich = c("protein", "phospho"),
-  pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
   overwrite = F,
   contrasts_subdir = NULL,
   summary_csv = NULL,
@@ -35,11 +33,6 @@ will construct a directory based on the ilab name and type of analysis.}
 
 \item{norm.method}{The method that was used to normalize the data for the
 statistical model being output.}
-
-\item{enrich}{The type of analysis being run. Options are "protein" and "phospho".}
-
-\item{pipe}{The analysis pipeline being run. Options are "DIA", "TMT",
-"phosphoTMT", and "LF".}
 
 \item{overwrite}{Should results files be overwritten? Default is F.}
 

@@ -93,15 +93,12 @@ results <- extract_limma_DE_results(limma_fit = fit)
 write_limma_tables(model_results = results,
                     norm.method = "vsn",
                     annotation = extracted_data$annot,
-                    ilab = "example_1234",
-                    enrich = "protein")
+                    ilab = "example_1234")
 # And save the plots and interactive report
 write_limma_plots(model_results = results,
                    annotation =  extracted_data$annot,
                    groups = norm$targets$group,
                    output_dir = "example_1234")
-
-
 
 
 # Functions are documented, check them out:

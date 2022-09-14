@@ -283,42 +283,34 @@ write_limma_tables(model_results = results_lupashin,
                     norm.method = "vsn",
                     annotation = ext_lupashin$annot,
                     ilab = "Lupashin_82928",
-                    enrich = "protein",
                     overwrite = T)
 
 
 write_limma_tables(model_results = results_ndu_brain,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,
-                    ilab = "ndu_brain_82928",
-                    enrich = "protein")
+                    ilab = "ndu_brain_82928")
 
 write_limma_tables(model_results = results_ndu_intestine,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,
-                    ilab = "ndu_intestine_82928",
-                    enrich = "protein")
+                    ilab = "ndu_intestine_82928")
 
 write_limma_tables(model_results = results_ndu_kidney,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,
-                    ilab = "ndu_kidney_82928",
-                    enrich = "protein")
+                    ilab = "ndu_kidney_82928")
 
 write_limma_tables(model_results = results_reb,
                     norm.method = "vsn",
                     annotation = ext_reb$annot,
-                    ilab = "Rebello_82928",
-                    enrich = "protein")
+                    ilab = "Rebello_82928")
 
 
 write_limma_tables(model_results = results_zhan,
                     norm.method = "vsn",
                     annotation = ext_zhan$annot,
-                    ilab = "zhan_982974",
-                    enrich = "protein")
-
-
+                    ilab = "zhan_982974")
 
 
 # testing report making ---------------------------------------------------
@@ -358,88 +350,3 @@ write_limma_plots(model_results = results_zhan,
                    groups = norm_zhan$targets$group,
                    output_dir = "output_zhan_wide",
                    width = 2000)
-
-# Testing phospho ---------------------------------------------------------
-# extract data
-thomas_tmt <- extract_data(file = "for_testing/Example Data/Thomas_03922_phos/proteinGroups.txt",
-             pipe = "TMT",
-             enrich = "protein")
-
-thomas_phospho <- extract_data(file = "for_testing/Example Data/Thomas_03922_phos/Phospho (STY)Sites.txt",
-                           pipe = "phosphoTMT",
-                           enrich = "phospho")
-
-
-tar_tmt <- make_targets(file = "for_testing/Example Data/Thomas_03922_phos/Thomas_032922_metafile_pro.csv",
-                        sampleIDs = colnames(thomas_tmt$data),
-                        pipe = "phosphoTMT",
-                        enrich = "protein")
-
-tar_phospho <- make_targets(file = "for_testing/Example Data/Thomas_03922_phos/Thomas_032922_metafile_phos.csv",
-                        sampleIDs = colnames(thomas_tmt$data),
-                        pipe = "phosphoTMT",
-                        enrich = "phospho")
-sub_protein <- subset_targets(tar_tmt, filter_column = "group", rm.vals = "Pool")
-sub_phospho <- subset_targets(tar_phospho, filter_column = "group", rm.vals = "Pool")
-
-
-norm_prot <- process_data(data = thomas_tmt$data, targets = sub_protein$targets,
-                          min.reps = 3, min.grps = 2)
-
-colnames(thomas_phospho$data) <- stringr::str_replace(colnames(thomas_phospho$data), ".phospho", ".lysate")
-norm_phospho <- process_data(data = thomas_phospho$data, targets = sub_phospho$targets,
-                          min.reps = 3, min.grps = 2)
-
-
-write_proteinorm_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
-                       enrich = "protein", file = "thomas_protein.pdf", overwrite = T)
-write_proteinorm_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
-                       enrich = "phospho", file = "thomas_phospho.pdf", overwrite = T)
-
-make_qc_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
-               norm.method = "log2",
-               enrich = "protein",
-               file = "thomas_protein_qc.pdf",
-               overwrite = T)
-
-make_qc_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
-               norm.method = "log2",
-               enrich = "phospho",
-               file = "thomas_phospho_qc.pdf",
-               overwrite = T)
-
-
-des_prot <- make_design(targets = norm_prot$targets, group_column = "group")
-des_phos <- make_design(targets = norm_phospho$targets, group_column = "group")
-
-contrast_prot <- make_contrasts("for_testing/Example Data/Thomas_03922_phos/contrasts.csv",
-                                design = des_prot$design)
-contrast_phos <- make_contrasts("for_testing/Example Data/Thomas_03922_phos/contrasts.csv",
-                                design = des_phos$design)
-
-
-fit_prot <- fit_limma_model(data = norm_prot$normList[["vsn"]],
-                            targets = des_prot$targets,
-                            design = des_prot$design,
-                            contrasts = contrast_prot$contrasts)
-
-fit_phos <- fit_limma_model(data = norm_phospho$normList[["vsn"]],
-                            targets = des_phos$targets,
-                            design = des_phos$design,
-                            contrasts = contrast_phos$contrasts)
-
-results_prot <- extract_limma_DE_results(fit_prot)
-results_phos <- extract_limma_DE_results(fit_phos)
-
-write_limma_results(results_prot,
-                    annotation = thomas_tmt$annot,
-                    ilab = "thomas_09819",
-                    norm.method = "vsn",
-                    pipe = "TMT", enrich = "protein")
-
-write_limma_results(results_phos,
-                    annotation = thomas_phospho$annot,
-                    ilab = "thomas_09819",
-                    norm.method = "vsn",
-                    pipe = "phosphoTMT", enrich = "phospho")
-
