@@ -142,7 +142,6 @@ write_proteinorm_report(processed_data = norm_reb,
 write_qc_report(processed_data = norm_higgs,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "higgs_qc_update.pdf",
                 overwrite = T)
 
@@ -150,20 +149,17 @@ write_qc_report(processed_data = norm_higgs,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
                 label_column = "sampleIDs",
-                enrich = "protein",
                 file = "higgs_qc_update_samplelabs.pdf",
                 overwrite = T)
 
 write_qc_report(processed_data = norm_ndu,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "ndu_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(processed_data = norm_ndu,
                 chosen_norm_method = "vsn",
-                enrich = "protein",
                 file = "ndu_qc_update_batch.pdf",
                 overwrite = T)
 
@@ -171,21 +167,18 @@ write_qc_report(processed_data = norm_ndu,
 write_qc_report(processed_data = norm_lupashin,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "lupashin_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(processed_data = norm_zhan,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "zhan_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(processed_data = norm_reb,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "rebello_qc_update.pdf",
                 overwrite = T)
 

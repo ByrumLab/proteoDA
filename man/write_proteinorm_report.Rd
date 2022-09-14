@@ -7,7 +7,6 @@
 write_proteinorm_report(
   processed_data,
   grouping_column = NULL,
-  enrich = c("protein", "phospho"),
   out_dir = NULL,
   file = NULL,
   overwrite = FALSE,
@@ -22,14 +21,8 @@ a list object containing processed data and sample information..}
 gives information on how to group samples for normalization. Must be supplied:
 some metrics can't be calculated for only one group.}
 
-\item{enrich}{What type of analysis is this for? Options are
-"protein" and "phospho". Only used for making output dir name when one isn't
-supplied.}
-
 \item{out_dir}{The directory in which to save the report. If not provided,
-will default to either "protein_analysis/01_quality_control" or
-"phospho_analysis/01_quality_control" within the current working
-directory, depending on the enrich argument.}
+will default to "protein_analysis/01_quality_control".}
 
 \item{file}{The file name of the report to be saved. Must end in .pdf. Will
 default to "proteiNorm_Report.pdf" if no filename is provided.}

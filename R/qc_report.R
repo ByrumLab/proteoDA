@@ -50,7 +50,6 @@ write_qc_report <- function(processed_data,
                             chosen_norm_method = NULL,
                             grouping_column = NULL,
                             label_column = NULL,
-                            enrich = c("protein", "phospho"),
                             out_dir = NULL,
                             file = NULL,
                             overwrite = FALSE,
@@ -72,9 +71,6 @@ write_qc_report <- function(processed_data,
     cli::cli_abort(c("{.arg processed_data} does not have expected structure:",
                      "i" = "Is it the object created by running {.code process_data()}?."))
   }
-
-  # enrich: possible values encoded in function def
-  enrich <- rlang::arg_match(enrich)
 
   # chosen_norm_method
   chosen_norm_method <- rlang::arg_match(
@@ -126,7 +122,7 @@ write_qc_report <- function(processed_data,
 
   # Set default dir if not provided
   if (is.null(out_dir)) {
-    out_dir <- file.path(paste0(enrich, "_analysis"), "01_quality_control")
+    out_dir <- file.path("protein_analysis", "01_quality_control")
     cli::cli_inform(cli::col_yellow("{.arg dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
   }
 

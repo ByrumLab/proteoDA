@@ -15,15 +15,10 @@
 #' @param grouping_column The name of column within the targets data frame which
 #'   gives information on how to group samples for normalization. Must be supplied:
 #'   some metrics can't be calculated for only one group.
-#' @param enrich What type of analysis is this for? Options are
-#'   "protein" and "phospho". Only used for making output dir name when one isn't
-#'   supplied.
 #' @param overwrite Should report file be overwritten if it already exists?
 #'   Default is FALSE.
 #' @param out_dir The directory in which to save the report. If not provided,
-#'   will default to either "protein_analysis/01_quality_control" or
-#'   "phospho_analysis/01_quality_control" within the current working
-#'   directory, depending on the enrich argument.
+#'   will default to "protein_analysis/01_quality_control".
 #' @param file The file name of the report to be saved. Must end in .pdf. Will
 #'   default to "proteiNorm_Report.pdf" if no filename is provided.
 #' @param suppress_zoom_legend Should the legend be removed from the zoomed
@@ -45,7 +40,6 @@
 #'
 write_proteinorm_report <- function(processed_data,
                                    grouping_column = NULL,
-                                   enrich = c("protein", "phospho"), #TODO: only used for making dir name...
                                    out_dir = NULL,
                                    file = NULL,
                                    overwrite = FALSE,
@@ -62,8 +56,6 @@ write_proteinorm_report <- function(processed_data,
     cli::cli_abort(c("{.arg processed_data} does not have expected structure:",
                      "i" = "Is it the object created by running {.code process_data()}?."))
   }
-
-  enrich <- rlang::arg_match(enrich)
 
   # If provided, check that grouping column exists in the target dataframe
   # And set it
@@ -90,7 +82,7 @@ write_proteinorm_report <- function(processed_data,
 
   # Set default dir if not provided
   if (is.null(out_dir)) {
-    out_dir <- file.path(paste0(enrich, "_analysis"), "01_quality_control")
+    out_dir <- file.path("protein_analysis", "01_quality_control")
     cli::cli_inform(cli::col_yellow("{.arg out_dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
   }
   # Set default report name if not provided

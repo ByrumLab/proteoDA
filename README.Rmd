@@ -65,14 +65,12 @@ norm <- process_data(data = extracted_data$data,
                      min.grps = 3)
 # Make the proteinorm report
 write_proteinorm_report(processed_data = norm,
-                        grouping_column = "group", 
-                        enrich = "protein")
+                        grouping_column = "group")
 
 # Make the QC report
 write_qc_report(processed_data = norm, 
                 chosen_norm_method = "vsn",
-                grouping_column = "group",
-                enrich = "protein")
+                grouping_column = "group")
 
 # Make the design matrix
 design <- make_design(targets=norm$targets,
