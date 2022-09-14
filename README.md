@@ -52,15 +52,15 @@ features or making changes.
 library(proteomicsDIA)
 
 # Extract Maxquant data
-extracted_data <- extract_data("path/to/Samples Report of from Maxquant.csv",
-                               pipe = "DIA",
-                               enrich = "protein")
+extracted_data <- read_DIA_data("path/to/Samples Report of from Maxquant.csv")
 
 # make targets
-targets <- make_targets(file = "path/to/metdata.csv",
-                        sampleIDs = colnames(extracted_data$data),
-                        pipe = "DIA",
-                        enrich = "protein")
+targets <- make_targets(input_file = "path/to/metdata.csv",
+                        sample_IDs = colnames(extracted_data$data))
+
+# If you want, can save the generated targets dataframe for internal checking
+write.csv(targets, file = "targets.csv")
+
 
 # Subset targets
 sub <- subset_targets(targets = targets, 
@@ -74,14 +74,12 @@ norm <- process_data(data = extracted_data$data,
                      min.grps = 3)
 # Make the proteinorm report
 write_proteinorm_report(processed_data = norm,
-                        grouping_column = "group", 
-                        enrich = "protein")
+                        grouping_column = "group")
 
 # Make the QC report
 write_qc_report(processed_data = norm, 
                 chosen_norm_method = "vsn",
-                grouping_column = "group",
-                enrich = "protein")
+                grouping_column = "group")
 
 # Make the design matrix
 design <- make_design(targets=norm$targets,
@@ -116,7 +114,7 @@ write_limma_plots(model_results = results,
 
 
 # Functions are documented, check them out:
-?extract_data
+?read_DIA_data
 ?make_targets
 ?subset_targets
 ?process_data
@@ -228,7 +226,7 @@ tests as well. Maybe better to just do it once.
 
 | Function                   | Code               | Document           | Test               |
 |----------------------------|--------------------|--------------------|--------------------|
-| `extract_data`             | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| `read_DIA_data`            | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | `make_targets`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `subset_targets`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
 | `process_data`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |

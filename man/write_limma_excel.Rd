@@ -12,8 +12,6 @@ write_limma_excel(
   norm.method,
   pval.thresh,
   lfc.thresh,
-  pipe,
-  enrich,
   add_filter
 )
 }
@@ -32,11 +30,6 @@ statistical model being output.}
 \item{pval.thresh}{The p-value threshold that was used to determine significance.}
 
 \item{lfc.thresh}{The logFC threshold that was used to determine significance.}
-
-\item{pipe}{The analysis pipeline being run. Options are "DIA", "TMT",
-"phosphoTMT", and "LF".}
-
-\item{enrich}{The type of analysis being run. Options are "protein" and "phospho".}
 
 \item{add_filter}{Should per-column filters be added to the spreadsheet?}
 }

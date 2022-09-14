@@ -16,15 +16,12 @@
 #'   \code{\link{extract_limma_DE_results}}.
 #' @param annotation A dataframe containing annotation data for this analysis.
 #'   In our pipeline, usually the "annot" slot from the object returned by
-#'   \code{\link{extract_data}}.
+#'   \code{\link{read_DIA_data}}.
 #' @param ilab The ilab identifier for this project.
 #' @param out_dir The directory in which to output tables. If not specified,
 #'   will construct a directory based on the ilab name and type of analysis.
 #' @param norm.method The method that was used to normalize the data for the
 #'   statistical model being output.
-#' @param enrich The type of analysis being run. Options are "protein" and "phospho".
-#' @param pipe The analysis pipeline being run. Options are "DIA", "TMT",
-#'   "phosphoTMT", and "LF".
 #' @param overwrite Should results files be overwritten? Default is F.
 #' @param contrasts_subdir The subdirectory within out_dir to write the per-contrast
 #'   result .csv files. If not specified, will be "per_contrast_results".
@@ -50,8 +47,6 @@ write_limma_tables <- function(model_results,
                                ilab,
                                out_dir = NULL,
                                norm.method,
-                               enrich = c("protein", "phospho"),
-                               pipe = c("DIA", "TMT", "phosphoTMT", "LF"),
                                overwrite = F,
                                contrasts_subdir = NULL,
                                summary_csv = NULL,
@@ -59,14 +54,9 @@ write_limma_tables <- function(model_results,
                                spreadsheet_xlsx = NULL,
                                add_filter = T) {
 
-  # Check args ----------------------------------------------------
-  pipe <- rlang::arg_match(pipe)
-  enrich <- rlang::arg_match(enrich)
-
-
   # Assign defaults if not overridden above
   if (is.null(out_dir)) {
-    out_dir <- file.path(ilab, paste0(enrich, "_analysis"))
+    out_dir <- file.path(ilab, "protein_analysis")
   }
   if (is.null(contrasts_subdir)) {
     contrasts_subdir <- "per_contrast_results"
@@ -201,8 +191,6 @@ write_limma_tables <- function(model_results,
                     norm.method = norm.method,
                     pval.thresh = model_results$pval.thresh,
                     lfc.thresh = model_results$lfc.thresh,
-                    pipe = pipe,
-                    enrich = enrich,
                     add_filter = add_filter)
 
   if (!file.exists(excel_output_file)) {
@@ -309,9 +297,6 @@ write_per_contrast_csvs <- function(annotation_df,
 #'   statistical model being output.
 #' @param pval.thresh The p-value threshold that was used to determine significance.
 #' @param lfc.thresh The logFC threshold that was used to determine significance.
-#' @param pipe The analysis pipeline being run. Options are "DIA", "TMT",
-#'   "phosphoTMT", and "LF".
-#' @param enrich The type of analysis being run. Options are "protein" and "phospho".
 #' @param add_filter Should per-column filters be added to the spreadsheet?
 #'
 #' @return Invisibly returns a list, where the first element is the filename
@@ -321,7 +306,7 @@ write_per_contrast_csvs <- function(annotation_df,
 #' @examples
 #' # No examples yet
 write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
-                              pval.thresh, lfc.thresh, pipe, enrich, add_filter) {
+                              pval.thresh, lfc.thresh, add_filter) {
 
 
   # Maybe some argument processing
@@ -335,67 +320,14 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   # Can I streamline this? And how much does this need to be here?
   # Are these the same column names we enforced when making the annotation
   # in the extract data function?
-  if(pipe == "DIA" & enrich == "protein") {
-    annotCols <- c("id", "Protein.Name","Accession.Number","Molecular.Weight", "Protein.Group.Score",
-                   "Identified.Peptide.Count","Exclusivity",
-                   "UniprotID", "Gene_name","Description")
-    newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
-      stringr::str_replace("UniprotID", "UniProt ID")
-    annot.title <- "Protein Annotation"
-    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Intensities")
-    sheetName <- "Protein Results"
-
-  } else if (pipe == "TMT" & enrich == "protein") {
-
-    annotCols <- c("id", "Fasta.headers","Majority.protein.IDs", "Score", "UniprotID",
-                   "Gene_name","Description")
-    newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
-      stringr::str_replace("UniprotID", "UniProt ID")
-    annot.title <- "Protein Annotation"
-    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive MS1 Intensities")
-    sheetName <- "Protein Results"
-
-  } else if (pipe == "LF" & enrich == "protein") {
-
-    annotCols <- c("id", "Fasta.headers","Majority.protein.IDs", "Score", "UniprotID",
-                   "Gene_name","Description")
-    newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
-      stringr::str_replace("UniprotID", "UniProt ID")
-    annot.title <- "Protein Annotation"
-    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Intensities")
-    sheetName <- "Protein Results"
-
-  } else if (pipe == "phosphoTMT" & enrich == "protein") {
-
-    annotCols <- c("id", "Fasta.headers", "Majority.protein.IDs", "Phospho..STY..site.IDs", "Score",
-                   "UniprotID","Gene_name","Description") %>%
-      stringr::str_replace("UniprotID", "Uniprot ID")
-    newNames <- stringr::str_replace(annotCols, "\\.\\.S", " (S") %>%
-      stringr::str_replace("Y\\.\\.", "Y) ") %>%
-      stringr::str_replace_all("[._]", " ") %>%
-      stringr::str_replace("UniprotID", "UniProt ID")
-
-    annot.title <- "Protein Annotation"
-    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive MS1 Intensities")
-    sheetName <- "Protein Results"
-
-  } else if (pipe == "phosphoTMT" & enrich == "phospho") {
-
-    annotCols <- c("id","Fasta.headers", "proGroupID","UniprotID","Gene_name",
-                   "Description", "PEP","Score", "Localization.prob", "Phospho..STY..Probabilities",
-                   "Flanking","phosAAPosition","Class")
-    newNames <- stringr::str_replace(annotCols, "\\.\\.S", " (S") %>%
-      stringr::str_replace("Y\\.\\.", "Y) ") %>%
-      stringr::str_replace_all("[._]", " ") %>%
-      stringr::str_replace("UniprotID", "UniProt ID")
-
-    annot.title <- "Protein/Phospho Annotation"
-    data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive MS1 Intensities")
-    sheetName <- "Phospho Results"
-  } else {
-    cli::cli_abort("Invalid combination of {.arg pipe} and {.arg enrich}")
-  }
-
+  annotCols <- c("id", "Protein.Name","Accession.Number","Molecular.Weight", "Protein.Group.Score",
+                 "Identified.Peptide.Count","Exclusivity",
+                 "UniprotID", "Gene_name","Description")
+  newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
+    stringr::str_replace("UniprotID", "UniProt ID")
+  annot.title <- "Protein Annotation"
+  data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Intensities")
+  sheetName <- "Protein Results"
 
   # Initialize worksheet ----------------------------------------------------
   openxlsx::addWorksheet(wb, sheetName = sheetName, tabColour = "#FFE100")

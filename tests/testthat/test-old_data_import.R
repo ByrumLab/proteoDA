@@ -1,36 +1,13 @@
-test_that("DIA data extract fxns check arguments", {
-  expect_error(
-    extract_data(
-      file = "XXX.txt",
-      pipe = "DIX",
-      enrich = "protein"
-    ),
-    "DIA"
-  )
-  expect_error(
-    extract_data(
-      file = "XXX.txt",
-      pipe = "DIA",
-      enrich = "Protein"
-    ),
-    "protein"
-  )
-})
-
 test_that("DIA data extract fxns check existence and type of input file", {
   expect_error(
-    import_data(
-      file = "XXX.xml",
-      pipe = "DIA",
-      enrich = "protein"
+    read_maxquant_delim(
+      input_file = "XXX.xml"
     ),
     "must end"
   )
   expect_error(
-    import_data(
-      file = "XXX.txt",
-      pipe = "DIA",
-      enrich = "protein"
+    read_maxquant_delim(
+      input_file = "XXX.txt"
     ),
     "does not exist"
   )
@@ -38,10 +15,8 @@ test_that("DIA data extract fxns check existence and type of input file", {
 
 test_that("DIA data extract fxns checks reqd cols", {
   expect_error(
-    import_data(
-      file = "test_data/DIA_bad-cols.csv",
-      pipe = "DIA",
-      enrich = "protein"
+    read_DIA_data(
+      input_file = "test_data/DIA_bad-cols.csv"
     ),
     "not present in"
   )
@@ -49,22 +24,17 @@ test_that("DIA data extract fxns checks reqd cols", {
 
 test_that("DIA data extract fxns check for sample IDs when provided", {
   expect_error(
-    suppressMessages(extract_data(
-      file = "test_data/DIA_good.csv",
-      sampleIDs = c("not-there"),
-      pipe = "DIA",
-      enrich = "protein"
+    suppressMessages(read_DIA_data(
+      input_file = "test_data/DIA_good.csv",
+      sample_IDs = c("not-there")
     )),
     "not found in column names"
   )
   expect_error(
-    suppressMessages(extract_data(
-      file = "test_data/DIA_good.csv",
-      sampleIDs = c("not-there", "Kinter_120720_DIA_Q15_3D.mzML"),
-      pipe = "DIA",
-      enrich = "protein"
+    suppressMessages(read_DIA_data(
+      input_file = "test_data/DIA_good.csv",
+      sample_IDs = c("not-there", "Kinter_120720_DIA_Q15_3D.mzML")
     )),
     "not-there"
   )
-  file.remove("DIA_good_Samples_Report_BQ.csv")
 })

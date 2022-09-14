@@ -4,48 +4,31 @@
 \alias{make_targets}
 \title{Make a targets file}
 \usage{
-make_targets(
-  file = NULL,
-  sampleIDs,
-  pipe = c("DIA", "TMT", "phosphoTMT"),
-  enrich = c("protein", "phospho")
-)
+make_targets(input_file = NULL, sample_IDs)
 }
 \arguments{
-\item{file}{Optional: a metadata file, giving info on the samples. Required
-format and columns for metadata file vary by pipeline.
-Need to document somewhere.}
+\item{input_file}{Optional: a metadata file, giving info on the samples.}
 
-\item{sampleIDs}{A character vector of sample IDs, from which the targets
-file is constructed. In the DIA pipeline, these are the column names of the
-data slot in the object returned by \code{\link{extract_data}}, e.g.,
-\code{colnames(ext$data)}. Currently, these sampleIDs have a required format:
+\item{sample_IDs}{A character vector of sample IDs, from which the targets
+file is constructed. Generally, these are the column names of the
+data slot in the object returned by \code{\link{read_DIA_data}}, e.g.,
+\code{colnames(ext$data)}. Currently, these sample_IDs have a required format:
 "Pool" samples must include the regex pattern \code{[P/p]ool_[[:digit:]]} in
 the column name, and samples must contain the regex pattern
 \code{[S/s]ample_[[:digit:]]} in the column name.}
-
-\item{pipe}{Which analysis pipeline are you running? Options are "DIA", "TMT",
-"phosphoTMT". Output varies slightly based on the pipeline you
-choose.}
-
-\item{enrich}{Another aspect of pipeline? Options are "protein" and "phospho".
-Seems semi-redundant?: DIA, TMT, and LF seem to always be "protein" in the
-code. PhosphoTMT can be either protein or phospho, though that seems to vary
-across subfunctions a little?}
 }
 \value{
 It depends:
 \itemize{
 \item If a metadata file is supplied and could be successfully matched
-against the input column names, a full targets dataframe is returned,
-and a targets.csv file is created in the working directory.
+against the input column names, a full targets dataframe is returned.
 \item If a metadata file is supplied but matching against column names
 was unsuccessful, returns, with a warning, a list with two slots:
 (1) the dataframe of assembled targets, and (2) the dataframe of
 imported metadata. These must be manually combined before further
-analysis. No targets.csv file is created.
+analysis.
 \item When a metadata file is not supplied, returns, with a warning, an
-incomplete targets dataframe, and does not create a targets.csv file.
+incomplete targets dataframe.
 }
 }
 \description{
@@ -56,4 +39,5 @@ is supplied, and whether the metadata and targets can be matched successfully
 }
 \examples{
 # No examples yet
+
 }

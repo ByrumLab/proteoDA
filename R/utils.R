@@ -12,7 +12,9 @@ magrittr::`%>%`
 #' @keywords internal
 #'
 #'
-remove_commas <- function(x){ x<-as.numeric(gsub("\\,", "", x)) }
+remove_commas <- function(x) {
+  as.numeric(gsub("\\,", "", x))
+}
 
 
 #' %notin% operator, opposite of %in%

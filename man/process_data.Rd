@@ -14,7 +14,7 @@ process_data(
 }
 \arguments{
 \item{data}{Raw data to be processed. In the pipeline, this is generally the
-"data" slot of the list output by \code{\link{extract_data}}.}
+"data" slot of the list output by \code{\link{read_DIA_data}}.}
 
 \item{targets}{An inputs target dataframe. In the pipeline, this is generally
 the subsetted targets data frame (that is, with pools or other non-desired

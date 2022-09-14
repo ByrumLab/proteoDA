@@ -21,87 +21,51 @@ CreatePackageReport("proteomicsDIA")
 
 # extract_data on a bunch of files --------------------------------
 
-# ext_bart <- extract_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv",
-#              pipe = "DIA",
-#              enrich = "protein") # Missing exclusivity col
+ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv") # Missing exclusivity col
 
+ext_higgs <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") # Worked
 
-ext_higgs <- extract_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv",
-             pipe = "DIA",
-             enrich = "protein") # Worked
+ext_ndu <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") # Worked
 
+ext_kinter <- read_DIA_data("for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv") # Worked
 
-ext_ndu <- extract_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv",
-             pipe = "DIA",
-             enrich = "protein") # Worked
+ext_lupashin <- read_DIA_data("for_testing/Example Data/lupashin_030222/Samples Report of Lupashin_030222.csv") # Worked
 
+ext_zhan <- read_DIA_data("for_testing/Example Data/Zhan_DIA_217_samples/input_files/Samples Report of Zhan_111821_Experiment.csv")
 
-ext_kinter <- extract_data(file = "for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv",
-                            pipe = "DIA",
-                            enrich = "protein") # Worked
-
-ext_lupashin <- extract_data(file = "for_testing/Example Data/lupashin_030222/Samples Report of Lupashin_030222.csv",
-                             pipe = "DIA",
-                             enrich = "protein") # Worked
-
-ext_zhan <- extract_data(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Samples Report of Zhan_111821_Experiment.csv",
-                         pipe = "DIA",
-                         enrich = "protein")
-
-ext_reb <- extract_data(file = "for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv",
-                       pipe = "DIA",
-                       enrich = "protein")
+ext_reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv")
 
 # Make targets ------------------------------------------------------------
 
-target_higgs <- make_targets(file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
-                             sampleIDs = colnames(ext_higgs$data),
-                             pipe = "DIA",
-                             enrich = "protein") # worked
+target_higgs_metadata <- make_targets(input_file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
+                             sample_IDs = colnames(ext_higgs$data)) # worked
 
-target_higgs2 <- make_targets(#file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
-                             sampleIDs = colnames(ext_higgs$data),
-                             pipe = "DIA",
-                             enrich = "protein")
+target_higgs_IDs_only <- make_targets(#file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
+                             sample_IDs = colnames(ext_higgs$data))
 
-target_ndu <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                           sampleIDs = colnames(ext_ndu$data),
-                           pipe = "DIA",
-                           enrich = "protein") # worked
+target_ndu <- make_targets(input_file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+                           sample_IDs = colnames(ext_ndu$data)) # worked
 
-# target_ndu2 <- make_targets(#file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-#                            sampleIDs = colnames(ext_ndu$data),
-#                            pipe = "DIA",
-#                            enrich = "protein")
-#
-# target_ndu3 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-#                            sampleIDs = c(colnames(ext_ndu$data), "sample_45"),
-#                            pipe = "DIA",
-#                            enrich = "protein") # Gave warning as expected
-#
-# target_ndu4 <- make_targets(file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-#                             sampleIDs = colnames(ext_higgs$data),
-#                             pipe = "DIA",
-#                             enrich = "protein") # Gave error as expected,
-#                             # but need to improve the error message and figure this logic out
+target_ndu_IDs_only<- make_targets(#file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+                           sample_IDs = colnames(ext_ndu$data))
 
-target_lupashin <- make_targets(file = "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv",
-                                sampleIDs = colnames(ext_lupashin$data),
-                                pipe = "DIA",
-                                enrich = "protein") # Worked
+target_ndu_extra_IDs <- make_targets(input_file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+                           sample_IDs = c(colnames(ext_ndu$data), "sample_45")) # Gave warning as expected
 
-target_zhan <- make_targets(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv",
-                            sampleIDs = colnames(ext_zhan$data),
-                            pipe = "DIA",
-                            enrich = "protein")
+target_ndu_extra_meta<- make_targets(input_file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
+                                     sample_IDs = colnames(ext_higgs$data))
 
-target_reb <- make_targets(file = "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv",
-                           sampleIDs = colnames(ext_reb$data),
-                           pipe = "DIA",
-                           enrich = "protein")
+target_lupashin <- make_targets(input_file = "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv",
+                                sample_IDs = colnames(ext_lupashin$data)) # Worked
+
+target_zhan <- make_targets(input_file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv",
+                            sample_IDs = colnames(ext_zhan$data))
+
+target_reb <- make_targets(input_file = "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv",
+                           sample_IDs = colnames(ext_reb$data))
 
 # Subset targets --------------------------------------------------------------
-sub_higgs <- subset_targets(targets = target_higgs,
+sub_higgs <- subset_targets(targets = target_higgs_metadata,
                             filter_list = list(group = "Pool"))
 
 sub_ndu <- subset_targets(targets = target_ndu,
@@ -178,7 +142,6 @@ write_proteinorm_report(processed_data = norm_reb,
 write_qc_report(processed_data = norm_higgs,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "higgs_qc_update.pdf",
                 overwrite = T)
 
@@ -186,20 +149,17 @@ write_qc_report(processed_data = norm_higgs,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
                 label_column = "sampleIDs",
-                enrich = "protein",
                 file = "higgs_qc_update_samplelabs.pdf",
                 overwrite = T)
 
 write_qc_report(processed_data = norm_ndu,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "ndu_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(processed_data = norm_ndu,
                 chosen_norm_method = "vsn",
-                enrich = "protein",
                 file = "ndu_qc_update_batch.pdf",
                 overwrite = T)
 
@@ -207,21 +167,18 @@ write_qc_report(processed_data = norm_ndu,
 write_qc_report(processed_data = norm_lupashin,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "lupashin_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(processed_data = norm_zhan,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "zhan_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(processed_data = norm_reb,
                 chosen_norm_method = "vsn",
                 grouping_column = "group",
-                enrich = "protein",
                 file = "rebello_qc_update.pdf",
                 overwrite = T)
 
@@ -326,42 +283,34 @@ write_limma_tables(model_results = results_lupashin,
                     norm.method = "vsn",
                     annotation = ext_lupashin$annot,
                     ilab = "Lupashin_82928",
-                    enrich = "protein",
                     overwrite = T)
 
 
 write_limma_tables(model_results = results_ndu_brain,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,
-                    ilab = "ndu_brain_82928",
-                    enrich = "protein")
+                    ilab = "ndu_brain_82928")
 
 write_limma_tables(model_results = results_ndu_intestine,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,
-                    ilab = "ndu_intestine_82928",
-                    enrich = "protein")
+                    ilab = "ndu_intestine_82928")
 
 write_limma_tables(model_results = results_ndu_kidney,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,
-                    ilab = "ndu_kidney_82928",
-                    enrich = "protein")
+                    ilab = "ndu_kidney_82928")
 
 write_limma_tables(model_results = results_reb,
                     norm.method = "vsn",
                     annotation = ext_reb$annot,
-                    ilab = "Rebello_82928",
-                    enrich = "protein")
+                    ilab = "Rebello_82928")
 
 
 write_limma_tables(model_results = results_zhan,
                     norm.method = "vsn",
                     annotation = ext_zhan$annot,
-                    ilab = "zhan_982974",
-                    enrich = "protein")
-
-
+                    ilab = "zhan_982974")
 
 
 # testing report making ---------------------------------------------------
@@ -401,88 +350,3 @@ write_limma_plots(model_results = results_zhan,
                    groups = norm_zhan$targets$group,
                    output_dir = "output_zhan_wide",
                    width = 2000)
-
-# Testing phospho ---------------------------------------------------------
-# extract data
-thomas_tmt <- extract_data(file = "for_testing/Example Data/Thomas_03922_phos/proteinGroups.txt",
-             pipe = "TMT",
-             enrich = "protein")
-
-thomas_phospho <- extract_data(file = "for_testing/Example Data/Thomas_03922_phos/Phospho (STY)Sites.txt",
-                           pipe = "phosphoTMT",
-                           enrich = "phospho")
-
-
-tar_tmt <- make_targets(file = "for_testing/Example Data/Thomas_03922_phos/Thomas_032922_metafile_pro.csv",
-                        sampleIDs = colnames(thomas_tmt$data),
-                        pipe = "phosphoTMT",
-                        enrich = "protein")
-
-tar_phospho <- make_targets(file = "for_testing/Example Data/Thomas_03922_phos/Thomas_032922_metafile_phos.csv",
-                        sampleIDs = colnames(thomas_tmt$data),
-                        pipe = "phosphoTMT",
-                        enrich = "phospho")
-sub_protein <- subset_targets(tar_tmt, filter_column = "group", rm.vals = "Pool")
-sub_phospho <- subset_targets(tar_phospho, filter_column = "group", rm.vals = "Pool")
-
-
-norm_prot <- process_data(data = thomas_tmt$data, targets = sub_protein$targets,
-                          min.reps = 3, min.grps = 2)
-
-colnames(thomas_phospho$data) <- stringr::str_replace(colnames(thomas_phospho$data), ".phospho", ".lysate")
-norm_phospho <- process_data(data = thomas_phospho$data, targets = sub_phospho$targets,
-                          min.reps = 3, min.grps = 2)
-
-
-write_proteinorm_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
-                       enrich = "protein", file = "thomas_protein.pdf", overwrite = T)
-write_proteinorm_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
-                       enrich = "phospho", file = "thomas_phospho.pdf", overwrite = T)
-
-make_qc_report(normList = norm_prot$normList, groups = norm_prot$targets$group,
-               norm.method = "log2",
-               enrich = "protein",
-               file = "thomas_protein_qc.pdf",
-               overwrite = T)
-
-make_qc_report(normList = norm_phospho$normList, groups = norm_phospho$targets$group,
-               norm.method = "log2",
-               enrich = "phospho",
-               file = "thomas_phospho_qc.pdf",
-               overwrite = T)
-
-
-des_prot <- make_design(targets = norm_prot$targets, group_column = "group")
-des_phos <- make_design(targets = norm_phospho$targets, group_column = "group")
-
-contrast_prot <- make_contrasts("for_testing/Example Data/Thomas_03922_phos/contrasts.csv",
-                                design = des_prot$design)
-contrast_phos <- make_contrasts("for_testing/Example Data/Thomas_03922_phos/contrasts.csv",
-                                design = des_phos$design)
-
-
-fit_prot <- fit_limma_model(data = norm_prot$normList[["vsn"]],
-                            targets = des_prot$targets,
-                            design = des_prot$design,
-                            contrasts = contrast_prot$contrasts)
-
-fit_phos <- fit_limma_model(data = norm_phospho$normList[["vsn"]],
-                            targets = des_phos$targets,
-                            design = des_phos$design,
-                            contrasts = contrast_phos$contrasts)
-
-results_prot <- extract_limma_DE_results(fit_prot)
-results_phos <- extract_limma_DE_results(fit_phos)
-
-write_limma_results(results_prot,
-                    annotation = thomas_tmt$annot,
-                    ilab = "thomas_09819",
-                    norm.method = "vsn",
-                    pipe = "TMT", enrich = "protein")
-
-write_limma_results(results_phos,
-                    annotation = thomas_phospho$annot,
-                    ilab = "thomas_09819",
-                    norm.method = "vsn",
-                    pipe = "phosphoTMT", enrich = "phospho")
-

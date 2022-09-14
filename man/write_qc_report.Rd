@@ -9,7 +9,6 @@ write_qc_report(
   chosen_norm_method = NULL,
   grouping_column = NULL,
   label_column = NULL,
-  enrich = c("protein", "phospho"),
   out_dir = NULL,
   file = NULL,
   overwrite = FALSE,
@@ -36,14 +35,8 @@ some metrics can't be calculated for only one group.}
 which contains labels to use for plotting figures. When not supplied,
 defaults to using the column names of the data in processed_data.}
 
-\item{enrich}{What type of analysis is this for? Options are
-"protein" and "phospho". Only used for making output dir name when one isn't
-supplied.}
-
 \item{out_dir}{The directory in which to save the report. If not provided,
-will default to either "protein_analysis/01_quality_control" or
-"phospho_analysis/01_quality_control" within the current working
-directory, depending on the enrich argument.}
+will default to "protein_analysis/01_quality_control".}
 
 \item{file}{The file name of the report to be saved. Must end in .pdf. Will
 default to "QC_Report.pdf" if no filename is provided.}
