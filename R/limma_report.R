@@ -29,12 +29,12 @@
 #' @examples
 #' # No examples yet
 write_limma_plots <- function(model_results = NULL,
-                               annotation = NULL,
-                               groups = NULL,
-                               output_dir = NULL,
-                               tmp_subdir = "tmp",
-                               height = 1000,
-                               width = 1000) {
+                              annotation = NULL,
+                              groups = NULL,
+                              output_dir = NULL,
+                              tmp_subdir = "tmp",
+                              height = 1000,
+                              width = 1000) {
 
   # TODO: add output filename validation once we decide on directory format
   if (!dir.exists(output_dir)) {
@@ -159,6 +159,11 @@ prep_plot_model_data <- function(model_results, contrast) {
   # convert missing values in sig cols to 0
   # and add factor columns for static plots
   data <- model_results$stats_by_contrast[[contrast]]
+
+  # I'm not sure that this is actually needed or does anything
+  # The order of the model_results$stats_by_contrast and
+  # model_results$data should already be the same. But, I guess it can't hurt.
+  data <- data[rownames(model_results$data), ]
   data$`P value` <- data$P.Value
   data$`Adjusted P value` <- data$adj.P.Val
   data$negLog10rawP <- -log(data$P.Value, 10)
@@ -321,6 +326,6 @@ static_pval_histogram <- function(data, contrast) {
     theme(panel.border = element_rect(fill = NA, color = "grey30")) +
     patchwork::plot_annotation(
       title = stringr::str_replace(contrast, "_vs_", " vs ")
-      )
- output
+    )
+  output
 }
