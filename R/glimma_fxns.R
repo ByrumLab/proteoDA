@@ -1,8 +1,8 @@
 uams_glimmaXY <- function (x, y, xlab = "x", ylab = "y", dge = NULL, counts = dge$counts,
-          groups = dge$samples$group, status = rep(0, length(x)), anno = NULL,
-          display.columns = NULL, status.cols = c("#1052bd", "silver",
-                                                  "#cc212f"), sample.cols = NULL, main = "XY Plot", html = NULL,
-          width = 920, height = 920)
+                           groups = dge$samples$group, status = rep(0, length(x)), anno = NULL,
+                           display.columns = NULL, status.cols = c("#1052bd", "silver",
+                                                                   "#cc212f"), sample.cols = NULL, main = "XY Plot", html = NULL,
+                           width = 920, height = 920)
 {
   if (length(x) != length(y))
     stop("Error: x and y args must have the same length.")
@@ -21,7 +21,7 @@ uams_glimmaXY <- function (x, y, xlab = "x", ylab = "y", dge = NULL, counts = dg
     table <- cbind(gene = seq_along(x), table)
   }
   xData <- UAMS_buildXYData(table, status, main, display.columns,
-                       anno, counts, xlab, ylab, status.cols, sample.cols, groups)
+                            anno, counts, xlab, ylab, status.cols, sample.cols, groups)
   return(UAMS_glimmaXYWidget(xData, width, height, html))
 }
 
@@ -44,7 +44,7 @@ UAMS_glimmaXYWidget <- function (xData, width, height, html)
 
 
 UAMS_buildXYData <- function (table, status, main, display.columns, anno, counts,
-          xlab, ylab, status.cols, sample.cols, groups)
+                              xlab, ylab, status.cols, sample.cols, groups)
 {
   if (is.null(counts)) {
     counts <- -1

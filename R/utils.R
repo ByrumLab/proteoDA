@@ -94,43 +94,43 @@ all_pw_diffs <- function(vector) {
 #' # No examples yet
 #'
 colorGroup <- function(group) {
-    blueberry <- "#1F5EDC";  cherry <- "#EE0010"
-    apple     <- "#32CD32";  barbie <- "#FF1493"
-    fanta     <- "#FF7F00";  grape  <- "#A342FC"
-    ocean     <- "#00C8FF";  mtndew <- "#ADFF2F"
-    gold      <- "#FFE100";  orchid <- "#E36EF6"
-    aceblue   <- "#009ACE";  poop   <- "#996633"
+  blueberry <- "#1F5EDC";  cherry <- "#EE0010"
+  apple     <- "#32CD32";  barbie <- "#FF1493"
+  fanta     <- "#FF7F00";  grape  <- "#A342FC"
+  ocean     <- "#00C8FF";  mtndew <- "#ADFF2F"
+  gold      <- "#FFE100";  orchid <- "#E36EF6"
+  aceblue   <- "#009ACE";  poop   <- "#996633"
 
-    binfcolors <-c(blueberry, cherry, apple, barbie, fanta,
-                   grape, ocean, mtndew, gold, orchid, aceblue, poop)
-    names(binfcolors)<-c("blueberry", "cherry", "apple", "barbie", "fanta",
-                         "grape", "ocean", "mtndew", "gold", "orchid", "aceblue", "poop")
+  binfcolors <-c(blueberry, cherry, apple, barbie, fanta,
+                 grape, ocean, mtndew, gold, orchid, aceblue, poop)
+  names(binfcolors)<-c("blueberry", "cherry", "apple", "barbie", "fanta",
+                       "grape", "ocean", "mtndew", "gold", "orchid", "aceblue", "poop")
 
-    ## group=6-12
-    if(length(unique(group)) > 5){
-      groupCol <- binfcolors[1:length(unique(group))]
-      names(groupCol) <- unique(group)
+  ## group=6-12
+  if(length(unique(group)) > 5){
+    groupCol <- binfcolors[1:length(unique(group))]
+    names(groupCol) <- unique(group)
+  }
+  if(length(unique(group)) > 12) { # Rare
+    if (!requireNamespace("grDevices", quietly = TRUE)) {
+      cli::cli_abort(c("Package \"grDevices\" must be to to make plots for more than 12 groups"))
     }
-    if(length(unique(group)) > 12) { # Rare
-      if (!requireNamespace("grDevices", quietly = TRUE)) {
-        cli::cli_abort(c("Package \"grDevices\" must be to to make plots for more than 12 groups"))
-      }
-      groupCol <- c(grDevices::rainbow(length(unique(group))))
-      names(groupCol) <- unique(group)
-    }
-    if(length(unique(group)) <= 5) {
-      groupCol<-binfcolors[1:length(unique(group))]
-      names(groupCol) <- unique(group)
-    }
-    if(length(unique(group)) == 3) {
-      groupCol<-c(binfcolors[c("blueberry","barbie","apple")])
-      names(groupCol) <- unique(group)
-    }
-    if(length(unique(group)) == 2) {
-      groupCol<-binfcolors[c("aceblue","cherry")]
-      names(groupCol) <- unique(group)
-    }
-    return(groupCol)
+    groupCol <- c(grDevices::rainbow(length(unique(group))))
+    names(groupCol) <- unique(group)
+  }
+  if(length(unique(group)) <= 5) {
+    groupCol<-binfcolors[1:length(unique(group))]
+    names(groupCol) <- unique(group)
+  }
+  if(length(unique(group)) == 3) {
+    groupCol<-c(binfcolors[c("blueberry","barbie","apple")])
+    names(groupCol) <- unique(group)
+  }
+  if(length(unique(group)) == 2) {
+    groupCol<-binfcolors[c("aceblue","cherry")]
+    names(groupCol) <- unique(group)
+  }
+  return(groupCol)
 }
 
 #' Validate filename
@@ -256,6 +256,6 @@ rowMedians <- function(x, ...) { # Much slower than the matrixStats version, whi
 #' @examples
 #' # No examples yet.
 rowMads <- function(x, ...) {
- apply(x, MARGIN = 1, FUN = stats::mad, ...)
+  apply(x, MARGIN = 1, FUN = stats::mad, ...)
 }
 
