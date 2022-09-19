@@ -285,7 +285,6 @@ write_limma_tables(model_results = results_lupashin,
                     ilab = "Lupashin_82928",
                     overwrite = T)
 
-
 write_limma_tables(model_results = results_ndu_brain,
                     norm.method = "vsn",
                     annotation = ext_ndu$annot,

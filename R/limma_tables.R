@@ -56,7 +56,7 @@ write_limma_tables <- function(model_results,
 
   # Assign defaults if not overridden above
   if (is.null(out_dir)) {
-    out_dir <- file.path(ilab, "protein_analysis")
+    out_dir <- file.path("protein_analysis","02_diff_expression")
   }
   if (is.null(contrasts_subdir)) {
     contrasts_subdir <- "per_contrast_results"
@@ -78,12 +78,6 @@ write_limma_tables <- function(model_results,
     validate_filename(filename, allowed_exts = "csv")
   }
   validate_filename(spreadsheet_xlsx, allowed_exts = "xlsx")
-
-  # Make sure proteins in results have matching rows in annotation
-  if (!all(unique(unlist(lapply(model_results$stats_by_contrast, rownames))) %in% rownames(annotation))) {
-    cli::cli_abort(c("Not all proteins/rownames in {.arg model_results} have a matching rowname in {.arg annotation}",
-                     "i" = "Are these objects from the same dataset?"))
-  }
 
   # Check norm method
   norm.method <- rlang::arg_match(
@@ -110,6 +104,23 @@ write_limma_tables <- function(model_results,
   statlist <- model_results$stats_by_contrast
   data <- model_results$data
 
+
+  # Make sure proteins in results have matching rows in annotation
+  passed_annot <- check_rows_in(obj = c(list(data = data, statlist)),
+                                ref_rows = rownames(annotation))
+  if (!passed_annot) {
+    cli::cli_abort(c("Not all proteins/rownames in {.arg model_results} have a matching rowname in {.arg annotation}",
+                     "i" = "Are these objects from the same dataset?"))
+  }
+  # Make sure proteins in results have matching rows in data
+  passed_data <- check_rows_in(obj=c(statlist), ref_rows = rownames(data))
+
+  if (!passed_data) {
+    cli::cli_abort(c("Not all proteins/rownames in the stats_by_contrast slot of {.arg model_results} have a matching rowname in the data slot of {.arg model_results}",
+                     "i" = "Double-check your model fitting."))
+  }
+
+
   # Write summary CSV -------------------------------------------------------
   summary_output_file <- file.path(out_dir, summary_csv)
   cli::cli_inform("Writing DE summary table to {.path {summary_output_file}}")
@@ -121,8 +132,6 @@ write_limma_tables <- function(model_results,
   summary$pval_thresh <- model_results$pval.thresh
   summary$lfc_thresh <- model_results$lfc.thresh
   summary$p_adj_method <- model_results$adj.method
-
-
 
   utils::write.csv(x = summary,
                    file = summary_output_file,
@@ -156,22 +165,26 @@ write_limma_tables <- function(model_results,
   cli::cli_inform("Writing combined results table to {.path {combined_output_file}}")
 
 
-  # Get common row order from the first element of the stat list
-  row_order <- rownames(statlist[[1]])
-  # Reorder rows and rename cols for each element of the results statlist
-  results_for_combine <- lapply(X = names(statlist),
-                                function(x) {
-                                  tmp <- statlist[[x]][row_order, ,drop = F]
-                                  colnames(tmp) <- paste(colnames(tmp), x, sep = "_")
-                                  tmp
-                                })
-  combined_output_file <- file.path(out_dir, combined_file_csv)
-  combined_results <- cbind(annotation[row_order, ],
-                            data[row_order, ],
-                            results_for_combine)
-  utils::write.csv(x = combined_results,
+  ## combine annotation, data, and per contrast results
+  combined_results <- create_combined_results(annotation = annotation,
+                                              data = data,
+                                              statlist = statlist)
+
+  ## write combined results csv
+  combined_results_csv <- combined_results
+
+  # format Gene_name values so that excel does not convert them to date format
+  # e.g. SEPT11, SEPT9, SEPT7, EPT2, SEPT6, MARC1, SEPT8, SEPT10, MARC2
+  if ("Gene_name" %in% colnames(combined_results_csv)) {
+    combined_results_csv$Gene_name <- paste0('"=""', combined_results_csv$Gene_name,'"""')
+  }
+
+  csv_quote_cols <- which(colnames(combined_results_csv) != "Gene_name")
+  utils::write.csv(x = combined_results_csv,
                    file = combined_output_file,
-                   row.names = F)
+                   row.names = F,
+                   quote = csv_quote_cols)
+
 
   if (!file.exists(combined_output_file)) {
     cli::cli_abort(c("Failed to write combined results {.path .csv} to {.path {combined_output_file}}"))
@@ -255,32 +268,73 @@ write_per_contrast_csvs <- function(annotation_df,
     dir.create(output_dir, recursive = T)
   }
 
+  # format annotation_df GN column so that excel does not convert them to date format
+  # e.g. SEPT11, SEPT9, SEPT7, EPT2, SEPT6, MARC1, SEPT8, SEPT10, MARC2
+  annotation_df$Gene_name <- paste0('"=""',annotation_df$Gene_name,'"""')
+  csv_quote_cols <- which(colnames(annotation_df)!="Gene_name")
+
   # make list combining
   # annotation, intensity data, and statistical results
-  # reordering everything by rownames to match and subset
+  # reordering everything by data rownames to match and subset
   # Note: technically, these could be in different orders across contrasts,
   # If they differed across contrasts.
   per_contrast_results <- lapply(X = results_statlist,
-                                 FUN = function(x) cbind(annotation_df[rownames(x), ],
-                                                         data[rownames(x), ],
-                                                         x))
+                                 FUN = function(x) cbind(annotation_df[rownames(data), ],
+                                                         data[rownames(data), ],
+                                                         x[rownames(data), ]))
   # Make corresponding filenames
   filenames <- file.path(output_dir, paste0(names(per_contrast_results), ".csv"))
   # write
   tmp <- lapply(seq_along(per_contrast_results),
                 function(x)
-                  {
+                {
                   utils::write.csv(per_contrast_results[[x]],
                                    file = filenames[x],
-                                   row.names = F)
-                  }
-                )
+                                   row.names = F, quote = csv_quote_cols)
+                }
+  )
 
   # check
   write_success <- file.exists(filenames)
   names(write_success) <- names(per_contrast_results)
 
   write_success
+}
+
+
+
+#' Write combined results csv
+#'
+#' Internal function used to write the combined statistical results to a .csv
+#' file.
+#'
+#' @param annotation A dataframe of annotation data for each gene/protein.
+#' @param data A dataframe of normalized intensity data for each sample.
+#' @param statlist A list of per-contrast DE results.
+#'
+#' @return A dataframe of the combined results
+#'
+#' @examples
+#' # No examples yet
+create_combined_results <- function(annotation,
+                                    data,
+                                    statlist) {
+  # Get common row order from data
+  row_order <- rownames(data)
+  # Reorder rows and rename cols for each element of the results statlist
+  results_for_combine <- lapply(X = names(statlist),
+                                function(x) {
+                                  tmp <- statlist[[x]][row_order, ,drop = F]
+                                  colnames(tmp) <- paste(colnames(tmp), x, sep = "_")
+                                  tmp
+                                })
+
+  ## combine, annotation, data and combined stat results
+  combined_results <- cbind(annotation[row_order, ],
+                            data[row_order, ],
+                            results_for_combine)
+
+  combined_results
 }
 
 
@@ -311,22 +365,16 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
 
   # Maybe some argument processing
   normName <- names(norm.methods)[grep(norm.method,norm.methods)]
-
+  row_order <- rownames(data)
 
   # initialize workbook
   wb<-openxlsx::createWorkbook()
 
   # Set up annotation columns -----------------------------------------------
-  # Can I streamline this? And how much does this need to be here?
-  # Are these the same column names we enforced when making the annotation
-  # in the extract data function?
-  annotCols <- c("id", "Protein.Name","Accession.Number","Molecular.Weight", "Protein.Group.Score",
-                 "Identified.Peptide.Count","Exclusivity",
-                 "UniprotID", "Gene_name","Description")
-  newNames <- stringr::str_replace_all(annotCols, "[._]", " ") %>%
+  newNames <- stringr::str_replace_all(colnames(annotation), "[._]", " ") %>%
     stringr::str_replace("UniprotID", "UniProt ID")
   annot.title <- "Protein Annotation"
-  data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Intensities")
+  data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive Intensities")
   sheetName <- "Protein Results"
 
   # Initialize worksheet ----------------------------------------------------
@@ -338,7 +386,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   # Add annotation columns -----------------------------------------------------
 
   # Subset and rename
-  annot <- annotation[1:nrow(data), annotCols]
+  annot <- annotation[row_order, ]
   colnames(annot) <- newNames
   annot <- make_excel_hyperlinks(data = annot,
                                  url.col = "UniProt ID",
@@ -428,7 +476,8 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
                                     numFmt = "TEXT")
   openxlsx::addStyle(wb, sheet = sheetName, style = colStyle,
                      rows = title_row + 1, cols = data_col_start:data_col_end, stack=TRUE)
-  openxlsx::writeData(wb, sheet = sheetName, x = data,
+
+  openxlsx::writeData(wb, sheet = sheetName, x = data[row_order, ],
                       startCol = data_col_start,
                       startRow = title_row + 1,
                       colNames = TRUE,
@@ -460,6 +509,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   for(i in base::seq_along(names(statlist))) {
 
     stats <- statlist[[i]]
+    stats<-stats[row_order, ]
     comparison <- names(statlist)[i]
     title_color <- colors2[i]
     header_color <- lightcolors2[i]
@@ -596,4 +646,3 @@ make_excel_hyperlinks <- function(data, url.col, url) {
 
   return(data)
 }
-
