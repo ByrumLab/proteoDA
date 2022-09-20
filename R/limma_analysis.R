@@ -127,6 +127,10 @@ fit_limma_model <- function(data,
 
   # contrasts fit and eBayes are the same across paired and not paired
   con.fit <- limma::contrasts.fit(fit = fit, contrasts = contrasts)
+  if (!requireNamespace("statmod", quietly = TRUE)) {
+    cli::cli_abort(c("Package \"statmod\" must be installed to perform empirical Bayes moderation of test statistics"))
+  }
+
   efit <- limma::eBayes(fit = con.fit, robust = TRUE)
   cli::cli_inform("limma DE analysis with {.arg paired} == {paired} complete")
 
