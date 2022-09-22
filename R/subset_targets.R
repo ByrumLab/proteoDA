@@ -76,9 +76,9 @@ subset_targets <- function(targets, filter_list, ignore.case = TRUE) {
   # checked earlier in the pipeline), so maybe good to throw an error here in case
   # that happens?
   if (nrow(tar_removed) + nrow(tar_kept) != nrow(targets)) {
-    cli::cli_abort("Issue when subsetting targets",
-                   "!" = "Rows kept + rows removed != rows input",
-                   "i" = "Is there an {.val NA} in the column you're subsetting from?")
+    cli::cli_abort(c("Issue when subsetting targets",
+                     "!" = "Rows kept + rows removed != rows input",
+                     "i" = "Is there an {.val NA} in the column you're subsetting from?"))
   }
 
   # Write info to logs:
