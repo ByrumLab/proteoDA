@@ -4,7 +4,13 @@
 \alias{make_design}
 \title{Prepare limma model design matrix}
 \usage{
-make_design(targets, group_column, factor_columns = NULL, paired_column = NULL)
+make_design(
+  targets,
+  group_column = NULL,
+  factor_columns = NULL,
+  paired_column = NULL,
+  designformula = NULL
+)
 }
 \arguments{
 \item{targets}{A targets dataframe. In the pipeline, usually the "targets" slot
@@ -18,6 +24,10 @@ that describes additional statistical factors for analysis. Default is NULL.}
 
 \item{paired_column}{Optional. The name of the column in the targets dataframe
 that lists paired samples, for use in limma's paired mixed effect model.}
+
+\item{designformula}{Optional. A chracter string that can be coercted into a terms
+object that is appropriate for input as the object for stats:model.matrix(). When
+designformula is specified group_columns, factor_columns and paired_column is ignored.}
 }
 \value{
 A list with three slots \enumerate{
@@ -29,7 +39,8 @@ factor, and paired columns specified.
 }
 \description{
 Creates the model design matrix, targets data frame, and design formula for use in
-limma.
+limma. Either group_column or designformula must be specified. If designformula is
+specific all other column parameters are ignored.
 }
 \examples{
 # No examples yet
