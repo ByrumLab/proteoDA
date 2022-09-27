@@ -177,6 +177,8 @@ make_design <- function(targets,
     tar <- targets[ , rownames(attr(formulaobject, which = "factors")), drop = F]
     formulaobject <- stats::terms(eval(parse(text = designformula)), data=tar)
     design <- stats::model.matrix(eval(parse(text = designformula)), data = tar)
+    extratext <- rownames(attr(formulaobject, which="factors"))
+    colnames(design) <- gsub(paste(extratext, collapse="|"), "", colnames(design))
     
     cli::cli_inform("Design matrix and targets created")
     cli::cli_inform(c("v" = "Success"))
