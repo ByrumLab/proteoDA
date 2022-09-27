@@ -179,7 +179,9 @@ make_design <- function(targets,
     design <- stats::model.matrix(eval(parse(text = designformula)), data = tar)
     extratext <- rownames(attr(formulaobject, which="factors"))
     colnames(design) <- gsub(paste(extratext, collapse="|"), "", colnames(design))
-    
+    colnames(design) <- gsub("\\(Intercept\\)", "Intercept", colnames(design))
+    colnames(design) <- gsub("\\:", ".", colnames(design))
+
     cli::cli_inform("Design matrix and targets created")
     cli::cli_inform(c("v" = "Success"))
     

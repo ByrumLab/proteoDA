@@ -209,6 +209,11 @@ des_reb <- make_design(targets = norm_reb$targets,
                            factor_columns = NULL,
                            paired_column = NULL)
 
+des_kaul <- make_design(targets = norm_kaul$targets,
+                           group_column = "group",
+                           factor_columns = NULL,
+                           paired_column = NULL,
+                           designformula = "~group+gender+group:gender")
 
 # Make contrasts ----------------------------------------------------------
 # Higgs
@@ -222,6 +227,9 @@ contrasts_ndu_brain <- make_contrasts(file = "for_testing/Example Data/NDu_03082
 contrasts_ndu_intestine <- make_contrasts(file = "for_testing/Example Data/NDu_030822_DIA/input_files/intestine_contrasts.txt",
                                           design = des_ndu$design)
 
+#kaul
+contrasts_kaul <- make_contrasts(file = "for_testing/Example\ Data/kaul/contrasts_designformula.csv",
+                                          design = des_kaul$design)
 # Lupashin
 # contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv",
 #                                      design = des_lupashin$design)
@@ -267,6 +275,9 @@ fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
                            design_obj = des_reb,
                            contrasts_obj = contrasts_rebello)
 
+fit_kaul <- fit_limma_model(data = norm_kaul$normList[["cycloess"]],
+                           design_obj = des_kaul,
+                           contrasts_obj = contrasts_kaul)
 # Extract results ---------------------------------------------------------
 results_lupashin <- extract_limma_DE_results(limma_fit = fit_lupashin)
 results_ndu_brain <- extract_limma_DE_results(limma_fit = fit_ndu_brain)
@@ -274,7 +285,7 @@ results_ndu_intestine <- extract_limma_DE_results(limma_fit = fit_ndu_intestine)
 results_ndu_kidney <- extract_limma_DE_results(limma_fit = fit_ndu_kidney)
 results_zhan <- extract_limma_DE_results(limma_fit = fit_zhan)
 results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
-
+results_kaul <- extract_limma_DE_results(limma_fit = fit_kaul)
 
 
 
@@ -311,12 +322,22 @@ write_limma_tables(model_results = results_zhan,
                     annotation = ext_zhan$annot,
                     ilab = "zhan_982974")
 
+write_limma_tables(model_results = results_kaul,
+                    norm.method = "cycloess",
+                    annotation = ext_kaul$annot,
+                    ilab = "kaul_82921", overwrite=T)
+
 
 # testing report making ---------------------------------------------------
 write_limma_plots(model_results = results_reb,
                    annotation = ext_reb$annot,
                    groups = norm_reb$targets$group,
                    output_dir = "output_rebello")
+
+write_limma_plots(model_results = results_kaul,
+                   annotation = ext_kaul$annot,
+                   groups = norm_kaul$targets$group,
+                   output_dir = "output_kaul")
 
 write_limma_plots(model_results = results_reb,
                    annotation = ext_reb$annot,
