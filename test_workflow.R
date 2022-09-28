@@ -35,6 +35,8 @@ ext_zhan <- read_DIA_data("for_testing/Example Data/Zhan_DIA_217_samples/input_f
 
 ext_reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv")
 
+ext_kaul <- read_DIA_data("for_testing/Example Data/kaul/Samples Report of Kaul_030922.csv")
+
 # Make targets ------------------------------------------------------------
 
 target_higgs_metadata <- make_targets(input_file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
@@ -64,6 +66,9 @@ target_zhan <- make_targets(input_file = "for_testing/Example Data/Zhan_DIA_217_
 target_reb <- make_targets(input_file = "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv",
                            sample_IDs = colnames(ext_reb$data))
 
+target_kaul <- make_targets(input_file = "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv",
+                            sample_IDs =  colnames(ext_kaul$data))
+
 # Subset targets --------------------------------------------------------------
 sub_higgs <- subset_targets(targets = target_higgs_metadata,
                             filter_list = list(group = "Pool"))
@@ -79,6 +84,9 @@ sub_zhan <- subset_targets(targets = target_zhan,
 
 
 sub_reb <- subset_targets(targets = target_reb,
+                          filter_list = list(group = "Pool"))
+
+sub_kaul <- subset_targets(targets = target_kaul,
                           filter_list = list(group = "Pool"))
 
 
@@ -109,6 +117,11 @@ norm_reb <- process_data(data = ext_reb$data,
                          targets = sub_reb$targets,
                          min.reps = 2,
                          min.grps = 1)
+
+norm_kaul <- process_data(data = ext_kaul$data,
+                          targets = sub_kaul$targets,
+                          min.reps = 4,
+                          min.grps = 2)
 
 # Normalization report ----------------------------------------------------
 # Higgs
@@ -184,25 +197,59 @@ write_qc_report(processed_data = norm_reb,
 
 
 # Make design -------------------------------------------------------------
-des_higgs<- make_design(targets=norm_higgs$targets,
+des_higgs <- make_design(targets=norm_higgs$targets,
                         group_column = "group",
                         factor_columns = NULL,
                         paired_column = NULL)
+
+des_higgs2 <- make_design(targets=norm_higgs$targets,
+                        group_column = "group",
+                        factor_columns = NULL,
+                        paired_column = NULL,
+                        design_formula = "~0 + group")
+
+waldo::compare(des_higgs, des_higgs2)
 
 des_ndu <- make_design(targets = norm_ndu$targets,
                        group_column = "group",
                        factor_columns = NULL,
                        paired_column =  NULL)
 
+des_ndu2 <- make_design(targets = norm_ndu$targets,
+                       group_column = "group",
+                       factor_columns = "test",
+                       paired_column =  NULL,
+                       design_formula = "~ 0 + group")
+
+waldo::compare(des_ndu, des_ndu2) # slight difference in order, should be no big deal
+
 des_lupashin <- make_design(targets = norm_lupashin$targets,
                             group_column = "group",
                             factor_columns = NULL,
                             paired_column = NULL)
 
+des_lupashin2 <- make_design(targets = norm_lupashin$targets,
+                            group_column = "group",
+                            factor_columns = NULL,
+                            paired_column = NULL,
+                            design_formula = "~ 0 + group")
+
+waldo::compare(des_lupashin, des_lupashin2) # same: different order, but otherwise should be the same.
+
+
 des_zhan <- make_design(targets = norm_zhan$targets,
                         group_column = "group",
                         factor_columns = NULL,
                         paired_column = NULL)
+
+
+des_zhan2 <- make_design(targets = norm_zhan$targets,
+                        group_column = "group",
+                        factor_columns = NULL,
+                        paired_column = NULL,
+                        design_formula = "~0 + group")
+waldo::compare(des_zhan, des_zhan2) # switched order again, but looks the same
+
 
 des_reb <- make_design(targets = norm_reb$targets,
                            group_column = "group",
@@ -213,7 +260,14 @@ des_kaul <- make_design(targets = norm_kaul$targets,
                            group_column = "group",
                            factor_columns = NULL,
                            paired_column = NULL,
-                           designformula = "~group+gender+group:gender")
+                           design_formula = "~group+gender")
+
+des_kaul2 <- make_design(targets = norm_kaul$targets,
+                        group_column = "group",
+                        factor_columns = "gender",
+                        paired_column = NULL)
+waldo::compare(des_kaul, des_kaul2) # order and levels a little different by defauls, but looks OK
+
 
 # Make contrasts ----------------------------------------------------------
 # Higgs
@@ -228,8 +282,8 @@ contrasts_ndu_intestine <- make_contrasts(file = "for_testing/Example Data/NDu_0
                                           design = des_ndu$design)
 
 #kaul
-contrasts_kaul <- make_contrasts(file = "for_testing/Example\ Data/kaul/contrasts_designformula.csv",
-                                          design = des_kaul$design)
+contrasts_kaul <- make_contrasts(file = "for_testing/Example Data/kaul/contrasts_designfomula.csv",
+                                          design = des_kaul2$design)
 # Lupashin
 # contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv",
 #                                      design = des_lupashin$design)
@@ -240,6 +294,10 @@ contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_0
 # Zhan
 contrasts_zhan <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt",
                                  design = des_zhan$design)
+
+contrasts_zhan2 <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt",
+                                 design = des_zhan2$design)
+waldo::compare(contrasts_zhan, contrasts_zhan2)
 
 # Rebello
 contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/contrasts.csv",
@@ -270,6 +328,12 @@ fit_zhan <- fit_limma_model(data = norm_zhan$normList[["vsn"]],
                             design_obj = des_zhan,
                             contrasts_obj = contrasts_zhan)
 
+fit_zhan2 <- fit_limma_model(data = norm_zhan$normList[["vsn"]],
+                            design_obj = des_zhan2,
+                            contrasts_obj = contrasts_zhan2)
+
+waldo::compare(fit_zhan, fit_zhan2)
+
 
 fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
                            design_obj = des_reb,
@@ -284,9 +348,11 @@ results_ndu_brain <- extract_limma_DE_results(limma_fit = fit_ndu_brain)
 results_ndu_intestine <- extract_limma_DE_results(limma_fit = fit_ndu_intestine)
 results_ndu_kidney <- extract_limma_DE_results(limma_fit = fit_ndu_kidney)
 results_zhan <- extract_limma_DE_results(limma_fit = fit_zhan)
+results_zhan2 <- extract_limma_DE_results(limma_fit = fit_zhan2)
 results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
 results_kaul <- extract_limma_DE_results(limma_fit = fit_kaul)
 
+waldo::compare(results_zhan, results_zhan2)
 
 
 # Write results -----------------------------------------------------------

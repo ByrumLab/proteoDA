@@ -9,7 +9,7 @@ make_design(
   group_column = NULL,
   factor_columns = NULL,
   paired_column = NULL,
-  designformula = NULL
+  design_formula = NULL
 )
 }
 \arguments{
@@ -25,7 +25,7 @@ that describes additional statistical factors for analysis. Default is NULL.}
 \item{paired_column}{Optional. The name of the column in the targets dataframe
 that lists paired samples, for use in limma's paired mixed effect model.}
 
-\item{designformula}{Optional. A chracter string that can be coercted into a terms
+\item{design_formula}{Optional. A character string that can be coerced into a terms
 object that is appropriate for input as the object for stats:model.matrix(). When
 designformula is specified group_columns, factor_columns and paired_column is ignored.}
 }
@@ -39,8 +39,9 @@ factor, and paired columns specified.
 }
 \description{
 Creates the model design matrix, targets data frame, and design formula for use in
-limma. Either group_column or designformula must be specified. If designformula is
-specific all other column parameters are ignored.
+limma. Either group_column or design_formula must be specified. If design_formula is
+specified all other column parameters are ignored. Currently, if you want to use a
+random factor model with paired_column, you cannot specify your model via design_formula.
 }
 \examples{
 # No examples yet

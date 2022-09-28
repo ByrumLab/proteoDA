@@ -1,9 +1,10 @@
 #' Prepare limma model design matrix
 #'
 #' Creates the model design matrix, targets data frame, and design formula for use in
-#' limma. Either group_column or designformula must be specified. If designformula is
-#' specific all other column parameters are ignored.
-#' 
+#' limma. Either group_column or design_formula must be specified. If design_formula is
+#' specified all other column parameters are ignored. Currently, if you want to use a
+#' random factor model with paired_column, you cannot specify your model via design_formula.
+#'
 #' @param targets A targets dataframe. In the pipeline, usually the "targets" slot
 #'   of the list output by \code{\link{process_data}}.
 #' @param group_column The name of the column in the targets dataframe that
@@ -12,7 +13,7 @@
 #'   that describes additional statistical factors for analysis. Default is NULL.
 #' @param paired_column Optional. The name of the column in the targets dataframe
 #'   that lists paired samples, for use in limma's paired mixed effect model.
-#' @param designformula Optional. A chracter string that can be coercted into a terms
+#' @param design_formula Optional. A character string that can be coerced into a terms
 #'   object that is appropriate for input as the object for stats:model.matrix(). When
 #'   designformula is specified group_columns, factor_columns and paired_column is ignored.
 #'
@@ -31,21 +32,13 @@ make_design <- function(targets,
                         group_column = NULL,
                         factor_columns = NULL,
                         paired_column = NULL,
-                        designformula = NULL) {
-  # In current implementation, not saved to log file for some reason?
-  # Just commenting out for now.
-  # param <- list()
-  # param[["group"]] <- group
-  # param[["factors"]] <- ifelse(is.null(factors), "NULL", paste(factors, collapse = ", "))
-  # param[["paired"]] <- ifelse(is.null(paired), "NULL", paired)
-  # param <- t(data.frame(param))
-  # colnames(param) <- "make.design.parameters"
-  # param
+                        design_formula = NULL) {
+  cli::cli_rule()
 
   ## if input values are all column names in targets
-  if(is.null(designformula)){
-    if(is.null(group_column)){
-      cli::cli_abort(c("Either designformula or group_column must be specified"))
+  if (is.null(design_formula)) {
+    if (is.null(group_column)) {
+      cli::cli_abort(c("Either {.arg design_formula} or {.arg group_column} must be specified"))
     }
     pass <- c(group_column, paired_column, factor_columns) %in% colnames(targets)
 
@@ -144,49 +137,52 @@ make_design <- function(targets,
         # contrasts for the later terms of the model formula?
     }
     colnames(design) <- desCols
-    formulaobject <- terms(eval(parse(text=designformula)), data=tar)
 
-    cli::cli_inform("Design matrix and targets created")
-    cli::cli_inform(c("v" = "Success"))
+    output <- list(design = design,
+                   targets = tar,
+                   designformula = designformula)
 
-    ## the targets file returned by this function should be used in the limma analysis
-    list(design = design,
-        targets = tar,
-        designformula = designformula)
+  } else { # When supplying design_formula
 
-    } 
-    else {
-    formulaobject <- stats::terms(eval(parse(text=designformula)))
-    if(class(formulaobject)[2] != "formula"){
-        cli::cli_abort(c("Provided string could not be coerced to class terms formula"))
-    }
-    if(!is.null(group_column)){
-        cli::cli_inform(c("Specfied group column is ignored when designformula is provided"))
-    }
-    if(!is.null(paired_column)){
-        cli::cli_inform(c("Specfied paired column is ignored when designformula is provided"))
-    }
-    if(!is.null(factor_columns)){
-        cli::cli_inform(c("Specfied factor column(s) is ignored when designformula is provided"))
-    }
-    if(attr(formulaobject, which="intercept") == 0){
-        cli::cli_inform(c("A no-intercept model has been specified"))
-    } else{
-        cli::cli_inform(c("An implied intercept model has been specified"))
-    }      
-    tar <- targets[ , rownames(attr(formulaobject, which = "factors")), drop = F]
-    formulaobject <- stats::terms(eval(parse(text = designformula)), data=tar)
-    design <- stats::model.matrix(eval(parse(text = designformula)), data = tar)
-    extratext <- rownames(attr(formulaobject, which="factors"))
-    colnames(design) <- gsub(paste(extratext, collapse="|"), "", colnames(design))
-    colnames(design) <- gsub("\\(Intercept\\)", "Intercept", colnames(design))
-    colnames(design) <- gsub("\\:", ".", colnames(design))
+      formulaobject <- stats::terms(eval(parse(text=design_formula)))
 
-    cli::cli_inform("Design matrix and targets created")
-    cli::cli_inform(c("v" = "Success"))
-    
-    list(design = design,
-        targets = tar,
-        designformula = designformula)
+      if (class(formulaobject)[2] != "formula") {
+          cli::cli_abort(c("String provided in {.arg design_formula} could not be coerced to a formula"))
+      }
+      if (!is.null(group_column)) {
+          cli::cli_inform(c("{.arg group_column} is ignored when {.arg design_formula} is provided"))
+      }
+      if (!is.null(paired_column)) {
+          cli::cli_inform(c("{.arg paired_column} is ignored when {.arg design_formula} is provided"))
+      }
+      if (!is.null(factor_columns)) {
+          cli::cli_inform(c("{.arg factor_columns} is ignored when {.arg design_formula} is provided"))
+      }
+      if (attr(formulaobject, which="intercept") == 0) {
+          cli::cli_inform(c("A no-intercept model has been specified"))
+      } else{
+          cli::cli_inform(c("An intercept model has been specified"))
+      }
+
+      tar <- targets[ , rownames(attr(formulaobject, which = "factors")), drop = F]
+      formulaobject <- stats::terms(eval(parse(text = design_formula)), data = tar)
+      design <- stats::model.matrix(eval(parse(text = design_formula)), data = tar)
+      extratext <- rownames(attr(formulaobject, which="factors"))
+
+      # Fix colnames of design matrix to be compatible with limma
+      colnames(design) <- stringr::str_remove_all(colnames(design), paste(extratext, collapse="|"))
+      colnames(design) <- stringr::str_replace_all(colnames(design), "\\(Intercept\\)", "Intercept")
+      colnames(design) <- stringr::str_replace_all(colnames(design), "\\:", ".")
+
+      output <- list(design = design,
+                     targets = tar,
+                     designformula = design_formula)
     }
+
+  cli::cli_inform("Design matrix and targets created")
+  cli::cli_rule()
+  cli::cli_inform(c("v" = "Success"))
+
+  output
+
 }
