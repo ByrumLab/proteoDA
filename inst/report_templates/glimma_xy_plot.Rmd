@@ -40,7 +40,7 @@ uams_glimmaXY(
         ylab = ylab,
         status = status,
         anno = anno,
-        display.columns = c("UniprotID", "Gene_name"),
+        display.columns = c("Gene_name", "Description", "UniprotID"),
         main = " ",
         width = width,
         height = height)
