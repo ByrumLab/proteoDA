@@ -213,6 +213,18 @@ function setupXYInteraction(data)
         stripeClasses: ['stripe1','stripe2']
       });
 
+    var col_number = datatable.columns().count();
+    // Loop of column indices, get column names
+    for (var i = 0; i < col_number; i++) {
+      var title = $(datatable.column(i).header()).text();
+      if (title === "negLog10adjP") {
+        $(datatable.column(i).visible(false));
+      }
+      if (title === "negLog10rawP") {
+        $(datatable.column(i).visible(false));
+      }
+    }
+
     datatable.on('click', 'tr', function() { tableClickListener(datatable, state, data, $(this)) } );
     data.xyView.addSignalListener('click', function(name, value) { XYSignalListener(datatable, state, value[0], data) } );
 
