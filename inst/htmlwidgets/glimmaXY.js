@@ -179,6 +179,12 @@ function setupXYInteraction(data)
       {
         data: data.xyTable,
         columns: data.cols.map(el => ({"data": el, "title": el})),
+        columnDefs: [
+          {
+            targets: 0,
+            visible: false,
+          },
+        ],
         rowId: "gene",
         dom: '<"geneDisplay fade-in">Bfrtip',
         buttons: {
