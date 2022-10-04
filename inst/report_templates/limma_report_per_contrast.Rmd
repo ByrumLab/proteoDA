@@ -44,3 +44,99 @@ cat(res, sep = "\n")
 
 # {-}
 
+```{js, echo = F}
+window.addEventListener('DOMContentLoaded', (event) => {
+    console.log('DOM fully loaded and parsed');
+    
+    var listItems = document.getElementById("section").getElementsByTagName("li");
+    console.log(listItems.length);
+    for (var i=0; i<listItems.length; i++) {
+      listItems[i].addEventListener("click", function(i) {
+        alert("pre resize");
+        $($.fn.dataTable.tables()).DataTable() // can do only one table by indexing [] after tables()[1])
+          .columns.adjust(); 
+        alert("post resize"); // happens before the screen is even done switching
+        });
+    };
+});
+```
+
+
+```{r, eval = F, echo = F}
+
+  var listItems2 = document.getElementById("section").getElementsByTagName("li");
+  console.log(listItems2);
+  console.log("length");
+  console.log(document.getElementById("section").getElementsByTagName("li").length);
+  console.log("before for loop");
+  
+  for (var i=0; i<4; i++) {
+    console.log(document.getElementById("section").getElementsByTagName("li")[i]);
+    
+    console.log("inside for loop");
+    
+    listItems2[i].addEventListener("click", function() {
+    $($.fn.dataTable.tables(true)).DataTable()
+      .columns.adjust().draw(); 
+    });
+  };
+  
+  console.log("after for loop");
+$("#section").on("click", function(e) {
+  console.log("click in section");
+});
+
+$('li[role="presentation"').on("click", function(e) {
+  console.log("click on li tab");
+  $($.fn.dataTable.tables(true)).DataTable()
+   .columns.adjust().draw();
+});
+
+$("#volcano-raw-p").on("click", function (e) {
+  console.log("clicked volcano raw");
+});
+
+
+  $($.fn.dataTable.tables(true)).DataTable()
+   .columns.adjust().draw();
+   
+   
+   $("#section").on("click", function(e) {
+  console.log("click in section");
+  
+  var button_array = Array.prototype.slice.call(clear_buttons);
+  button_array.every().click();
+});
+
+$("#volcano-raw-p").on("click", function (e) {
+  console.log("clicked volcano raw");
+});
+
+
+$('a[role="tab"]').on('click', function (e) {
+  console.log("clicked on toggle tab");
+  //  $.fn.dataTable
+  //      .tables( { visible: true, api: true } )
+  //      .scroller.measure();
+})
+
+
+var listItems = document.getElementById("section").getElementsByTagName("a");
+var clear_buttons = document.getElementsByClassName("save-button clearSubset");
+console.log(clear_buttons);
+console.log(listItems);
+console.log($('li[role="presentation"]'));
+console.log($('a[role="tab"]'));
+
+$(document.getElementById("section").getElementsByTagName("li")).on("click", function(e) {
+  console.log(e);
+});
+
+console.log("test")
+$('a[role="tab"]').on("click", function(e) {
+  console.log(e);
+  //datatable.columns.adjust().draw();
+});
+
+```
+
