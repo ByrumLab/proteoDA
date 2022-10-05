@@ -223,45 +223,6 @@ function setupXYInteraction(data) {
       }
     }
 
-    // I've done a ton to try to fix the issue of headers being incorrect
-    // when switching to new tabs
-
-    // As far as I can tell, the issue is because each data table gets initialized
-    // above, and 3 of them aren't visible. The non-visible ones
-    // inherit an incorrect width, so when they're initially displayed they have the wrong width
-
-    // This can be fixed by taking some action (clearing the table, selecting a point
-    // on the graph) that causes the table to be re-drawn.
-
-    // Importantly, taking an action that does not cause the table to be re-drawn
-    // (e.g., selecting a row on the table) does not fix the header issue.
-
-    // Datatable has methods for re-drawing and resizing tables:
-    // datatable.columns.adjust(), for example
-
-    // The trick is: how to trigger the re-drawing?
-    // For tabs, as we have here, the internet says to trigger on
-    // a shown.bw.tab event:
-    //$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-    //  do resizing
-    //})
-
-    // I did some testing, and shown.bs.tab events never seem to occur.
-    // I can't figure out if there's another event that triggers when the active
-    // tab switches.
-
-    // Instead,
-    // I tried resizing specifically when clicking on the tabs,
-    // which in our document are labeled as section:
-    //$("#section").on("click", function(e) {
-    //  datatable.columns.adjust().draw();
-    //});
-
-    // This ALMOST gets the desired behaviour.
-    // The area is too large: it works fro clicking anywhere
-    // and the redrawing happens too late, almost: you have to click twice in the same tab
-    // to see the redrawn thing.
-
     datatable.on('click', 'tr', function() { tableClickListener(datatable, state, data, $(this)) } );
     data.xyView.addSignalListener('click', function(name, value) { XYSignalListener(datatable, state, value[0], data) } );
 

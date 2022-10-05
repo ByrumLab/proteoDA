@@ -7,7 +7,6 @@ if ({{plot}} == "Volcano raw P") {
   xlab <- "logFC"
   ylab <- "negLog10rawP"
   status <- data$sig.PVal
-  
   cols_to_display <- c("Gene_name", "Description", "UniprotID", "logFC", "p", "adjusted_p")
 } else if ({{plot}} == "Volcano adjusted P") {
   x <- data$logFC
