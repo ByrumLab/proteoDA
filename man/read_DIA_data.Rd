@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_import.R
 \name{read_DIA_data}
 \alias{read_DIA_data}
-\title{Loading Maxquant data}
+\title{Loading DIA data from MaxQuant}
 \usage{
 read_DIA_data(input_file = NULL, sample_IDs = NULL)
 }
@@ -15,23 +15,7 @@ ask you to pick a file from the file browser.}
 case all sample IDs are analyzed. These are determined from column names.}
 }
 \value{
-A list of extracted data, with 5 elements:
-\enumerate{
-\item "data", a dataframe with N rows and M cols, where N is proteins and M is
-individual sample intensities. Rownames in this data frame give a protein ID,
-in the form of UniprotID_Gene_name_id. These
-proteins have been partially filtered: contaminants removed.
-\item "annot". a dataframe with N rows and X cols, where N is proteins and the X
-cols are various protein annotation data. Rownames in this data frame give a protein ID,
-in the form of UniprotID_Gene_name_id.
-\item "param", a dataframe with 1 column giving the value of some of the
-parameters used to call the function, but also other info it parses from the
-file. Rownames give the info on what each value is.
-\item  "stats", a named list of statistics on sample #, contaminants
-removed, etc.
-\item a character vector of the ilab variable (also listed in the
-param dataframe).
-}
+A prototype of our new S3 list type (currently just a list).
 }
 \description{
 A function to extract and load DIA MaxQuant data. The \code{read_DIA_data}
