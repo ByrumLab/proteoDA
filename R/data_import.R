@@ -17,7 +17,7 @@
 #' @param sample_IDs Optional: a vector of sample IDs to analyze. Default is NULL, in which
 #'   case all sample IDs are analyzed. These are determined from column names.
 #'
-#' @return A prototype of our new S3 list type (currently just a list).
+#' @return A prototype of our new S3 list type.
 #'
 #' @export
 #'
@@ -73,7 +73,7 @@ read_DIA_data <- function(input_file = NULL,
   ## return a list of data.frame containing the extracted quality
   ## filtered intensity data, corresponding extracted annotation,
   ## stats, and input parameters
-  list(
+  out <- list(
     data = clean_data,
     annototation = clean_annot,
     metadata = NULL,
@@ -82,6 +82,8 @@ read_DIA_data <- function(input_file = NULL,
     results = NULL,
     tags = NULL
   )
+
+  new_DIAlist(out)
 }
 
 

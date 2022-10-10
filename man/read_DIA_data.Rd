@@ -15,7 +15,7 @@ ask you to pick a file from the file browser.}
 case all sample IDs are analyzed. These are determined from column names.}
 }
 \value{
-A prototype of our new S3 list type (currently just a list).
+A prototype of our new S3 list type.
 }
 \description{
 A function to extract and load DIA MaxQuant data. The \code{read_DIA_data}
