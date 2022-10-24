@@ -45,6 +45,9 @@ validate_DIAlist <- function(x) {
     cli::cli_abort("The {.arg data} slot of a DIAlist must contain only numeric data")
   }
 
+
+  # CHECKS FOR TARGETS/METADATA
+
   # If all checks pass, return input
   x
 }

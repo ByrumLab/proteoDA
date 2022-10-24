@@ -6,139 +6,84 @@
 #' (see Value, below). Calls two subfunctions: \code{\link{import_meta}} and
 #' \code{\link{get_dia_sample_number}}.
 #'
-#' @param sample_IDs A character vector of sample IDs, from which the targets
-#'   file is constructed. Generally, these are the column names of the
-#'   data slot in the object returned by \code{\link{read_DIA_data}}, e.g.,
-#'   \code{colnames(ext$data)}. Currently, these sample_IDs have a required format:
-#'   "Pool" samples must include the regex pattern \code{[P/p]ool_[[:digit:]]} in
-#'   the column name, and samples must contain the regex pattern
-#'   \code{[S/s]ample_[[:digit:]]} in the column name.
-#' @param input_file Optional: a metadata file, giving info on the samples.
+#' @param DIAlist A DIAlist to which metadata will be added
+#' @param metadata_file A metadata file, giving info on the samples.
 #'
-#' @return It depends:
-#'   \itemize{
-#'     \item If a metadata file is supplied and could be successfully matched
-#'       against the input column names, a full targets dataframe is returned.
-#'     \item If a metadata file is supplied but matching against column names
-#'       was unsuccessful, returns, with a warning, a list with two slots:
-#'       (1) the dataframe of assembled targets, and (2) the dataframe of
-#'       imported metadata. These must be manually combined before further
-#'       analysis.
-#'     \item When a metadata file is not supplied, returns, with a warning, an
-#'       incomplete targets dataframe.
-#'   }
+#' @return A prototype of our new S3 list type, with added metadata
 #'
 #' @export
 #'
 #' @examples
 #' # No examples yet
 #'
-make_targets <- function(input_file = NULL,
-                         sample_IDs) {
+add_metadata <- function(DIAlist,
+                         metadata_file) {
 
   cli::cli_rule()
 
+  validate_DIAlist(DIAlist)
+
+  if (!is.null(DIAlist$metadata)) {
+    cli::cli_inform(c("!" = "input DIAlist already contains metadata",
+                      "!" = "Overwriting"), )
+
+  }
+
   ## extract sample number from sample_IDs and use as data key
-  number  <- get_dia_sample_number(sample_IDs = sample_IDs)
+  number  <- get_dia_sample_number(sample_IDs = colnames(DIAlist$data))
 
+  # Import the metadata
+  # which has some formatting rules (see documentation)
+  metadata <- import_meta(input_file = metadata_file)
 
-  # If the user didn't supply a metadata file,
-  # build a targets dataframe just from the sample IDs provided
-  if (is.null(input_file)) {
-    targets <- data.frame(sampleIDs = sample_IDs,
-                          number = number,
-                          pipe = rep("DIA", length(sample_IDs)),
-                          enrichment= rep("protein", length(sample_IDs)),
-                          row.names=sample_IDs)
+  # Then, cross-check the sample numbers read in from the sample_IDs
+  # against the sample numbers in the metadata
+  # If they don't match, give some warnings and output non-integrated lists
+  if ((length(number) > length(metadata$number)) | (any(number %notin% metadata$number))) {
+    # more samples in data than in metadata
 
+    missing_samples <- number[number %notin% metadata$number]
     cli::cli_rule()
-    cli::cli_warn(c("!" = "metadata file not provided",
-                    "!" = "returning protein targets template for a DIA experiment",
-                    "!" = "import metadata for these samples and add it to the returned target template dataframe"))
-    output <- targets
-
-  } else { # Otherwise if metadata supplied
-
-    # Import the metadata
-    # which has some formatting rules (see documentation)
-    metadata <- import_meta(input_file = input_file,
-                            sample_IDs = sample_IDs)
-
-    # Then, cross-check the sample numbers read in from the sample_IDs
-    # against the sample numbers in the metadata
-    # If they don't match, give some warnings and output non-integrated lists
-    if ((length(number) > length(metadata$number)) | (any(number %notin% metadata$number))) {
-      # more samples in data than in metadata
-
-      missing_samples <- number[number %notin% metadata$number]
-
-      cli::cli_rule()
-      cli::cli_warn(c("!" = "Not all samples supplied in {.arg samples_ID} are present in metadata file",
-                      "!" = "sample number{?s} {missing_samples} not found in metadata file",
-                      "!" = "returning basic target info and metadata as separate dataframes within a list",
-                      "!" = "Combine them manually"))
-      ## create basic targets info.
-      targets <- data.frame(sampleIDs = sample_IDs,
-                            number = number,
-                            pipe = rep("DIA", length(sample_IDs)),
-                            enrichment = rep("protein", length(sample_IDs)),
-                            row.names = sample_IDs)
-
-      output <- list(targets = targets,
-                     metadata = metadata)
+    cli::cli_abort(c("!" = "Not all samples supplied in the data are present in metadata file",
+                    "!" = "sample number{?s} {missing_samples} not found in metadata file"))
     } else if ((length(metadata$number) > length(number)) | (any(metadata$number %notin% number))){
       # more samples in metadata than in data columns
 
       missing_samples <- metadata$number[metadata$number %notin% number]
 
       cli::cli_rule()
-      cli::cli_warn(c("!" = "Not all samples in metadata file are present in {.arg sample_IDs}",
-                      "!" = "sample number{?s} {missing_samples} in metadata file not found in {.arg sample_IDs}",
-                      "!" = "returning basic target info and metadata as separate dataframes within a list",
-                      "!" = "Combine them manually"))
-      ## create basic targets info.
-      targets <- data.frame(sampleIDs = sample_IDs,
-                            number = number,
-                            pipe = rep("DIA", length(sample_IDs)),
-                            enrichment = rep("protein", length(sample_IDs)),
-                            row.names = sample_IDs)
-
-      output <- list(targets = targets,
-                     metadata = metadata)
+      cli::cli_abort(c("!" = "Not all samples in metadata file are present in the data",
+                      "!" = "sample number{?s} {missing_samples} in metadata file not found in data"))
     } else {
-      # double check that everything is equal
-
-      ## create basic targets info.
-      targets <- data.frame(sampleIDs = sample_IDs,
-                            number = number,
-                            pipe = rep("DIA", length(sample_IDs)),
-                            enrichment = rep("protein", length(sample_IDs)),
-                            row.names = sample_IDs)
-
-      ## use sample number info. to sort targets info. so that it is in the same order
-      ## as the meta data file. combine targets and metadata into a single data.frame
-      m <- match(metadata$number, number)
-      targets <- targets[m, ]
-      remove  <- colnames(metadata) %in% colnames(targets)
-      targets <- cbind(targets, metadata[,remove==FALSE])
 
 
-      cli::cli_inform(c("metadata and targets info combined"))
-      cli::cli_rule()
-      cli::cli_inform(c("v" = "Success"))
+    ## create basic targets info.
+    targets <- data.frame(sampleIDs = colnames(DIAlist$data),
+                          number = number,
+                          row.names = colnames(DIAlist$data))
 
-      output <- targets
+    ## use sample number info. to sort targets info. so that it is in the same order
+    ## as the meta data file. combine targets and metadata into a single data.frame
+    m <- match(metadata$number, number)
+    targets <- targets[m, ]
+    remove  <- colnames(metadata) %in% colnames(targets)
+    targets <- cbind(targets, metadata[,remove==FALSE])
+
+    cli::cli_rule()
+    cli::cli_inform(c("v" = "Success"))
     }
-  }
-  output
+
+    DIAlist$metadata <- targets
+    validate_DIAlist(DIAlist)
+    DIAlist
 }
 
 
 #' Import metadata file
 #'
-#' Imports a delimted metadata file, checking for some required columns.
+#' Imports a delimited metadata file, checking for some required columns.
 #'
-#' @inheritParams make_targets
+#' @param input_file A metadata file, giving info on the samples.
 #'
 #' @return A dataframe of the imported metadata.
 #' @export
@@ -146,8 +91,7 @@ make_targets <- function(input_file = NULL,
 #' @examples
 #' # No examples yet
 #'
-import_meta <-function(input_file,
-                       sample_IDs) {
+import_meta <-function(input_file) {
 
   ## check that the file is a csv, tsv, or text file
   filext <- file_extension(input_file)
@@ -198,7 +142,13 @@ import_meta <-function(input_file,
 #'
 #' Extracts the sample number from a vector of sample IDs
 #'
-#' @inheritParams make_targets
+#' @param sample_IDs A character vector of sample IDs, from which the targets
+#'   file is constructed. Generally, these are the column names of the
+#'   data slot in the object returned by \code{\link{read_DIA_data}}, e.g.,
+#'   \code{colnames(ext$data)}. Currently, these sample_IDs have a required format:
+#'   "Pool" samples must include the regex pattern \code{[P/p]ool_[[:digit:]]} in
+#'   the column name, and samples must contain the regex pattern
+#'   \code{[S/s]ample_[[:digit:]]} in the column name.
 #'
 #' @return A numeric vector of the extracted sample numbers
 #' @export

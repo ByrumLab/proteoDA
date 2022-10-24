@@ -25,7 +25,7 @@
 #' # No examples yet
 #'
 read_DIA_data <- function(input_file = NULL,
-                         sample_IDs = NULL) {
+                          sample_IDs = NULL) {
 
 
   ## if no file is input by user the open file dialog box is

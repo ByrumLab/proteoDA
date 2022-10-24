@@ -23,51 +23,45 @@ CreatePackageReport("proteomicsDIA")
 
 #ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv") # Missing exclusivity col
 
-ext_higgs <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") # Worked
+higgs <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") # Worked
 
-ext_ndu <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") # Worked
+ndu <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") # Worked
 
-ext_kinter <- read_DIA_data("for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv") # Worked
+kinter <- read_DIA_data("for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv") # Worked
 
-ext_lupashin <- read_DIA_data("for_testing/Example Data/lupashin_030222/Samples Report of Lupashin_030222.csv") # Worked
+lupashin <- read_DIA_data("for_testing/Example Data/lupashin_030222/Samples Report of Lupashin_030222.csv") # Worked
 
-ext_zhan <- read_DIA_data("for_testing/Example Data/Zhan_DIA_217_samples/input_files/Samples Report of Zhan_111821_Experiment.csv")
+zhan <- read_DIA_data("for_testing/Example Data/Zhan_DIA_217_samples/input_files/Samples Report of Zhan_111821_Experiment.csv") # Worked
 
-ext_reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv")
+reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv") # Worked
 
-ext_kaul <- read_DIA_data("for_testing/Example Data/kaul/Samples Report of Kaul_030922.csv")
+kaul <- read_DIA_data("for_testing/Example Data/kaul/Samples Report of Kaul_030922.csv") # Worked
 
 # Make targets ------------------------------------------------------------
 
-target_higgs_metadata <- make_targets(input_file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
-                             sample_IDs = colnames(ext_higgs$data)) # worked
+higgs <- add_metadata(higgs, "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") # worked
 
-target_higgs_IDs_only <- make_targets(#file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
-                             sample_IDs = colnames(ext_higgs$data))
+ndu <- add_metadata(ndu, "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv") # worked
 
-target_ndu <- make_targets(input_file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                           sample_IDs = colnames(ext_ndu$data)) # worked
+ndu <- add_metadata(ndu, "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv") # worked
 
-target_ndu_IDs_only<- make_targets(#file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                           sample_IDs = colnames(ext_ndu$data))
+ndu <- add_metadata(ndu, "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv") # error as expected
 
-target_ndu_extra_IDs <- make_targets(input_file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                           sample_IDs = c(colnames(ext_ndu$data), "sample_45")) # Gave warning as expected
+ndu_chain <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") %>%
+  add_metadata("for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv")
 
-target_ndu_extra_meta<- make_targets(input_file = "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv",
-                                     sample_IDs = colnames(ext_higgs$data))
+ndu_chain2 <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") |>
+  add_metadata("for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv")
 
-target_lupashin <- make_targets(input_file = "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv",
-                                sample_IDs = colnames(ext_lupashin$data)) # Worked
+lupashin <- add_metadata(lupashin, "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv") # Worked
 
-target_zhan <- make_targets(input_file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv",
-                            sample_IDs = colnames(ext_zhan$data))
+zhan <- add_metadata(zhan, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # worked
 
-target_reb <- make_targets(input_file = "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv",
-                           sample_IDs = colnames(ext_reb$data))
+zhan <- add_metadata(zhan, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # error as expected
 
-target_kaul <- make_targets(input_file = "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv",
-                            sample_IDs =  colnames(ext_kaul$data))
+reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # worked
+
+kaul <- add_metadata(kaul, "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv")
 
 # Subset targets --------------------------------------------------------------
 sub_higgs <- subset_targets(targets = target_higgs_metadata,
