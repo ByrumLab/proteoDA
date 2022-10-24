@@ -45,8 +45,17 @@ validate_DIAlist <- function(x) {
     cli::cli_abort("The {.arg data} slot of a DIAlist must contain only numeric data")
   }
 
+  # data and annotation slots should have same number of rows
+  if (nrow(x$data) != nrow(x$annotation)) {
+    cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DIAlist must have the same number of rows")
+  }
 
   # CHECKS FOR TARGETS/METADATA
+  if (!is.null(x$metadata)) {
+    if (nrow(x$metadata) != ncol(x$data)) {
+      cli::cli_abort("The number of samples in the metadata ({nrow(x$metadata)}) do not match the number of samples in the data ({ncol(x$data)})")
+    }
+  }
 
   # If all checks pass, return input
   x

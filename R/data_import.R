@@ -75,7 +75,7 @@ read_DIA_data <- function(input_file = NULL,
   ## stats, and input parameters
   out <- list(
     data = clean_data,
-    annototation = clean_annot,
+    annotation = clean_annot,
     metadata = NULL,
     design = NULL,
     eBayes_fit = NULL,

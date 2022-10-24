@@ -63,26 +63,42 @@ reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafi
 
 kaul <- add_metadata(kaul, "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv")
 
-# Subset targets --------------------------------------------------------------
-sub_higgs <- subset_targets(targets = target_higgs_metadata,
-                            filter_list = list(group = "Pool"))
+# filter targets --------------------------------------------------------------
+sub_higgs <- filter_samples(higgs,
+                            filter_list = list(group = "Pool")) %>%
+  filter_samples(filter_list = list(group = "Pool"))
 
-sub_ndu <- subset_targets(targets = target_ndu,
+sub_ndu <- filter_samples(ndu,
                           filter_list = list(group = "Pool"))
 
-sub_lupashin <- subset_targets(targets = target_lupashin,
+sub_lupashin <- filter_samples(lupashin,
                                filter_list = list(group = c("Pool", "input")))
 
-sub_zhan <- subset_targets(targets = target_zhan,
+sub_zhan <- filter_samples(zhan,
                            filter_list = list(group = "Pool"))
 
 
-sub_reb <- subset_targets(targets = target_reb,
+sub_reb <- filter_samples(reb,
                           filter_list = list(group = "Pool"))
 
-sub_kaul <- subset_targets(targets = target_kaul,
+sub_kaul <- filter_samples(kaul,
                           filter_list = list(group = "Pool"))
 
+
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
+  filter_samples(filter_list = list(group = "Pool"))
+
+# subset proteins ---------------------------------------------------------
+
+
+
+# then make the proteinorm report, with the different normalization happening internally
+
+
+
+# Then, a normalize_data function,
+# which replaces the data with normalized data and sets some tags
 
 # Process data ------------------------------------------------------------
 norm_higgs <- process_data(data = ext_higgs$data,
@@ -120,8 +136,8 @@ norm_kaul <- process_data(data = ext_kaul$data,
 # Normalization report ----------------------------------------------------
 # Higgs
 write_proteinorm_report(processed_data = norm_higgs,
-                       grouping_column = "group",
-                       file = "higgs_update_2.pdf", overwrite = T)
+                        grouping_column = "group",
+                        file = "higgs_update_2.pdf", overwrite = T)
 
 # Ndu
 write_proteinorm_report(processed_data = norm_ndu,

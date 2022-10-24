@@ -1,11 +1,11 @@
-#' Filter samples from targets file
+#' Filter samples from a DIAlist
 #'
 #' Removes unwanted samples (rows) from the targets data frame This function is
 #' basically \code{\link[base]{subset}} with extra functionality. It removes
 #' rows if they contain certain values in a given column. By default, ignores
 #' the case of strings in rm.val. Calls \code{\link{make_log}} as a subfunction.
 #'
-#' @param targets The input targets dataframe to be filtered
+#' @param DIAlist The DIAlist to be filtered
 #' @param filter_list A named list describing how to filter targets dataframe.
 #'   The name for each element of the list gives a column to be filters, and
 #'   each element of the list should be a character vector of strings to search for
@@ -14,25 +14,21 @@
 #'   TRUE by default, such that case does not have to match. If FALSE, case must
 #'   match for rows to be removed.
 #'
-#' @return A list with three elements:
-#'   \enumerate{
-#'     \item "targets", a dataframe of subsetted targets
-#'     \item "stats", a dataframe with statistics on filtering
-#'     \item "param", a dataframe giving the parameters used for filtering
-#'   }
+#' @return A prototype of our new S3 list type.
+#'
 #' @export
 #'
 #' @importFrom rlang .data
 #'
 #' @examples
 #' \dontrun{
-#' sub_targets <- subset_targets(targets = target,
-#'                               filter_list = list(group = "pool"
-#'                                                  sample = c("sampleA", "sampleB")))
+#' DIAlist <- filter_samples(DIAlist
+#'                           filter_list = list(group = "pool"
+#'                                              sample = c("sampleA", "sampleB")))
 #' }
 #'
 
-subset_targets <- function(targets, filter_list, ignore.case = TRUE) {
+filter_samples <- function(DIAlist, filter_list, ignore.case = TRUE) {
 
   # check args
   if (!is.list(filter_list)) {
@@ -51,23 +47,27 @@ subset_targets <- function(targets, filter_list, ignore.case = TRUE) {
   to_remove <- for_match <- remove_reason <- NULL
 
   # Mark for removal any rows that match/contain the supplied strings to exclude
-  targets$to_remove <- F
+  in_meta <- DIAlist$metadata
+  in_meta$to_remove <- F
+
+
+
   for (column in names(filter_list)) {
     for (filter_string in unique(filter_list[[column]])) {
       if (ignore.case) {
-        targets$to_remove <- stringr::str_to_lower(targets[,column]) %>%
+        in_meta$to_remove <- stringr::str_to_lower(in_meta[,column]) %>%
           stringr::str_detect(stringr::str_to_lower(filter_string)) %>%
-          ifelse(T, targets$to_remove)
+          ifelse(T, in_meta$to_remove)
       } else {
-        targets$to_remove <- stringr::str_detect(targets[,column], filter_string) %>%
-          ifelse(T, targets$to_remove)
+        in_meta$to_remove <- stringr::str_detect(in_meta[,column], filter_string) %>%
+          ifelse(T, in_meta$to_remove)
       }
     }
   }
 
   # Do subsetting, keeping removed samples for stats.
-  tar_removed <- subset(targets, subset = to_remove, select = c(-to_remove))
-  tar_kept <- subset(targets, subset = !to_remove, select = c(-to_remove))
+  meta_removed <- subset(in_meta, subset = to_remove, select = c(-to_remove))
+  meta_kept <- subset(in_meta, subset = !to_remove, select = c(-to_remove))
 
   # Check that sample numbers match
   # From testing, I think this would only happen if there's an NA in the column
@@ -75,32 +75,25 @@ subset_targets <- function(targets, filter_list, ignore.case = TRUE) {
   # Targets dataframes shouldn't really have NAs in them (not sure if that gets
   # checked earlier in the pipeline), so maybe good to throw an error here in case
   # that happens?
-  if (nrow(tar_removed) + nrow(tar_kept) != nrow(targets)) {
-    cli::cli_abort(c("Issue when subsetting targets",
+  if (nrow(meta_removed) + nrow(meta_kept) != nrow(in_meta)) {
+    cli::cli_abort(c("Issue when subsetting samples",
                      "!" = "Rows kept + rows removed != rows input",
                      "i" = "Is there an {.val NA} in the column you're subsetting from?"))
   }
 
-  # Write info to logs:
-  param <- stats <- list()
-  # Param
-  param[["filter_list"]] <- paste(lapply(names(filter_list), function (x) paste(x, "=", paste(filter_list[[x]], collapse = " or "))), collapse = "; ")
-  param[["ignore.case"]] <- as.character(ignore.case)
-  # Stats
-  stats[["input_samples"]] <- nrow(targets)
-  stats[["samples_removed"]] <- nrow(tar_removed)
-  stats[["samples_kept"]] <- nrow(tar_kept)
-  # Logfile
-  title <- paste0("SUBSET TARGETS STATS (", paste(names(filter_list), collapse = ", "), ")")
-  logs <- make_log(param = param, stats = stats, title = "test", save=TRUE)
+  # Update metadata samples
+  DIAlist$metadata <- meta_kept
+  # Update data, removing cols that are no longer present
+  DIAlist$data <- DIAlist$data[, DIAlist$metadata$sampleIDs]
+  validate_DIAlist(DIAlist)
+
 
   # print messages
-  cli::cli_inform("Removed {nrow(tar_removed)} of the {nrow(targets)} {cli::qty(nrow(targets))} sample{?s}  from the targets file")
-  cli::cli_inform("{cli::qty(nrow(tar_removed))} Sample{?s} removed:")
-  print(tar_removed)
+  cli::cli_inform("Removed {nrow(meta_removed)} of the {nrow(in_meta)} {cli::qty(nrow(in_meta))} sample{?s} in DIAlist")
+  cli::cli_inform("{cli::qty(nrow(meta_removed))} Sample{?s} removed:")
+  print(meta_removed)
   cli::cli_rule()
   cli::cli_inform(c("v" = "Success"))
 
-  # Return
-  list(targets = tar_kept, stats = logs$stats, param = logs$param)
+  DIAlist
 }
