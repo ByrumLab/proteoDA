@@ -50,6 +50,12 @@ validate_DIAlist <- function(x) {
     cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DIAlist must have the same number of rows")
   }
 
+  # Data and annotation should have matching rownames
+  if (!(all(rownames(x$data) == rownames(x$annotation)))) {
+    cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DIAlist must match")
+  }
+
+
   # CHECKS FOR TARGETS/METADATA
   if (!is.null(x$metadata)) {
     if (nrow(x$metadata) != ncol(x$data)) {

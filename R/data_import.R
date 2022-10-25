@@ -40,6 +40,7 @@ read_DIA_data <- function(input_file = NULL,
   ## the first 10 lines are skipped and last line removed. column 1 (.X)
   ## is renamed "id"
   maxquant_data <- read_maxquant_delim(input_file = input_file)
+  rownames(maxquant_data) <- paste0("protein", 1:nrow(maxquant_data))
 
   # Separate out data columns (which end in .mzML)
   raw_data <- maxquant_data[,stringr::str_detect(colnames(maxquant_data), ".mzML$")]
@@ -55,12 +56,13 @@ read_DIA_data <- function(input_file = NULL,
   ## data in each column to numeric values
   raw_data[, ][raw_data[, ] == "Missing Value"] <- "0"
 
-  clean_data <- as.data.frame(apply(raw_data, MARGIN = 2, remove_commas))
+  clean_data <- as.data.frame(apply(raw_data, MARGIN = 2, remove_commas), row.names = rownames(raw_data))
   clean_annot <- extract_protein_data(raw_annotation)
 
   # For now, check that nrows are equal, but
   # TODO: remove this once the checker does it for us
   stopifnot(nrow(clean_data) == nrow(clean_annot))
+  stopifnot(rownames(clean_data) == rownames(clean_annot))
 
   num_samples   <- ncol(clean_data)
   num_extracted <- nrow(clean_data)
@@ -83,7 +85,7 @@ read_DIA_data <- function(input_file = NULL,
     tags = NULL
   )
 
-  new_DIAlist(out)
+  validate_DIAlist(new_DIAlist(out))
 }
 
 
@@ -189,7 +191,7 @@ extract_protein_data <- function(annotation_data) {
 
   annotColums <- diaAnnotationColums
   annotColums <- c(annotColums, "UniprotID", "Gene_name","Description")
-  rownames(annotation_data) <- paste(annotation_data$UniprotID, annotation_data$Gene_name, annotation_data$id, sep="_")
+  #rownames(annotation_data) <- paste(annotation_data$UniprotID, annotation_data$Gene_name, annotation_data$id, sep="_")
 
   annotation_data[, unique(c(annotColums, "UniprotID", "Gene_name","Description"))]
 }
