@@ -52,7 +52,7 @@ filter_samples <- function(DIAlist, condition) {
   # Update metadata samples
   DIAlist$metadata <- meta_kept
   # Update data, removing cols that are no longer present
-  DIAlist$data <- DIAlist$data[, DIAlist$metadata$sampleIDs]
+  DIAlist$data <- DIAlist$data[, rownames(DIAlist$metadata)]
   validate_DIAlist(DIAlist)
 
 

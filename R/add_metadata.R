@@ -24,8 +24,7 @@ add_metadata <- function(DIAlist,
   validate_DIAlist(DIAlist)
 
   if (!is.null(DIAlist$metadata)) {
-    cli::cli_inform(c("!" = "input DIAlist already contains metadata",
-                      "!" = "Overwriting"), )
+    cli::cli_abort(c("!" = "input DIAlist already contains metadata"))
 
   }
 
@@ -46,36 +45,45 @@ add_metadata <- function(DIAlist,
     cli::cli_rule()
     cli::cli_abort(c("!" = "Not all samples supplied in the data are present in metadata file",
                     "!" = "sample number{?s} {missing_samples} not found in metadata file"))
-    } else if ((length(metadata$number) > length(number)) | (any(metadata$number %notin% number))){
-      # more samples in metadata than in data columns
+  }
 
-      missing_samples <- metadata$number[metadata$number %notin% number]
+  if ((length(metadata$number) > length(number)) | (any(metadata$number %notin% number))){
+    # more samples in metadata than in data columns
 
-      cli::cli_rule()
-      cli::cli_abort(c("!" = "Not all samples in metadata file are present in the data",
-                      "!" = "sample number{?s} {missing_samples} in metadata file not found in data"))
-    } else {
-
-
-    ## create basic targets info.
-    targets <- data.frame(sampleIDs = colnames(DIAlist$data),
-                          number = number,
-                          row.names = colnames(DIAlist$data))
-
-    ## use sample number info. to sort targets info. so that it is in the same order
-    ## as the meta data file. combine targets and metadata into a single data.frame
-    m <- match(metadata$number, number)
-    targets <- targets[m, ]
-    remove  <- colnames(metadata) %in% colnames(targets)
-    targets <- cbind(targets, metadata[,remove==FALSE])
+    missing_samples <- metadata$number[metadata$number %notin% number]
 
     cli::cli_rule()
-    cli::cli_inform(c("v" = "Success"))
-    }
+    cli::cli_abort(c("!" = "Not all samples in metadata file are present in the data",
+                    "!" = "sample number{?s} {missing_samples} in metadata file not found in data"))
+  }
 
-    DIAlist$metadata <- targets
-    validate_DIAlist(DIAlist)
-    DIAlist
+  ## create basic targets info.
+  targets <- data.frame(sampleIDs = colnames(DIAlist$data),
+                        number = number,
+                        row.names = colnames(DIAlist$data))
+
+  ## use sample number info. to sort targets info. so that it is in the same order
+  ## as the meta data file. combine targets and metadata into a single data.frame
+  m <- match(metadata$number, number)
+  targets <- targets[m, ]
+  remove  <- colnames(metadata) %in% colnames(targets)
+  targets <- cbind(targets, metadata[,remove==FALSE])
+
+
+  ## change data column names and targets row names
+  ## to sample name i.e. sample column in targets
+  #TODO NEED TO FIGURE THIS OUT
+  # NEEDED FOR OUR CURRENT DATA, SHOULD rethink for public
+  if ("sample" %in% colnames(targets)) {
+    rownames(targets) <- targets$sample
+    colnames(DIAlist$data) <- rownames(targets)
+
+    cli::cli_inform(cli::col_yellow("\"sample\" column found in the input metadata file: renamed column names of {.arg data} and row names of {.arg metadata} to sample names"))
+  }
+
+  DIAlist$metadata <- targets
+  validate_DIAlist(DIAlist)
+  DIAlist
 }
 
 

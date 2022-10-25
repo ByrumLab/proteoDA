@@ -61,6 +61,9 @@ validate_DIAlist <- function(x) {
     if (nrow(x$metadata) != ncol(x$data)) {
       cli::cli_abort("The number of samples in the metadata ({nrow(x$metadata)}) do not match the number of samples in the data ({ncol(x$data)})")
     }
+    if (any(colnames(x$data) != rownames(x$metadata))) {
+      cli::cli_abort("The row names of the metadata do not match the column names of the data")
+    }
   }
 
   # If all checks pass, return input
