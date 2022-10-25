@@ -2,13 +2,13 @@
 % Please edit documentation in R/filter_proteins.R
 \name{filter_proteins_by_group}
 \alias{filter_proteins_by_group}
-\title{Filter protein data.}
+\title{Filter protein data by number of samples in group.}
 \usage{
 filter_proteins_by_group(
   DIAlist,
   min_reps = NULL,
   min_groups = NULL,
-  group_col = "group"
+  grouping_column = "group"
 )
 }
 \arguments{
@@ -21,7 +21,7 @@ peptide to be considered as quantified within a group.}
 \item{min_groups}{The minimum number of groups that must have at
 least min_reps non-zero samples for a given protein/peptide to be retained.}
 
-\item{group_col}{Optional. The name of the column in the targets dataframe which
+\item{grouping_column}{The name of the column in the targets dataframe which
 lists the experimental group names. Default is "group"}
 }
 \value{

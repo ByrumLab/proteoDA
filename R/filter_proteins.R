@@ -81,13 +81,13 @@ filter_proteins_by_annotation <- function(DIAlist, condition) {
   # Update data, removing proteins
   DIAlist$data <- DIAlist$data[rownames(DIAlist$annotation),]
   # Add tags to track filtering
-  DIAlist$tags$filter_protein_by_annotation <- c(DIAlist$tags$filter_protein_by_annotation, list(condition = condition_call))
+  DIAlist$tags$filter_proteins_by_annotation <- c(DIAlist$tags$filter_proteins_by_annotation, list(condition = condition_call))
 
   validate_DIAlist(DIAlist)
 }
 
 
-#' Filter protein data.
+#' Filter protein data by number of samples in group.
 #'
 #' NEED TO REWRITE
 #'
@@ -97,7 +97,7 @@ filter_proteins_by_annotation <- function(DIAlist, condition) {
 #'   peptide to be considered as quantified within a group.
 #' @param min_groups The minimum number of groups that must have at
 #'   least min_reps non-zero samples for a given protein/peptide to be retained.
-#' @param group_col Optional. The name of the column in the targets dataframe which
+#' @param grouping_column The name of the column in the targets dataframe which
 #'   lists the experimental group names. Default is "group"
 #'
 #' @return A filtered DIAlist
@@ -108,9 +108,9 @@ filter_proteins_by_annotation <- function(DIAlist, condition) {
 #'
 #'
 filter_proteins_by_group <- function(DIAlist,
-                                      min_reps = NULL,
-                                      min_groups = NULL,
-                                      group_col = "group") {
+                                     min_reps = NULL,
+                                     min_groups = NULL,
+                                     grouping_column = "group") {
 
   validate_DIAlist(DIAlist)
 
@@ -119,8 +119,8 @@ filter_proteins_by_group <- function(DIAlist,
   }
 
   # Make sure the group column is present in the metadata
-  if (group_col %notin% colnames(DIAlist$metadata)) {
-    cli::cli_abort(c("Column {.arg {group_col}} not found in metadata slot of {.arg DIAlist}"))
+  if (grouping_column %notin% colnames(DIAlist$metadata)) {
+    cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata slot of {.arg DIAlist}"))
   }
   # Make sure that min_reps and min_groups are specified, no more default values.
   if (is.null(min_reps)) {
@@ -134,7 +134,7 @@ filter_proteins_by_group <- function(DIAlist,
   }
 
   ## extract group column as character vector
-  group_membership <- as.character(DIAlist$metadata[, group_col])
+  group_membership <- as.character(DIAlist$metadata[, grouping_column])
   # And get just the different groups
   groups <- unique(group_membership)
 
@@ -208,7 +208,97 @@ filter_proteins_by_group <- function(DIAlist,
   out$data <- kept_proteins
   out$annotation <- out$annotation[rownames(out$data),]
   # add tags to track filtering
-  out$tags$filter_protein_by_group <- c(out$tags$filter_protein_by_group, list(min_reps = min_reps, min_groups = min_groups, group_col = group_col))
+  out$tags$filter_proteins_by_group <- c(out$tags$filter_proteins_by_group, list(min_reps = min_reps, min_groups = min_groups, grouping_column = grouping_column))
 
   validate_DIAlist(out)
 }
+
+
+#' Filter protein data by proportion.
+#'
+#' NEED TO REWRITE. Not that it rounds integer values down.
+#'
+#' @inheritParams  filter_proteins_by_group
+#' @param min_prop The minimum proportion of samples within a group
+#'   in which a protein must be found for it to be retained.
+#'
+#' @return A filtered DIAlist
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
+#'
+filter_proteins_by_proportion <- function(DIAlist,
+                                          min_prop,
+                                          grouping_column = "group") {
+  validate_DIAlist(DIAlist)
+
+  if (is.null(DIAlist$metadata)) {
+    cli::cli_abort(c("The {.arg DIAlist} object must include metadata to filter proteins by group"))
+  }
+
+  # Make sure the group column is present in the metadata
+  if (grouping_column %notin% colnames(DIAlist$metadata)) {
+    cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata slot of {.arg DIAlist}"))
+  }
+  # Make sure that min_reps and min_groups are specified, no more default values.
+  if (is.null(min_prop)) {
+    cli::cli_abort(c("You must specify a value for {.arg min_prop}",
+                     "i" = "A good rule of thumb is to use 0.66"))
+  }
+
+  if (min_prop < 0 | min_prop > 1) {
+    cli::cli_abort(c("{.arg min_prop} must be between 0 and 1, not {.val {min_prop}}"))
+  }
+
+  cli::cli_inform("Keeping only protein entries with intensity > 0 in at least {.val {min_prop*100}}% of samples in each group")
+
+
+  ## zeros, if they exist, are replaced with NA
+  tmpData <- DIAlist$data
+  tmpData[,][tmpData[,] == 0] <- NA
+
+  # Prep for filtering by getting a vector of group memberships per sample
+  # and calculating the threshold for each group
+  group_membership <- as.character(DIAlist$metadata[, grouping_column])
+  group_thresholds <-  floor(table(as.character(DIAlist$metadata[, grouping_column]))*min_prop)
+
+  # Build a results dataframe in advance, empty for now
+  protein_passes_threshold_per_group <- as.data.frame(
+    matrix(
+      data = NA,
+      nrow = nrow(tmpData),
+      ncol = length(names(group_thresholds)),
+      dimnames = list(rownames(tmpData),
+                      as.character(names(group_thresholds)))
+    )
+  )
+  # Loop over group thresholds, check if protein passes for that group
+  for (group in names(group_thresholds)) {
+    one_group_data <- tmpData[, group_membership == group]
+
+    # count up the the number of samples in that group with
+    # non-missing intensities for each protein/row
+    # and check whether it is over the threshold
+    protein_passes_threshold_per_group[, group] <- rowSums(!is.na(one_group_data)) >= group_thresholds[group]
+  }
+
+  # Keep only proteins where all groups are T
+  protein_meets_threshold <- apply(X = protein_passes_threshold_per_group, MARGIN = 1, FUN = all)
+  # And filter
+  kept_proteins <- tmpData[protein_meets_threshold, ]
+  removed_proteins <- tmpData[!protein_meets_threshold, ]
+
+  cli::cli_inform("Filtered {.val {nrow(removed_proteins)}} entr{?y/ies} {cli::qty(nrow(removed_proteins))} from the dataset leaving {.val {nrow(kept_proteins)}} entr{?y/ies} {cli::qty(nrow(kept_proteins))} for analysis")
+
+  out <- DIAlist
+  # Update data and annotation
+  out$data <- kept_proteins
+  out$annotation <- out$annotation[rownames(out$data),]
+  # add tags to track filtering
+  out$tags$filter_proteins_by_proportion <- c(out$tags$filter_proteins_by_proportion, list(min_prop = min_prop, grouping_column = grouping_column))
+
+  validate_DIAlist(out)
+}
+

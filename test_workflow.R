@@ -11,17 +11,11 @@ library(devtools)
 #lsf.str("package:proteomicsDIA")
 
 CreatePackageReport("proteomicsDIA")
-# source("bin/functions26_CURRENT_031022.r")
-
-# making some temporary changes
-# make a change again
 
 # Pipeline ----------------------------------------------------------------
 
 
-# extract_data on a bunch of files --------------------------------
-
-#ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.csv") # Missing exclusivity col
+# Load in data on a bunch of files --------------------------------
 
 higgs <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") # Worked
 
@@ -37,7 +31,7 @@ reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Rebello
 
 kaul <- read_DIA_data("for_testing/Example Data/kaul/Samples Report of Kaul_030922.csv") # Worked
 
-# Make targets ------------------------------------------------------------
+# Add metadata ------------------------------------------------------------
 
 higgs <- add_metadata(higgs, "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") # worked
 
@@ -61,7 +55,7 @@ reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafi
 
 kaul <- add_metadata(kaul, "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv")
 
-# filter targets --------------------------------------------------------------
+# filter samples --------------------------------------------------------------
 sub_higgs <- filter_samples(higgs, group != "Pool")
 
 sub_ndu <- filter_samples(ndu, group != "Pool")
@@ -75,10 +69,14 @@ sub_reb <- filter_samples(reb, group != "Pool")
 
 sub_kaul <- filter_samples(kaul, group != "Pool")
 
-# subset proteins ---------------------------------------------------------
+# filter proteins ---------------------------------------------------------
 
-# contaminants
-# and per group filtering now in different steps
+# Have added a few possibilities
+# can filter by annotation, by group,
+# and by proportion
+
+# there's a contaminants function that wraps the annotation filtering
+# for our UAMS contaminants/decoys
 
 filtered_higgs <- filter_proteins_contaminants(sub_higgs) %>%
   filter_proteins_by_group(min_reps = 5, min_groups = 3)
@@ -91,6 +89,9 @@ filtered_lupashin <- filter_proteins_contaminants(sub_lupashin) %>%
 
 filtered_zhan <- filter_proteins_contaminants(sub_zhan) %>%
   filter_proteins_by_group(min_reps = 13, min_groups = 2)
+
+filtered_zhan_2 <- filter_proteins_contaminants(sub_zhan) %>%
+  filter_proteins_by_proportion(min_prop = 0.66)
 
 filtered_reb  <- filter_proteins_contaminants(sub_reb) %>%
   filter_proteins_by_group(min_reps = 2, min_groups = 1)
@@ -105,7 +106,8 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
   filter_samples(group != "Pool") %>%
   filter_proteins_contaminants() %>%
   filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
-  filter_proteins_by_group(min_reps = 5, min_groups = 3)
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
+  filter_proteins_by_proportion(min_prop = 1)
 
 
 # then make the proteinorm report, with the different normalization happening internally
