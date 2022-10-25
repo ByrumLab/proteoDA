@@ -97,7 +97,7 @@ filter_proteins_by_annotation <- function(DIAlist, condition) {
 #'   peptide to be considered as quantified within a group.
 #' @param min_groups The minimum number of groups that must have at
 #'   least min_reps non-zero samples for a given protein/peptide to be retained.
-#' @param grouping_column The name of the column in the targets dataframe which
+#' @param grouping_column The name of the column in the metadata which
 #'   lists the experimental group names. Default is "group"
 #'
 #' @return A filtered DIAlist

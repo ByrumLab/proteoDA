@@ -113,40 +113,51 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
 # then make the proteinorm report, with the different normalization happening internally
 # should check for a normalized tag
 
-
-# Then, a normalize_data function,
-# which replaces the data with normalized data and sets some tags
-# should check for a normalized tag
-
-
-
 # Normalization report ----------------------------------------------------
 # Higgs
-write_proteinorm_report(processed_data = norm_higgs,
+write_proteinorm_report(filtered_higgs,
                         grouping_column = "group",
                         file = "higgs_update_2.pdf", overwrite = T)
 
 # Ndu
-write_proteinorm_report(processed_data = norm_ndu,
-                       grouping_column = "group",
-                       file = "ndu_update_2.pdf", overwrite = T)
+write_proteinorm_report(filtered_ndu,
+                        grouping_column = "group",
+                        file = "ndu_update_2.pdf", overwrite = T)
 
 # Lupashin
-write_proteinorm_report(processed_data = norm_lupashin,
-                       grouping_column = "group",
-                       file = "lupashin_update_2.pdf", overwrite = T, suppress_zoom_legend = T)
+write_proteinorm_report(filtered_lupashin,
+                        grouping_column = "group",
+                        file = "lupashin_update_2.pdf", overwrite = T, suppress_zoom_legend = T)
 # Zhan
-# tic()
-write_proteinorm_report(processed_data = norm_zhan,
-                       grouping_column = "group",
-                       file = "zhan_update_2.pdf", overwrite = T)
-# toc()
+write_proteinorm_report(filtered_zhan_2,
+                        grouping_column = "group",
+                        file = "zhan_update_2.pdf", overwrite = T)
 
 # Rebello
-write_proteinorm_report(processed_data = norm_reb,
-                       grouping_column = "group",
-                       file = "rebello_update_2.pdf",
-                       overwrite = T)
+write_proteinorm_report(filtered_reb,
+                        grouping_column = "group",
+                        file = "rebello_update_2.pdf",
+                        overwrite = T)
+
+# Kaul
+write_proteinorm_report(filtered_kaul,
+                        grouping_column = "group",
+                        file = "kaul_update_2.pdf",
+                        overwrite = T, suppress_zoom_legend = T)
+
+
+
+# Normalize data ----------------------------------------------------------
+
+
+
+# Then, a normalize_data function,
+# which replaces the data with normalized data and sets some tags
+# should check for a normalized tag
+# and leave a normalized tag when its done
+
+
+
 
 # Make QC report ----------------------------------------------------------
 write_qc_report(processed_data = norm_higgs,

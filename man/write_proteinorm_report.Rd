@@ -5,7 +5,7 @@
 \title{Create proteinorm report}
 \usage{
 write_proteinorm_report(
-  processed_data,
+  DIAlist,
   grouping_column = NULL,
   out_dir = NULL,
   file = NULL,
@@ -14,10 +14,9 @@ write_proteinorm_report(
 )
 }
 \arguments{
-\item{processed_data}{The output of the  function:
-a list object containing processed data and sample information..}
+\item{DIAlist}{A DIAlist.}
 
-\item{grouping_column}{The name of column within the targets data frame which
+\item{grouping_column}{The name of the column in the metadata which
 gives information on how to group samples for normalization. Must be supplied:
 some metrics can't be calculated for only one group.}
 

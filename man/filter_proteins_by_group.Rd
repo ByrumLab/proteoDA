@@ -21,7 +21,7 @@ peptide to be considered as quantified within a group.}
 \item{min_groups}{The minimum number of groups that must have at
 least min_reps non-zero samples for a given protein/peptide to be retained.}
 
-\item{grouping_column}{The name of the column in the targets dataframe which
+\item{grouping_column}{The name of the column in the metadata which
 lists the experimental group names. Default is "group"}
 }
 \value{

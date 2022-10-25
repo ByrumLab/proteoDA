@@ -12,7 +12,7 @@ filter_proteins_by_proportion(DIAlist, min_prop, grouping_column = "group")
 \item{min_prop}{The minimum proportion of samples within a group
 in which a protein must be found for it to be retained.}
 
-\item{grouping_column}{The name of the column in the targets dataframe which
+\item{grouping_column}{The name of the column in the metadata which
 lists the experimental group names. Default is "group"}
 }
 \value{

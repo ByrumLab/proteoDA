@@ -1,100 +1,38 @@
 
-#' Normalize raw intensity data
+#' Apply all normalizations to a dataframe
 #'
-#' Takes in raw intensity data and applies 8 different normalization methods. A
-#' subfunction of . See \code{\link{norm_functions}}
-#' for info on all the normalization functions.
+#' Takes in raw intensity data and applies 8 different normalization methods,
+#' returning a list of the data normalized with each method. Used internally in
+#' \code{\link{write_proteinorm_report}}.
 #'
 #' @param data A dataframe of raw data to be normalized. Rows are proteins and
 #'   columns are raw intensity data.
-#' @param targets A targets dataframe listing the samples to be analyzed.
 #'
-#' @return A list with two elements:
-#'   \enumerate{
-#'     \item "normList"- a list of length 8, where each item in the list is a
+#' @return A list length 8, where each item in the list is a
 #'       named dataframe. Names give the normalization method, and the dataframe
 #'       gives the normalized intensity data
-#'     \item "targets"- The targets dataframe that was passed into the function.
-#'   }
-#' @export
 #'
 #' @examples
 #' # No examples yet
 #'
-normalize_data <- function(data, targets) {
+apply_all_normalizations <- function(data) {
 
-  # if (ncol(data) > nrow(targets)) {
-  #   # TODO: delete this section?
-  #   # Little confused by what is going on with this check
-  #   # In the original code, the check is whether there are
-  #   # more samples in the data than in the targets (nrow(data > nrow(targets)))
-  #   # This is not unexpected: we removed some targets (e.g., pools) with the
-  #   # subset_targets function. And, for this function, I think the the input data
-  #   # will have already been filtered (see the filter_data function, which gets called first)
-  #
-  #   # In the text of the warning, however, it is saying that there are fewer targets
-  #   # than data: that is, we've got some targets that we want that don't have data.
-  #   # This seems like an error, not a warning. But that is what is getting checked below
-  #   # For now, will just comment all this code out, not sure we need it.
-  #
-  #   ## Improve error message
-  #   warning("Warning! data < targets. the data set will be subsetted to match",
-  #           "the samples listed in the targets file prior to normalization...")
-  #
-  # }
 
-  if (any(rownames(targets) %notin% colnames(data))) {
-    missing_targets <- rownames(targets)[rownames(targets) %notin% colnames(data)]
-
-    cli::cli_abort(c("Some targets are not present in input data.",
-                     "x" = "Missing target{?s}: {missing_targets}",
-                     "i" = "Check {.code colnames(data)}"))
-
-  }
-
-  # TODO: possibly redundant? Does this happen in the filter_data function as well?
-  data2 <- data[ , rownames(targets)]
-  stopifnot(colnames(data2) == rownames(targets))
-
-  # This section, for renaming row and column names of the targets and data
-  # to match the "samples" column in targets (if it exists) is redundant, as
-  # far as I can tell. Happens earlier, in the filter_data function. Commenting
-  # out for now
-  # TODO: delete if continues to not be needed.
-  # filter_data function that makes the object that gets passed to this
-  # if ("sample" %in% colnames(targets)) {
-  #   print("column names of data and row names of targets converted to targets sample names...");cat("\n")
-  #   rownames(targets) <- targets$sample
-  #   colnames(data)    <- rownames(targets)
-  #   stopifnot(colnames(data) == rownames(targets))
-  # }
-
-  ## create named list object to hold output dataframes of normalized data.
-  ## names= normalization methods
-
-  # norm.methods is one of the vectors of strings that is internal data in the
-  # package
   normList <- NULL
-  # names(normList) <- norm.methods
-
-  cli::cli_inform("Starting normaliztion")
 
   ## apply normalization methods using functions listed above.
   ## NOTE: most of the normalizations use log2(intensity) as input except
   ## VSN which normalizes using raw intensities with no log2 transformation.
-  normList[["log2"]]     <- logNorm(dat = data2)
+  normList[["log2"]]     <- logNorm(dat = data)
   normList[["median"]]   <- medianNorm(logDat = normList[["log2"]])
   normList[["mean"]]     <- meanNorm(logDat = normList[["log2"]])
-  normList[["vsn"]]      <- vsnNorm(dat = data2)
+  normList[["vsn"]]      <- vsnNorm(dat = data)
   normList[["quantile"]] <- quantNorm(logDat = normList[["log2"]])
   normList[["cycloess"]] <- cycLoessNorm(logDat = normList[["log2"]])
   normList[["rlr"]]      <- rlrNorm(logDat = normList[["log2"]])
-  normList[["gi"]]       <- giNorm(dat = data2)
+  normList[["gi"]]       <- giNorm(dat = data)
 
-  cli::cli_inform("Data normalization complete")
-
-  # Return list of output
-  list(normList = normList, targets = targets)
+  normList
 }
 
 
