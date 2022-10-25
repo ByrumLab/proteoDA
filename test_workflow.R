@@ -64,32 +64,47 @@ reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafi
 kaul <- add_metadata(kaul, "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv")
 
 # filter targets --------------------------------------------------------------
-sub_higgs <- filter_samples(higgs,
-                            filter_list = list(group = "Pool")) %>%
-  filter_samples(filter_list = list(group = "Pool"))
+sub_higgs <- filter_samples(higgs, group != "Pool") %>%
+  filter_samples(replicate < 4)
 
-sub_ndu <- filter_samples(ndu,
-                          filter_list = list(group = "Pool"))
+sub_ndu <- filter_samples(ndu, group != "Pool")
 
-sub_lupashin <- filter_samples(lupashin,
-                               filter_list = list(group = c("Pool", "input")))
+sub_lupashin <- filter_samples(lupashin, !(group %in% c("Pool", "input")))
 
-sub_zhan <- filter_samples(zhan,
-                           filter_list = list(group = "Pool"))
+sub_zhan <- filter_samples(zhan, group != "Pool")
 
+sub_reb <- filter_samples(reb, group != "Pool")
 
-sub_reb <- filter_samples(reb,
-                          filter_list = list(group = "Pool"))
-
-sub_kaul <- filter_samples(kaul,
-                          filter_list = list(group = "Pool"))
+sub_kaul <- filter_samples(kaul, group != "Pool")
 
 
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
-  filter_samples(filter_list = list(group = "Pool"))
+
+
 
 # subset proteins ---------------------------------------------------------
+
+# contaminants
+
+filtered_higgs <- filter_proteins_contaminants(sub_higgs)
+
+filtered_ndu <- filter_proteins_contaminants(sub_ndu)
+
+filtered_lupashin <- filter_proteins_contaminants(sub_lupashin)
+
+filtered_zhan <- filter_proteins_contaminants(sub_zhan)
+
+filtered_reb  <- filter_proteins_contaminants(sub_reb)
+
+filtered_kaul <- filter_proteins_contaminants(sub_kaul)
+
+
+# All the cli lines get a little weird with the chaining...
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
+  filter_samples(group != "Pool") %>%
+  filter_proteins_contaminants()
+
+# an initial filtering function that replicates our current
 
 
 
@@ -277,6 +292,7 @@ des_kaul2 <- make_design(targets = norm_kaul$targets,
                         factor_columns = "gender",
                         paired_column = NULL)
 waldo::compare(des_kaul, des_kaul2) # order and levels a little different by defauls, but looks OK
+
 
 
 # Make contrasts ----------------------------------------------------------
