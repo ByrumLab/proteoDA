@@ -43,10 +43,6 @@ higgs <- add_metadata(higgs, "for_testing/Example Data/09_Higgs_072721_DIA_AG/me
 
 ndu <- add_metadata(ndu, "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv") # worked
 
-ndu <- add_metadata(ndu, "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv") # worked
-
-ndu <- add_metadata(ndu, "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv") # error as expected
-
 ndu_chain <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") %>%
   add_metadata("for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv")
 
@@ -55,21 +51,23 @@ ndu_chain2 <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files
 
 lupashin <- add_metadata(lupashin, "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv") # Worked
 
+zhan <- add_metadata(zhan, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # error as expected
+
 zhan <- add_metadata(zhan, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # worked
 
-zhan <- add_metadata(zhan, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # error as expected
+reb <- add_metadata(reb, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # error as expected
 
 reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # worked
 
 kaul <- add_metadata(kaul, "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv")
 
 # filter targets --------------------------------------------------------------
-sub_higgs <- filter_samples(higgs, group != "Pool") %>%
-  filter_samples(replicate < 4)
+sub_higgs <- filter_samples(higgs, group != "Pool")
 
 sub_ndu <- filter_samples(ndu, group != "Pool")
 
-sub_lupashin <- filter_samples(lupashin, !(group %in% c("Pool", "input")))
+sub_lupashin <- filter_samples(lupashin, group != "Pool") %>%
+  filter_samples(!stringr::str_detect(group, "input"))
 
 sub_zhan <- filter_samples(zhan, group != "Pool")
 
@@ -77,76 +75,48 @@ sub_reb <- filter_samples(reb, group != "Pool")
 
 sub_kaul <- filter_samples(kaul, group != "Pool")
 
-
-
-
-
 # subset proteins ---------------------------------------------------------
 
 # contaminants
+# and per group filtering now in different steps
 
-filtered_higgs <- filter_proteins_contaminants(sub_higgs)
+filtered_higgs <- filter_proteins_contaminants(sub_higgs) %>%
+  filter_proteins_by_group(min_reps = 5, min_groups = 3)
 
-filtered_ndu <- filter_proteins_contaminants(sub_ndu)
+filtered_ndu <- filter_proteins_contaminants(sub_ndu) %>%
+  filter_proteins_by_group(min_reps = 3, min_groups = 1)
 
-filtered_lupashin <- filter_proteins_contaminants(sub_lupashin)
+filtered_lupashin <- filter_proteins_contaminants(sub_lupashin) %>%
+  filter_proteins_by_group(min_reps = 1, min_groups = 1)
 
-filtered_zhan <- filter_proteins_contaminants(sub_zhan)
+filtered_zhan <- filter_proteins_contaminants(sub_zhan) %>%
+  filter_proteins_by_group(min_reps = 13, min_groups = 2)
 
-filtered_reb  <- filter_proteins_contaminants(sub_reb)
+filtered_reb  <- filter_proteins_contaminants(sub_reb) %>%
+  filter_proteins_by_group(min_reps = 2, min_groups = 1)
 
-filtered_kaul <- filter_proteins_contaminants(sub_kaul)
+filtered_kaul <- filter_proteins_contaminants(sub_kaul) %>%
+  filter_proteins_by_group(min_reps = 4, min_groups = 2)
 
 
-# All the cli lines get a little weird with the chaining...
+
 full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
   add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
   filter_samples(group != "Pool") %>%
-  filter_proteins_contaminants()
-
-# an initial filtering function that replicates our current
-
+  filter_proteins_contaminants() %>%
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
+  filter_proteins_by_group(min_reps = 5, min_groups = 3)
 
 
 # then make the proteinorm report, with the different normalization happening internally
-
+# should check for a normalized tag
 
 
 # Then, a normalize_data function,
 # which replaces the data with normalized data and sets some tags
+# should check for a normalized tag
 
-# Process data ------------------------------------------------------------
-norm_higgs <- process_data(data = ext_higgs$data,
-                           targets = sub_higgs$targets,
-                           min.reps = 5,
-                           min.grps = 3)
 
-norm_ndu <- process_data(data = ext_ndu$data,
-                         targets = sub_ndu$targets,
-                         min.reps = 3,
-                         min.grps = 1)
-
-norm_lupashin <- process_data(data = ext_lupashin$data,
-                              targets = sub_lupashin$targets,
-                              min.reps = 1,
-                              min.grps = 1)
-
-# tic()
-norm_zhan <- process_data(data = ext_zhan$data,
-                          targets = sub_zhan$targets,
-                          min.reps = 13,
-                          min.grps = 2)
-# toc()
-
-norm_reb <- process_data(data = ext_reb$data,
-                         targets = sub_reb$targets,
-                         min.reps = 2,
-                         min.grps = 1)
-
-norm_kaul <- process_data(data = ext_kaul$data,
-                          targets = sub_kaul$targets,
-                          min.reps = 4,
-                          min.grps = 2)
 
 # Normalization report ----------------------------------------------------
 # Higgs

@@ -13,9 +13,9 @@ filter_proteins_contaminants(DIAlist)
 A DIAlist with contaminants filtered out
 }
 \description{
-Not sure if this should be in internal function only, or if
+Not sure if this should be a UAMS function only, or if
 it should stay public. Just calls the general function to
-filter ptoreins based on annotations, but with some presets
+filter proteins based on annotations, but with some presets
 that we use.
 }
 \examples{
