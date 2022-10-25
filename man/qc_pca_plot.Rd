@@ -16,7 +16,7 @@ qc_pca_plot(
 \arguments{
 \item{data}{A data frame of intensity data, likely normalized. Rows should be
 proteins and columns should be samples. Generally, a single element in the
-normList slot of the object returned by \code{\link{process_data}}.}
+normList slot of the object returned by .}
 
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}

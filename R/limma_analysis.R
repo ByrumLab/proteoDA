@@ -88,7 +88,7 @@ fit_limma_model <- function(data,
   data <- data[, rownames(targets)]
 
 
-  cli::cli_rule()
+  
 
   # On to model fitting
   # First step of fitting differs between paired and unpaired
@@ -145,7 +145,7 @@ fit_limma_model <- function(data,
   if (paired) model[["corr_fit"]] <- corfit
 
 
-  cli::cli_rule()
+  
   cli::cli_inform(c("v" = "Success!"))
 
   model

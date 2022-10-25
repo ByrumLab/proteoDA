@@ -60,7 +60,7 @@ write_qc_report <- function(processed_data,
                             clust_method = "complete",
                             show_all_proteins = F) {
 
-  cli::cli_rule()
+  
 
   #################
   ## Check args  ##
@@ -252,7 +252,7 @@ write_qc_report <- function(processed_data,
   if (!file.exists(file.path(out_dir, file))) {
     cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
   }
-  cli::cli_rule()
+  
   cli::cli_inform(c("v" = "Success"))
 
   invisible(file.path(out_dir, file))

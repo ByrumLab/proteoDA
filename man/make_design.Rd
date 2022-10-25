@@ -14,7 +14,7 @@ make_design(
 }
 \arguments{
 \item{targets}{A targets dataframe. In the pipeline, usually the "targets" slot
-of the list output by \code{\link{process_data}}.}
+of the list output by .}
 
 \item{group_column}{The name of the column in the targets dataframe that
 describes the main groups to be compared in the limma model.}

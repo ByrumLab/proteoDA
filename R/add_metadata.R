@@ -19,7 +19,7 @@
 add_metadata <- function(DIAlist,
                          metadata_file) {
 
-  cli::cli_rule()
+  
 
   validate_DIAlist(DIAlist)
 
@@ -42,7 +42,7 @@ add_metadata <- function(DIAlist,
     # more samples in data than in metadata
 
     missing_samples <- number[number %notin% metadata$number]
-    cli::cli_rule()
+    
     cli::cli_abort(c("!" = "Not all samples supplied in the data are present in metadata file",
                     "!" = "sample number{?s} {missing_samples} not found in metadata file"))
   }
@@ -52,7 +52,7 @@ add_metadata <- function(DIAlist,
 
     missing_samples <- metadata$number[metadata$number %notin% number]
 
-    cli::cli_rule()
+    
     cli::cli_abort(c("!" = "Not all samples in metadata file are present in the data",
                     "!" = "sample number{?s} {missing_samples} in metadata file not found in data"))
   }

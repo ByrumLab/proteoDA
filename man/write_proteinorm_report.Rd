@@ -14,7 +14,7 @@ write_proteinorm_report(
 )
 }
 \arguments{
-\item{processed_data}{The output of the \code{\link{process_data}} function:
+\item{processed_data}{The output of the  function:
 a list object containing processed data and sample information..}
 
 \item{grouping_column}{The name of column within the targets data frame which

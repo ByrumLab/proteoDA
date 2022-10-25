@@ -21,7 +21,7 @@ write_qc_report(
 )
 }
 \arguments{
-\item{processed_data}{The output of the \code{\link{process_data}} function:
+\item{processed_data}{The output of the  function:
 a list object containing processed data and sample information..}
 
 \item{chosen_norm_method}{The normalization method for which to perform the QC analysis.

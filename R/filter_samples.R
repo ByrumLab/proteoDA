@@ -9,7 +9,6 @@
 #'
 #' @export
 #'
-#' @importFrom rlang .data
 #'
 #' @examples
 #' \dontrun{
@@ -27,7 +26,7 @@ filter_samples <- function(DIAlist, condition) {
     cli::cli_abort("{.arg DIAlist} does not contain metadata for filtering samples")
   }
 
-  cli::cli_rule()
+
 
   # get input metadata
   in_meta <- DIAlist$metadata
@@ -57,10 +56,10 @@ filter_samples <- function(DIAlist, condition) {
 
 
   # print messages
-  cli::cli_inform("Removed {nrow(meta_removed)} of the {nrow(in_meta)} {cli::qty(nrow(in_meta))} sample{?s} in DIAlist")
+  cli::cli_inform("Removed {.val {nrow(meta_removed)}} of the {.val {nrow(in_meta)}} {cli::qty(nrow(in_meta))} sample{?s} in DIAlist")
   cli::cli_inform("{cli::qty(nrow(meta_removed))} Sample{?s} removed:")
   print(meta_removed)
-  cli::cli_rule()
+
   cli::cli_inform(c("v" = "Success"))
 
   DIAlist

@@ -2,7 +2,7 @@
 #' Normalize raw intensity data
 #'
 #' Takes in raw intensity data and applies 8 different normalization methods. A
-#' subfunction of \code{\link{process_data}}. See \code{\link{norm_functions}}
+#' subfunction of . See \code{\link{norm_functions}}
 #' for info on all the normalization functions.
 #'
 #' @param data A dataframe of raw data to be normalized. Rows are proteins and

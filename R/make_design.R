@@ -6,7 +6,7 @@
 #' random factor model with paired_column, you cannot specify your model via design_formula.
 #'
 #' @param targets A targets dataframe. In the pipeline, usually the "targets" slot
-#'   of the list output by \code{\link{process_data}}.
+#'   of the list output by .
 #' @param group_column The name of the column in the targets dataframe that
 #'   describes the main groups to be compared in the limma model.
 #' @param factor_columns Optional. The name of the column(s) in the targets dataframe
@@ -33,7 +33,7 @@ make_design <- function(targets,
                         factor_columns = NULL,
                         paired_column = NULL,
                         design_formula = NULL) {
-  cli::cli_rule()
+  
 
   ## if input values are all column names in targets
   if (is.null(design_formula)) {
@@ -180,7 +180,7 @@ make_design <- function(targets,
     }
 
   cli::cli_inform("Design matrix and targets created")
-  cli::cli_rule()
+  
   cli::cli_inform(c("v" = "Success"))
 
   output

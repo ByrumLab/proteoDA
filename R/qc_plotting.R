@@ -5,7 +5,7 @@
 #'
 #' @param data A data frame of intensity data, likely normalized. Rows should be
 #'   proteins and columns should be samples. Generally, a single element in the
-#'   normList slot of the object returned by \code{\link{process_data}}.
+#'   normList slot of the object returned by .
 #' @param groups A character or factor vector, listing the group(s) the samples
 #'   belong to.
 #' @param sample_labels Optional, a vector of sample labels to use. If not supplied,

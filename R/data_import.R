@@ -34,7 +34,7 @@ read_DIA_data <- function(input_file = NULL,
     input_file <- file.choose()
   }
 
-  cli::cli_rule()
+
 
   ## IMPORT DATA
   ## the first 10 lines are skipped and last line removed. column 1 (.X)
@@ -67,8 +67,8 @@ read_DIA_data <- function(input_file = NULL,
   num_samples   <- ncol(clean_data)
   num_extracted <- nrow(clean_data)
 
-  cli::cli_inform(c("Intensity data for {num_extracted} DIA protein entries and {num_samples} samples extracted"))
-  cli::cli_rule()
+  cli::cli_inform(c("Intensity data for {.val {num_extracted}} DIA protein entries and {.val {num_samples}} samples extracted"))
+
   cli::cli_inform(c("v" = "Success!!"))
 
 

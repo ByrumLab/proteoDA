@@ -10,7 +10,7 @@
 #' Creates and saves as a PDF report a variety of plots which give
 #' information about the performance of different normalization metrics.
 #'
-#' @param processed_data The output of the \code{\link{process_data}} function:
+#' @param processed_data The output of the  function:
 #'   a list object containing processed data and sample information..
 #' @param grouping_column The name of column within the targets data frame which
 #'   gives information on how to group samples for normalization. Must be supplied:
@@ -45,7 +45,7 @@ write_proteinorm_report <- function(processed_data,
                                    overwrite = FALSE,
                                    suppress_zoom_legend = FALSE) {
 
-  cli::cli_rule()
+  
 
   #################################
   ## Check args and set defaults ##
@@ -158,7 +158,7 @@ write_proteinorm_report <- function(processed_data,
   if (!file.exists(file.path(out_dir, file))) {
     cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
   }
-  cli::cli_rule()
+  
   cli::cli_inform(c("v" = "Success"))
 
   invisible(file.path(out_dir, file))

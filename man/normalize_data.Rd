@@ -23,7 +23,7 @@ gives the normalized intensity data
 }
 \description{
 Takes in raw intensity data and applies 8 different normalization methods. A
-subfunction of \code{\link{process_data}}. See \code{\link{norm_functions}}
+subfunction of . See \code{\link{norm_functions}}
 for info on all the normalization functions.
 }
 \examples{
