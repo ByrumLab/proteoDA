@@ -43,15 +43,10 @@ filter_samples <- function(DIAlist, condition) {
   meta_kept <- subset(in_meta, subset = keep, select = c(-keep))
 
   # Check that sample numbers match
-  # From testing, I think this would only happen if there's an NA in the column
-  # being filtered on, such that the to_remove column then also has an NA in it.
-  # Targets dataframes shouldn't really have NAs in them (not sure if that gets
-  # checked earlier in the pipeline), so maybe good to throw an error here in case
-  # that happens?
   if (nrow(meta_removed) + nrow(meta_kept) != nrow(in_meta)) {
-    cli::cli_abort(c("Issue when subsetting samples",
+    cli::cli_abort(c("Issue when filtering samples",
                      "!" = "Rows kept + rows removed != rows input",
-                     "i" = "Is there an {.val NA} in the column you're subsetting from?"))
+                     "i" = "Is there an {.val NA} in the column you're filtering on?"))
   }
 
   # Update metadata samples

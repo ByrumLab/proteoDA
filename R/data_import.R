@@ -8,8 +8,8 @@
 #' some stats and other info. Also has some side effects: creates some log files.
 #'
 #'
-#' Subfunctions (DIA): \code{\link{read_maxquant_delim}}, \code{\link{remove_contaminants}},
-#' \code{\link{extract_protein_data}}, \code{\link{make_log}}.
+#' Subfunctions (DIA): \code{\link{read_maxquant_delim}},
+#' \code{\link{extract_protein_data}}.
 #'
 #' @param input_file The file of Maxquant data to be imported. Format and filetype
 #'   vary depending on the type of data to be analyzed. If not supplied, R will

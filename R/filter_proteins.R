@@ -4,7 +4,9 @@
 #' Remove protein contaminant rows
 #'
 #' Not sure if this should be in internal function only, or if
-#' it should stay public.
+#' it should stay public. Just calls the general function to
+#' filter ptoreins based on annotations, but with some presets
+#' that we use.
 #'
 #' @param DIAlist A DIAlist object to be filtered
 #'
@@ -15,43 +17,76 @@
 #' @examples
 #' # No examples yet
 #'
+filter_proteins_contaminants <- function(DIAlist) {
 
-filter_proteins_contaminants <- function(DIAlist, cols_to_search = "Protein.Name") {
+  # avoid R CMD check
+  Protein.Name <- NULL
 
-  # Could make a simpler base function (filter_protein_condition),
-  # and then apply it hear to filter.
+  out <- filter_proteins_by_annotation(DIAlist, !(stringr::str_detect(Protein.Name, "DECOY"))) %>%
+    filter_proteins_by_annotation(!(stringr::str_detect(Protein.Name, "Group of")))
 
+
+  num_proteins_in <- nrow(DIAlist$annotation)
+  num_proteins_out <- nrow(out$annotation)
+
+  cli::cli_inform("{num_proteins_in - num_proteins_out} contaminants removed")
+  cli::cli_inform("{num_proteins_out} DIA protein entries retained")
+
+  validate_DIAlist(out)
+}
+
+
+#' Remove proteins by annotations
+#'
+#' NEED TO REWRITE
+#'
+#' @param DIAlist A DIAlist object to be filtered
+#' @param condition A logical expression indicating which samples to keep.
+#'
+#' @return A DIAlist with some proteins filtered out
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
+filter_proteins_by_annotation <- function(DIAlist, condition) {
 
   if (!(class(DIAlist) %in% c("DIAlist"))) {
     cli::cli_abort("{.arg DIAlist} must be a DIAlist object")
   }
 
   if (is.null(DIAlist$annotation)) {
-    cli::cli_abort("{.arg DIAlist} does not contain annotation information for filtering contaminants")
+    cli::cli_abort("{.arg DIAlist} does not contain annotation for filtering samples")
   }
 
-  cli::cli_rule()
+  # get input annotation
+  in_annot <- DIAlist$annotation
 
-  # Do filtering
-  in_annotation <- DIAlist$annotation
-  out_annotation <- in_annotation[!grepl("DECOY", in_annotation[, cols_to_search]),]
-  out_annotation <- out_annotation[!grepl("Group of", out_annotation[, cols_to_search]),]
+  # Add a col, keep, with the evaluation of the condition expression.
+  condition_call <- substitute(condition)
+  in_annot <- within(in_annot, {
+    keep <- eval(condition_call)
+  })
 
-  num_proteins_in <- nrow(in_annotation)
-  num_proteins_out <- nrow(out_annotation)
+  # Do subseting, keeping removed samples for stats.
+  annotation_removed <- subset(in_annot, subset = !keep, select = c(-keep))
+  annotation_kept <- subset(in_annot, subset = keep, select = c(-keep))
 
-  cli::cli_inform("{num_proteins_in - num_proteins_out} contaminants removed")
-  cli::cli_inform("{num_proteins_out} DIA protein entries retained")
+  # Check that sample numbers match
+  if (nrow(annotation_removed) + nrow(annotation_kept) != nrow(in_annot)) {
+    cli::cli_abort(c("Issue when filtering proteins",
+                     "!" = "Rows kept + rows removed != rows input",
+                     "i" = "Is there an {.val NA} in the column you're filtering on?"))
+  }
 
-
-  # Update annotation and data,
-  DIAlist$annotation <- out_annotation
-  DIAlist$data <- DIAlist$data[rownames(DIAlist$annotation), ]
-
+  # Update metadata samples
+  DIAlist$annotation <- annotation_kept
+  # Update data, removing proteins
+  DIAlist$data <- DIAlist$data[rownames(DIAlist$annotation),]
 
   validate_DIAlist(DIAlist)
 }
-
 
 
 

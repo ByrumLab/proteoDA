@@ -4,7 +4,7 @@
 \alias{filter_proteins_contaminants}
 \title{Remove protein contaminant rows}
 \usage{
-filter_proteins_contaminants(DIAlist, cols_to_search = "Protein.Name")
+filter_proteins_contaminants(DIAlist)
 }
 \arguments{
 \item{DIAlist}{A DIAlist object to be filtered}
@@ -14,7 +14,9 @@ A DIAlist with contaminants filtered out
 }
 \description{
 Not sure if this should be in internal function only, or if
-it should stay public.
+it should stay public. Just calls the general function to
+filter ptoreins based on annotations, but with some presets
+that we use.
 }
 \examples{
 # No examples yet

@@ -25,8 +25,8 @@ subfunctions for more info. Returns a list of data from maxquant, along with
 some stats and other info. Also has some side effects: creates some log files.
 }
 \details{
-Subfunctions (DIA): \code{\link{read_maxquant_delim}}, \code{\link{remove_contaminants}},
-\code{\link{extract_protein_data}}, \code{\link{make_log}}.
+Subfunctions (DIA): \code{\link{read_maxquant_delim}},
+\code{\link{extract_protein_data}}.
 }
 \examples{
 # No examples yet
