@@ -1,18 +1,9 @@
 #' Filter samples from a DIAlist
 #'
-#' Removes unwanted samples (rows) from the targets data frame This function is
-#' basically \code{\link[base]{subset}} with extra functionality. It removes
-#' rows if they contain certain values in a given column. By default, ignores
-#' the case of strings in rm.val. Calls \code{\link{make_log}} as a subfunction.
+#' NEED TO REWRITE
 #'
 #' @param DIAlist The DIAlist to be filtered
-#' @param filter_list A named list describing how to filter targets dataframe.
-#'   The name for each element of the list gives a column to be filters, and
-#'   each element of the list should be a character vector of strings to search for
-#'   in the given column. See examples.
-#' @param ignore.case Should the case of the strings in rm.vals be ignored? Is
-#'   TRUE by default, such that case does not have to match. If FALSE, case must
-#'   match for rows to be removed.
+#' @param condition A logical expression indicating which samples to keep.
 #'
 #' @return A prototype of our new S3 list type.
 #'
@@ -22,52 +13,34 @@
 #'
 #' @examples
 #' \dontrun{
-#' DIAlist <- filter_samples(DIAlist
-#'                           filter_list = list(group = "pool"
-#'                                              sample = c("sampleA", "sampleB")))
+#' DIAlist <- filter_samples(DIAlist, group != "Pool")
 #' }
 #'
 
-filter_samples <- function(DIAlist, filter_list, ignore.case = TRUE) {
+filter_samples <- function(DIAlist, condition) {
 
-  # check args
-  if (!is.list(filter_list)) {
-    cli::cli_abort(c("{.arg filter_list} must be a list"))
+  if (!(class(DIAlist) %in% c("DIAlist"))) {
+    cli::cli_abort("{.arg DIAlist} must be a DIAlist object")
   }
-  if (is.null(names(filter_list)) | length(names(filter_list)) == 0) {
-    cli::cli_abort(c("{.arg filter_list} must be a named list"))
-  }
-  if (length(names(filter_list)) != length(filter_list)) {
-    cli::cli_abort(c("Each list element in {.arg filter_list} must be named"))
+
+  if (is.null(DIAlist$metadata)) {
+    cli::cli_abort("{.arg DIAlist} does not contain metadata for filtering samples")
   }
 
   cli::cli_rule()
 
-  # Set up some vars to avoid R CMD check warning
-  to_remove <- for_match <- remove_reason <- NULL
-
-  # Mark for removal any rows that match/contain the supplied strings to exclude
+  # get input metadata
   in_meta <- DIAlist$metadata
-  in_meta$to_remove <- F
 
+  # Add a col, keep, with the evaluation of the condition expression.
+  condition_call <- substitute(condition)
+  in_meta <- within(in_meta, {
+    keep <- eval(condition_call)
+  })
 
-
-  for (column in names(filter_list)) {
-    for (filter_string in unique(filter_list[[column]])) {
-      if (ignore.case) {
-        in_meta$to_remove <- stringr::str_to_lower(in_meta[,column]) %>%
-          stringr::str_detect(stringr::str_to_lower(filter_string)) %>%
-          ifelse(T, in_meta$to_remove)
-      } else {
-        in_meta$to_remove <- stringr::str_detect(in_meta[,column], filter_string) %>%
-          ifelse(T, in_meta$to_remove)
-      }
-    }
-  }
-
-  # Do subsetting, keeping removed samples for stats.
-  meta_removed <- subset(in_meta, subset = to_remove, select = c(-to_remove))
-  meta_kept <- subset(in_meta, subset = !to_remove, select = c(-to_remove))
+  # Do subseting, keeping removed samples for stats.
+  meta_removed <- subset(in_meta, subset = !keep, select = c(-keep))
+  meta_kept <- subset(in_meta, subset = keep, select = c(-keep))
 
   # Check that sample numbers match
   # From testing, I think this would only happen if there's an NA in the column
