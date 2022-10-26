@@ -1,4 +1,40 @@
 
+normalize_data <- function(DIAlist,
+                           method = c("log2", "median", "mean", "vsn", "quantile",
+                                      "cycloess", "rlr", "gi")) {
+
+  method <- rlang::arg_match(method)
+
+  validate_DIAlist(DIAlist)
+
+  if (!is.null(DIAlist$tags$normalized)) {
+    if (DIAlist$tags$normalized) {
+      cli::cli_abort("Data in DIAlist are already normalized. Cannot evaluate normalization metrics")
+    }
+  }
+
+  # Some normalization methods work on raw data, some on
+  # log2 transformed data
+  if (method %in% c("log2", "vsn", "gi")) {
+    normalized_data <- do.call(what = paste0(method, "Norm"),
+                               args = list(dat = DIAlist$data))
+  } else if (method %in% c("median", "mean", "quantile", "cycloess", "rlr")) {
+    log2_dat <- log2Norm(dat = DIAlist$data)
+    normalized_data <- do.call(what = paste0(method, "Norm"),
+                               args = list(logDat = log2_dat))
+  } else {
+    cli::cli_abort("{.arg {method}} is not a valid normalization method")
+  }
+
+  # Updata data
+  DIAlist$data <- normalized_data
+  DIAlist$tags$normalized <- T
+  DIAlist$tags$norm_method <- method
+
+  validate_DIAlist(DIAlist)
+}
+
+
 #' Apply all normalizations to a dataframe
 #'
 #' Takes in raw intensity data and applies 8 different normalization methods,
@@ -17,18 +53,17 @@
 #'
 apply_all_normalizations <- function(data) {
 
-
   normList <- NULL
 
   ## apply normalization methods using functions listed above.
   ## NOTE: most of the normalizations use log2(intensity) as input except
   ## VSN which normalizes using raw intensities with no log2 transformation.
-  normList[["log2"]]     <- logNorm(dat = data)
+  normList[["log2"]]     <- log2Norm(dat = data)
   normList[["median"]]   <- medianNorm(logDat = normList[["log2"]])
   normList[["mean"]]     <- meanNorm(logDat = normList[["log2"]])
   normList[["vsn"]]      <- vsnNorm(dat = data)
-  normList[["quantile"]] <- quantNorm(logDat = normList[["log2"]])
-  normList[["cycloess"]] <- cycLoessNorm(logDat = normList[["log2"]])
+  normList[["quantile"]] <- quantileNorm(logDat = normList[["log2"]])
+  normList[["cycloess"]] <- cycloessNorm(logDat = normList[["log2"]])
   normList[["rlr"]]      <- rlrNorm(logDat = normList[["log2"]])
   normList[["gi"]]       <- giNorm(dat = data)
 
@@ -41,17 +76,17 @@ apply_all_normalizations <- function(data) {
 #'
 #' A set of functions that normalize sample data (in columns of a data frame
 #' or matrix), according to various methods: \itemize{
-#'   \item logNorm- A binary (base2) log transformation
+#'   \item log2Norm- A binary (base2) log transformation
 #'   \item medianNorm- Divides by per-sample median, then multiplies by the
 #'     average of the per-sample medians.
 #'   \item meanNorm- Divides by per-sample mean, then multiplies by the
 #'     average of the per-sample means
 #'   \item vsnNorm-  Variance-stabilizing normalization (vsn),
 #'     using the \code{\link[vsn:justvsn]{vsn::justvsn}} function.
-#'   \item quantNorm-  Quantile normalization, using the
+#'   \item quantileNorm-  Quantile normalization, using the
 #'     \code{\link[preprocessCore:normalize.quantiles]{preprocessCore::normalize.quantiles}}
 #'      function.
-#'   \item cycLoessNorm- Cyclic Loess normalization, using the
+#'   \item cycloessNorm- Cyclic Loess normalization, using the
 #'     \code{\link[limma:normalizeCyclicLoess]{limma::normalizeCyclicLoess}}
 #'     function.
 #'   \item rlrNorm- Global linear regression normalization, inspired by the
@@ -86,7 +121,7 @@ NULL
 #' @rdname norm_functions
 #' @export
 #'
-logNorm <- function(dat) {
+log2Norm <- function(dat) {
   logInt <- log2(as.matrix(dat))
   logInt[is.infinite(as.matrix(logInt))] <- NA
   return(as.matrix(logInt))
@@ -133,7 +168,7 @@ vsnNorm <- function(dat) {
 #' @rdname norm_functions
 #' @export
 #'
-quantNorm <- function(logDat) {
+quantileNorm <- function(logDat) {
   quantNormed <- preprocessCore::normalize.quantiles(as.matrix(logDat), copy = TRUE)
   colnames(quantNormed) <- colnames(logDat)
   row.names(quantNormed) <- rownames(logDat)
@@ -143,7 +178,7 @@ quantNorm <- function(logDat) {
 #' @rdname norm_functions
 #' @export
 #'
-cycLoessNorm <- function(logDat) {
+cycloessNorm <- function(logDat) {
   cycLoessNormed <- limma::normalizeCyclicLoess(as.matrix(logDat), method = "fast")
   colnames(cycLoessNormed) <- colnames(logDat)
   row.names(cycLoessNormed) <- rownames(logDat)

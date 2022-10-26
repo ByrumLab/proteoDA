@@ -2,17 +2,17 @@
 % Please edit documentation in R/normalization_methods.R
 \name{norm_functions}
 \alias{norm_functions}
-\alias{logNorm}
+\alias{log2Norm}
 \alias{medianNorm}
 \alias{meanNorm}
 \alias{vsnNorm}
-\alias{quantNorm}
-\alias{cycLoessNorm}
+\alias{quantileNorm}
+\alias{cycloessNorm}
 \alias{rlrNorm}
 \alias{giNorm}
 \title{Normalization functions}
 \usage{
-logNorm(dat)
+log2Norm(dat)
 
 medianNorm(logDat)
 
@@ -20,9 +20,9 @@ meanNorm(logDat)
 
 vsnNorm(dat)
 
-quantNorm(logDat)
+quantileNorm(logDat)
 
-cycLoessNorm(logDat)
+cycloessNorm(logDat)
 
 rlrNorm(logDat)
 
@@ -41,17 +41,17 @@ A matrix of normalized sample intensities
 \description{
 A set of functions that normalize sample data (in columns of a data frame
 or matrix), according to various methods: \itemize{
-\item logNorm- A binary (base2) log transformation
+\item log2Norm- A binary (base2) log transformation
 \item medianNorm- Divides by per-sample median, then multiplies by the
 average of the per-sample medians.
 \item meanNorm- Divides by per-sample mean, then multiplies by the
 average of the per-sample means
 \item vsnNorm-  Variance-stabilizing normalization (vsn),
 using the \code{\link[vsn:justvsn]{vsn::justvsn}} function.
-\item quantNorm-  Quantile normalization, using the
+\item quantileNorm-  Quantile normalization, using the
 \code{\link[preprocessCore:normalize.quantiles]{preprocessCore::normalize.quantiles}}
 function.
-\item cycLoessNorm- Cyclic Loess normalization, using the
+\item cycloessNorm- Cyclic Loess normalization, using the
 \code{\link[limma:normalizeCyclicLoess]{limma::normalizeCyclicLoess}}
 function.
 \item rlrNorm- Global linear regression normalization, inspired by the

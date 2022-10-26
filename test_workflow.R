@@ -110,9 +110,6 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
   filter_proteins_by_proportion(min_prop = 1)
 
 
-# then make the proteinorm report, with the different normalization happening internally
-# should check for a normalized tag
-
 # Normalization report ----------------------------------------------------
 # Higgs
 write_proteinorm_report(filtered_higgs,
@@ -157,6 +154,20 @@ write_proteinorm_report(filtered_kaul,
 # and leave a normalized tag when its done
 
 
+x <- normalize_data(full_higgs_chain, method = "log2")
+
+all <- apply_all_normalizations(full_higgs_chain$data)
+
+
+for (method in c("log2", "median", "mean", "vsn", "quantile",
+                 "cycloess", "rlr", "gi")) {
+
+  normed <- normalize_data(full_higgs_chain, method = method)
+  stopifnot(all(unique(all[[method]] == normed$data)))
+  stopifnot(normed$tags$normalized)
+  stopifnot(normed$tags$norm_method == method)
+
+}
 
 
 # Make QC report ----------------------------------------------------------
