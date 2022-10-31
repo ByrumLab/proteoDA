@@ -100,19 +100,9 @@ filtered_kaul <- filter_proteins_contaminants(sub_kaul) %>%
   filter_proteins_by_group(min_reps = 4, min_groups = 2)
 
 
-
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
-  filter_samples(group != "Pool") %>%
-  filter_proteins_contaminants() %>%
-  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
-  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
-  filter_proteins_by_proportion(min_prop = 1)
-
-
 # Normalization report ----------------------------------------------------
 # Higgs
-write_proteinorm_report(filtered_higgs,
+write_proteinorm_report(full_higgs_chain,
                         grouping_column = "group",
                         file = "higgs_update_2.pdf", overwrite = T)
 
@@ -154,7 +144,7 @@ write_proteinorm_report(filtered_kaul,
 # and leave a normalized tag when its done
 
 
-x <- normalize_data(full_higgs_chain, method = "log2")
+x <- normalize_data(full_higgs_chain, method = "cycloess")
 
 all <- apply_all_normalizations(full_higgs_chain$data)
 
@@ -170,50 +160,72 @@ for (method in c("log2", "median", "mean", "vsn", "quantile",
 }
 
 
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
+  filter_samples(group != "Pool") %>%
+  filter_proteins_contaminants() %>%
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
+  filter_proteins_by_proportion(min_prop = 1) %>%
+  normalize_data(method = "cycloess")
+
+
+norm_kaul <- filtered_kaul %>%
+  normalize_data("quantile")
+
+norm_lupashin <- filtered_lupashin %>%
+  normalize_data("rlr")
+
+norm_ndu <- filtered_ndu %>%
+  normalize_data("median")
+
+norm_reb <- filtered_reb %>%
+  normalize_data("vsn")
+
+norm_zhan <- filtered_zhan %>%
+  normalize_data("cycloess")
+
 # Make QC report ----------------------------------------------------------
-write_qc_report(processed_data = norm_higgs,
-                chosen_norm_method = "vsn",
+write_qc_report(full_higgs_chain,
                 grouping_column = "group",
                 file = "higgs_qc_update.pdf",
                 overwrite = T)
 
-write_qc_report(processed_data = norm_higgs,
-                chosen_norm_method = "vsn",
+write_qc_report(full_higgs_chain,
                 grouping_column = "group",
                 label_column = "sampleIDs",
                 file = "higgs_qc_update_samplelabs.pdf",
                 overwrite = T)
 
-write_qc_report(processed_data = norm_ndu,
-                chosen_norm_method = "vsn",
+write_qc_report(norm_ndu,
                 grouping_column = "group",
                 file = "ndu_qc_update.pdf",
                 overwrite = T)
 
-write_qc_report(processed_data = norm_ndu,
-                chosen_norm_method = "vsn",
+write_qc_report(norm_ndu,
                 file = "ndu_qc_update_batch.pdf",
                 overwrite = T)
 
 
-write_qc_report(processed_data = norm_lupashin,
-                chosen_norm_method = "vsn",
+write_qc_report(norm_lupashin,
                 grouping_column = "group",
                 file = "lupashin_qc_update.pdf",
                 overwrite = T)
 
-write_qc_report(processed_data = norm_zhan,
-                chosen_norm_method = "vsn",
+write_qc_report(norm_zhan,
                 grouping_column = "group",
                 file = "zhan_qc_update.pdf",
                 overwrite = T)
 
-write_qc_report(processed_data = norm_reb,
-                chosen_norm_method = "vsn",
+write_qc_report(norm_reb,
                 grouping_column = "group",
                 file = "rebello_qc_update.pdf",
                 overwrite = T)
 
+write_qc_report(norm_kaul,
+                grouping_column = "group",
+                file = "kaul_qc_update.pdf",
+                overwrite = T)
 
 # Make design -------------------------------------------------------------
 des_higgs <- make_design(targets=norm_higgs$targets,
@@ -238,7 +250,7 @@ des_ndu2 <- make_design(targets = norm_ndu$targets,
                        group_column = "group",
                        factor_columns = "test",
                        paired_column =  NULL,
-                       design_formula = "~ 0 + group")
+                       design_formula = "~ 0 + group + (1 | pair")
 
 waldo::compare(des_ndu, des_ndu2) # slight difference in order, should be no big deal
 

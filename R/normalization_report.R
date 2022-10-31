@@ -69,7 +69,7 @@ write_proteinorm_report <- function(DIAlist,
 
     }
     if (grouping_column %notin% colnames(DIAlist$metadata)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of  in {.arg DIAlist}",
+      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DIAlist}",
                        "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
     }
     # And set it

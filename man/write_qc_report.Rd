@@ -5,8 +5,7 @@
 \title{Create quality control report}
 \usage{
 write_qc_report(
-  processed_data,
-  chosen_norm_method = NULL,
+  DIAlist,
   grouping_column = NULL,
   label_column = NULL,
   out_dir = NULL,
@@ -21,8 +20,7 @@ write_qc_report(
 )
 }
 \arguments{
-\item{chosen_norm_method}{The normalization method for which to perform the QC analysis.
-Should be a name of one of the datasets in normList.}
+\item{DIAlist}{A DIAlist.}
 
 \item{grouping_column}{The name of the column in the metadata which
 gives information on how to group samples for normalization. Must be supplied:

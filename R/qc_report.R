@@ -15,8 +15,6 @@
 #'
 #'
 #' @inheritParams write_proteinorm_report
-#' @param chosen_norm_method The normalization method for which to perform the QC analysis.
-#'   Should be a name of one of the datasets in normList.
 #' @param label_column Optional. The name of column within the targets data frame
 #'   which contains labels to use for plotting figures. When not supplied,
 #'   defaults to using the column names of the data in processed_data.
@@ -46,8 +44,7 @@
 #' # No examples yet
 #'
 
-write_qc_report <- function(processed_data,
-                            chosen_norm_method = NULL,
+write_qc_report <- function(DIAlist,
                             grouping_column = NULL,
                             label_column = NULL,
                             out_dir = NULL,
@@ -60,26 +57,23 @@ write_qc_report <- function(processed_data,
                             clust_method = "complete",
                             show_all_proteins = F) {
 
-  
+  #################################
+  ## Check args and set defaults ##
+  #################################
 
-  #################
-  ## Check args  ##
-  #################
+  validate_DIAlist(DIAlist)
 
-  # Check that processed_data has expected list structure
-  if (!all(c("normList", "targets", "filt", "param", "stats") %in% names(processed_data))) {
-    cli::cli_abort(c("{.arg processed_data} does not have expected structure:",
-                     "i" = "Is it the object created by running {.code process_data()}?."))
+  if (!is.null(DIAlist$tags$normalized)) {
+    if (!DIAlist$tags$normalized) {
+      cli::cli_warn("Data in DIAlist are not normalized. Writing QC report for raw data.")
+      normalized <- F
+    } else {
+      normalized <- T
+    }
+  } else {
+    cli::cli_warn("Data in DIAlist are not normalized. Writing QC report for raw data.")
+    normalized <- F
   }
-
-  # chosen_norm_method
-  chosen_norm_method <- rlang::arg_match(
-    arg = chosen_norm_method,
-    values = unique(c(
-      names(processed_data$normList), "log2", "median", "mean", "vsn", "quantile",
-      "cycloess", "rlr", "gi"
-    )), multiple = FALSE
-  )
 
   # If provided, check that grouping column exists in the target dataframe
   # And set it
@@ -89,17 +83,17 @@ write_qc_report <- function(processed_data,
                        "i" = "Only specify one column name for {.arg grouping_column}"))
 
     }
-    if (grouping_column %notin% colnames(processed_data$targets)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in the targets dataframe of  in {.arg processed_data}",
-                       "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
+    if (grouping_column %notin% colnames(DIAlist$metadata)) {
+      cli::cli_abort(c("Column {.arg {grouping_column}} not found in the metadata of {.arg DIAlist}",
+                       "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
     }
-    groups <- as.character(processed_data$targets[,grouping_column])
+    groups <- as.character(DIAlist$metadata[,grouping_column])
   } else { # If no groups provided, set them but warn user
-    groups <- rep("group", ncol(processed_data$normList[[chosen_norm_method]]))
-    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples/columns in {.arg processed_data} as one group."))
+    groups <- rep("group", ncol(DIAlist$data))
+    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples in {.arg DIAlist} as one group."))
   }
 
-  # If provided, check that label column is present in the target dataframe
+  # If provided, check that label column is present in the metadata
   # and set it
   if (!is.null(label_column)) {
     if (length(label_column) != 1) {
@@ -107,13 +101,13 @@ write_qc_report <- function(processed_data,
                        "i" = "Only specify one column name for {.arg label_column}"))
 
     }
-    if (label_column %notin% colnames(processed_data$targets)) {
-      cli::cli_abort(c("Column {.arg {label_column}} not found in the targets dataframe of  in {.arg processed_data}",
-                       "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
+    if (label_column %notin% colnames(DIAlist$metadata)) {
+      cli::cli_abort(c("Column {.arg {label_column}} not found in the metadata of {.arg DIAlist}",
+                       "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
     }
-    sample_labels <- processed_data$targets[,label_column]
-  } else { # Use colnames of the normlist if not provided
-    sample_labels <- colnames(processed_data$normList[[chosen_norm_method]])
+    sample_labels <- as.character(DIAlist$metadata[,label_column])
+  } else { # Use colnames of the data if not provided
+    sample_labels <- colnames(DIAlist$data)
   }
 
   ############
@@ -152,7 +146,7 @@ write_qc_report <- function(processed_data,
   }
 
   # Select data from chosen normalization method for further use
-  norm_data <- processed_data$normList[[chosen_norm_method]]
+  norm_data <- DIAlist$data
 
   #######################
   ## MAKE PLOT OBJECTS ##
@@ -160,9 +154,16 @@ write_qc_report <- function(processed_data,
 
   # Violin plot
   violin_plot <- qc_violin_plot(data = norm_data,
-                           groups = groups,
-                           sample_labels = sample_labels) +
+                                groups = groups,
+                                sample_labels = sample_labels) +
     ggtitle(paste0("Grouped by ", grouping_column))
+
+  # Change label if data aren't normalized
+  if (!normalized) {
+    violin_plot <- violin_plot +
+      ylab("Intensity")
+  }
+
 
 
   # PCA
@@ -252,7 +253,7 @@ write_qc_report <- function(processed_data,
   if (!file.exists(file.path(out_dir, file))) {
     cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
   }
-  
+
   cli::cli_inform(c("v" = "Success"))
 
   invisible(file.path(out_dir, file))
