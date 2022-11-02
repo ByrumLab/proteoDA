@@ -152,9 +152,25 @@ make_design <- function(targets,
       if (!is.null(group_column)) {
           cli::cli_inform(c("{.arg group_column} is ignored when {.arg design_formula} is provided"))
       }
+      ## if paired factor supplied then design matrix and targets file for
+      ## mixed effects model created. i.e. paired column in targets renamed
+      ## "paired"
       if (!is.null(paired_column)) {
-          cli::cli_inform(c("{.arg paired_column} is ignored when {.arg design_formula} is provided"))
+          ## make paired a named list. if paired.type is paired then
+          ## add to formula.
+          p.col <- grep(paired_column, colnames(tar))
+          stopifnot(colnames(tar)[p.col] == paired_column) #TODO: DOES THIS EVER FAIL?
+          # IT DOES IF YOU SUPPLY MULTIPLE COLUMNS HERE. BUT SHOULD WE BE CHECKING THAT ABOVE ANYWAY?
+          colnames(tar)[p.col] <- "paired" ## rename column
+          cli::cli_inform("Creating design matrix and targets for paired sample design using limma's mixed effect model")
+          cli::cli_inform("Renamed input {.arg paired_column} {.val {paired_column}} to {.val paired}")
+          paired_column <- NULL ## so paired is not included in design formula
       }
+      # From my reading of the code, we always want pairedformula to be NULL
+      # And it is never included in the design formula and matrix, only the
+      # target??
+      # TODO: double check on this, and streamline it out if that's true.
+      pairedformula <- NULL
       if (!is.null(factor_columns)) {
           cli::cli_inform(c("{.arg factor_columns} is ignored when {.arg design_formula} is provided"))
       }
