@@ -145,7 +145,6 @@ make_design <- function(targets,
   } else { # When supplying design_formula
 
       formulaobject <- stats::terms(eval(parse(text=design_formula)))
-
       if (class(formulaobject)[2] != "formula") {
           cli::cli_abort(c("String provided in {.arg design_formula} could not be coerced to a formula"))
       }
@@ -158,10 +157,10 @@ make_design <- function(targets,
       if (!is.null(paired_column)) {
           ## make paired a named list. if paired.type is paired then
           ## add to formula.
-          p.col <- grep(paired_column, colnames(tar))
-          stopifnot(colnames(tar)[p.col] == paired_column) #TODO: DOES THIS EVER FAIL?
+          p.col <- grep(paired_column, colnames(targets))
+          stopifnot(colnames(targets)[p.col] == paired_column) #TODO: DOES THIS EVER FAIL?
           # IT DOES IF YOU SUPPLY MULTIPLE COLUMNS HERE. BUT SHOULD WE BE CHECKING THAT ABOVE ANYWAY?
-          colnames(tar)[p.col] <- "paired" ## rename column
+          colnames(targets)[p.col] <- "paired" ## rename column
           cli::cli_inform("Creating design matrix and targets for paired sample design using limma's mixed effect model")
           cli::cli_inform("Renamed input {.arg paired_column} {.val {paired_column}} to {.val paired}")
           paired_column <- NULL ## so paired is not included in design formula
