@@ -35,7 +35,7 @@ make_contrasts <- function(file = NULL,
   }
 
   ## check that the file is a csv, tsv, or text file
-  filext <- file_extension(file)
+  filext <- stringr::str_to_lower(file_extension(file))
   if (filext %notin% c("csv","txt","tsv")) {
     cli::cli_abort(c("Problem with input file",
                      "x" = "Input file must end in {.file .csv}, {.file .tsv}, or {.file .txt}"))
