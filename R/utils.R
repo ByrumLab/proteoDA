@@ -172,7 +172,7 @@ validate_filename <- function(filename, allowed_exts, check_space = T) {
 
 #' Get the file extension from a file
 #'
-#' @param filepath The filepath from which to extract the exxtension
+#' @param filepath The filepath from which to extract the extension
 #'
 #' @return A string of the file extension. When no extension was detected, an empty string.
 #'
