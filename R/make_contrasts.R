@@ -35,7 +35,7 @@ make_contrasts <- function(file = NULL,
   }
 
   ## check that the file is a csv, tsv, or text file
-  filext <- file_extension(file)
+  filext <- stringr::str_to_lower(file_extension(file))
   if (filext %notin% c("csv","txt","tsv")) {
     cli::cli_abort(c("Problem with input file",
                      "x" = "Input file must end in {.file .csv}, {.file .tsv}, or {.file .txt}"))
@@ -51,7 +51,7 @@ make_contrasts <- function(file = NULL,
   if (filext == "txt" | filext=="tsv") {sep= "\t"}
   if (filext == "csv") {sep=","}
 
-  cli::cli_rule()
+  
   ## imports contrast file
   contrast.tbl <- utils::read.delim(file = file,
                                     sep = sep,
@@ -94,7 +94,7 @@ make_contrasts <- function(file = NULL,
                    save = TRUE)
 
   cli::cli_inform("Contrasts imported successfully")
-  cli::cli_rule()
+  
   cli::cli_inform(c("v" = "Success"))
 
   # return data

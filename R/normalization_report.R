@@ -10,9 +10,8 @@
 #' Creates and saves as a PDF report a variety of plots which give
 #' information about the performance of different normalization metrics.
 #'
-#' @param processed_data The output of the \code{\link{process_data}} function:
-#'   a list object containing processed data and sample information..
-#' @param grouping_column The name of column within the targets data frame which
+#' @param DIAlist A DIAlist.
+#' @param grouping_column The name of the column in the metadata which
 #'   gives information on how to group samples for normalization. Must be supplied:
 #'   some metrics can't be calculated for only one group.
 #' @param overwrite Should report file be overwritten if it already exists?
@@ -38,23 +37,25 @@
 #' @examples
 #' # No examples yet
 #'
-write_proteinorm_report <- function(processed_data,
+write_proteinorm_report <- function(DIAlist,
                                    grouping_column = NULL,
                                    out_dir = NULL,
                                    file = NULL,
                                    overwrite = FALSE,
                                    suppress_zoom_legend = FALSE) {
 
-  cli::cli_rule()
+
 
   #################################
   ## Check args and set defaults ##
   #################################
 
-  # Check that processed_data has expected list structure
-  if (!all(c("normList", "targets", "filt", "param", "stats") %in% names(processed_data))) {
-    cli::cli_abort(c("{.arg processed_data} does not have expected structure:",
-                     "i" = "Is it the object created by running {.code process_data()}?."))
+  validate_DIAlist(DIAlist)
+
+  if (!is.null(DIAlist$tags$normalized)) {
+    if (DIAlist$tags$normalized) {
+      cli::cli_abort("Data in DIAlist are already normalized. Cannot evaluate normalization metrics")
+    }
   }
 
   # If provided, check that grouping column exists in the target dataframe
@@ -67,12 +68,12 @@ write_proteinorm_report <- function(processed_data,
                        "i" = "Only specify one column name for {.arg grouping_column}"))
 
     }
-    if (grouping_column %notin% colnames(processed_data$targets)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in the targets dataframe of  in {.arg processed_data}",
-                       "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
+    if (grouping_column %notin% colnames(DIAlist$metadata)) {
+      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DIAlist}",
+                       "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
     }
     # And set it
-    groups <- as.character(processed_data$targets[,grouping_column])
+    groups <- as.character(DIAlist$metadata[,grouping_column])
     # And give error if there's only one group
     if (length(unique(groups)) < 2) {
       cli::cli_abort(c("Column {.arg {grouping_column}} does not contain at least two different groups",
@@ -91,8 +92,13 @@ write_proteinorm_report <- function(processed_data,
     cli::cli_inform(cli::col_yellow("{.arg file} argument is empty. Saving report to: {.path {out_dir}/{file}}"))
   }
 
-  # Extract normList from input data
-  normList <- processed_data$normList
+
+  ###########################
+  ## Do all normalizations ##
+  ###########################
+  cli::cli_inform("Starting normalizations")
+  normList <- apply_all_normalizations(DIAlist$data)
+  cli::cli_inform("Normalizations finished")
 
   ##################
   ## Set up files ##
@@ -158,7 +164,7 @@ write_proteinorm_report <- function(processed_data,
   if (!file.exists(file.path(out_dir, file))) {
     cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
   }
-  cli::cli_rule()
+
   cli::cli_inform(c("v" = "Success"))
 
   invisible(file.path(out_dir, file))

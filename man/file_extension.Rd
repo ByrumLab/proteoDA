@@ -7,7 +7,7 @@
 file_extension(filepath)
 }
 \arguments{
-\item{filepath}{The filepath from which to extract the exxtension}
+\item{filepath}{The filepath from which to extract the extension}
 }
 \value{
 A string of the file extension. When no extension was detected, an empty string.

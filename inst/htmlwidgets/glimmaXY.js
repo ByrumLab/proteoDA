@@ -165,20 +165,24 @@ class State {
  * Generates datatable DOM object, state machine and assigns event listeners
  * @param  {Data} data encapsulated data object containing references to Vega graphs and DOM elements
  */
-function setupXYInteraction(data)
-{
+function setupXYInteraction(data) {
 
   var state = new State(data);
   var datatableEl = document.createElement("TABLE");
   datatableEl.setAttribute("class", "dataTable");
   data.controlContainer.appendChild(datatableEl);
 
-  $(document).ready(function()
-  {
+  $(document).ready(function() {
     var datatable = $(datatableEl).DataTable(
       {
         data: data.xyTable,
         columns: data.cols.map(el => ({"data": el, "title": el})),
+        columnDefs: [
+          {
+            targets: 0,
+            visible: false,
+          },
+        ],
         rowId: "gene",
         dom: '<"geneDisplay fade-in">Bfrtip',
         buttons: {
@@ -207,6 +211,18 @@ function setupXYInteraction(data)
         stripeClasses: ['stripe1','stripe2']
       });
 
+    var col_number = datatable.columns().count();
+    // Loop of column indices, get column names
+    for (var i = 0; i < col_number; i++) {
+      var title = $(datatable.column(i).header()).text();
+      if (title === "negLog10adjP") {
+        $(datatable.column(i).visible(false));
+      }
+      if (title === "negLog10rawP") {
+        $(datatable.column(i).visible(false));
+      }
+    }
+
     datatable.on('click', 'tr', function() { tableClickListener(datatable, state, data, $(this)) } );
     data.xyView.addSignalListener('click', function(name, value) { XYSignalListener(datatable, state, value[0], data) } );
 
@@ -229,8 +245,7 @@ function showDataDropdown() {
  * @param  {State} state state machine object returned by getStateMachine()
  * @param  {Data} data encapsulated data object containing references to Vega graphs and DOM elements
  */
-function clearTableListener(datatable, state, data)
-{
+function clearTableListener(datatable, state, data) {
   state.graphMode = false;
   state.selected = [];
   datatable.rows('.selected').nodes().to$().removeClass('selected');
@@ -248,8 +263,7 @@ function clearTableListener(datatable, state, data)
  * @param  {Data} data encapsulated data object containing references to Vega graphs and DOM elements
  * @param  {Row} row row object in the table clicked on by the user
  */
-function tableClickListener(datatable, state, data, row)
-{
+function tableClickListener(datatable, state, data, row) {
   if (state.graphMode) return;
   row.toggleClass('selected');
   let datum = datatable.row(row).data();
@@ -265,8 +279,7 @@ function tableClickListener(datatable, state, data, row)
  * @param  {Datum} datum point on the graph clicked on by the user
  * @param  {Data} data encapsulated data object containing references to Vega graphs and DOM elements
  */
-function XYSignalListener(datatable, state, datum, data)
-{
+function XYSignalListener(datatable, state, datum, data) {
   if (datum == null) return;
   if (!state.graphMode)
   {
@@ -293,8 +306,7 @@ function XYSignalListener(datatable, state, datum, data)
  * Resets expression plot to a blank slate
  * @param  {Data} data encapsulated data object containing references to Vega graphs and DOM elements
  */
-function clearExpressionPlot(data)
-{
+function clearExpressionPlot(data) {
 
   if (!data.expressionView)
     return;
@@ -312,8 +324,7 @@ function clearExpressionPlot(data)
  * @param  {Data} data encapsulated data object containing references to Vega graphs and DOM elements
  * @param  {String} geneName name of gene being displayed
  */
-function updateExpressionPlot(countsRow, data, geneName)
-{
+function updateExpressionPlot(countsRow, data, geneName) {
   let groups = data.groups.group;
   let numUniqueGroups = [...new Set(groups)].length;
   let samples = data.groups.sample;
@@ -365,8 +376,7 @@ function updateExpressionPlot(countsRow, data, geneName)
  * Adds y-axis scaling message DOM objects to the expression plot
  * @param  {Data} data encapsulated data object containing references to Vega graphs and DOM elements
  */
-function addAxisMessage(data)
-{
+function addAxisMessage(data) {
   var bindings = data.expressionContainer.getElementsByClassName("vega-bindings")[0];
   var alertBox = document.createElement("div");
   alertBox.setAttribute("class", "alertBox invisible");
@@ -381,8 +391,7 @@ function addAxisMessage(data)
  * Updaes the y-axis scaling for the expression plot
  * @param  {Data} data encapsulated data object containing references to Vega graphs and DOM elements
  */
-function updateAxisMessage(data)
-{
+function updateAxisMessage(data) {
   var alertBox = data.expressionContainer.getElementsByClassName("alertBox")[0];
   let minCount = data.expressionView.signal("min_count");
   let maxCount = data.expressionView.signal("max_count");
@@ -415,8 +424,7 @@ function updateAxisMessage(data)
  * @param  {Datum} datum given gene object
  * @return {Integer} -1 if the given gene is not found; index of the gene in arr otherwise.
  */
-function containsGene(arr, datum)
-{
+function containsGene(arr, datum) {
   let loc = -1;
   let i;
   for (i = 0; i < arr.length; i++)
@@ -436,8 +444,7 @@ function containsGene(arr, datum)
  * @param  {Integer} i index i of element to be removed from arr.
  * @return {Array} modified array with element at index i removed.
  */
-function remove(arr, i)
-{
+function remove(arr, i) {
   let new_arr = arr.slice(0, i).concat(arr.slice(i+1))
   return new_arr;
 }

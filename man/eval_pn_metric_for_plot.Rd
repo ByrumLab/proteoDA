@@ -12,7 +12,7 @@ eval_pn_metric_for_plot(
 }
 \arguments{
 \item{normList}{A named list of normalized data matrices. Generally, the "normList"
-slot of the list that is output by \code{\link{process_data}}.}
+slot of the list that is output by .}
 
 \item{grouping}{A character or factor vector, listing the group(s) the samples
 belong to.}

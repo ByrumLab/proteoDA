@@ -44,7 +44,7 @@ write_limma_plots <- function(model_results = NULL,
   old_wd <- getwd()
   on.exit(expr = setwd(old_wd), add = T)
 
-  cli::cli_rule()
+  
 
   cli::cli_inform("Setting working directory to {.path {file.path(old_wd, output_dir)}}")
   setwd(output_dir)
@@ -133,7 +133,7 @@ write_limma_plots <- function(model_results = NULL,
   unlink(c("logo_higherres.png", "plot_template.Rmd", "report_template.Rmd", tmp_subdir), recursive = T)
   cli::cli_inform("Returning working directory to {.path {old_wd}}")
   setwd(old_wd)
-  cli::cli_rule()
+  
   cli::cli_inform(c("v" = "Success"))
 
   invisible(TRUE)

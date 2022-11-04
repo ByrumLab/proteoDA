@@ -88,7 +88,7 @@ write_limma_tables <- function(model_results,
 
 
   # Setup -------------------------------------------------------------------
-  cli::cli_rule()
+  
   if (dir.exists(out_dir)) {
     if (overwrite) {
       cli::cli_inform("Directory {.path {out_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting files in directory.")
@@ -213,7 +213,7 @@ write_limma_tables <- function(model_results,
 
   # Finish ------------------------------------------------------------------
 
-  cli::cli_rule()
+  
   cli::cli_inform(c("v" = "Success"))
   # If everything works, return combined results
   invisible(combined_results)

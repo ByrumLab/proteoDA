@@ -5,8 +5,7 @@
 \title{Create quality control report}
 \usage{
 write_qc_report(
-  processed_data,
-  chosen_norm_method = NULL,
+  DIAlist,
   grouping_column = NULL,
   label_column = NULL,
   out_dir = NULL,
@@ -21,13 +20,9 @@ write_qc_report(
 )
 }
 \arguments{
-\item{processed_data}{The output of the \code{\link{process_data}} function:
-a list object containing processed data and sample information..}
+\item{DIAlist}{A DIAlist.}
 
-\item{chosen_norm_method}{The normalization method for which to perform the QC analysis.
-Should be a name of one of the datasets in normList.}
-
-\item{grouping_column}{The name of column within the targets data frame which
+\item{grouping_column}{The name of the column in the metadata which
 gives information on how to group samples for normalization. Must be supplied:
 some metrics can't be calculated for only one group.}
 
