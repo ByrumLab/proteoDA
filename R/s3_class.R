@@ -66,6 +66,13 @@ validate_DIAlist <- function(x) {
     }
   }
 
+  # Checks for design:
+  # If design matrix exists, needs to have same # of rows as metadata
+  # also, rownames of design matrix need to equal colnames of data
+
+  # If there's a random effect blocking factor, make sure its in the metadata
+
+
   # If all checks pass, return input
   x
 }
