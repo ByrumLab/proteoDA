@@ -22,16 +22,20 @@ qc_violin_plot <- function(data,
                            groups = NULL,
                            sample_labels = colnames(data)) {
 
-  # Get alphabetical order of groups
-  group_order <- sort.int(groups, index.return = T)$ix
+
+
+  # Get ordering of samples, by order in which groups are supplied
+  group_order <- order(match(groups, unique(groups)))
 
 
   # Rename column names to sample names provided
   colnames(data) <- sample_labels
 
   # Match sample names to groups, for coloring
-  sample_group_info <- data.frame(ind = factor(x = colnames(data)[group_order], levels = colnames(data)[group_order]),
-                                  group = as.factor(groups[group_order]))
+  sample_group_info <- data.frame(ind = factor(x = colnames(data)[group_order],
+                                               levels = colnames(data)[group_order]),
+                                  group = factor(x = groups[group_order],
+                                                 levels = unique(groups)))
 
   # make and return plot
   # Must merge with sample info first, to get order correct
