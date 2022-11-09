@@ -31,33 +31,39 @@ add_design <- function(DIAlist,
                      "x" = "Missing term{?s}: {problem_terms}"))
   }
 
+  formula_terms <- attributes(terms(formula))$term.labels
+  formula_has_random <- any(stringr::str_detect(formula_terms, "\\|"))
+
   # After all checks, strip out any random effects into a fixed-only formula
-  # STILL NEED TO IMPLEMENT
-  # Som epossible code ideas: update(mod, formula=drop.terms(mod$terms, 2, keep.response=TRUE)  )
-  form_fixed_only <- formula
+  if (formula_has_random) {
+    form_fixed_only <- drop.terms(terms(formula),
+                                  dropx = which(stringr::str_detect(formula_terms, "\\|")))
+    elements <- formula_terms[stringr::str_detect(formula_terms, "\\|")] %>%
+      stringr::str_split_fixed(pattern = "\\|", n = 2)
+
+    random_factor <- stringr::str_remove_all(elements[[2]], " ")
+  } else {
+    form_fixed_only <- formula
+  }
 
   # Make the model matrix
   design_matrix <- stats::model.matrix(form_fixed_only, data = DIAlist$metadata)
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\(Intercept\\)", "Intercept")
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\:", ".")
 
-  # then, process fixed effects
-  # Or maybe lower down..
-
-  # Do I need to do anything to the metadata?
-  # I don't think so???
-
   if (!is.null(DIAlist$design)) {
     cli::cli_inform("DIAlist already contains a statistical design. Overwriting.")
+    # Get rid of any old stuff
+    DIAlist$design <- NULL
   }
 
   DIAlist$design <- list(design_formula = paste0(as.character(formula), collapse = ""),
                          design_matrix = design_matrix)
 
-  # Add fixed effect info as needed.
-  # unlike before, won't mess with the metadata at all
-  # will just add in the design list a slot for the
-  # random factor
+  # If theres a random factor, add it in
+  if (formula_has_random) {
+    DIAlist$design$random_factor <- random_factor
+  }
 
   validate_DIAlist(DIAlist)
 
@@ -127,16 +133,33 @@ validate_formula <- function(design_formula) {
   }
 
   if (any(stringr::str_detect(terms, "\\|"))) {
+    # Grab the random term
     random_term <- terms[stringr::str_detect(terms, "\\|")]
-    print("Random term:")
-    print(random_term)
+
+    # Get the randomg group term and the grouping
+    elements <- stringr::str_split_fixed(random_term, pattern = "\\|", n = 2)
+    rand_group_term <- stringr::str_remove_all(elements[[1]], " ")
+    rand_groups <- stringr::str_remove_all(elements[[2]], " ")
+
+    # Random group term has to equal "1"
+    if (!identical(rand_group_term, "1")) {
+      cli::cli_abort(c("Random effects can only influence the intercept, and not other terms",
+                       "i" = "The random effect must be specified as (1 | random_factor)"))
+    }
+
+    # Random groups has to be only one factor
+    if (stringr::str_count(rand_groups, "\\w+") > 1) {
+      cli::cli_abort(c("Only one grouping/blocking factor can be specified as a random effect.",
+                       "i" = "The random effect must be specified as (1 | random_factor)",
+                       "i" = "Multiple effects like (1 | batch + group) aren't allowed"))
+    }
+
+    # Random group cannot be the same as one of the other terms (right?)
+    if (rand_groups %in% terms[!stringr::str_detect(terms, "\\|")]) {
+      cli::cli_abort(c("Random factors cannot also be fixed factors."))
+    }
   }
 
-  ## NEED TO IMPLEMENT A BUNCH OF CHECKS FOR APPROPRIATENESS
-  # can't have more than one term within the intercept part of the random effect
-  # can't have nested terms in the random effect: right side of random effect should be 1 word, no special characters
-  # can't have random slopes, only random intercepts.: left side of random effect with | must be 1
-
-
+  # If all checks pass, return the input formula as a formula
   formula
 }

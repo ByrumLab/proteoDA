@@ -209,15 +209,17 @@ norm_ndu$metadata <- norm_ndu$metadata %>%
   separate(group, into = c("treatment", "tissue"), remove = F)
 
 x <- add_design(norm_ndu,
-           design_formula = ~treatment*tissue)
+                design_formula = "~ 0 + treatment + (1 | tissue)")
+
+x2 <- add_design(x,
+                design_formula = "~ 0 + treatment + tissue")
+
+x$design
+x2$design
 
 
-group <- "~group"
 
-formula_testing(~ hello)
-
-
-
+## NEED TO MOVE THIS OVER TO A TEST
 # Bunch of equations that should work
 validate_formula("~ 0 + group + xyz + (1 | hello)")
 validate_formula("~ group + xyz + (1 | hello)")
@@ -249,20 +251,25 @@ validate_formula("~ 0 + group + xyz + 1 | hello")
 validate_formula(~ 0 + group + xyz + (1 || hello))
 validate_formula(~ 0 + group + xyz + (1 | hello) + (1 | hello))
 validate_formula(~ 0 + group + xyz + 1 | hello + 1 | hello)
-validate_formula(~ 0 + group + xyz + (1 | hello) + 1 | hello)
+validate_formula(~ 0 + group + xyz + (1 | hello ) + 1 | hello)
 validate_formula(~ 0 + group + xyz + 1 | hello)
+validate_formula("~ 0 + group + xyz + (hello | hello)")
+validate_formula(~ 0 + group + xyz + (hello | hello))
+validate_formula("~ 0 + group + xyz + (1 | hello:group)")
+validate_formula("~ 0 + group + xyz + (1 | hello*group)")
+validate_formula("~ 0 + group + xyz + (1 | hello/group)")
+validate_formula("~ 0 + group + xyz + (1 | hello + group)")
+validate_formula(~ 0 + group + xyz + (1 | hello:group))
+validate_formula(~ 0 + group + xyz + (1 | hello*group))
+validate_formula(~ 0 + group + xyz + (1 | hello/group))
+validate_formula(~ 0 + group + xyz + (1 | hello + group))
+validate_formula("~ group + (1 | group )")
+validate_formula(~ group + (1 | group   ))
 
-# Checking of random effect terms
-validate_formula("~ 0 + group + xyz + (1 | hello:group)") # DOESN'T FAIL YET
-validate_formula("~ 0 + group + xyz + (1 | hello*group)") # DOESN'T FAIL YET
-validate_formula("~ 0 + group + xyz + (1 | hello/group)") # DOESN'T FAIL YET
-validate_formula("~ 0 + group + xyz + (1 | hello + group)") # DOESN'T FAIL YET
-validate_formula("~ 0 + group + xyz + (hello | hello)") # DOESN'T FAIL YET
-validate_formula(~ 0 + group + xyz + (1 | hello:group)) # DOESN'T FAIL YET
-validate_formula(~ 0 + group + xyz + (1 | hello*group)) # DOESN'T FAIL YET
-validate_formula(~ 0 + group + xyz + (1 | hello/group)) # DOESN'T FAIL YET
-validate_formula(~ 0 + group + xyz + (1 | hello + group)) # DOESN'T FAIL YET
-validate_formula(~ 0 + group + xyz + (hello | hello)) # DOESN'T FAIL YET
+
+# Will need to get some more complicated data to test out
+# a model with both interactions and random factors
+# for the model fitting...
 
 
 
@@ -409,6 +416,8 @@ fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
 fit_kaul <- fit_limma_model(data = norm_kaul$normList[["cycloess"]],
                            design_obj = des_kaul,
                            contrasts_obj = contrasts_kaul)
+
+
 # Extract results ---------------------------------------------------------
 results_lupashin <- extract_limma_DE_results(limma_fit = fit_lupashin)
 results_ndu_brain <- extract_limma_DE_results(limma_fit = fit_ndu_brain)
