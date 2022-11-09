@@ -19,6 +19,8 @@ CreatePackageReport("proteomicsDIA")
 
 ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.CSV") # Missing exclusivity col
 
+higgs <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") # worked
+
 ndu <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") # Worked
 
 kinter <- read_DIA_data("for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv") # Worked
@@ -135,31 +137,6 @@ write_proteinorm_report(filtered_kaul,
 
 
 # Normalize data ----------------------------------------------------------
-
-
-
-# Then, a normalize_data function,
-# which replaces the data with normalized data and sets some tags
-# should check for a normalized tag
-# and leave a normalized tag when its done
-
-
-x <- normalize_data(full_higgs_chain, method = "cycloess")
-
-all <- apply_all_normalizations(full_higgs_chain$data)
-
-
-for (method in c("log2", "median", "mean", "vsn", "quantile",
-                 "cycloess", "rlr", "gi")) {
-
-  normed <- normalize_data(full_higgs_chain, method = method)
-  stopifnot(all(unique(all[[method]] == normed$data)))
-  stopifnot(normed$tags$normalized)
-  stopifnot(normed$tags$norm_method == method)
-
-}
-
-
 full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
   add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
   filter_samples(group != "Pool") %>%
@@ -228,10 +205,68 @@ write_qc_report(norm_kaul,
                 overwrite = T)
 
 # Make design -------------------------------------------------------------
-des_higgs <- make_design(targets=norm_higgs$targets,
-                        group_column = "group",
-                        factor_columns = NULL,
-                        paired_column = NULL)
+norm_ndu$metadata <- norm_ndu$metadata %>%
+  separate(group, into = c("treatment", "tissue"), remove = F)
+
+x <- add_design(norm_ndu,
+           design_formula = ~treatment*tissue)
+
+
+group <- "~group"
+
+formula_testing(~ hello)
+
+
+
+# Bunch of equations that should work
+validate_formula("~ 0 + group + xyz + (1 | hello)")
+validate_formula("~ group + xyz + (1 | hello)")
+validate_formula("~ 0 + group*xyz + (1 | hello)")
+validate_formula("~ group*xyz")
+validate_formula("~ group*xyz*hello")
+validate_formula("~ group*xyz*hello - xyz:hello")
+validate_formula(~ 0 + group + xyz + (1 | hello))
+validate_formula(~ group + xyz + (1 | hello))
+validate_formula(~ 0 + group*xyz + (1 | hello))
+validate_formula(~ group*xyz)
+validate_formula(~ group*xyz*hello)
+validate_formula(~ group*xyz*hello - xyz:hello)
+
+# Bunch of equations that should fail
+validate_formula("y ~ 0 + group + xyz + (1 | hello)")
+validate_formula(y ~ 0 + group + xyz + (1 | hello))
+validate_formula(0 + group + xyz + (1 | hello))
+validate_formula("0 + group + xyz + (1 | hello)")
+validate_formula(~ 0 + group + xyz + (1 | ))
+validate_formula("~ 0 + group + xyz + (1 | )")
+validate_formula(~ 0 + group + xyz + ( | ))
+validate_formula("~ 0 + group + xyz + (| )")
+validate_formula("~ 0 + group + xyz + (1 || hello)")
+validate_formula("~ 0 + group + xyz + (1 | hello) + (1 | hello)")
+validate_formula("~ 0 + group + xyz + 1 | hello + 1 | hello")
+validate_formula("~ 0 + group + xyz + (1 | hello) + 1 | hello")
+validate_formula("~ 0 + group + xyz + 1 | hello")
+validate_formula(~ 0 + group + xyz + (1 || hello))
+validate_formula(~ 0 + group + xyz + (1 | hello) + (1 | hello))
+validate_formula(~ 0 + group + xyz + 1 | hello + 1 | hello)
+validate_formula(~ 0 + group + xyz + (1 | hello) + 1 | hello)
+validate_formula(~ 0 + group + xyz + 1 | hello)
+
+# Checking of random effect terms
+validate_formula("~ 0 + group + xyz + (1 | hello:group)") # DOESN'T FAIL YET
+validate_formula("~ 0 + group + xyz + (1 | hello*group)") # DOESN'T FAIL YET
+validate_formula("~ 0 + group + xyz + (1 | hello/group)") # DOESN'T FAIL YET
+validate_formula("~ 0 + group + xyz + (1 | hello + group)") # DOESN'T FAIL YET
+validate_formula("~ 0 + group + xyz + (hello | hello)") # DOESN'T FAIL YET
+validate_formula(~ 0 + group + xyz + (1 | hello:group)) # DOESN'T FAIL YET
+validate_formula(~ 0 + group + xyz + (1 | hello*group)) # DOESN'T FAIL YET
+validate_formula(~ 0 + group + xyz + (1 | hello/group)) # DOESN'T FAIL YET
+validate_formula(~ 0 + group + xyz + (1 | hello + group)) # DOESN'T FAIL YET
+validate_formula(~ 0 + group + xyz + (hello | hello)) # DOESN'T FAIL YET
+
+
+
+
 
 des_higgs2 <- make_design(targets=norm_higgs$targets,
                         group_column = "group",

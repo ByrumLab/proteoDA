@@ -13,44 +13,27 @@
 #'
 #'
 #'
-
-
-# design_formula <- "~ 0 + group"
-# design_formula <- "group"
-# design_formula <- "~ group + (1 | replicate)"
-# design_formula <- "~ group + (replicate | replicate)"
-# design_formula <- "~ group*sample + XXX + (replicate | replicate)"
-
 add_design <- function(DIAlist,
                        design_formula = NULL) {
 
   # Check input arguments generally
   validate_DIAlist(DIAlist)
 
-  ## NEED TO FIX THIS CHECK
-  # DOESN"T WORK PROPERLY FOR STRINGS WITHOUT ~
-  if ("formula" %notin% class(eval(parse(text=design_formula)))) {
-    cli::cli_abort(c("Could not process {.arg design_formula} as a formula"))
-  }
-
-  formula <- formula(eval(parse(text=design_formula)))
+  # validate and parse formula
+  formula <- validate_formula(design_formula)
 
   # Check that the terms in the user-supplied formula are present in
   # the metadata
   if (!all(all.vars(formula) %in% colnames(DIAlist$metadata))) {
     problem_terms <- all.vars(formula)[all.vars(formula) %notin% colnames(DIAlist$metadata)]
 
-    cli::cli_abort(c("{cli::qty(problem_terms)} Term{?s} in design formula not found in metadata.",
+    cli::cli_abort(c("{cli::qty(problem_terms)} Term{?s} in {.arg design_formula} not found in metadata.",
                      "x" = "Missing term{?s}: {problem_terms}"))
   }
 
-  ## NEED TO IMPLEMENT A BUNCH OF CHECKS FOR APPROPRIATENESS
-  # checks: can't have more than 1 random effect
-  # can't have more than one term within the intercept part of the random effect
-  # can't have nested terms in the random effect
-  # can't have random slopes, only random intercepts.
-
   # After all checks, strip out any random effects into a fixed-only formula
+  # STILL NEED TO IMPLEMENT
+  # Som epossible code ideas: update(mod, formula=drop.terms(mod$terms, 2, keep.response=TRUE)  )
   form_fixed_only <- formula
 
   # Make the model matrix
@@ -89,4 +72,71 @@ add_design <- function(DIAlist,
   #     colnames(design) <- stringr::str_replace_all(colnames(design), "\\(Intercept\\)", "Intercept")
   #     colnames(design) <- stringr::str_replace_all(colnames(design), "\\:", ".")
   #
+}
+
+
+#' Validate a statistical formula
+#'
+#' An internal function to validate
+#'
+#' @param design_formula A string or expression which represents a statistical formula
+#'
+#' @return If all checks pass, a formula object of the design_formula
+#'
+#' @examples
+#' # No examples yet
+#'
+#'
+
+validate_formula <- function(design_formula) {
+
+  # First, try to coerce to formula
+  formula <- try(formula(eval(parse(text = design_formula))), silent = T)
+  if (inherits(formula, "try-error")) {
+    cli::cli_abort(c("Could not parse supplied design_formula",
+                     "!" = "Did you forget the {.val ~} or include a response variable?"))
+  }
+
+  # Then, check that the formula is only the RHS
+  if (attributes(terms(formula))$response == 1) {
+    cli::cli_abort(c("{.arg design_formula} must be the right-hand side of a statistical formula.",
+                     "i" = "It must be a string or expression that starts with {.val ~}"))
+  }
+
+  # Extract terms
+  terms <- attributes(terms(formula))$term.labels
+
+  # Multiple terms within parentheses not allowed
+  if (stringr::str_count(paste0(as.character(formula), collapse = ""), "\\(") > 1) {
+    cli::cli_abort(c("{.arg design_formula} can only contain 1 random factor term",
+                     "i" = "Do not include multiple sets of terms within parentheses"))
+  }
+  # Multiple terms with | not allowed, no || allowed
+  if (stringr::str_count(paste0(as.character(formula), collapse = ""), "\\|") > 1) {
+    cli::cli_abort(c("{.arg design_formula} can only contain 1 random factor term",
+                     "i" = "Do not include multiple terms with the | character",
+                     "i" = "Do not include any terms with ||"))
+  }
+
+  # All | terms, if they exist, must be enclosed in parentheses.
+  if (stringr::str_detect(paste0(as.character(formula), collapse = ""), "\\|")) {
+    if (!stringr::str_detect(paste0(as.character(formula), collapse = ""), "\\(.*\\|.*\\)")) {
+      cli::cli_abort(c("In {.arg design_formula}, random effects terms must be enclosed in parentheses.",
+                       "i" = "The | character can only be used within parentheses."))
+    }
+  }
+
+  if (any(stringr::str_detect(terms, "\\|"))) {
+    random_term <- terms[stringr::str_detect(terms, "\\|")]
+    print("Random term:")
+    print(random_term)
+  }
+
+  ## NEED TO IMPLEMENT A BUNCH OF CHECKS FOR APPROPRIATENESS
+  # can't have more than one term within the intercept part of the random effect
+  # can't have nested terms in the random effect: right side of random effect should be 1 word, no special characters
+  # can't have random slopes, only random intercepts.: left side of random effect with | must be 1
+
+
+  formula
 }
