@@ -3,6 +3,7 @@
 # library(tictoc)
 # library(microbenchmark)
 library(devtools)
+library(tidyverse)
 # library(profvis)
 
 
@@ -17,7 +18,7 @@ CreatePackageReport("proteomicsDIA")
 
 # Load in data on a bunch of files --------------------------------
 
-ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.CSV") # Missing exclusivity col
+#ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.CSV") # Missing exclusivity col
 
 higgs <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") # worked
 
@@ -47,11 +48,11 @@ ndu_chain2 <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files
 
 lupashin <- add_metadata(lupashin, "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv") # Worked
 
-zhan <- add_metadata(zhan, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # error as expected
+#zhan <- add_metadata(zhan, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # error as expected
 
 zhan <- add_metadata(zhan, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # worked
 
-reb <- add_metadata(reb, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # error as expected
+#reb <- add_metadata(reb, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # error as expected
 
 reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # worked
 
@@ -72,13 +73,6 @@ sub_reb <- filter_samples(reb, group != "Pool")
 sub_kaul <- filter_samples(kaul, group != "Pool")
 
 # filter proteins ---------------------------------------------------------
-
-# Have added a few possibilities
-# can filter by annotation, by group,
-# and by proportion
-
-# there's a contaminants function that wraps the annotation filtering
-# for our UAMS contaminants/decoys
 
 filtered_higgs <- filter_proteins_contaminants(sub_higgs) %>%
   filter_proteins_by_group(min_reps = 5, min_groups = 3)
@@ -137,16 +131,6 @@ write_proteinorm_report(filtered_kaul,
 
 
 # Normalize data ----------------------------------------------------------
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
-  filter_samples(group != "Pool") %>%
-  filter_proteins_contaminants() %>%
-  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
-  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
-  filter_proteins_by_proportion(min_prop = 1) %>%
-  normalize_data(method = "cycloess")
-
-
 norm_kaul <- filtered_kaul %>%
   normalize_data("quantile")
 
@@ -208,92 +192,39 @@ write_qc_report(norm_kaul,
 norm_ndu$metadata <- norm_ndu$metadata %>%
   separate(group, into = c("treatment", "tissue"), remove = F)
 
-x <- add_design(norm_ndu,
-                design_formula = "~ 0 + treatment + (1 | tissue)")
-
-x2 <- add_design(x,
-                design_formula = "~ 0 + treatment + tissue")
-
-x$design
-x2$design
 
 
+norm_kaul <- add_design(norm_kaul,
+                        ~ group + gender)
 
-
-
-# Will need to get some more complicated data to test out
-# a model with both interactions and random factors
-# for the model fitting...
-
-
-
-
-
-des_higgs2 <- make_design(targets=norm_higgs$targets,
-                        group_column = "group",
-                        factor_columns = NULL,
-                        paired_column = NULL,
-                        design_formula = "~0 + group")
-
-waldo::compare(des_higgs, des_higgs2)
-
-des_ndu <- make_design(targets = norm_ndu$targets,
-                       group_column = "group",
-                       factor_columns = NULL,
-                       paired_column =  NULL)
-
-des_ndu2 <- make_design(targets = norm_ndu$targets,
-                       group_column = "group",
-                       factor_columns = "test",
-                       paired_column =  NULL,
-                       design_formula = "~ 0 + group + (1 | pair")
-
-waldo::compare(des_ndu, des_ndu2) # slight difference in order, should be no big deal
-
-des_lupashin <- make_design(targets = norm_lupashin$targets,
-                            group_column = "group",
-                            factor_columns = NULL,
-                            paired_column = NULL)
-
-des_lupashin2 <- make_design(targets = norm_lupashin$targets,
-                            group_column = "group",
-                            factor_columns = NULL,
-                            paired_column = NULL,
+norm_lupashin <- add_design(norm_lupashin,
                             design_formula = "~ 0 + group")
 
-waldo::compare(des_lupashin, des_lupashin2) # same: different order, but otherwise should be the same.
+norm_ndu <- add_design(norm_ndu,
+                design_formula = "~ 0 + treatment + (1 | tissue)")
+
+norm_ndu <- add_design(norm_ndu,
+                       design_formula = "~ 0 + treatment + tissue")
 
 
-des_zhan <- make_design(targets = norm_zhan$targets,
-                        group_column = "group",
-                        factor_columns = NULL,
-                        paired_column = NULL)
+norm_reb <- add_design(norm_reb,
+                       "~ group")
+
+norm_zhan <- add_design(norm_zhan,
+                        ~group*sex)
+
+norm_zhan$design$design_matrix
 
 
-des_zhan2 <- make_design(targets = norm_zhan$targets,
-                        group_column = "group",
-                        factor_columns = NULL,
-                        paired_column = NULL,
-                        design_formula = "~0 + group")
-waldo::compare(des_zhan, des_zhan2) # switched order again, but looks the same
-
-
-des_reb <- make_design(targets = norm_reb$targets,
-                           group_column = "group",
-                           factor_columns = NULL,
-                           paired_column = NULL)
-
-des_kaul <- make_design(targets = norm_kaul$targets,
-                           group_column = "group",
-                           factor_columns = NULL,
-                           paired_column = NULL,
-                           design_formula = "~group+gender")
-
-des_kaul2 <- make_design(targets = norm_kaul$targets,
-                        group_column = "group",
-                        factor_columns = "gender",
-                        paired_column = NULL)
-waldo::compare(des_kaul, des_kaul2) # order and levels a little different by defauls, but looks OK
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
+  filter_samples(group != "Pool") %>%
+  filter_proteins_contaminants() %>%
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
+  filter_proteins_by_proportion(min_prop = 1) %>%
+  normalize_data(method = "cycloess") %>%
+  add_design(~0 +group)
 
 
 
