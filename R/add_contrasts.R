@@ -22,7 +22,7 @@
 #' @examples
 #' # No examples yet
 #'
-make_contrasts <- function(file = NULL,
+add_contrasts <- function(file = NULL,
                            design) {
 
   param <- stats <- list()
@@ -51,7 +51,7 @@ make_contrasts <- function(file = NULL,
   if (filext == "txt" | filext=="tsv") {sep= "\t"}
   if (filext == "csv") {sep=","}
 
-  
+
   ## imports contrast file
   contrast.tbl <- utils::read.delim(file = file,
                                     sep = sep,
@@ -94,7 +94,7 @@ make_contrasts <- function(file = NULL,
                    save = TRUE)
 
   cli::cli_inform("Contrasts imported successfully")
-  
+
   cli::cli_inform(c("v" = "Success"))
 
   # return data
