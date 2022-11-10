@@ -80,6 +80,14 @@ validate_DIAlist <- function(x) {
   # If you have a contrasts, must have a design
   # if you have a contrasts_vec, must have contrasts_matrix and vice versa?
 
+  # Checks for eBayes fit
+  # if not null, then the first item should be an MArrayLM. If random effect,
+  # should have a non-null correlation term. If no random effect,
+  # should have a null correlation term.
+
+
+  # Checks for results
+
 
   # If all checks pass, return input
   x

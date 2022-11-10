@@ -1,158 +1,90 @@
 #' Fit the limma differential expression model
 #'
 #' Fits the limma differential expresison model to the expression data, following
-#' the specified design and contrasts matrices. When paired = T, first estimates
-#' the inter-duplicate correlation across paired samples with
-#' \code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}}. Then,
-#' uses \code{\link[limma:lmFit]{limma::lmFit}} to fit the initial model,
-#' \code{\link[limma:contrasts.fit]{limma::contrasts.fit}} to re-parameterize
-#' the results in terms of your desired contrasts, and then recomputes moderated
-#' statistic following limma's empirical Bayes  model with
-#' \code{\link[limma:eBayes]{limma::eBayes}}.
+#' the specified design and (optional) contrast matrices. When a random factor is included,
+#' uses \code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}} to estimate
+#' the intra-block correlation within groups. Uses \code{\link[limma:lmFit]{limma::lmFit}}
+#' to fit the initial model, optionally re-parameterizes the results in terms of
+#' contrasts with \code{\link[limma:contrasts.fit]{limma::contrasts.fit}},
+#' and then recomputes moderated statistics following limma's empirical Bayes
+#' model with \code{\link[limma:eBayes]{limma::eBayes}}.
 #'
-#' @param data The data on which to fit the limma model. In our pipeline,
-#'   this should be a single normalized dataset from the normalized data.
-#' @param design_obj A list object output from \code{\link{make_design}} which
-#'   specifies the statistical design.
-#' @param contrasts_obj A list object output from \code{\link{make_contrasts}}
-#'   which specifies
-#' @param paired Is the statistical design paired (TRUE) or not (FALSE)? Default
-#'   is FALSE.
+#' @param DIAlist A DIAlist, which must contain a statistical design.
 #'
-#' @return A list with either six or seven slots: \enumerate{
-#'   \item "eBayes_fit"- The results returned from \code{\link[limma:eBayes]{limma::eBayes}}.
-#'   \item "contrasts_fit"- The results returned from
-#'     \code{\link[limma:contrasts.fit]{limma::contrasts.fit}}.
-#'   \item "lm_fit"- The results returned from
-#'     \code{\link[limma:lmFit]{limma::lmFit}}.
-#'   \item "data"- A data frame of the data that were input into the limma DE model.
-#'   \item "design" - The design matrix used for model fitting.
-#'   \item "contrasts"- The contrasts matrix used for model fitting.
-#'   \item "corr_fit"- When paired == TRUE, output includes the results returned
-#'     by \code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}}.
-#' }
+#' @return A DIAlist object, with the model fit.
+#'
 #' @export
 #'
 #' @examples
 #' # No examples yet
 #'
 
-fit_limma_model <- function(data,
-                            design_obj,
-                            contrasts_obj,
-                            paired = FALSE) {
-  # Original fxn had a check that rownames in the data equalled rownames in the
-  # annotation. Took that out for now, and removed annotation as an argument,
-  # since we don't actually need the annotation to fit the model. But may want
-  # to put that back in. We definitely need to check that at some point (maybe in
-  # later functions?), but it may be worth doing it now to just not waste time running the
-  # model on something that is incorrect.
+fit_limma_model <- function(DIAlist) {
 
-  # On the other hand, depending on the various outputs, may be able to
-  # reorder and match things back up if they ever are actually out of sync.
 
-  # Extract elements out of their objects
-  design <- design_obj$design
-  targets <- design_obj$targets
-  contrasts <- contrasts_obj$contrasts
+  # Check input arguments generally
+  validate_DIAlist(DIAlist)
 
-  #TODO: could possibly add some checks for the above, to make sure the objects are what we're expecting.
-
-  # Do some checks of the input data
-  # All samples in data have targets
-  if (!all(colnames(data) %in% rownames(targets))) {
-    problemCols <- colnames(data)[colnames(data) %notin% rownames(targets)]
-    cli::cli_abort(c("Not all column names in {.arg data} have a matching rowname in {.arg targets}",
-                     "!" = "{cli::qty(length(problemCols))} Column{?s} without a match: {.val {problemCols}}"))
-  }
-  # All targets have corresponding data
-  if (!all(rownames(targets) %in% colnames(data))) {
-    problemTargets <- rownames(targets)[rownames(targets) %notin% colnames(data)]
-    cli::cli_abort(c("Not all target rownames in {.arg targets} have a matching colname in {.arg data}",
-                     "!" = "{cli::qty(length(problemTargets))} Row{?s} without a match: {.val {problemTargets}}"))
-  }
-  # Levels in contrasts and levels in design match
-  # TODO: need to figure out the best way to deal with this check in conjunction with
-  # issue #14: these may not always match perfectly if, e.g., there's a
-  # factor we're controlling for in the design matrix but not comparing in the
-  # contrasts. So, I think everything in contrasts needs to be present in design,
-  # but not necessarily vice versa (at least, with the way things are now)
-  if (!all(rownames(contrasts) %in% colnames(design))) {
-    problemContrasts <- rownames(contrasts)[rownames(contrasts) %notin% colnames(design)]
-    cli::cli_abort(c("{cli::qty(length(problemContrasts))} {?A/Some} level{?s} in the contrast matrix {?is/are} not present in the design matrix",
-                     "!" = "{cli::qty(length(problemContrasts))} Level{?s} without a match: {.val {problemContrasts}}"))
+  # Make sure there's a design matrix present already,
+  # tell user to set it first if not
+  if (is.null(DIAlist$design)) {
+    cli::cli_abort(c("Input DIAlist does not have a statistical design",
+                     "i" = "Run {.code DIAlist <- add_design(DIAlist, ~ formula)} before fitting model"))
   }
 
+  # With a random factor
+  if (!is.null(DIAlist$design$random_factor)) {
+    block <- DIAlist$metadata[, DIAlist$design$random_factor, drop = T]
+    corfit <- limma::duplicateCorrelation(object = DIAlist$data,
+                                          design = DIAlist$design$design_matrix,
+                                          block = block)
 
-  # Ensure data cols are in same order as rows in targets
-  data <- data[, rownames(targets)]
-
-
-  
-
-  # On to model fitting
-  # First step of fitting differs between paired and unpaired
-  if (paired) {
-
-    cli::cli_inform("Performing paired analysis with mixed effects model")
-    # check for paired col
-    if ("paired" %notin% colnames(targets)) {
-      cli::cli_abort(c("{.arg targets} does not contain required column names {.val paired}",
-                       "i" = "Add {.val paired} column, or using {.fun make_design}",
-                       "i" = "Ensure that design formula does not include {.val paired}",
-                       "i" = "e.g. ~0+group OR ~0+group+batch NOT ~0+group+paired"))
-    }
-
-    # Coerce paired col to factor, if it isn't
-    if (!is.factor(targets$paired)) {
-      targets$paired <- make_factor(targets$paired, prefix = "")
-    }
-
-    corfit <- limma::duplicateCorrelation(object = data, design = design, block = targets$paired)
     corfit_display <- round(corfit$consensus.correlation, 3)
-    cli::cli_inform("Estimated inter-duplicate correlation = {.val {corfit_display}}")
+    cli::cli_inform("Estimated intra-block correlation = {.val {corfit_display}}")
 
     if (corfit$consensus.correlation < 0.1) {
-      cli::cli_inform(cli::col_yellow("Estimated inter-duplicate correlation is low,
-                                      which may indicate little or no paired influence"))
+      cli::cli_inform(cli::col_yellow(c("Estimated intra-block correlation is low.",
+                                        "Consider using a model withno random effect.")))
     }
+    intra_block_cor <- corfit$consensus.correlation
+  } else { # No random factor
+    intra_block_cor <- NULL
+    block <- NULL
+  }
 
-    fit <- limma::lmFit(object = data, design = design,
-                        block = targets$paired,
-                        correlation = corfit$consensus.correlation)
-  } else {
-    cli::cli_inform("Performing standard un-paired model")
-    fit <- limma::lmFit(object = data, design = design)
-    }
+  # Fit the initial model
+  fit <- limma::lmFit(object = DIAlist$data,
+                      design = DIAlist$design$design_matrix,
+                      block = block,
+                      correlation = intra_block_cor)
 
-  # contrasts fit and eBayes are the same across paired and not paired
-  con.fit <- limma::contrasts.fit(fit = fit, contrasts = contrasts)
+  # If contrasts are specified, re-fit
+  if (!is.null(DIAlist$design$contrast_matrix)) {
+    fit <- limma::contrasts.fit(fit = fit, contrasts = DIAlist$design$contrast_matrix)
+  }
+
+  # Annoying statmod issue still...
   if (!requireNamespace("statmod", quietly = TRUE)) {
     cli::cli_abort(c("Package \"statmod\" must be installed to perform empirical Bayes moderation of test statistics"))
   }
 
-  efit <- limma::eBayes(fit = con.fit, robust = TRUE)
-  cli::cli_inform("limma DE analysis with {.arg paired} == {paired} complete")
+  # Fit empirical bayes model
+  efit <- limma::eBayes(fit = fit, robust = TRUE)
 
+  # If there are already results, warn about overwriting
+  if (!is.null(DIAlist$eBayes_fit) | !is.null(DIAlist$results)) {
+    cli::cli_inform("DIAlist already contains statistical results. Overwriting.")
+    # Get rid of any old stuff
+    DIAlist$eBayes_fit <- NULL
+    DIAlist$results <- NULL
+  }
 
-  # Set up return
-  model <- list(eBayes_fit = efit,
-                contrasts_fit = con.fit,
-                lm_fit = fit,
-                data = data,
-                design = design,
-                contrasts = contrasts)
-  if (paired) model[["corr_fit"]] <- corfit
+  # Add results
+  DIAlist$eBayes_fit <- efit
 
-
-  
-  cli::cli_inform(c("v" = "Success!"))
-
-  model
+  # Validate and return
+  validate_DIAlist(DIAlist)
 }
-
-
-
 
 #' Extract differential expression results from a model fit
 #'

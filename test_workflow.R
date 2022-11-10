@@ -128,8 +128,6 @@ write_proteinorm_report(filtered_kaul,
                         file = "kaul_update_2.pdf",
                         overwrite = T, suppress_zoom_legend = T)
 
-
-
 # Normalize data ----------------------------------------------------------
 norm_kaul <- filtered_kaul %>%
   normalize_data("quantile")
@@ -261,41 +259,33 @@ norm_reb <- norm_reb %>%
 # Run the analysis --------------------------------------------------------
 # Splitting up functionality
 # First, fit the model
+fit_lupashin <- fit_limma_model(norm_lupashin)
 
-fit_lupashin <- fit_limma_model(data = norm_lupashin$normList[["vsn"]],
-                                design_obj = des_lupashin,
-                                contrasts_obj = contrasts_lupashin)
+fit_ndu<- fit_limma_model(norm_ndu)
 
-fit_ndu_brain <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
-                                 design_obj = des_ndu,
-                                 contrasts_obj = contrasts_ndu_brain)
+fit_zhan <- fit_limma_model(norm_zhan)
 
-fit_ndu_intestine <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
-                                     design_obj = des_ndu,
-                                     contrasts_obj = contrasts_ndu_intestine)
+fit_reb <- fit_limma_model(norm_reb)
 
-fit_ndu_kidney <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
-                                  design_obj = des_ndu,
-                                  contrasts_obj = contrasts_ndu_kidney)
-
-fit_zhan <- fit_limma_model(data = norm_zhan$normList[["vsn"]],
-                            design_obj = des_zhan,
-                            contrasts_obj = contrasts_zhan)
-
-fit_zhan2 <- fit_limma_model(data = norm_zhan$normList[["vsn"]],
-                            design_obj = des_zhan2,
-                            contrasts_obj = contrasts_zhan2)
-
-waldo::compare(fit_zhan, fit_zhan2)
+fit_kaul <- fit_limma_model(norm_kaul)
 
 
-fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
-                           design_obj = des_reb,
-                           contrasts_obj = contrasts_rebello)
+fit_ndu_random <- norm_ndu %>%
+  add_design(design_formula = "~ 0 + treatment + (1 | tissue)") %>%
+  fit_limma_model()
 
-fit_kaul <- fit_limma_model(data = norm_kaul$normList[["cycloess"]],
-                           design_obj = des_kaul,
-                           contrasts_obj = contrasts_kaul)
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
+  filter_samples(group != "Pool") %>%
+  filter_proteins_contaminants() %>%
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
+  filter_proteins_by_proportion(min_prop = 1) %>%
+  normalize_data(method = "cycloess") %>%
+  add_design(~0 +group)
+
+
+fit_higgs <- fit_limma_model(full_higgs_chain)
 
 
 # Extract results ---------------------------------------------------------
