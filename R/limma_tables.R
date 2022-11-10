@@ -1,6 +1,6 @@
 #' Write tables of limma results
 #'
-#' This wrapper function prepares and then saves a number of tables of results:
+#' This function prepares and then saves a number of tables of results:
 #' \enumerate{
 #'   \item A .csv summarizing the number of direction of differentially
 #'     expressed genes for each contrast.
@@ -12,16 +12,10 @@
 #'     contrast.
 #' }
 #'
-#' @param model_results A model results object returned by
-#'   \code{\link{extract_limma_DE_results}}.
-#' @param annotation A dataframe containing annotation data for this analysis.
-#'   In our pipeline, usually the "annot" slot from the object returned by
-#'   \code{\link{read_DIA_data}}.
+#' @param DIAlist A DIAlist object, with statistical results.
 #' @param ilab The ilab identifier for this project.
 #' @param out_dir The directory in which to output tables. If not specified,
 #'   will construct a directory based on the ilab name and type of analysis.
-#' @param norm.method The method that was used to normalize the data for the
-#'   statistical model being output.
 #' @param overwrite Should results files be overwritten? Default is F.
 #' @param contrasts_subdir The subdirectory within out_dir to write the per-contrast
 #'   result .csv files. If not specified, will be "per_contrast_results".
@@ -36,23 +30,32 @@
 #'   try setting to FALSE if you're having issues with the Excel output.
 #'
 #'
-#' @return Invisibly returns a dataframe with the combined results.
+#' @return Invisibly returns the input DIAlist.
 #'
 #' @export
 #'
 #' @examples
 #' # No examples yet
-write_limma_tables <- function(model_results,
-                               annotation,
-                               ilab,
+write_limma_tables <- function(DIAlist,
+                               ilab = NULL,
                                out_dir = NULL,
-                               norm.method,
                                overwrite = F,
                                contrasts_subdir = NULL,
                                summary_csv = NULL,
                                combined_file_csv = NULL,
                                spreadsheet_xlsx = NULL,
                                add_filter = T) {
+
+  # Check input arguments generally
+  validate_DIAlist(DIAlist)
+
+  # Make sure there's a design matrix present already,
+  # tell user to set it first if not
+  if (is.null(DIAlist$results)) {
+    cli::cli_abort(c("Input DIAlist does not have a results design",
+                     "i" = "Run {.code DIAlist <- extract_DE_results(DIAlist, ~ formula)}"))
+  }
+
 
   # Assign defaults if not overridden above
   if (is.null(out_dir)) {
@@ -70,7 +73,11 @@ write_limma_tables <- function(model_results,
   }
 
   if (is.null(spreadsheet_xlsx)) {
-    spreadsheet_xlsx <- paste0(ilab, "_results.xlsx")
+    if (is.null(ilab)) {
+      spreadsheet_xlsx <- "results.xlsx"
+    } else {
+      spreadsheet_xlsx <- paste(ilab, "results.xlsx", sep = "_")
+    }
   }
 
   # Validate filenames
@@ -79,16 +86,9 @@ write_limma_tables <- function(model_results,
   }
   validate_filename(spreadsheet_xlsx, allowed_exts = "xlsx")
 
-  # Check norm method
-  norm.method <- rlang::arg_match(
-    arg = norm.method,
-    values = norm.methods,
-    multiple = FALSE
-  )
-
 
   # Setup -------------------------------------------------------------------
-  
+
   if (dir.exists(out_dir)) {
     if (overwrite) {
       cli::cli_inform("Directory {.path {out_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting files in directory.")
@@ -101,37 +101,17 @@ write_limma_tables <- function(model_results,
     dir.create(out_dir, recursive = T)
   }
 
-  statlist <- model_results$stats_by_contrast
-  data <- model_results$data
-
-
-  # Make sure proteins in results have matching rows in annotation
-  passed_annot <- check_rows_in(obj = c(list(data = data, statlist)),
-                                ref_rows = rownames(annotation))
-  if (!passed_annot) {
-    cli::cli_abort(c("Not all proteins/rownames in {.arg model_results} have a matching rowname in {.arg annotation}",
-                     "i" = "Are these objects from the same dataset?"))
-  }
-  # Make sure proteins in results have matching rows in data
-  passed_data <- check_rows_in(obj=c(statlist), ref_rows = rownames(data))
-
-  if (!passed_data) {
-    cli::cli_abort(c("Not all proteins/rownames in the stats_by_contrast slot of {.arg model_results} have a matching rowname in the data slot of {.arg model_results}",
-                     "i" = "Double-check your model fitting."))
-  }
-
-
   # Write summary CSV -------------------------------------------------------
   summary_output_file <- file.path(out_dir, summary_csv)
   cli::cli_inform("Writing DE summary table to {.path {summary_output_file}}")
 
   summary <- do.call("rbind",
-                     lapply(X = names(statlist),
+                     lapply(X = names(DIAlist$results),
                             FUN = summarize_contrast_DE,
-                            contrast_res_list = statlist))
-  summary$pval_thresh <- model_results$pval.thresh
-  summary$lfc_thresh <- model_results$lfc.thresh
-  summary$p_adj_method <- model_results$adj.method
+                            contrast_res_list = DIAlist$results))
+  summary$pval_thresh <- DIAlist$tags$DE_criteria$pval.thresh
+  summary$lfc_thresh <- DIAlist$tags$DE_criteria$lfc.thresh
+  summary$p_adj_method <- DIAlist$tags$DE_criteria$adj.method
 
   utils::write.csv(x = summary,
                    file = summary_output_file,
@@ -145,12 +125,12 @@ write_limma_tables <- function(model_results,
   # Write per-contrast csvs -------------------------------------------------
   per_contrast_dir <- file.path(out_dir, contrasts_subdir)
   cli::cli_inform("Writing per-contrast results {.path .csv}
-                  {cli::qty(length(statlist))} file{?s} to {.path {per_contrast_dir}}")
+                  {cli::qty(length(DIAlist$results))} file{?s} to {.path {per_contrast_dir}}")
 
 
-  contrast_csv_success <- write_per_contrast_csvs(annotation_df = annotation,
-                                                  data = data,
-                                                  results_statlist = statlist,
+  contrast_csv_success <- write_per_contrast_csvs(annotation_df = DIAlist$annotation,
+                                                  data = DIAlist$data,
+                                                  results_statlist = DIAlist$results,
                                                   output_dir = per_contrast_dir)
   if (!all(contrast_csv_success)) {
     failed <- names(contrast_csv_success)[!contrast_csv_success]
@@ -166,9 +146,9 @@ write_limma_tables <- function(model_results,
 
 
   ## combine annotation, data, and per contrast results
-  combined_results <- create_combined_results(annotation = annotation,
-                                              data = data,
-                                              statlist = statlist)
+  combined_results <- create_combined_results(annotation = DIAlist$annotation,
+                                              data = DIAlist$data,
+                                              statlist = DIAlist$results)
 
   ## write combined results csv
   combined_results_csv <- combined_results
@@ -198,25 +178,20 @@ write_limma_tables <- function(model_results,
 
 
   write_limma_excel(filename = excel_output_file,
-                    statlist = statlist,
-                    annotation = annotation,
-                    data = data,
-                    norm.method = norm.method,
-                    pval.thresh = model_results$pval.thresh,
-                    lfc.thresh = model_results$lfc.thresh,
+                    statlist = DIAlist$results,
+                    annotation = DIAlist$annotation,
+                    data = DIAlist$data,
+                    norm.method = DIAlist$tags$norm_method,
+                    pval.thresh = DIAlist$tags$DE_criteria$pval.thresh,
+                    lfc.thresh = DIAlist$tags$DE_criteria$lfc.thresh,
                     add_filter = add_filter)
 
   if (!file.exists(excel_output_file)) {
     cli::cli_abort(c("Failed to write combined results Excel spreadsheet to {.path {excel_output_file}}"))
   }
 
-
-  # Finish ------------------------------------------------------------------
-
-  
-  cli::cli_inform(c("v" = "Success"))
-  # If everything works, return combined results
-  invisible(combined_results)
+  # If everything works, return input DIAlist
+  invisible(validate_DIAlist(DIAlist))
 }
 
 

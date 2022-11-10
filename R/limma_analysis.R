@@ -21,7 +21,6 @@
 
 fit_limma_model <- function(DIAlist) {
 
-
   # Check input arguments generally
   validate_DIAlist(DIAlist)
 

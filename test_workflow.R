@@ -301,43 +301,33 @@ names(results_higgs$results)
 
 
 # Write results -----------------------------------------------------------
-write_limma_tables(model_results = results_lupashin,
-                    norm.method = "vsn",
-                    annotation = ext_lupashin$annot,
-                    ilab = "Lupashin_82928",
-                    overwrite = T)
+write_limma_tables(results_lupashin,
+                   out_dir = "Lupashin_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_ndu_brain,
-                    norm.method = "vsn",
-                    annotation = ext_ndu$annot,
-                    ilab = "ndu_brain_82928")
+write_limma_tables(results_ndu,
+                   out_dir = "Ndu_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_ndu_intestine,
-                    norm.method = "vsn",
-                    annotation = ext_ndu$annot,
-                    ilab = "ndu_intestine_82928")
+write_limma_tables(results_ndu_random,
+                   out_dir = "Ndu_random_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_ndu_kidney,
-                    norm.method = "vsn",
-                    annotation = ext_ndu$annot,
-                    ilab = "ndu_kidney_82928")
+write_limma_tables(results_reb,
+                   out_dir = "reb_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_reb,
-                    norm.method = "vsn",
-                    annotation = ext_reb$annot,
-                    ilab = "Rebello_82928")
+write_limma_tables(results_zhan,
+                   out_dir = "zhan_s3obj",
+                   overwrite = T)
 
+write_limma_tables(results_kaul,
+                   out_dir = "kaul_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_zhan,
-                    norm.method = "vsn",
-                    annotation = ext_zhan$annot,
-                    ilab = "zhan_982974")
-
-write_limma_tables(model_results = results_kaul,
-                    norm.method = "cycloess",
-                    annotation = ext_kaul$annot,
-                    ilab = "kaul_82921", overwrite=T)
-
+write_limma_tables(results_higgs,
+                   out_dir = "higgs_s3obj",
+                   overwrite = T)
 
 # testing report making ---------------------------------------------------
 write_limma_plots(model_results = results_reb,

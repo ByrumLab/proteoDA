@@ -87,8 +87,30 @@ validate_DIAlist <- function(x) {
 
 
   # Checks for results
-  # if not null, length should match either ncol(design_matrix) or ncol(contrasts_matrix)
-  # if not null, pval.thresh, lfc.thresh, and adj.method should be set in tags??
+  if (!is.null(x$results)) {
+
+    # if not null, pval.thresh, lfc.thresh, and adj.method should be set in tags??
+    # if not null, length should match either ncol(design_matrix) or ncol(contrasts_matrix)
+    # if not null, nrow and rownames for each element of the results should
+    # match the data (which matches the annotation, as we check above. )
+
+
+    # # data and annotation slots should have same number of rows
+    # if (nrow(x$data) != nrow(x$annotation)) {
+    #   cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DIAlist must have the same number of rows")
+    # }
+    #
+    # # Data and annotation should have matching rownames
+    # if (!(all(rownames(x$data) == rownames(x$annotation)))) {
+    #   cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DIAlist must match")
+    # }
+
+  }
+
+
+
+
+
 
 
   # If all checks pass, return input
