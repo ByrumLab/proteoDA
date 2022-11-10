@@ -302,72 +302,72 @@ names(results_higgs$results)
 
 # Write results -----------------------------------------------------------
 write_limma_tables(results_lupashin,
-                   out_dir = "Lupashin_s3obj",
+                   output_dir = "Lupashin_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_ndu,
-                   out_dir = "Ndu_s3obj",
+                   output_dir = "Ndu_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_ndu_random,
-                   out_dir = "Ndu_random_s3obj",
+                   output_dir = "Ndu_random_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_reb,
-                   out_dir = "reb_s3obj",
+                   output_dir = "reb_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_zhan,
-                   out_dir = "zhan_s3obj",
+                   output_dir = "zhan_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_kaul,
-                   out_dir = "kaul_s3obj",
+                   output_dir = "kaul_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_higgs,
-                   out_dir = "higgs_s3obj",
+                   output_dir = "higgs_s3obj",
                    overwrite = T)
 
 # testing report making ---------------------------------------------------
-write_limma_plots(model_results = results_reb,
-                   annotation = ext_reb$annot,
-                   groups = norm_reb$targets$group,
-                   output_dir = "output_rebello")
+write_limma_plots(results_reb,
+                  grouping_column = "group",
+                  output_dir = "reb_s3obj")
 
-write_limma_plots(model_results = results_kaul,
-                   annotation = ext_kaul$annot,
-                   groups = norm_kaul$targets$group,
-                   output_dir = "output_kaul")
-
-write_limma_plots(model_results = results_reb,
-                   annotation = ext_reb$annot,
-                   groups = norm_reb$targets$group,
-                   output_dir = "output_rebello_wide",
-                   width = 1500,
-                   height = 1500)
+write_limma_plots(results_kaul,
+                  grouping_column = "group",
+                  output_dir = "kaul_s3obj/")
 
 
-write_limma_plots(model_results = results_lupashin,
-                   annotation = ext_lupashin$annot,
-                   groups = norm_lupashin$targets$group,
-                   output_dir = "output_lupashin")
+write_limma_plots(results_reb,
+                  grouping_column = "group",
+                  output_dir = "reb_s3obj/")
+
+write_limma_plots(results_lupashin,
+                  grouping_column = "group",
+                  output_dir = "Lupashin_s3obj")
 
 
-write_limma_plots(model_results = results_ndu_brain,
-                   annotation = ext_ndu$annot,
-                   groups = norm_ndu$targets$group,
-                   output_dir = "output_ndu_brain")
 
 
-write_limma_plots(model_results = results_zhan,
-                   annotation = ext_zhan$annot,
-                   groups = norm_zhan$targets$group,
-                   output_dir = "output_zhan")
+write_limma_plots(results_ndu,
+                  grouping_column = "group",
+                  output_dir = "Ndu_s3obj")
+
+write_limma_plots(results_ndu_random,
+                  grouping_column = "group",
+                  output_dir = "Ndu_random_s3obj")
 
 
-write_limma_plots(model_results = results_zhan,
-                   annotation = ext_zhan$annot,
-                   groups = norm_zhan$targets$group,
-                   output_dir = "output_zhan_wide",
+write_limma_plots(results_zhan,
+                  grouping_column = "group",
+                  output_dir = "zhan_s3obj")
+
+write_limma_plots(results_zhan,
+                  grouping_column = "group",
+                  output_dir = "zhan_wide_s3obj",
                    width = 2000)
+
+write_limma_plots(results_higgs,
+                  grouping_column = "group",
+                  output_dir = "higgs_s3obj")

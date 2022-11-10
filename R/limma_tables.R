@@ -14,10 +14,10 @@
 #'
 #' @param DIAlist A DIAlist object, with statistical results.
 #' @param ilab The ilab identifier for this project.
-#' @param out_dir The directory in which to output tables. If not specified,
+#' @param output_dir The directory in which to output tables. If not specified,
 #'   will construct a directory based on the ilab name and type of analysis.
 #' @param overwrite Should results files be overwritten? Default is F.
-#' @param contrasts_subdir The subdirectory within out_dir to write the per-contrast
+#' @param contrasts_subdir The subdirectory within output_dir to write the per-contrast
 #'   result .csv files. If not specified, will be "per_contrast_results".
 #' @param summary_csv The filename of the csv file giving a summary of the number
 #'   of DE genes per contrast. If not specified, will be "DE_summary.csv".
@@ -38,7 +38,7 @@
 #' # No examples yet
 write_limma_tables <- function(DIAlist,
                                ilab = NULL,
-                               out_dir = NULL,
+                               output_dir = NULL,
                                overwrite = F,
                                contrasts_subdir = NULL,
                                summary_csv = NULL,
@@ -58,8 +58,8 @@ write_limma_tables <- function(DIAlist,
 
 
   # Assign defaults if not overridden above
-  if (is.null(out_dir)) {
-    out_dir <- file.path("protein_analysis","02_diff_expression")
+  if (is.null(output_dir)) {
+    output_dir <- file.path("protein_analysis","02_diff_expression")
   }
   if (is.null(contrasts_subdir)) {
     contrasts_subdir <- "per_contrast_results"
@@ -89,20 +89,20 @@ write_limma_tables <- function(DIAlist,
 
   # Setup -------------------------------------------------------------------
 
-  if (dir.exists(out_dir)) {
+  if (dir.exists(output_dir)) {
     if (overwrite) {
-      cli::cli_inform("Directory {.path {out_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting files in directory.")
+      cli::cli_inform("Directory {.path {output_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting files in directory.")
     } else {
-      cli::cli_abort(c("Directory {.path {out_dir}} already exists",
+      cli::cli_abort(c("Directory {.path {output_dir}} already exists",
                        "!" = "and {.arg overwrite} == {.val {overwrite}}",
-                       "i" = "Rename {.arg out_dir} or set {.arg overwrite} to {.val TRUE}"))
+                       "i" = "Rename {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"))
     }
   } else {
-    dir.create(out_dir, recursive = T)
+    dir.create(output_dir, recursive = T)
   }
 
   # Write summary CSV -------------------------------------------------------
-  summary_output_file <- file.path(out_dir, summary_csv)
+  summary_output_file <- file.path(output_dir, summary_csv)
   cli::cli_inform("Writing DE summary table to {.path {summary_output_file}}")
 
   summary <- do.call("rbind",
@@ -123,7 +123,7 @@ write_limma_tables <- function(DIAlist,
 
 
   # Write per-contrast csvs -------------------------------------------------
-  per_contrast_dir <- file.path(out_dir, contrasts_subdir)
+  per_contrast_dir <- file.path(output_dir, contrasts_subdir)
   cli::cli_inform("Writing per-contrast results {.path .csv}
                   {cli::qty(length(DIAlist$results))} file{?s} to {.path {per_contrast_dir}}")
 
@@ -141,7 +141,7 @@ write_limma_tables <- function(DIAlist,
 
 
   # Write combined results csv ----------------------------------------------
-  combined_output_file <- file.path(out_dir, combined_file_csv)
+  combined_output_file <- file.path(output_dir, combined_file_csv)
   cli::cli_inform("Writing combined results table to {.path {combined_output_file}}")
 
 
@@ -172,7 +172,7 @@ write_limma_tables <- function(DIAlist,
 
 
   # Write excel spreadsheet -------------------------------------------------
-  excel_output_file <- file.path(out_dir, spreadsheet_xlsx)
+  excel_output_file <- file.path(output_dir, spreadsheet_xlsx)
   cli::cli_inform("Writing combined results Excel spreadsheet to {.path {excel_output_file}}")
 
 

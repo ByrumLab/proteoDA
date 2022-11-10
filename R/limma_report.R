@@ -5,13 +5,10 @@
 #' for each contrast. Also creates and saves a set of static .pdf plots. Current
 #' behavior is to overwrite any previous reports or other files with the same name.
 #'
-#' @param model_results A model results object returned by
-#'   \code{\link{extract_limma_DE_results}}.
-#' @param annotation A dataframe containing annotation data for this analysis.
-#'   In our pipeline, usually the "annot" slot from the object returned by
-#'   \code{\link{read_DIA_data}}.
-#' @param groups A vector describing the groups to which each sample belongs. Used
-#'   for grouping expression data in the interactive expression plot.
+#' @param DIAlist A DIAlist object, with statistical results.
+#' @param grouping_column The name of the column in the metadata which
+#'   gives information on how to group samples for the interactive
+#'   expression plot.
 #' @param output_dir The directory in which to create the reports and save the
 #'   plot files. No defaults, must be specified.
 #' @param tmp_subdir The subdirectory within the output directory in which to
@@ -21,20 +18,59 @@
 #' @param width The width of the interactive report objects, in pixels.
 #'   Default is 1000.
 #'
-#' @return If successful, invisible(TRUE).
+#' @return Invisibly returns the input DIAlist.
 #'
 #' @importFrom ggplot2 ggsave
 #' @export
 #'
 #' @examples
 #' # No examples yet
-write_limma_plots <- function(model_results = NULL,
-                              annotation = NULL,
-                              groups = NULL,
+write_limma_plots <- function(DIAlist = NULL,
+                              grouping_column = NULL,
                               output_dir = NULL,
                               tmp_subdir = "tmp",
                               height = 1000,
                               width = 1000) {
+
+
+  # Check input arguments generally
+  validate_DIAlist(DIAlist)
+
+  # Make sure there's a design matrix present already,
+  # tell user to set it first if not
+  if (is.null(DIAlist$results)) {
+    cli::cli_abort(c("Input DIAlist does not have a results design",
+                     "i" = "Run {.code DIAlist <- extract_DE_results(DIAlist, ~ formula)}"))
+  }
+
+  # If provided, check that grouping column exists in the target dataframe
+  # And set it
+  if (is.null(grouping_column)) { # If no groups provided, abort
+    cli::cli_abort("{.arg grouping_column} cannot be empty")
+  } else { # check that grouping column exists in the target dataframe
+    if (length(grouping_column) != 1) {
+      cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
+                       "i" = "Only specify one column name for {.arg grouping_column}"))
+
+    }
+    if (grouping_column %notin% colnames(DIAlist$metadata)) {
+      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DIAlist}",
+                       "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
+    }
+    # And set it
+    groups <- as.character(DIAlist$metadata[,grouping_column])
+  }
+
+  # check height and width
+  if (any(!is.numeric(height),
+          !(height > 0))) {
+    cli::cli_abort(c("{.arg height} must be a numeric value greater > 0."))
+  }
+
+  if (any(!is.numeric(width),
+          !(width > 0))) {
+    cli::cli_abort(c("{.arg width} must be a numeric value greater > 0."))
+  }
 
   # TODO: add output filename validation once we decide on directory format
   if (!dir.exists(output_dir)) {
@@ -44,7 +80,7 @@ write_limma_plots <- function(model_results = NULL,
   old_wd <- getwd()
   on.exit(expr = setwd(old_wd), add = T)
 
-  
+
 
   cli::cli_inform("Setting working directory to {.path {file.path(old_wd, output_dir)}}")
   setwd(output_dir)
@@ -62,29 +98,29 @@ write_limma_plots <- function(model_results = NULL,
             to = "report_template.Rmd", overwrite = T)
 
   contrast_count <- 1
-  num_contrasts <- length(names(model_results$stats_by_contrast))
+  num_contrasts <- length(names(DIAlist$results))
 
   # TODO:
   # Add overwriting checks?
 
   # Loop over contrasts, making static plots and reports for each
-  for (contrast in names(model_results$stats_by_contrast)) {
+  for (contrast in names(DIAlist$results)) {
 
     # Prep data
-    data <- prep_plot_model_data(model_results, contrast)
-    counts <- model_results$data[rownames(data),]
+    data <- prep_plot_model_data(DIAlist$results, contrast)
+    counts <- DIAlist$data[rownames(data),]
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
-    anno <- annotation[rownames(data), ]
+    anno <- DIAlist$annotation[rownames(data), ]
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
 
     # make and save static plots
     for (type in c("raw", "adjusted")) {
       volcano <- static_volcano_plot(data,
-                                     lfc.thresh = model_results$lfc.thresh,
-                                     pval.thresh = model_results$pval.thresh,
+                                     lfc.thresh = DIAlist$tags$DE_criteria$lfc.thresh,
+                                     pval.thresh = DIAlist$tags$DE_criteria$pval.thresh,
                                      contrast = contrast, pval.type = type)
       MD <- static_MD_plot(data,
-                           lfc.thresh = model_results$lfc.thresh,
+                           lfc.thresh = DIAlist$tags$DE_criteria$lfc.thresh,
                            contrast = contrast, pval.type = type)
       ggsave(filename = file.path("static_plots", paste0(paste(contrast, "volcano", type, "pval", sep = "-"), ".pdf")),
              plot = volcano,
@@ -133,10 +169,8 @@ write_limma_plots <- function(model_results = NULL,
   unlink(c("logo_higherres.png", "plot_template.Rmd", "report_template.Rmd", tmp_subdir), recursive = T)
   cli::cli_inform("Returning working directory to {.path {old_wd}}")
   setwd(old_wd)
-  
-  cli::cli_inform(c("v" = "Success"))
 
-  invisible(TRUE)
+  invisible(validate_DIAlist(DIAlist))
 }
 
 
@@ -145,8 +179,7 @@ write_limma_plots <- function(model_results = NULL,
 #' Internal function used to prepare a results dataframe for both static and interactive
 #' plots in our reports.
 #'
-#' @param model_results A model results object from
-#'   \code{\link{extract_limma_DE_results}}.
+#' @param model_results The results slot of a DIAlist object.
 #' @param contrast The name of the contrast for which to prep the model data
 #'
 #' @return A data frame of model results for the given contrast
@@ -158,12 +191,7 @@ prep_plot_model_data <- function(model_results, contrast) {
   # rename cols,
   # convert missing values in sig cols to 0
   # and add factor columns for static plots
-  data <- model_results$stats_by_contrast[[contrast]]
-
-  # I'm not sure that this is actually needed or does anything
-  # The order of the model_results$stats_by_contrast and
-  # model_results$data should already be the same. But, I guess it can't hurt.
-  data <- data[rownames(model_results$data), ]
+  data <- model_results[[contrast]]
   data$`P value` <- data$P.Value
   data$`Adjusted P value` <- data$adj.P.Val
   data$negLog10rawP <- -log(data$P.Value, 10)
@@ -176,7 +204,6 @@ prep_plot_model_data <- function(model_results, contrast) {
   data$sig.FDR.fct <- factor(x = data$sig.FDR,
                              levels = c(-1, 0, 1),
                              labels = c("downReg", "nonDE", "upReg"))
-
   data
 }
 
