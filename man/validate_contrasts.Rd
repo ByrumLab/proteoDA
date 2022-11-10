@@ -4,16 +4,16 @@
 \alias{validate_contrasts}
 \title{Validate contrasts format}
 \usage{
-validate_contrasts(contrast.tbl)
+validate_contrasts(contrast_vector)
 }
 \arguments{
-\item{contrast.tbl}{The imported data frame of contrasts.}
+\item{contrast_vector}{A}
 }
 \value{
-If all checks pass, invisible(TRUE).
+If all checks pass, invisibly returns contrast vector.
 }
 \description{
-Internal function that checks the format of the imported contrasts
+Internal function that checks the format of a contrasts vector
 and provides informative error messages about issues.
 }
 \examples{

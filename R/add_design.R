@@ -31,12 +31,12 @@ add_design <- function(DIAlist,
                      "x" = "Missing term{?s}: {problem_terms}"))
   }
 
-  formula_terms <- attributes(terms(formula))$term.labels
+  formula_terms <- attributes(stats::terms(formula))$term.labels
   formula_has_random <- any(stringr::str_detect(formula_terms, "\\|"))
 
   # After all checks, strip out any random effects into a fixed-only formula
   if (formula_has_random) {
-    form_fixed_only <- drop.terms(terms(formula),
+    form_fixed_only <- stats::drop.terms(stats::terms(formula),
                                   dropx = which(stringr::str_detect(formula_terms, "\\|")))
     elements <- formula_terms[stringr::str_detect(formula_terms, "\\|")] %>%
       stringr::str_split_fixed(pattern = "\\|", n = 2)
@@ -48,7 +48,7 @@ add_design <- function(DIAlist,
 
   # Make the model matrix
   design_matrix <- stats::model.matrix(form_fixed_only, data = DIAlist$metadata)
-  extratext <- rownames(attr(terms(form_fixed_only), which="factors"))
+  extratext <- rownames(attr(stats::terms(form_fixed_only), which="factors"))
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\(Intercept\\)", "Intercept")
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\:", ".")
   colnames(design_matrix) <- stringr::str_remove_all(colnames(design_matrix), paste(extratext, collapse="|"))
@@ -94,13 +94,13 @@ validate_formula <- function(design_formula) {
   }
 
   # Then, check that the formula is only the RHS
-  if (attributes(terms(formula))$response == 1) {
+  if (attributes(stats::terms(formula))$response == 1) {
     cli::cli_abort(c("{.arg design_formula} must be the right-hand side of a statistical formula.",
                      "i" = "It must be a string or expression that starts with {.val ~}"))
   }
 
   # Extract terms
-  terms <- attributes(terms(formula))$term.labels
+  terms <- attributes(stats::terms(formula))$term.labels
 
   # Multiple terms within parentheses not allowed
   if (stringr::str_count(paste0(as.character(formula), collapse = ""), "\\(") > 1) {

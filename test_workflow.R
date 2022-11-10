@@ -282,23 +282,22 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
   filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
   filter_proteins_by_proportion(min_prop = 1) %>%
   normalize_data(method = "cycloess") %>%
-  add_design(~0 +group)
+  add_design(~group)
 
 
 fit_higgs <- fit_limma_model(full_higgs_chain)
 
 
 # Extract results ---------------------------------------------------------
-results_lupashin <- extract_limma_DE_results(limma_fit = fit_lupashin)
-results_ndu_brain <- extract_limma_DE_results(limma_fit = fit_ndu_brain)
-results_ndu_intestine <- extract_limma_DE_results(limma_fit = fit_ndu_intestine)
-results_ndu_kidney <- extract_limma_DE_results(limma_fit = fit_ndu_kidney)
-results_zhan <- extract_limma_DE_results(limma_fit = fit_zhan)
-results_zhan2 <- extract_limma_DE_results(limma_fit = fit_zhan2)
-results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
-results_kaul <- extract_limma_DE_results(limma_fit = fit_kaul)
+results_lupashin <- extract_DE_results(fit_lupashin)
+results_ndu <- extract_DE_results(fit_ndu)
+results_ndu_random <- extract_DE_results(fit_ndu_random)
+results_zhan <- extract_DE_results(fit_zhan)
+results_reb <- extract_DE_results(fit_reb)
+results_kaul <- extract_DE_results(fit_kaul)
+results_higgs <- extract_DE_results(fit_higgs)
+names(results_higgs$results)
 
-waldo::compare(results_zhan, results_zhan2)
 
 
 # Write results -----------------------------------------------------------

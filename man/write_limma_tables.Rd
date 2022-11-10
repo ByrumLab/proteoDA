@@ -20,7 +20,7 @@ write_limma_tables(
 }
 \arguments{
 \item{model_results}{A model results object returned by
-\code{\link{extract_limma_DE_results}}.}
+\code{\link{extract_DE_results}}.}
 
 \item{annotation}{A dataframe containing annotation data for this analysis.
 In our pipeline, usually the "annot" slot from the object returned by

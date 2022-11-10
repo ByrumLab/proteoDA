@@ -4,29 +4,22 @@
 \alias{add_contrasts}
 \title{Prepare limma contrasts matrix}
 \usage{
-add_contrasts(file = NULL, design)
+add_contrasts(DIAlist, contrasts_vector = NULL, contrasts_file = NULL)
 }
 \arguments{
-\item{file}{The path to the contrasts file listing the desired contrasts.
-Must be a .csv, .tsv, or .txt file.}
+\item{DIAlist}{A DIAlist. Must have a non-empty statistical design.}
 
-\item{design}{The limma design matrix for the model. In the pipeline, this
-is usually the "design" slot of the list returned by
-\code{\link{make_design}}.}
+\item{contrasts_vector}{A vector of contrasts}
+
+\item{contrasts_file}{The path to the contrasts file listing the desired contrasts.
+Must be a .csv, .tsv, or .txt file.}
 }
 \value{
-A list with 4 slots: \enumerate{
-\item "contrasts"- The contrast matrix, for use in limma
-\item "contrast.vec"- The vector of contrasts, as read from the input
-contrasts file
-\item "param"- A dataframe of parametes used for calling the function
-\item "stats"- A dataframe giving stats (the total number of contrasts).
-}
+A DIAlist with added contrasts
 }
 \description{
 Create the contrasts matrix, for use in limma. Calls
-\code{\link{extract_contrast_groups}} \code{\link{validate_contrasts}}
-and \code{\link{make_log}} as subfunctions.
+\code{\link{extract_contrast_groups}} \code{\link{validate_contrasts}}.
 }
 \examples{
 # No examples yet

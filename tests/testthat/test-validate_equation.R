@@ -43,4 +43,4 @@
 # validate_formula(~ 0 + group + xyz + (1 | hello/group))
 # validate_formula(~ 0 + group + xyz + (1 | hello + group))
 # validate_formula("~ group + (1 | group )")
-validate_formula(~ group + (1 | group   ))
+# validate_formula(~ group + (1 | group   ))

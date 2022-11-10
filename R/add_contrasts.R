@@ -3,9 +3,9 @@
 #' Create the contrasts matrix, for use in limma. Calls
 #' \code{\link{extract_contrast_groups}} \code{\link{validate_contrasts}}.
 #'
-#' @param DIAlist
+#' @param DIAlist A DIAlist. Must have a non-empty statistical design.
 #' @param contrasts_vector A vector of contrasts
-#' @param contrast_file The path to the contrasts file listing the desired contrasts.
+#' @param contrasts_file The path to the contrasts file listing the desired contrasts.
 #'   Must be a .csv, .tsv, or .txt file.
 #'
 #' @return A DIAlist with added contrasts

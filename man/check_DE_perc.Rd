@@ -29,7 +29,7 @@ A vector of numeric values giving the \% of significant DE proteins within
 each contrast.
 }
 \description{
-Internal utility function, used in \code{\link{extract_limma_DE_results}} to
+Internal utility function, used in \code{\link{extract_DE_results}} to
 check if assumptions are met.
 }
 \examples{

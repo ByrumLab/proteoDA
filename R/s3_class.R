@@ -87,6 +87,8 @@ validate_DIAlist <- function(x) {
 
 
   # Checks for results
+  # if not null, length should match either ncol(design_matrix) or ncol(contrasts_matrix)
+  # if not null, pval.thresh, lfc.thresh, and adj.method should be set in tags??
 
 
   # If all checks pass, return input
