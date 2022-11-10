@@ -57,6 +57,7 @@ validate_DIAlist <- function(x) {
 
 
   # CHECKS FOR TARGETS/METADATA
+  # Maybe need more??
   if (!is.null(x$metadata)) {
     if (nrow(x$metadata) != ncol(x$data)) {
       cli::cli_abort("The number of samples in the metadata ({nrow(x$metadata)}) do not match the number of samples in the data ({ncol(x$data)})")
@@ -70,7 +71,14 @@ validate_DIAlist <- function(x) {
   # If design matrix exists, needs to have same # of rows as metadata
   # also, rownames of design matrix need to equal colnames of data
 
-  # If there's a random effect blocking factor, make sure its in the metadata
+  # If there's a random effect blocking factor, make sure its in the metadata?
+  # if you have a formula, must have a matrix and vice versa?
+  # And, if you have a random effect, must have a matrix and formula?
+
+
+  # Checks for contrasts
+  # If you have a contrasts, must have a design
+  # if you have a contrasts_vec, must have contrasts_matrix and vice versa?
 
 
   # If all checks pass, return input

@@ -48,8 +48,10 @@ add_design <- function(DIAlist,
 
   # Make the model matrix
   design_matrix <- stats::model.matrix(form_fixed_only, data = DIAlist$metadata)
+  extratext <- rownames(attr(terms(form_fixed_only), which="factors"))
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\(Intercept\\)", "Intercept")
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\:", ".")
+  colnames(design_matrix) <- stringr::str_remove_all(colnames(design_matrix), paste(extratext, collapse="|"))
 
   if (!is.null(DIAlist$design)) {
     cli::cli_inform("DIAlist already contains a statistical design. Overwriting.")
@@ -66,18 +68,6 @@ add_design <- function(DIAlist,
   }
 
   validate_DIAlist(DIAlist)
-
-  #
-  #     tar <- targets[ , rownames(attr(formulaobject, which = "factors")), drop = F]
-  #     formulaobject <- stats::terms(eval(parse(text = design_formula)), data = tar)
-  #     design <- stats::model.matrix(eval(parse(text = design_formula)), data = tar)
-  #     extratext <- rownames(attr(formulaobject, which="factors"))
-  #
-  #     # Fix colnames of design matrix to be compatible with limma
-  #     colnames(design) <- stringr::str_remove_all(colnames(design), paste(extratext, collapse="|"))
-  #     colnames(design) <- stringr::str_replace_all(colnames(design), "\\(Intercept\\)", "Intercept")
-  #     colnames(design) <- stringr::str_replace_all(colnames(design), "\\:", ".")
-  #
 }
 
 

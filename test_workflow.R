@@ -193,9 +193,8 @@ norm_ndu$metadata <- norm_ndu$metadata %>%
   separate(group, into = c("treatment", "tissue"), remove = F)
 
 
-
 norm_kaul <- add_design(norm_kaul,
-                        ~ group + gender)
+                        ~ 0 +group + gender)
 
 norm_lupashin <- add_design(norm_lupashin,
                             design_formula = "~ 0 + group")
@@ -213,9 +212,6 @@ norm_reb <- add_design(norm_reb,
 norm_zhan <- add_design(norm_zhan,
                         ~group*sex)
 
-norm_zhan$design$design_matrix
-
-
 full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
   add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
   filter_samples(group != "Pool") %>%
@@ -226,41 +222,40 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
   normalize_data(method = "cycloess") %>%
   add_design(~0 +group)
 
-
-
 # Make contrasts ----------------------------------------------------------
 # Higgs
-# No higgs contrast file??
+# Will be good test of later code, can let higgs run the model without contrasts
 
 # Ndu
-contrasts_ndu_kidney <- make_contrasts(file = "for_testing/Example Data/NDu_030822_DIA/input_files/kidney_contrasts.txt",
-                                       design = des_ndu$design)
-contrasts_ndu_brain <- make_contrasts(file = "for_testing/Example Data/NDu_030822_DIA/input_files/brain_contrasts.txt",
-                                      design = des_ndu$design)
-contrasts_ndu_intestine <- make_contrasts(file = "for_testing/Example Data/NDu_030822_DIA/input_files/intestine_contrasts.txt",
-                                          design = des_ndu$design)
+norm_ndu <- norm_ndu %>%
+  add_design(~ 0 + group) %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/NDu_030822_DIA/input_files/kidney_contrasts.txt")
 
 #kaul
-contrasts_kaul <- make_contrasts(file = "for_testing/Example Data/kaul/contrasts_designfomula.csv",
-                                          design = des_kaul2$design)
-# Lupashin
-# contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv",
-#                                      design = des_lupashin$design)
-contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts.csv",
-                                     design = des_lupashin$design)
+norm_kaul$metadata$gender <- factor(norm_kaul$metadata$gender, levels = c("male", "female"))
+norm_kaul <- norm_kaul %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/kaul/contrasts_designfomula.csv")
 
+
+# Lupashin
+norm_lupashin <- norm_lupashin %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv")
+norm_lupashin <- norm_lupashin %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/lupashin_030222/contrasts.csv")
 
 # Zhan
-contrasts_zhan <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt",
-                                 design = des_zhan$design)
+norm_zhan <- norm_zhan %>%
+  add_design(~0 + group) %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt")
 
-contrasts_zhan2 <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt",
-                                 design = des_zhan2$design)
-waldo::compare(contrasts_zhan, contrasts_zhan2)
+norm_zhan <- norm_zhan %>%
+  add_design(~0 + group) %>%
+  add_contrasts(contrasts_vector = c("test=HiR-LoR"))
 
 # Rebello
-contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/contrasts.csv",
-                                    design = des_reb$design)
+norm_reb <- norm_reb %>%
+  add_design(~0 + group) %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/rebello/contrasts.csv")
 
 
 # Run the analysis --------------------------------------------------------
