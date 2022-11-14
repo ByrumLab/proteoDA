@@ -9,7 +9,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "100%",
+  eval = F
 )
 ```
 
@@ -18,15 +19,30 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The `proteomicsDIA` package will (eventually) be our internal R package that supplies all the functions we need for doing proteomics analysis of DIA data.
+Our package is getting closer to being ready for publication. One major task we've been working on for publication is streamlining/standardizing the input and output of all functions to use a single list with a custom S3 class. This has required a pretty comprehensive re-write of all our functions, and hopefully does so in a way that makes the package easier to use. 
 
-## Non-DIA experiments
+We're at the point where it would be helpful for folks to test out the new S3-based pipeline. It would be especially helpful if folks could re-run some old projects using the new S3 pipeline and make sure the results match the old package version. 
 
-At the moment, these functions should work fine for non-DIA experiments as well. Most of the functions are the same for the different experiment types. Some functions, like `extract_data()` and `make_targets()`, have slightly different behavior depending on the pipeline. At the moment, only the DIA code within these functions has been updated: you might notice differences in the text printed to the console and in the output objects. But, the non-DIA code is more or less unchanged from version 26 of Charity's functions, so it should still all work properly. If you run into any problems, [file an issue](https://github.com/ByrumLab/proteomicsDIA/issues). 
+We also need a new name!
+
+
+## Contributing to package development
+
+I would highly recommend checking out the [R Packages](https://r-pkgs.org/) book from Hadley Wickham and Jenny Bryan. It is a pretty comprehensive book on creating R packages, and provides a nice framework that we can all follow (and the framework which the package is currently following). 
+
+You'll want to install a few packages for development: 
+
+```{r package install, eval = F}
+install.packages(c("devtools", "roxygen2", "testthat", "knitr", "rmarkdown", "usethis"))
+```
+
+You may want to set up your `.Rprofile` to automatically load some of all of the packages when you start R (see [here](https://r-pkgs.org/setup.html#personal-startup-configuration) for more info), though I don't usually bother and just load them as I need them. 
+
 
 ## Installation
 
-The Github repository where the package is stored is private, so installation is a little more complicated that usual. You'll need the `devtools` package installed (which you'll want to have installed anyway for developing the package, see below). You'll also need the personal access token (PAT) that gives you access to the repository. Email Tim or Stephanie to get it. Once you have it, you can install the development version of `proteomicsDIA` from [GitHub](https://github.com/) with:
+The Github repository where the package is stored is private, so installation is a little more complicated that usual. You'll need the `devtools` package installed (which you'll want to have installed anyway for developing the package, see below). You'll also need the personal access token (PAT) that gives you access to the repository. Email Tim or Stephanie to get it. Once you have it, you can install the development version of `proteomicsDIA` from [GitHub](https://github.com/) with the `devtools::install_github()` function. To install the old style of the package:
+
 
 ``` r
 # install.packages("devtools")
@@ -34,9 +50,143 @@ devtools::install_github("ByrumLab/proteomicsDIA",
                          auth_token = "COPY_PAT_HERE")
 ```
 
-## Example
+And, to install the new version based on the S3 object:
 
-The package is getting developed in pipeline order, adding each of the functions and subfunctions needed for the various steps in the example workflows (see the progress tracker below). The goal is to get all the current functionality into the R package before we start adding new features or making changes. 
+``` r
+# install.packages("devtools")
+devtools::install_github("ByrumLab/proteomicsDIA@s3_object",
+                         auth_token = "COPY_PAT_HERE")
+```
+
+You can only have one version installed at a time. See the end of the README for an example workflow for the old pipeline. 
+
+## New s3 object structure
+
+The new version of the pipeline is based around a new S3 class, `DIAlist` (probably need to change the name to something more general). It holds all the info for a single quantitative proteomics experiment, and all our functions take it as input. Its a list, with 7 slots:
+
+1) data- MS intensity data, where each row is a protein and each column is a sample.
+2) annotation- Protein/gene annotation information. Same number of rows as data, Each column is a separate piece of annotation info.
+3) metadata- A data frame of sample metadata, 1 row per sample (should match the number of columns in data). 
+4) design- A list which holds information on the statistical design: the design formula and matrix, contrasts, etc. 
+5) eBayes_fit- The model fit object from running `limma`'s models on the data.
+6) results- Statistical tables of DE results for each of the statistical terms/contrasts analyzed.
+7) tags- Basically a "miscellaneous" slot, used to keep track of info on filtering, normalization, etc. 
+
+For the public R package, users will have to make the first three slots all at once, and then our functions are used to process the data and add the rest of the slots. For our internal usage, we have some functions to import data and metadata and assemble a DIAlist object. 
+
+All of the functions in the pipeline check for a proper structure of the DIAlist object, both when it is input into the function and before it returns the result. We still need to improve these checks and think of all the edge cases to test for. 
+
+## Example pipeline
+
+With the switch to a new S3 object, the analysis pipeline has changed a little bit. Some of these changes are to accommodate the new data structure, and others are to make things a little more straightforward for the public R package. So, here's a new example pipeline, with some explanation. 
+
+### Data Import
+
+For our internal use, we have a `read_DIA_data()` function that will read in our data, based on the formatting of our Samples Report files from MaxQuant:
+
+```{r}
+data <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv") 
+```
+
+One thing to notes: this function just reads in the data and spits it into the intensity data and annotation data. It doesn't do any filtering out of decoys or contaminants, as the old data import function did. 
+
+After importing the raw data, we import metadata and add it to the DIAlist object:
+
+```{r}
+data <- add_metadata(DIAlist = data, metadata_file = "path/to/metdata.csv") 
+```
+
+One thing to note: all the functions in the pipeline take the DIAlist object as their first argument/input. So, most functions can be piped together, using either the base R pipe `|>` or the tidyverse/magrittr `%>%`. So, the above code can be condensed to:
+
+```{r}
+data <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv")  %>% 
+  add_metadata(metadata_file = "path/to/metdata.csv") 
+```
+
+### Filtering
+
+#### Sample filtering
+
+The filtering functions have been rewritten to hopefully be easier to use and combine. First, there's functionality to filter out samples based on their metadata, with the `filter_samples()` function. Specifying filtering is easier, and now works like core R functions like `subset()` or `dplyr::filter()`: you just supply a logical expression that gives the filtering criteria. So, we can remove all samples where the group is equal to "pool"
+
+```{r}
+data <- filter_samples(data, group != "Pool")
+```
+
+Or where a sample ID contains a certain string:
+
+```{r}
+data <- filter_samples(data, !stringr::str_detect(sample, "sampleX"))
+```
+
+Again, these can be chained together:
+
+```{r}
+data <- filter_samples(data, group != "Pool") %>% 
+  filter_samples(!stringr::str_detect(sample, "sampleX"))
+```
+
+The filtering functions that are applied are tracked in the `tags` slot of the DIAlist object. Any samples that are filtered out are automatically removed from the data as well. 
+
+#### Protein/gene filtering
+
+We also have some new functions for filtering out proteins/genes. First, we can filter proteins by information in their annotation data:
+
+```{r}
+data <- filter_proteins_by_annotation(data, Protein.Name != "bad protein")
+```
+
+As with `filter_samples()`, this function takes an expression that evaluates to a logical condition that determines filtering. For our internal use, we have a function that filters out contaminant proteins (this used to happen in the data import step):
+
+```{r}
+data <- filter_proteins_contaminants(data) 
+# this is just a wrapper around filter_proteins_by_annotation()
+```
+
+We can also filter proteins based on their degree of missing data across samples. One function, `filter_proteins_by_group()`, replicates the filtering we used to apply in the old `process_data()` function (e.g., requiring a non-zero intensity in a minimum number of samples across a minimum number of groups). 
+
+```{r}
+data <- filter_proteins_by_group(data, min_reps = 5, min_groups = 3, grouping_column = "group")
+```
+
+We can also filter by proportion, which is useful when sample sizes are uneven across groups:
+
+```{r}
+data <- filter_proteins_by_proportion(data, 
+                                      min_prop = 1, # No missing data allowed
+                                      grouping_column = "group")
+```
+
+
+Again, these can be chained:
+
+```{r}
+data <- filter_proteins_contaminants(data) %>% 
+  filter_proteins_by_group(min_reps = 5, min_groups = 3, grouping_column = "group")
+```
+
+
+As with sample filtering, the protein filter functions that are applied are tracked in the `tags` slot. 
+
+This more modular way of filtering hopefully makes it easier to add other filtering methods. If there's one you think we should add, make a GitHub issue!
+
+### Normaalization report
+
+### Normalize data
+
+### QC report
+
+
+
+
+## Experiments other than DIA protein data
+
+At the moment, everything is written specifically with DIA protein data in mind. But, most of the middle functions should work regardless. The data import functions probably won't work with other data. But, if you can get your data into the right structure to be put into our S3 object (see above), the rest of the functions should work (though some text labels might be incorrect: e.g., "protein" instead of "phospho"). 
+
+
+### Example workflow- Old style
+
+Here's an example workflow for using the "old" style of the package, without the S3 object. I've left it here for reference, but once we make the switch to the new style it won't be relevant anymore. 
 
 ```{r example, eval = F}
 # Load the proteomicsDIA package
@@ -100,87 +250,11 @@ write_limma_plots(model_results = results,
                    groups = norm$targets$group,
                    output_dir = "example_1234")
 
-
-# Functions are documented, check them out:
-?read_DIA_data
-?make_targets
-?subset_targets
-?process_data
-?write_proteinorm_report
-?write_qc_report
-?make_design
-?make_contrasts
-?fit_limma_model
-?extract_limma_DE_results
-?write_limma_tables
-?write_limma_plots
-
 # If you see any typos or things that aren't clear, let me know!
 ```
 
-## Contributing to package development
 
-I would highly recommend checking out the [R Packages](https://r-pkgs.org/) book from Hadley Wickham and Jenny Bryan. It is a pretty comprehensive book on creating R packages, and provides a nice framework that we can all follow (and the framework which the package is currently following). 
 
-You'll want to install a few packages for development: 
 
-```{r package install, eval = F}
-install.packages(c("devtools", "roxygen2", "testthat", "knitr", "rmarkdown", "usethis"))
-```
 
-You may want to set up your `.Rprofile` to automatically load some of all of the packages when you start R (see [here](https://r-pkgs.org/setup.html#personal-startup-configuration) for more info), though I don't usually bother and just load them as I need them. 
-
-### Collaboration with Git
-
-We need to figure this out! Deciding on the best path forward with this depends a little on everyone's familiarity and level of comfort with Git. I (Tim) have used Git for the last couple years for all my projects, though I have rarely used it to collaborate with others and thus have rarely needed to worry about the optimal collaboration workflow. We can work together to figure that out more, but in the meantime here are some resources that might be helpful:
-
-* [Happy Git with R](https://happygitwithr.com/index.html)- A guide to using Git and Github with RStudio.
-* [Chapter 18 of R packages](https://r-pkgs.org/git.html) is on Git. 
-* Git GUIs- Personally, I mostly avoid using Git in the command line and instead use GUIs. RStudio has a minimal one, explained in the first link above. Initially, I mostly used [GitKraken](https://www.gitkraken.com/git-client), which is free with a student license and has some nice touches (better diff viewing, better branch visualization). Lately, I've just been using the Git functionality in [Visual Studio Code](https://code.visualstudio.com/), which also has some nice extensions for using Git. 
-
-Once we're all set up and comfortable with Git, we'll need to figure out how to manage workflows. That might be a topic for another day. 
-
-### Misc ideas
-
-See the GitHub issue tracker for other ideas
-
-* Add a changelog.md file, to textually track/explain changes (with version #s).
-
-* Check out code coverage and CI tools, to automate testing. Some options in usethis. Might want to wait to do much testing until after we decide on whether we want to do much re-writing and reformatting of the code. 
-
-### Software license
-
-Depending on when and how we release this to the public, may need to pick a new software license. To be able to reformat the Glimma plots, I had to copy-paste some of their code into our package and slightly modify it. They use a copyleft license, GPL3, which means it is fine for us to do this internally, but if we release our package we need to release it under the same GPL3 license. Right now, for no particular reason, we're using the MIT license (which is more permissive and imposes no restrictions on anyone who might use our software in the future). But we could switch to GPL3, makes no real difference to me. 
-
-### Progress tracker
-
-I'm working my way through the "top-level" functions in the example DIA workflow sent by Charity. I'm not doing much on the TMT, LF, or phosphoTMT side of things, though I have done a little code restyling for those sometimes. 
-
-On the code side, I've been doing relatively little. I've been doing some restyling of the code for clarity, and reduced redundancy. I've dropped TODOs through the code to mark ideas for re-doing of code. The main thing I've done is to rework print statements and error messages (using the `cli` R package) to make these better formatted and more informative. 
-
-On the documentation side, I'm just trying to get some initial documentation for each main function and all its subfunctions, linking them together. The goal is to explain all the inputs and outputs to get a better idea of how they fit together.
-
-On the test side, I started writing some unit tests for the data extraction functions, but I think I might hold off on that for now. If we do any changing of the code structure, we may have to re-write the tests as well. Maybe better to just do it once. 
-
-| Function                   | Code               | Document           | Test               |
-| -------------------------- | ------------------ | ------------------ | ------------------ |
-| `read_DIA_data`            | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| `make_targets`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `subset_targets`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `process_data`             | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `write_proteinorm_report`  | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `write_qc_report`          | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_design`              | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `make_contrasts`           | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `fit_limmma_model`         | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `extract_limma_DE_results` | :heavy_check_mark: | :heavy_check_mark: | :x:                |
-| `write_limma_tables`       | :heavy_check_mark: | :heavy_check_mark: | :x:                |  
-| `write_limma_plots`        | :heavy_check_mark: | :heavy_check_mark: | :x:                |  
-
-The final steps in the pipeline, for the limma analysis, are being reworked a little. Originally, there were two functions: `run_limma_analysis` fit the model, extracted data, saved some .csv files, and made the glimma plots. `add_limma_results` added limma results to an excel spreadsheet. I'm working to separate out some of the functionality into independent functions. Now, we have:
-
-* `fit_limma_model`- Just does model fitting, and returns a list of various model fit objects.
-* `extract_limma_DE_results`- Extracts statistical results for each contrast from the list of limma model fits. 
-* `write_limma_tables`- Output the various .csv and excel files of results.
-* `write_limma_plots`- Outputs the interactive HTML reports and static plots for the end user.  
 

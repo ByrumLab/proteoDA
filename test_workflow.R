@@ -37,6 +37,8 @@ ext_reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Reb
 
 ext_kaul <- read_DIA_data("for_testing/Example Data/kaul/Samples Report of Kaul_030922.csv")
 
+ext_porter <- read_DIA_data("for_testing/Example Data/porter/Samples Report of PorterC_100422.csv")
+
 # Make targets ------------------------------------------------------------
 
 target_higgs_metadata <- make_targets(input_file = "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv",
@@ -69,6 +71,9 @@ target_reb <- make_targets(input_file = "for_testing/Example Data/rebello/Rebell
 target_kaul <- make_targets(input_file = "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv",
                             sample_IDs =  colnames(ext_kaul$data))
 
+target_porter <- make_targets("for_testing/Example Data/porter/metafile_DIA_TJT.csv",
+                              sample_IDs = colnames(ext_porter$data))
+
 # Subset targets --------------------------------------------------------------
 sub_higgs <- subset_targets(targets = target_higgs_metadata,
                             filter_list = list(group = "Pool"))
@@ -88,6 +93,10 @@ sub_reb <- subset_targets(targets = target_reb,
 
 sub_kaul <- subset_targets(targets = target_kaul,
                           filter_list = list(group = "Pool"))
+
+sub_porter <- subset_targets(targets = target_porter,
+                             filter_list = list(group = "Pool",
+                                                sample = "S2117"))
 
 
 # Process data ------------------------------------------------------------
@@ -120,6 +129,11 @@ norm_reb <- process_data(data = ext_reb$data,
 
 norm_kaul <- process_data(data = ext_kaul$data,
                           targets = sub_kaul$targets,
+                          min.reps = 4,
+                          min.grps = 2)
+
+norm_porter <- process_data(data = ext_porter$data,
+                          targets = sub_porter$targets,
                           min.reps = 4,
                           min.grps = 2)
 
@@ -195,6 +209,14 @@ write_qc_report(processed_data = norm_reb,
                 file = "rebello_qc_update.pdf",
                 overwrite = T)
 
+
+write_qc_report(processed_data = norm_porter,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                file = "porter_qc_update.pdf",
+                overwrite = T)
+
+norm_porter$targets$group
 
 # Make design -------------------------------------------------------------
 des_higgs <- make_design(targets=norm_higgs$targets,
