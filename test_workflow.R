@@ -34,6 +34,8 @@ reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Rebello
 
 kaul <- read_DIA_data("for_testing/Example Data/kaul/Samples Report of Kaul_030922.csv") # Worked
 
+ext_porter <- read_DIA_data("for_testing/Example Data/porter/Samples Report of PorterC_100422.csv")
+
 # Add metadata ------------------------------------------------------------
 
 higgs <- add_metadata(higgs, "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") # worked
@@ -58,6 +60,9 @@ reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafi
 
 kaul <- add_metadata(kaul, "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv")
 
+target_porter <- make_targets("for_testing/Example Data/porter/metafile_DIA_TJT.csv",
+                              sample_IDs = colnames(ext_porter$data))
+
 # filter samples --------------------------------------------------------------
 sub_higgs <- filter_samples(higgs, group != "Pool")
 
@@ -74,6 +79,9 @@ sub_kaul <- filter_samples(kaul, group != "Pool")
 
 # filter proteins ---------------------------------------------------------
 
+sub_porter <- subset_targets(targets = target_porter,
+                             filter_list = list(group = "Pool",
+                                                sample = "S2117"))
 filtered_higgs <- filter_proteins_contaminants(sub_higgs) %>%
   filter_proteins_by_group(min_reps = 5, min_groups = 3)
 
@@ -185,6 +193,14 @@ write_qc_report(norm_kaul,
                 grouping_column = "group",
                 file = "kaul_qc_update.pdf",
                 overwrite = T)
+
+write_qc_report(processed_data = norm_porter,
+                chosen_norm_method = "vsn",
+                grouping_column = "group",
+                file = "porter_qc_update.pdf",
+                overwrite = T)
+
+norm_porter$targets$group
 
 # Make design -------------------------------------------------------------
 norm_ndu$metadata <- norm_ndu$metadata %>%
