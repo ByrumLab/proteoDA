@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-Our package is getting closer to being ready for publication. One major task we've been working on for publication is streamlining/standardizing the input and output of all functions to use a single list with a custom S3 class. This has required a pretty comprehensive re-write of all our functions, and hopefully does so in a way that makes the package easier to use. 
+Our package is getting closer to being ready for publication. One major task we've been working on for publication is streamlining/standardizing the input and output of all functions to use a single list with a custom S3 class. This has required a pretty comprehensive re-write of all our functions, but hopefully does so in a way that makes the package easier to use. 
 
 We're at the point where it would be helpful for folks to test out the new S3-based pipeline. It would be especially helpful if folks could re-run some old projects using the new S3 pipeline and make sure the results match the old package version. 
 
@@ -88,7 +88,7 @@ For our internal use, we have a `read_DIA_data()` function that will read in our
 data <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv") 
 ```
 
-One thing to notes: this function just reads in the data and spits it into the intensity data and annotation data. It doesn't do any filtering out of decoys or contaminants, as the old data import function did. 
+One thing to notes: this function just reads in the data and splits it into the intensity data and annotation data. It doesn't do any filtering out of decoys or contaminants, as the old data import function did. 
 
 After importing the raw data, we import metadata and add it to the DIAlist object:
 
@@ -103,11 +103,13 @@ data <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv"
   add_metadata(metadata_file = "path/to/metdata.csv") 
 ```
 
+When we split our package into the public and internal versions, these functions will be in the internal one. 
+
 ### Filtering
 
 #### Sample filtering
 
-The filtering functions have been rewritten to hopefully be easier to use and combine. First, there's functionality to filter out samples based on their metadata, with the `filter_samples()` function. Specifying filtering is easier, and now works like core R functions like `subset()` or `dplyr::filter()`: you just supply a logical expression that gives the filtering criteria. So, we can remove all samples where the group is equal to "pool"
+The filtering functions have been rewritten to hopefully be easier to use and combine. First, there's functionality to filter out samples based on their metadata, with the `filter_samples()` function. Specifying filtering is easier, and now works like core R functions such as `subset()` or `dplyr::filter()`: you just supply a logical expression that gives the filtering criteria. So, we can remove all samples where the group is equal to "pool"
 
 ```{r}
 data <- filter_samples(data, group != "Pool")
@@ -166,17 +168,147 @@ data <- filter_proteins_contaminants(data) %>%
 ```
 
 
-As with sample filtering, the protein filter functions that are applied are tracked in the `tags` slot. 
+As with sample filtering, the protein filter functions that are applied are tracked in the `tags` slot. With both types of filtering, proteins/genes are removed form both the annotation and data slots. 
 
 This more modular way of filtering hopefully makes it easier to add other filtering methods. If there's one you think we should add, make a GitHub issue!
 
-### Normaalization report
+### Normalization report
+
+Next, we make the proteinorm normalization report:
+
+```{r}
+write_proteinorm_report(data,
+                        grouping_column = "group",
+                        out_dir = "directory/to/save/",
+                        file = "filename.pdf", # See note below
+                        overwrite = T)
+```
+
+In the S3 version of the package, this function has no defaults for `out_dir` and `file`: you need to specify those yourself. In the example above, I've explicitly chosen generic ones: these are not the structure that Stephanie wants. When we split our package into public and internal packages, we can set the defaults we want for our internal package. For now, you'll need to specify them by hand. 
+
+Also note: this output from this function can't currently be chained (it doesn't output the DIAlist object). I'm still thinking about whether to change that. 
 
 ### Normalize data
 
+After looking at the normalization report and deciding what normalization method to use, you normalize the data:
+
+```{r}
+norm_data <- data %>%
+  normalize_data("quantile")
+```
+
+This function replaces the unnormalized data in the `data` slot of the `DIAlist` with normalized data, and updates the `tags` to record that the dat are normalized and the method of normalization. 
+
 ### QC report
 
+Then, we make the QC report. The QC report will actually work on either normalized or non-normalized data, and will use the appropriate y-axis names (intensity vs. normalized intensity). But we generally want to run this on normalized data.
 
+
+```{r}
+write_qc_report(full_higgs_chain,
+                grouping_column = "group",
+                out_dir = "directory/to/save",
+                file = "QC_report.pdf",
+                overwrite = T)
+```
+
+This function is like the normalization report: it has no defaults for `out_dir` and `file`: you need to specify those yourself. In the example above, I've explicitly chosen generic ones: these are not the structure that Stephanie wants. When we split our package into public and internal packages, we can set the defaults we want for our internal package. For now, you'll need to specify them by hand. 
+
+Also note: this output from this function can't currently be chained (it doesn't output the DIAlist object). I'm still thinking about whether to change that. 
+
+### Specifying the statistical model
+
+This is an area where there are some big changes, which hopefully will make it easier to specify more complicated models. The first step is to use `add_design()` to add the statistical model. Besides the DIAlist, the only argument this function takes in is a formula of the desired statistical model. In the previous code of the package, this was done by specifying column names, and there were some limitations around model specification (intercept vs. no-intercept, inclusion of interactions, etc). Now, there's much more flexibility. The "default" model we often use (a no intercept model with "group" as the only statistical factor) would be:
+
+```{r}
+norm_data <- add_design(data,
+                        design_formula = ~ 0 + group)
+```
+
+You could also specify a model with intercepts:
+
+```{r}
+norm_data <- add_design(data,
+                        design_formula = ~ group)
+```
+
+More complicated things like interactions:
+
+```{r}
+norm_data <- add_design(data,
+                        design_formula = ~ treatment*genotype)
+```
+
+
+Or even go crazy including random factors (though you can only include one, and only for intercepts):
+
+```{r}
+norm_data <- add_design(data,
+                        design_formula = ~ treatment*genotype + (1 | batch))
+```
+
+
+The model equation syntax is the same as functions like `lm()`/`glm()`/etc., with a limited random effect syntax in the style of `lme4`/`brms`. The function does checking to make sure you're inputting a valid equation, and if you don't the error messages are hopefully clear about what to fix.
+
+Then, you can optionally add contrasts, with `add_contrasts()`. These can be specified from a file, or just a string of contrasts:
+
+```{r}
+# Specify file
+norm_data <- add_contrasts(norm_data,
+                           contrasts_file = "path/to/contrasts.txt")
+
+# Specify by hand
+norm_data <- norm_data %>%
+  add_contrasts(contrasts_vector = c("example=groupA-groupB"))
+```
+
+Specifying contrasts is optional. If you don't add other contrasts, then by default you'll get estimates of the model terms directly from your design matrix. In cases where that isn't what you want (e.g., you want all pairwise  comparisons among the different levels in a group), you need to add contrasts. Adding contrasts has to be done after adding a design with `add_design()`, and the function will perform checks to make sure your contrasts and statistical design make sense together. 
+
+### Fitting the model
+
+After you add the statistical design, you fit the limma model with `fit_limma_model()` and get tables of differential expression results with `extract_DE_results()`. `fit_limma_model()` adds the `eBayes_fit` slot to the DIAlist, and `extract_DE_results()` adds the `results` slot as a list with one element for each statistical term/contrast. 
+
+```{r}
+final <- fit_limma_model(norm_data) %>% 
+  extract_DE_results(pval_thresh = 0.5, lfc.thresh = 1, adj.method = "BH")
+```
+
+Besides the report functions above, the whole analysis could in theory be chained together into one pipeline:
+
+```{r}
+full_chain <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv")  %>% 
+  add_metadata(metadata_file = "path/to/metdata.csv") %>% 
+  filter_samples(group != "Pool") %>% 
+  filter_samples(!stringr::str_detect(sample, "sampleX")) %>% 
+  filter_proteins_contaminants() %>% 
+  filter_proteins_by_group(min_reps = 5, 
+                           min_groups = 3, 
+                           grouping_column = "group") %>% 
+  normalize_data("quantile") %>% 
+  add_design(~ treatment*genotype + (1 | batch)) %>% 
+  add_contrasts(contrasts_vector = c("example=groupA-groupB")) %>% 
+  fit_limma_model() %>% 
+  extract_DE_results()
+```
+
+### Writing final reports
+
+Then, you write out results of the analysis in tables (`write_limma_tables()`) and interactive reports/plots (`write_limma_plots`). We might want to change those names, substituting "results" for "limma". 
+
+
+```{r}
+write_limma_tables(full_chain,
+                   output_dir = "path/to/output/dir",
+                   overwrite = T)
+```
+
+
+```{r}
+write_limma_plots(results_higgs,
+                  grouping_column = "group")
+```
+
+Confusingly, at the moment these functions do have some defaults for output directories and filenames (though I can't guarantee that they're exactly what Stephanie wants. Again, can always specify by hand). But, this will change once we split into the public and internal R package: the defaults for the public package will not be what we want to use internally. 
 
 
 ## Experiments other than DIA protein data
