@@ -22,16 +22,19 @@ qc_violin_plot <- function(data,
                            groups = NULL,
                            sample_labels = colnames(data)) {
 
-  # Get alphabetical order of groups
-  group_order <- sort.int(groups, index.return = T)$ix
+
+
+  # Get ordering of samples, by order in which groups are supplied
+  group_order <- order(match(groups, unique(groups)))
 
 
   # Rename column names to sample names provided
   colnames(data) <- sample_labels
 
   # Match sample names to groups, for coloring
-  sample_group_info <- data.frame(ind = factor(x = colnames(data)[group_order], levels = colnames(data)[group_order]),
-                                  group = as.factor(groups[group_order]))
+  sample_group_info <- data.frame(ind = factor(x = colnames(data)[group_order],
+                                               levels = colnames(data)[group_order]),
+                                  group = factor(x = groups[group_order]))
 
   # make and return plot
   # Must merge with sample info first, to get order correct
@@ -41,7 +44,7 @@ qc_violin_plot <- function(data,
     geom_violin(draw_quantiles = c(0.5),
                 na.rm = T,
                 col = "black") +
-    scale_fill_manual(values = colorGroup(sample_group_info$group), name = NULL) +
+    scale_fill_manual(values = colorGroup(groups), limits = unique(groups), name = NULL) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
@@ -116,7 +119,7 @@ qc_pca_plot <- function(data,
         sample_group_info) %>%
     ggplot(aes(x = .data$x, y = .data$y, color = .data$group, label = .data$ind)) +
     geom_point() +
-    scale_color_manual(values = colorGroup(groups)[groups], name = NULL) +
+    scale_color_manual(values = colorGroup(groups), limits = unique(groups), name = NULL) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5)) +
     xlab(paste0("PC", pca_axes[1], " (", round(pca$summary["Proportion of Variance", pca_axes[1]] * 100, 2), " %)")) +
@@ -210,7 +213,7 @@ qc_dendro_plot <- function(data,
     ggtree::layout_dendrogram() +
     ggtree::geom_tippoint(aes(color = .data$group)) +
     ggtree::geom_tiplab(aes(color = .data$group), angle=90, hjust=1, offset = -0.5, show.legend=FALSE) +
-    scale_color_manual(values = colorGroup(groups)[groups], name = NULL) +
+    scale_color_manual(values = colorGroup(groups), limits = unique(groups), name = NULL) +
     ggtree::theme_dendrogram(plot.margin=margin(6,6,80,6)) +
     theme(plot.title = element_text(hjust = 0.5))
 

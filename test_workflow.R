@@ -3,6 +3,7 @@
 # library(tictoc)
 # library(microbenchmark)
 library(devtools)
+library(tidyverse)
 # library(profvis)
 
 
@@ -17,7 +18,9 @@ CreatePackageReport("proteomicsDIA")
 
 # Load in data on a bunch of files --------------------------------
 
-ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.CSV") # Missing exclusivity col
+#ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.CSV") # Missing exclusivity col
+
+higgs <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") # worked
 
 ndu <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") # Worked
 
@@ -45,11 +48,11 @@ ndu_chain2 <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files
 
 lupashin <- add_metadata(lupashin, "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv") # Worked
 
-zhan <- add_metadata(zhan, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # error as expected
+#zhan <- add_metadata(zhan, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # error as expected
 
 zhan <- add_metadata(zhan, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # worked
 
-reb <- add_metadata(reb, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # error as expected
+#reb <- add_metadata(reb, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # error as expected
 
 reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # worked
 
@@ -70,13 +73,6 @@ sub_reb <- filter_samples(reb, group != "Pool")
 sub_kaul <- filter_samples(kaul, group != "Pool")
 
 # filter proteins ---------------------------------------------------------
-
-# Have added a few possibilities
-# can filter by annotation, by group,
-# and by proportion
-
-# there's a contaminants function that wraps the annotation filtering
-# for our UAMS contaminants/decoys
 
 filtered_higgs <- filter_proteins_contaminants(sub_higgs) %>%
   filter_proteins_by_group(min_reps = 5, min_groups = 3)
@@ -132,44 +128,7 @@ write_proteinorm_report(filtered_kaul,
                         file = "kaul_update_2.pdf",
                         overwrite = T, suppress_zoom_legend = T)
 
-
-
 # Normalize data ----------------------------------------------------------
-
-
-
-# Then, a normalize_data function,
-# which replaces the data with normalized data and sets some tags
-# should check for a normalized tag
-# and leave a normalized tag when its done
-
-
-x <- normalize_data(full_higgs_chain, method = "cycloess")
-
-all <- apply_all_normalizations(full_higgs_chain$data)
-
-
-for (method in c("log2", "median", "mean", "vsn", "quantile",
-                 "cycloess", "rlr", "gi")) {
-
-  normed <- normalize_data(full_higgs_chain, method = method)
-  stopifnot(all(unique(all[[method]] == normed$data)))
-  stopifnot(normed$tags$normalized)
-  stopifnot(normed$tags$norm_method == method)
-
-}
-
-
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
-  filter_samples(group != "Pool") %>%
-  filter_proteins_contaminants() %>%
-  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
-  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
-  filter_proteins_by_proportion(min_prop = 1) %>%
-  normalize_data(method = "cycloess")
-
-
 norm_kaul <- filtered_kaul %>%
   normalize_data("quantile")
 
@@ -228,243 +187,187 @@ write_qc_report(norm_kaul,
                 overwrite = T)
 
 # Make design -------------------------------------------------------------
-des_higgs <- make_design(targets=norm_higgs$targets,
-                        group_column = "group",
-                        factor_columns = NULL,
-                        paired_column = NULL)
+norm_ndu$metadata <- norm_ndu$metadata %>%
+  separate(group, into = c("treatment", "tissue"), remove = F)
 
-des_higgs2 <- make_design(targets=norm_higgs$targets,
-                        group_column = "group",
-                        factor_columns = NULL,
-                        paired_column = NULL,
-                        design_formula = "~0 + group")
 
-waldo::compare(des_higgs, des_higgs2)
+norm_kaul <- add_design(norm_kaul,
+                        ~ 0 +group + gender)
 
-des_ndu <- make_design(targets = norm_ndu$targets,
-                       group_column = "group",
-                       factor_columns = NULL,
-                       paired_column =  NULL)
-
-des_ndu2 <- make_design(targets = norm_ndu$targets,
-                       group_column = "group",
-                       factor_columns = "test",
-                       paired_column =  NULL,
-                       design_formula = "~ 0 + group + (1 | pair")
-
-waldo::compare(des_ndu, des_ndu2) # slight difference in order, should be no big deal
-
-des_lupashin <- make_design(targets = norm_lupashin$targets,
-                            group_column = "group",
-                            factor_columns = NULL,
-                            paired_column = NULL)
-
-des_lupashin2 <- make_design(targets = norm_lupashin$targets,
-                            group_column = "group",
-                            factor_columns = NULL,
-                            paired_column = NULL,
+norm_lupashin <- add_design(norm_lupashin,
                             design_formula = "~ 0 + group")
 
-waldo::compare(des_lupashin, des_lupashin2) # same: different order, but otherwise should be the same.
+norm_ndu <- add_design(norm_ndu,
+                design_formula = "~ 0 + treatment + (1 | tissue)")
+
+norm_ndu <- add_design(norm_ndu,
+                       design_formula = "~ 0 + treatment + tissue")
 
 
-des_zhan <- make_design(targets = norm_zhan$targets,
-                        group_column = "group",
-                        factor_columns = NULL,
-                        paired_column = NULL)
+norm_reb <- add_design(norm_reb,
+                       "~ group")
 
+norm_zhan <- add_design(norm_zhan,
+                        ~group*sex)
 
-des_zhan2 <- make_design(targets = norm_zhan$targets,
-                        group_column = "group",
-                        factor_columns = NULL,
-                        paired_column = NULL,
-                        design_formula = "~0 + group")
-waldo::compare(des_zhan, des_zhan2) # switched order again, but looks the same
-
-
-des_reb <- make_design(targets = norm_reb$targets,
-                           group_column = "group",
-                           factor_columns = NULL,
-                           paired_column = NULL)
-
-des_kaul <- make_design(targets = norm_kaul$targets,
-                           group_column = "group",
-                           factor_columns = NULL,
-                           paired_column = NULL,
-                           design_formula = "~group+gender")
-
-des_kaul2 <- make_design(targets = norm_kaul$targets,
-                        group_column = "group",
-                        factor_columns = "gender",
-                        paired_column = NULL)
-waldo::compare(des_kaul, des_kaul2) # order and levels a little different by defauls, but looks OK
-
-
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
+  filter_samples(group != "Pool") %>%
+  filter_proteins_contaminants() %>%
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
+  filter_proteins_by_proportion(min_prop = 1) %>%
+  normalize_data(method = "cycloess") %>%
+  add_design(~0 +group)
 
 # Make contrasts ----------------------------------------------------------
 # Higgs
-# No higgs contrast file??
+# Will be good test of later code, can let higgs run the model without contrasts
 
 # Ndu
-contrasts_ndu_kidney <- make_contrasts(file = "for_testing/Example Data/NDu_030822_DIA/input_files/kidney_contrasts.txt",
-                                       design = des_ndu$design)
-contrasts_ndu_brain <- make_contrasts(file = "for_testing/Example Data/NDu_030822_DIA/input_files/brain_contrasts.txt",
-                                      design = des_ndu$design)
-contrasts_ndu_intestine <- make_contrasts(file = "for_testing/Example Data/NDu_030822_DIA/input_files/intestine_contrasts.txt",
-                                          design = des_ndu$design)
+norm_ndu <- norm_ndu %>%
+  add_design(~ 0 + group) %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/NDu_030822_DIA/input_files/kidney_contrasts.txt")
 
 #kaul
-contrasts_kaul <- make_contrasts(file = "for_testing/Example Data/kaul/contrasts_designfomula.csv",
-                                          design = des_kaul2$design)
-# Lupashin
-# contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv",
-#                                      design = des_lupashin$design)
-contrasts_lupashin <- make_contrasts(file = "for_testing/Example Data/lupashin_030222/contrasts.csv",
-                                     design = des_lupashin$design)
+norm_kaul$metadata$gender <- factor(norm_kaul$metadata$gender, levels = c("male", "female"))
+norm_kaul <- norm_kaul %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/kaul/contrasts_designfomula.csv")
 
+
+# Lupashin
+norm_lupashin <- norm_lupashin %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv")
+norm_lupashin <- norm_lupashin %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/lupashin_030222/contrasts.csv")
 
 # Zhan
-contrasts_zhan <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt",
-                                 design = des_zhan$design)
+norm_zhan <- norm_zhan %>%
+  add_design(~0 + group) %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt")
 
-contrasts_zhan2 <- make_contrasts(file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt",
-                                 design = des_zhan2$design)
-waldo::compare(contrasts_zhan, contrasts_zhan2)
+norm_zhan <- norm_zhan %>%
+  add_design(~0 + group) %>%
+  add_contrasts(contrasts_vector = c("test=HiR-LoR"))
 
 # Rebello
-contrasts_rebello <- make_contrasts(file = "for_testing/Example Data/rebello/contrasts.csv",
-                                    design = des_reb$design)
+norm_reb <- norm_reb %>%
+  add_design(~0 + group) %>%
+  add_contrasts(contrasts_file = "for_testing/Example Data/rebello/contrasts.csv")
 
 
 # Run the analysis --------------------------------------------------------
 # Splitting up functionality
 # First, fit the model
+fit_lupashin <- fit_limma_model(norm_lupashin)
 
-fit_lupashin <- fit_limma_model(data = norm_lupashin$normList[["vsn"]],
-                                design_obj = des_lupashin,
-                                contrasts_obj = contrasts_lupashin)
+fit_ndu<- fit_limma_model(norm_ndu)
 
-fit_ndu_brain <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
-                                 design_obj = des_ndu,
-                                 contrasts_obj = contrasts_ndu_brain)
+fit_zhan <- fit_limma_model(norm_zhan)
 
-fit_ndu_intestine <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
-                                     design_obj = des_ndu,
-                                     contrasts_obj = contrasts_ndu_intestine)
+fit_reb <- fit_limma_model(norm_reb)
 
-fit_ndu_kidney <- fit_limma_model(data = norm_ndu$normList[["vsn"]],
-                                  design_obj = des_ndu,
-                                  contrasts_obj = contrasts_ndu_kidney)
-
-fit_zhan <- fit_limma_model(data = norm_zhan$normList[["vsn"]],
-                            design_obj = des_zhan,
-                            contrasts_obj = contrasts_zhan)
-
-fit_zhan2 <- fit_limma_model(data = norm_zhan$normList[["vsn"]],
-                            design_obj = des_zhan2,
-                            contrasts_obj = contrasts_zhan2)
-
-waldo::compare(fit_zhan, fit_zhan2)
+fit_kaul <- fit_limma_model(norm_kaul)
 
 
-fit_reb <- fit_limma_model(data = norm_reb$normList[["vsn"]],
-                           design_obj = des_reb,
-                           contrasts_obj = contrasts_rebello)
+fit_ndu_random <- norm_ndu %>%
+  add_design(design_formula = "~ 0 + treatment + (1 | tissue)") %>%
+  fit_limma_model()
 
-fit_kaul <- fit_limma_model(data = norm_kaul$normList[["cycloess"]],
-                           design_obj = des_kaul,
-                           contrasts_obj = contrasts_kaul)
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
+  filter_samples(group != "Pool") %>%
+  filter_proteins_contaminants() %>%
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
+  filter_proteins_by_proportion(min_prop = 1) %>%
+  normalize_data(method = "cycloess") %>%
+  add_design(~group)
+
+
+fit_higgs <- fit_limma_model(full_higgs_chain)
+
+
 # Extract results ---------------------------------------------------------
-results_lupashin <- extract_limma_DE_results(limma_fit = fit_lupashin)
-results_ndu_brain <- extract_limma_DE_results(limma_fit = fit_ndu_brain)
-results_ndu_intestine <- extract_limma_DE_results(limma_fit = fit_ndu_intestine)
-results_ndu_kidney <- extract_limma_DE_results(limma_fit = fit_ndu_kidney)
-results_zhan <- extract_limma_DE_results(limma_fit = fit_zhan)
-results_zhan2 <- extract_limma_DE_results(limma_fit = fit_zhan2)
-results_reb <- extract_limma_DE_results(limma_fit = fit_reb)
-results_kaul <- extract_limma_DE_results(limma_fit = fit_kaul)
+results_lupashin <- extract_DE_results(fit_lupashin)
+results_ndu <- extract_DE_results(fit_ndu)
+results_ndu_random <- extract_DE_results(fit_ndu_random)
+results_zhan <- extract_DE_results(fit_zhan)
+results_reb <- extract_DE_results(fit_reb)
+results_kaul <- extract_DE_results(fit_kaul)
+results_higgs <- extract_DE_results(fit_higgs)
+names(results_higgs$results)
 
-waldo::compare(results_zhan, results_zhan2)
 
 
 # Write results -----------------------------------------------------------
-write_limma_tables(model_results = results_lupashin,
-                    norm.method = "vsn",
-                    annotation = ext_lupashin$annot,
-                    ilab = "Lupashin_82928",
-                    overwrite = T)
+write_limma_tables(results_lupashin,
+                   output_dir = "Lupashin_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_ndu_brain,
-                    norm.method = "vsn",
-                    annotation = ext_ndu$annot,
-                    ilab = "ndu_brain_82928")
+write_limma_tables(results_ndu,
+                   output_dir = "Ndu_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_ndu_intestine,
-                    norm.method = "vsn",
-                    annotation = ext_ndu$annot,
-                    ilab = "ndu_intestine_82928")
+write_limma_tables(results_ndu_random,
+                   output_dir = "Ndu_random_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_ndu_kidney,
-                    norm.method = "vsn",
-                    annotation = ext_ndu$annot,
-                    ilab = "ndu_kidney_82928")
+write_limma_tables(results_reb,
+                   output_dir = "reb_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_reb,
-                    norm.method = "vsn",
-                    annotation = ext_reb$annot,
-                    ilab = "Rebello_82928")
+write_limma_tables(results_zhan,
+                   output_dir = "zhan_s3obj",
+                   overwrite = T)
 
+write_limma_tables(results_kaul,
+                   output_dir = "kaul_s3obj",
+                   overwrite = T)
 
-write_limma_tables(model_results = results_zhan,
-                    norm.method = "vsn",
-                    annotation = ext_zhan$annot,
-                    ilab = "zhan_982974")
-
-write_limma_tables(model_results = results_kaul,
-                    norm.method = "cycloess",
-                    annotation = ext_kaul$annot,
-                    ilab = "kaul_82921", overwrite=T)
-
+write_limma_tables(results_higgs,
+                   output_dir = "higgs_s3obj",
+                   overwrite = T)
 
 # testing report making ---------------------------------------------------
-write_limma_plots(model_results = results_reb,
-                   annotation = ext_reb$annot,
-                   groups = norm_reb$targets$group,
-                   output_dir = "output_rebello")
+write_limma_plots(results_reb,
+                  grouping_column = "group",
+                  output_dir = "reb_s3obj")
 
-write_limma_plots(model_results = results_kaul,
-                   annotation = ext_kaul$annot,
-                   groups = norm_kaul$targets$group,
-                   output_dir = "output_kaul")
-
-write_limma_plots(model_results = results_reb,
-                   annotation = ext_reb$annot,
-                   groups = norm_reb$targets$group,
-                   output_dir = "output_rebello_wide",
-                   width = 1500,
-                   height = 1500)
+write_limma_plots(results_kaul,
+                  grouping_column = "group",
+                  output_dir = "kaul_s3obj/")
 
 
-write_limma_plots(model_results = results_lupashin,
-                   annotation = ext_lupashin$annot,
-                   groups = norm_lupashin$targets$group,
-                   output_dir = "output_lupashin")
+write_limma_plots(results_reb,
+                  grouping_column = "group",
+                  output_dir = "reb_s3obj/")
+
+write_limma_plots(results_lupashin,
+                  grouping_column = "group",
+                  output_dir = "Lupashin_s3obj")
 
 
-write_limma_plots(model_results = results_ndu_brain,
-                   annotation = ext_ndu$annot,
-                   groups = norm_ndu$targets$group,
-                   output_dir = "output_ndu_brain")
 
 
-write_limma_plots(model_results = results_zhan,
-                   annotation = ext_zhan$annot,
-                   groups = norm_zhan$targets$group,
-                   output_dir = "output_zhan")
+write_limma_plots(results_ndu,
+                  grouping_column = "group",
+                  output_dir = "Ndu_s3obj")
+
+write_limma_plots(results_ndu_random,
+                  grouping_column = "group",
+                  output_dir = "Ndu_random_s3obj")
 
 
-write_limma_plots(model_results = results_zhan,
-                   annotation = ext_zhan$annot,
-                   groups = norm_zhan$targets$group,
-                   output_dir = "output_zhan_wide",
+write_limma_plots(results_zhan,
+                  grouping_column = "group",
+                  output_dir = "zhan_s3obj")
+
+write_limma_plots(results_zhan,
+                  grouping_column = "group",
+                  output_dir = "zhan_wide_s3obj",
                    width = 2000)
+
+write_limma_plots(results_higgs,
+                  grouping_column = "group",
+                  output_dir = "higgs_s3obj")

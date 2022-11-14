@@ -83,7 +83,6 @@ add_metadata <- function(DIAlist,
 
   DIAlist$metadata <- targets
   validate_DIAlist(DIAlist)
-  DIAlist
 }
 
 

@@ -8,7 +8,7 @@ prep_plot_model_data(model_results, contrast)
 }
 \arguments{
 \item{model_results}{A model results object from
-\code{\link{extract_limma_DE_results}}.}
+\code{\link{extract_DE_results}}.}
 
 \item{contrast}{The name of the contrast for which to prep the model data}
 }
