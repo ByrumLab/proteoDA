@@ -1,4 +1,18 @@
-
+#' Normalize data in a DIAlist
+#'
+#' Normalizes the raw data in a DIAlist.
+#'
+#' @param DIAlist A DIAlist with raw data to be normalized.
+#' @param method A normalization method to use. Options are "log2", "median",
+#'   "mean", "vsn", "quantile", "cycloess", "rlr", and "gi".
+#'
+#' @return A DIAlist with normalized data.
+#'
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#'
 normalize_data <- function(DIAlist,
                            method = c("log2", "median", "mean", "vsn", "quantile",
                                       "cycloess", "rlr", "gi")) {
@@ -9,7 +23,7 @@ normalize_data <- function(DIAlist,
 
   if (!is.null(DIAlist$tags$normalized)) {
     if (DIAlist$tags$normalized) {
-      cli::cli_abort("Data in DIAlist are already normalized. Cannot evaluate normalization metrics")
+      cli::cli_abort("Data in DIAlist are already normalized.")
     }
   }
 

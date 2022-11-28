@@ -5,9 +5,8 @@
 \title{Make interactive reports on DE}
 \usage{
 write_limma_plots(
-  model_results = NULL,
-  annotation = NULL,
-  groups = NULL,
+  DIAlist = NULL,
+  grouping_column = NULL,
   output_dir = NULL,
   tmp_subdir = "tmp",
   height = 1000,
@@ -15,15 +14,11 @@ write_limma_plots(
 )
 }
 \arguments{
-\item{model_results}{A model results object returned by
-\code{\link{extract_DE_results}}.}
+\item{DIAlist}{A DIAlist object, with statistical results.}
 
-\item{annotation}{A dataframe containing annotation data for this analysis.
-In our pipeline, usually the "annot" slot from the object returned by
-\code{\link{read_DIA_data}}.}
-
-\item{groups}{A vector describing the groups to which each sample belongs. Used
-for grouping expression data in the interactive expression plot.}
+\item{grouping_column}{The name of the column in the metadata which
+gives information on how to group samples for the interactive
+expression plot.}
 
 \item{output_dir}{The directory in which to create the reports and save the
 plot files. No defaults, must be specified.}
@@ -38,7 +33,7 @@ Default is 1000.}
 Default is 1000.}
 }
 \value{
-If successful, invisible(TRUE).
+Invisibly returns the input DIAlist.
 }
 \description{
 A wrapper function that creates and saves interactive HTML reports summarizing

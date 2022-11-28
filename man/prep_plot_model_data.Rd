@@ -7,8 +7,7 @@
 prep_plot_model_data(model_results, contrast)
 }
 \arguments{
-\item{model_results}{A model results object from
-\code{\link{extract_DE_results}}.}
+\item{model_results}{The results slot of a DIAlist object.}
 
 \item{contrast}{The name of the contrast for which to prep the model data}
 }

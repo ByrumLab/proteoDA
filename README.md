@@ -274,7 +274,7 @@ names (intensity vs. normalized intensity). But we generally want to run
 this on normalized data.
 
 ``` r
-write_qc_report(full_higgs_chain,
+write_qc_report(norm_data,
                 grouping_column = "group",
                 out_dir = "directory/to/save",
                 file = "QC_report.pdf",
@@ -306,21 +306,21 @@ use (a no intercept model with “group” as the only statistical factor)
 would be:
 
 ``` r
-norm_data <- add_design(data,
+norm_data <- add_design(norm_data,
                         design_formula = ~ 0 + group)
 ```
 
 You could also specify a model with intercepts:
 
 ``` r
-norm_data <- add_design(data,
+norm_data <- add_design(norm_data,
                         design_formula = ~ group)
 ```
 
 More complicated things like interactions:
 
 ``` r
-norm_data <- add_design(data,
+norm_data <- add_design(norm_data,
                         design_formula = ~ treatment*genotype)
 ```
 
@@ -328,7 +328,7 @@ Or even go crazy including random factors (though you can only include
 one, and only for intercepts):
 
 ``` r
-norm_data <- add_design(data,
+norm_data <- add_design(norm_data,
                         design_formula = ~ treatment*genotype + (1 | batch))
 ```
 
@@ -405,7 +405,7 @@ write_limma_tables(full_chain,
 ```
 
 ``` r
-write_limma_plots(results_higgs,
+write_limma_plots(full_chain,
                   grouping_column = "group")
 ```
 

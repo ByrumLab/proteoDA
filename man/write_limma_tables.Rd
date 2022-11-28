@@ -5,11 +5,9 @@
 \title{Write tables of limma results}
 \usage{
 write_limma_tables(
-  model_results,
-  annotation,
-  ilab,
-  out_dir = NULL,
-  norm.method,
+  DIAlist,
+  ilab = NULL,
+  output_dir = NULL,
   overwrite = F,
   contrasts_subdir = NULL,
   summary_csv = NULL,
@@ -19,24 +17,16 @@ write_limma_tables(
 )
 }
 \arguments{
-\item{model_results}{A model results object returned by
-\code{\link{extract_DE_results}}.}
-
-\item{annotation}{A dataframe containing annotation data for this analysis.
-In our pipeline, usually the "annot" slot from the object returned by
-\code{\link{read_DIA_data}}.}
+\item{DIAlist}{A DIAlist object, with statistical results.}
 
 \item{ilab}{The ilab identifier for this project.}
 
-\item{out_dir}{The directory in which to output tables. If not specified,
+\item{output_dir}{The directory in which to output tables. If not specified,
 will construct a directory based on the ilab name and type of analysis.}
-
-\item{norm.method}{The method that was used to normalize the data for the
-statistical model being output.}
 
 \item{overwrite}{Should results files be overwritten? Default is F.}
 
-\item{contrasts_subdir}{The subdirectory within out_dir to write the per-contrast
+\item{contrasts_subdir}{The subdirectory within output_dir to write the per-contrast
 result .csv files. If not specified, will be "per_contrast_results".}
 
 \item{summary_csv}{The filename of the csv file giving a summary of the number
@@ -53,10 +43,10 @@ Default is TRUE. These can sometimes cause unstable spreadsheet files,
 try setting to FALSE if you're having issues with the Excel output.}
 }
 \value{
-Invisibly returns a dataframe with the combined results.
+Invisibly returns the input DIAlist.
 }
 \description{
-This wrapper function prepares and then saves a number of tables of results:
+This function prepares and then saves a number of tables of results:
 \enumerate{
 \item A .csv summarizing the number of direction of differentially
 expressed genes for each contrast.

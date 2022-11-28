@@ -166,7 +166,7 @@ extract_contrast_groups <- function(contrast.vec) {
   # Basically replicating a lot of the stuff that
   # is already there, but with stringr. Though I have no idea what some of this is for
   processed_contrasts <-  contrasts %>%
-    stringr::str_remove_all(" ") %>% # remove blank spaces TODO: probably unneeded
+    stringr::str_remove_all(" ") %>% # remove blank spaces
     stringr::str_remove_all("\\/[[:digit:]]+") %>% ## removes division by one digit number (/2)
     stringr::str_remove_all("\\-[[:digit:]]+") %>% ## removes subtraction by one digit number (-2)
     stringr::str_remove_all("\\+[[:digit:]]+") %>% ## removes addition of one digit number (+2)
