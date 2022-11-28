@@ -31,6 +31,17 @@ fit_limma_model <- function(DIAlist) {
                      "i" = "Run {.code DIAlist <- add_design(DIAlist, ~ formula)} before fitting model"))
   }
 
+  # Warn user if data aren't normalized, unlikely
+  # to want to do stats on non-normalized data
+  if (is.null(DIAlist$tags$normalized)) {
+    cli::cli_inform("Data in DIAlist are not normalized. You may wish to normalize before fitting model.")
+  }
+  if (!is.null(DIAlist$tags$normalized)) {
+    if (!DIAlist$tags$normalized) {
+      cli::cli_inform("Data in DIAlist are not normalized. You may wish to normalize before fitting model.")
+    }
+  }
+
   # With a random factor
   if (!is.null(DIAlist$design$random_factor)) {
     block <- DIAlist$metadata[, DIAlist$design$random_factor, drop = T]

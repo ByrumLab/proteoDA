@@ -290,7 +290,7 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
   filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
   filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
   filter_proteins_by_proportion(min_prop = 1) %>%
-  normalize_data(norm_method = "cycloess") %>%
+  #normalize_data(norm_method = "cycloess") %>%
   add_design(~group)
 
 
