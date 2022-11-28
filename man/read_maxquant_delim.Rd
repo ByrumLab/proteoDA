@@ -23,3 +23,4 @@ data and does some checks for required columns.
 \examples{
 # No examples yet
 }
+\keyword{internal}

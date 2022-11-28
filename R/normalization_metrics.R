@@ -41,7 +41,7 @@
 
 
 #' @rdname norm_metrics
-#' @export
+#' @keywords internal
 #'
 # Pooled coefficient of variation (average of per-protein CVs)
 PCV <- function(data, groups) {
@@ -55,7 +55,7 @@ PCV <- function(data, groups) {
 }
 
 #' @rdname norm_metrics
-#' @export
+#' @keywords internal
 #'
 # Pooled median absolute deviation (median of per-protein MADs)
 PMAD <- function(data, groups) {
@@ -70,7 +70,7 @@ PMAD <- function(data, groups) {
 
 
 #' @rdname norm_metrics
-#' @export
+#' @keywords internal
 #'
 # Pooled estimate of variance
 PEV <- function(data, groups) {
@@ -87,7 +87,7 @@ PEV <- function(data, groups) {
 }
 
 #' @rdname norm_metrics
-#' @export
+#' @keywords internal
 #'
 # Within-group pairwise correlations.
 COR <- function(data, groups) {
@@ -114,7 +114,7 @@ COR <- function(data, groups) {
 #' @rdname norm_metrics
 #' @param keep_protein_ID Should protein ID information be retained? Default is False,
 #'   in which case \code{keep_protein_ID}
-#' @export
+#' @keywords internal
 #'
 # log2ratio
 

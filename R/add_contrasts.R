@@ -1,7 +1,6 @@
 #' Prepare limma contrasts matrix
 #'
-#' Create the contrasts matrix, for use in limma. Calls
-#' \code{\link{extract_contrast_groups}} \code{\link{validate_contrasts}}.
+#' Create the contrasts matrix, for use in limma.
 #'
 #' @param DIAlist A DIAlist. Must have a non-empty statistical design.
 #' @param contrasts_vector A vector of contrasts
@@ -147,7 +146,7 @@ validate_contrasts <- function(contrast_vector) {
 #'   in the list is a character vector of the groups involved in that contrast,
 #'   and the names of the list give the contrast names.
 #'
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet

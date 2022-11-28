@@ -7,9 +7,9 @@
 check_DE_perc(
   DE_outcomes_table,
   DE_warn_threshold = 0.2,
-  pval.thresh,
-  lfc.thresh,
-  adj.method
+  pval_thresh,
+  lfc_thresh,
+  adj_method
 )
 }
 \arguments{
@@ -18,11 +18,11 @@ check_DE_perc(
 
 \item{DE_warn_threshold}{Proporion of DE genes at which we warn user.}
 
-\item{pval.thresh}{P-value threshold used.}
+\item{pval_thresh}{P-value threshold used.}
 
-\item{lfc.thresh}{logFC threshold used.}
+\item{lfc_thresh}{logFC threshold used.}
 
-\item{adj.method}{P-value adjustment method used.}
+\item{adj_method}{P-value adjustment method used.}
 }
 \value{
 A vector of numeric values giving the \% of significant DE proteins within

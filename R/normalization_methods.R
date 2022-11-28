@@ -3,7 +3,7 @@
 #' Normalizes the raw data in a DIAlist.
 #'
 #' @param DIAlist A DIAlist with raw data to be normalized.
-#' @param method A normalization method to use. Options are "log2", "median",
+#' @param norm_method A normalization method to use. Options are "log2", "median",
 #'   "mean", "vsn", "quantile", "cycloess", "rlr", and "gi".
 #'
 #' @return A DIAlist with normalized data.
@@ -14,10 +14,10 @@
 #' # No examples yet
 #'
 normalize_data <- function(DIAlist,
-                           method = c("log2", "median", "mean", "vsn", "quantile",
+                           norm_method = c("log2", "median", "mean", "vsn", "quantile",
                                       "cycloess", "rlr", "gi")) {
 
-  method <- rlang::arg_match(method)
+  norm_method <- rlang::arg_match(norm_method)
 
   validate_DIAlist(DIAlist)
 
@@ -29,21 +29,21 @@ normalize_data <- function(DIAlist,
 
   # Some normalization methods work on raw data, some on
   # log2 transformed data
-  if (method %in% c("log2", "vsn", "gi")) {
-    normalized_data <- do.call(what = paste0(method, "Norm"),
+  if (norm_method %in% c("log2", "vsn", "gi")) {
+    normalized_data <- do.call(what = paste0(norm_method, "Norm"),
                                args = list(dat = DIAlist$data))
-  } else if (method %in% c("median", "mean", "quantile", "cycloess", "rlr")) {
+  } else if (norm_method %in% c("median", "mean", "quantile", "cycloess", "rlr")) {
     log2_dat <- log2Norm(dat = DIAlist$data)
-    normalized_data <- do.call(what = paste0(method, "Norm"),
+    normalized_data <- do.call(what = paste0(norm_method, "Norm"),
                                args = list(logDat = log2_dat))
   } else {
-    cli::cli_abort("{.arg {method}} is not a valid normalization method")
+    cli::cli_abort("{.arg {norm_method}} is not a valid normalization method")
   }
 
   # Updata data
   DIAlist$data <- normalized_data
   DIAlist$tags$normalized <- T
-  DIAlist$tags$norm_method <- method
+  DIAlist$tags$norm_method <- norm_method
 
   validate_DIAlist(DIAlist)
 }
@@ -62,6 +62,7 @@ normalize_data <- function(DIAlist,
 #'       named dataframe. Names give the normalization method, and the dataframe
 #'       gives the normalized intensity data
 #'
+#' @keywords internal
 #' @examples
 #' # No examples yet
 #'
@@ -133,7 +134,7 @@ NULL
 
 
 #' @rdname norm_functions
-#' @export
+#' @keywords internal
 #'
 log2Norm <- function(dat) {
   logInt <- log2(as.matrix(dat))
@@ -142,7 +143,7 @@ log2Norm <- function(dat) {
 }
 
 #' @rdname norm_functions
-#' @export
+#' @keywords internal
 #'
 medianNorm <- function(logDat) {
   # Find medians of each sample
@@ -156,7 +157,7 @@ medianNorm <- function(logDat) {
 }
 
 #' @rdname norm_functions
-#' @export
+#' @keywords internal
 #'
 meanNorm <- function(logDat) {
   # Find means of each sample
@@ -170,7 +171,7 @@ meanNorm <- function(logDat) {
 }
 
 #' @rdname norm_functions
-#' @export
+#' @keywords internal
 #'
 vsnNorm <- function(dat) {
   vsnNormed <- suppressMessages(vsn::justvsn(as.matrix(dat)))
@@ -180,7 +181,7 @@ vsnNorm <- function(dat) {
 }
 
 #' @rdname norm_functions
-#' @export
+#' @keywords internal
 #'
 quantileNorm <- function(logDat) {
   quantNormed <- preprocessCore::normalize.quantiles(as.matrix(logDat), copy = TRUE)
@@ -190,7 +191,7 @@ quantileNorm <- function(logDat) {
 }
 
 #' @rdname norm_functions
-#' @export
+#' @keywords internal
 #'
 cycloessNorm <- function(logDat) {
   cycLoessNormed <- limma::normalizeCyclicLoess(as.matrix(logDat), method = "fast")
@@ -200,7 +201,7 @@ cycloessNorm <- function(logDat) {
 }
 
 #' @rdname norm_functions
-#' @export
+#' @keywords internal
 #'
 rlrNorm <- function(logDat) {
   # First, an internal function to do get the coefficients from rlm regression
@@ -226,7 +227,7 @@ rlrNorm <- function(logDat) {
 }
 
 #' @rdname norm_functions
-#' @export
+#' @keywords internal
 #'
 giNorm <- function(dat) {
   # Make sure input data is matrix

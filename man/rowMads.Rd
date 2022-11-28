@@ -23,3 +23,4 @@ it replaces, though it is much slower (the matrixStats version uses C code).
 \examples{
 # No examples yet.
 }
+\keyword{internal}

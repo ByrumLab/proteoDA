@@ -91,11 +91,11 @@ fit_limma_model <- function(DIAlist) {
 #'
 #'
 #' @param DIAlist A DIAlist, which must contain a statistical design.
-#' @param pval.thresh The p-value threshold used to determine significance
-#'   (significant when p < pval.thresh). Default is 0.055.
-#' @param lfc.thresh The logFC threshold used to determine significance
+#' @param pval_thresh The p-value threshold used to determine significance
+#'   (significant when p < pval_thresh). Default is 0.055.
+#' @param lfc_thresh The logFC threshold used to determine significance
 #'   (significant when |logFC| > lfc.tresh). Default is 1. LogFC are base 2.
-#' @param adj.method The method used for adjusting P-values. Default is "BH",
+#' @param adj_method The method used for adjusting P-values. Default is "BH",
 #'   for the Benjamini-Hochberg correction
 #'
 #' @param DIAlist A DIAlist, which must contain a statistical design.
@@ -105,24 +105,24 @@ fit_limma_model <- function(DIAlist) {
 #'
 #' @examples
 #' # No examples yet
-extract_DE_results <- function(DIAlist, pval.thresh = 0.055, lfc.thresh = 1, adj.method = "BH") {
+extract_DE_results <- function(DIAlist, pval_thresh = 0.055, lfc_thresh = 1, adj_method = "BH") {
 
   # check args
-  adj.method <- rlang::arg_match(
-    arg = adj.method,
+  adj_method <- rlang::arg_match(
+    arg = adj_method,
     values = c("none", "BH", "BY", "holm"),
     multiple = FALSE
   )
 
-  if (any(!is.numeric(pval.thresh),
-          !(pval.thresh > 0),
-          !(pval.thresh <= 1))) {
-    cli::cli_abort(c("{.arg pval.thresh} must be a numeric value greater > 0 and <= 1."))
+  if (any(!is.numeric(pval_thresh),
+          !(pval_thresh > 0),
+          !(pval_thresh <= 1))) {
+    cli::cli_abort(c("{.arg pval_thresh} must be a numeric value greater > 0 and <= 1."))
   }
 
-  if (any(!is.numeric(lfc.thresh),
-          !(pval.thresh >= 0))) {
-    cli::cli_abort(c("{.arg lfc.thresh} must be a numeric value greater >= 0."))
+  if (any(!is.numeric(lfc_thresh),
+          !(pval_thresh >= 0))) {
+    cli::cli_abort(c("{.arg lfc_thresh} must be a numeric value greater >= 0."))
   }
 
   # validate the input dataset
@@ -148,18 +148,18 @@ extract_DE_results <- function(DIAlist, pval.thresh = 0.055, lfc.thresh = 1, adj
   contrast_names <- colnames(efit$coefficients)
 
   # Get dfs where 0 = insig, -1 is sig downregulated, and 1 is sig upregulated
-  outcomes_table_rawp <- as.data.frame(limma::decideTests(efit, adjust.method = "none", p.value = pval.thresh, lfc = lfc.thresh))
-  outcomes_table_adjp <- as.data.frame(limma::decideTests(efit, adjust.method = adj.method, p.value = pval.thresh, lfc = lfc.thresh))
+  outcomes_table_rawp <- as.data.frame(limma::decideTests(efit, adjust.method = "none", p.value = pval_thresh, lfc = lfc_thresh))
+  outcomes_table_adjp <- as.data.frame(limma::decideTests(efit, adjust.method = adj_method, p.value = pval_thresh, lfc = lfc_thresh))
 
-  perc_sig_rawp <- check_DE_perc(outcomes_table_rawp, pval.thresh = pval.thresh, lfc.thresh = lfc.thresh, adj.method = "none")
-  perc_sig_adjp <- check_DE_perc(outcomes_table_adjp, pval.thresh = pval.thresh, lfc.thresh = lfc.thresh, adj.method = adj.method)
+  perc_sig_rawp <- check_DE_perc(outcomes_table_rawp, pval_thresh = pval_thresh, lfc_thresh = lfc_thresh, adj_method = "none")
+  perc_sig_adjp <- check_DE_perc(outcomes_table_adjp, pval_thresh = pval_thresh, lfc_thresh = lfc_thresh, adj_method = adj_method)
 
   # make a list of statistical results for each contrast/term/comparison
   results_per_contrast <- list()
   limmaStatColums <- c("logFC", "CI.L", "CI.R", "AveExpr", "t", "B", "P.Value", "adj.P.Val")
   results_per_contrast <- base::lapply(contrast_names, function(x) {
     one_contrast_table <- limma::topTable(efit,
-                             coef = x, number = Inf, adjust.method = adj.method,
+                             coef = x, number = Inf, adjust.method = adj_method,
                              sort.by = "none", p.value = 1, lfc = 0, confint = TRUE
     )
     outcomes <- cbind(outcomes_table_rawp[, x, drop = F], outcomes_table_adjp[, x, drop = F])
@@ -170,9 +170,9 @@ extract_DE_results <- function(DIAlist, pval.thresh = 0.055, lfc.thresh = 1, adj
 
   # Add results
   DIAlist$results <- results_per_contrast
-  DIAlist$tags$DE_criteria$pval.thresh <- pval.thresh
-  DIAlist$tags$DE_criteria$lfc.thresh <- lfc.thresh
-  DIAlist$tags$DE_criteria$adj.method <- adj.method
+  DIAlist$tags$DE_criteria$pval_thresh <- pval_thresh
+  DIAlist$tags$DE_criteria$lfc_thresh <- lfc_thresh
+  DIAlist$tags$DE_criteria$adj_method <- adj_method
 
   # Validate and return
   validate_DIAlist(DIAlist)
@@ -187,16 +187,16 @@ extract_DE_results <- function(DIAlist, pval.thresh = 0.055, lfc.thresh = 1, adj
 #' @param DE_outcomes_table DE results dataframe. Should be the output of
 #' \code{\link[limma:decideTests]{limma::decideTests}}, coerced to a dataframe.
 #' @param DE_warn_threshold Proporion of DE genes at which we warn user.
-#' @param pval.thresh P-value threshold used.
-#' @param lfc.thresh logFC threshold used.
-#' @param adj.method P-value adjustment method used.
+#' @param pval_thresh P-value threshold used.
+#' @param lfc_thresh logFC threshold used.
+#' @param adj_method P-value adjustment method used.
 #'
 #' @return A vector of numeric values giving the % of significant DE proteins within
 #'   each contrast.
 #'
 #' @examples
 #' # No examples yet
-check_DE_perc <- function(DE_outcomes_table, DE_warn_threshold = 0.2, pval.thresh, lfc.thresh, adj.method) {
+check_DE_perc <- function(DE_outcomes_table, DE_warn_threshold = 0.2, pval_thresh, lfc_thresh, adj_method) {
   perc_sig <- colSums(DE_outcomes_table != 0, na.rm = T)/colSums(!is.na(DE_outcomes_table))
 
   # Don't check the intercept column, if it exists
@@ -206,7 +206,7 @@ check_DE_perc <- function(DE_outcomes_table, DE_warn_threshold = 0.2, pval.thres
     above_thresh <- names(perc_sig)[perc_sig > DE_warn_threshold]
     thresh_perc <- DE_warn_threshold*100
     cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is DE in {cli::qty(length(above_thresh))} {?a/some} term{?s}",
-                      "!" = "Criteria for DE: |logFC| > {.val {lfc.thresh}}, p-value < {.val {pval.thresh}}, p.value adjustment = {.val {adj.method}}",
+                      "!" = "Criteria for DE: |logFC| > {.val {lfc_thresh}}, p-value < {.val {pval_thresh}}, p.value adjustment = {.val {adj_method}}",
                       "!" = "{cli::qty(length(above_thresh))} Problematic term{?s}: {.val {above_thresh}}",
                       "!" = "Assumption that most genes/proteins/phospho are not DE may be violated"))
   }

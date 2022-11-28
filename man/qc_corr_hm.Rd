@@ -29,3 +29,4 @@ labels colored by group and batch.
 \examples{
 # No examples yet
 }
+\keyword{internal}

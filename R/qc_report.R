@@ -18,7 +18,7 @@
 #' @param label_column Optional. The name of column within the targets data frame
 #'   which contains labels to use for plotting figures. When not supplied,
 #'   defaults to using the column names of the data in processed_data.
-#' @param file The file name of the report to be saved. Must end in .pdf. Will
+#' @param filename The file name of the report to be saved. Must end in .pdf. Will
 #'   default to "QC_Report.pdf" if no filename is provided.
 #' @param top_proteins The number of most variable proteins to use for the analysis.
 #'   Default is 500.
@@ -47,8 +47,8 @@
 write_qc_report <- function(DIAlist,
                             grouping_column = NULL,
                             label_column = NULL,
-                            out_dir = NULL,
-                            file = NULL,
+                            output_dir = NULL,
+                            filename = NULL,
                             overwrite = FALSE,
                             top_proteins = 500,
                             standardize = TRUE,
@@ -115,33 +115,33 @@ write_qc_report <- function(DIAlist,
   ############
 
   # Set default dir if not provided
-  if (is.null(out_dir)) {
-    out_dir <- file.path("protein_analysis", "01_quality_control")
-    cli::cli_inform(cli::col_yellow("{.arg dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
+  if (is.null(output_dir)) {
+    output_dir <- file.path("protein_analysis", "01_quality_control")
+    cli::cli_inform(cli::col_yellow("{.arg output_dir} argument is empty. Setting output directory to: {.path {output_dir}}"))
   }
 
   # Set default report name if not provided
-  if (is.null(file)) {
-    file <- "QC_Report.pdf"
-    cli::cli_inform(cli::col_yellow("{.arg file} argument is empty. Saving report to: {.path {out_dir}/{file}}"))
+  if (is.null(filename)) {
+    filename <- "QC_Report.pdf"
+    cli::cli_inform(cli::col_yellow("{.arg filename} argument is empty. Saving report to: {.path {output_dir}/{filename}}"))
   }
 
   # Make directory if it doesn't exist
-  if (!dir.exists(out_dir)) {
-    dir.create(out_dir, recursive = T)
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = T)
   }
 
   # Check that the filename is a pdf
-  validate_filename(file, allowed_exts = c("pdf"))
+  validate_filename(filename, allowed_exts = c("pdf"))
 
   # Check if filename already exists
-  if (file.exists(file.path(out_dir, file))) {
+  if (file.exists(file.path(output_dir, filename))) {
     if (overwrite) {
-      cli::cli_inform("{.path {file}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
+      cli::cli_inform("{.path {filename}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
     } else {
-      cli::cli_abort(c("{.path {file}} already exists in {.path {out_dir}}",
+      cli::cli_abort(c("{.path {filename}} already exists in {.path {output_dir}}",
                        "!" = "and {.arg overwrite} == {.val {overwrite}}",
-                       "i" = "Give {.arg file} a unique name or set {.arg overwrite} to {.val TRUE}"))
+                       "i" = "Give {.arg filename} a unique name or set {.arg overwrite} to {.val TRUE}"))
     }
   }
 
@@ -243,18 +243,18 @@ write_qc_report <- function(DIAlist,
   }
 
   # Then save
-  cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
-  ggsave(file.path(out_dir, file),
+  cli::cli_inform("Saving report to: {.path {file.path(output_dir, filename)}}")
+  ggsave(file.path(output_dir, filename),
          plot = gridExtra::marrangeGrob(grobs = plots_list, nrow = 1, ncol = 1, top = NA),
          height = height,
          width = width,
          units = "in")
 
-  if (!file.exists(file.path(out_dir, file))) {
-    cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
+  if (!file.exists(file.path(output_dir, filename))) {
+    cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
 
   cli::cli_inform(c("v" = "Success"))
 
-  invisible(file.path(out_dir, file))
+  invisible(file.path(output_dir, filename))
 }

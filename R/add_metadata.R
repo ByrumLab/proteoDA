@@ -1,10 +1,7 @@
 
-#' Make a targets file
+#' Add metadata to a DIAlist
 #'
-#' Creates a dataframe of "targets". Output depends on whether a metadata file
-#' is supplied, and whether the metadata and targets can be matched successfully
-#' (see Value, below). Calls two subfunctions: \code{\link{import_meta}} and
-#' \code{\link{get_dia_sample_number}}.
+#' Add a dataframe of metadata to a DIAlist object. For UAMS internal use.
 #'
 #' @param DIAlist A DIAlist to which metadata will be added
 #' @param metadata_file A metadata file, giving info on the samples.
@@ -93,7 +90,7 @@ add_metadata <- function(DIAlist,
 #' @param input_file A metadata file, giving info on the samples.
 #'
 #' @return A dataframe of the imported metadata.
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet
@@ -158,7 +155,7 @@ import_meta <-function(input_file) {
 #'   \code{[S/s]ample_[[:digit:]]} in the column name.
 #'
 #' @return A numeric vector of the extracted sample numbers
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet

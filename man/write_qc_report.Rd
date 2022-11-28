@@ -8,8 +8,8 @@ write_qc_report(
   DIAlist,
   grouping_column = NULL,
   label_column = NULL,
-  out_dir = NULL,
-  file = NULL,
+  output_dir = NULL,
+  filename = NULL,
   overwrite = FALSE,
   top_proteins = 500,
   standardize = TRUE,
@@ -30,10 +30,10 @@ some metrics can't be calculated for only one group.}
 which contains labels to use for plotting figures. When not supplied,
 defaults to using the column names of the data in processed_data.}
 
-\item{out_dir}{The directory in which to save the report. If not provided,
+\item{output_dir}{The directory in which to save the report. If not provided,
 will default to "protein_analysis/01_quality_control".}
 
-\item{file}{The file name of the report to be saved. Must end in .pdf. Will
+\item{filename}{The file name of the report to be saved. Must end in .pdf. Will
 default to "QC_Report.pdf" if no filename is provided.}
 
 \item{overwrite}{Should report file be overwritten if it already exists?

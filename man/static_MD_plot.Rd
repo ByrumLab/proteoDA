@@ -4,18 +4,18 @@
 \alias{static_MD_plot}
 \title{Make a DE MD plot.}
 \usage{
-static_MD_plot(data, lfc.thresh, contrast, pval.type)
+static_MD_plot(data, lfc_thresh, contrast, pval_type)
 }
 \arguments{
 \item{data}{Per-contrast DE results to be plotted, as prepared by
 \code{\link{prep_plot_model_data}}.}
 
-\item{lfc.thresh}{The logFC threshold used to determine significance
+\item{lfc_thresh}{The logFC threshold used to determine significance
 (significant when |logFC| > lfc.tresh). LogFC are base 2.}
 
 \item{contrast}{The contrast being plotted. Used for generating the plot title.}
 
-\item{pval.type}{The type of p-value to plot. Can be "raw" or "adjusted".}
+\item{pval_type}{The type of p-value to plot. Can be "raw" or "adjusted".}
 }
 \value{
 A ggplot object
@@ -26,3 +26,4 @@ Internal function for plotting static versions of MD plots.
 \examples{
 # No examples yet
 }
+\keyword{internal}

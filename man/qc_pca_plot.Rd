@@ -45,3 +45,4 @@ only the 500 most variable proteins for the analysis.
 \examples{
 # No examples yet
 }
+\keyword{internal}

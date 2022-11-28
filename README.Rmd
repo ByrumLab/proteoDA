@@ -270,7 +270,7 @@ After you add the statistical design, you fit the limma model with `fit_limma_mo
 
 ```{r}
 final <- fit_limma_model(norm_data) %>% 
-  extract_DE_results(pval_thresh = 0.5, lfc.thresh = 1, adj.method = "BH")
+  extract_DE_results(pval_thresh = 0.055, lfc_thresh = 1, adj_method = "BH")
 ```
 
 Besides the report functions above, the whole analysis could in theory be chained together into one pipeline:

@@ -1,15 +1,7 @@
 
 #' Loading DIA data from MaxQuant
 #'
-#' A function to extract and load DIA MaxQuant data. The \code{read_DIA_data}
-#' function is the main function, and it calls a number
-#' of other subfunctions to process and prepare the data. See the links to
-#' subfunctions for more info. Returns a list of data from maxquant, along with
-#' some stats and other info. Also has some side effects: creates some log files.
-#'
-#'
-#' Subfunctions (DIA): \code{\link{read_maxquant_delim}},
-#' \code{\link{extract_protein_data}}.
+#' FOR INTERNAL UAMS USE, NEED TO UPDATE
 #'
 #' @param input_file The file of Maxquant data to be imported. Format and filetype
 #'   vary depending on the type of data to be analyzed. If not supplied, R will
@@ -101,7 +93,7 @@ read_DIA_data <- function(input_file = NULL,
 #'        few columns are protein ID data, and the last columns are the individual
 #'        sample intensities (as character vectors).
 #'
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet
@@ -170,13 +162,13 @@ read_maxquant_delim <-function(input_file) {
 #'
 #' Third subfunction called by \code{\link{read_DIA_data}}. Processes the raw
 #' protein annotation strings to extract standard gene names,
-#' accession numbers, and Ids.
+#' accession numbers, and Ids. FOR INTERNAL UAMS USE.
 #'
 #' @param annotation_data Annotation data from which to extract protein data.
 #' @return A  data frame of cleaned up annotation data, with protein info
 #'
 #'
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet

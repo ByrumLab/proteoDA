@@ -369,7 +369,7 @@ as a list with one element for each statistical term/contrast.
 
 ``` r
 final <- fit_limma_model(norm_data) %>% 
-  extract_DE_results(pval_thresh = 0.5, lfc.thresh = 1, adj.method = "BH")
+  extract_DE_results(pval_thresh = 0.055, lfc_thresh = 1, adj_method = "BH")
 ```
 
 Besides the report functions above, the whole analysis could in theory

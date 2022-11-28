@@ -7,8 +7,8 @@
 write_proteinorm_report(
   DIAlist,
   grouping_column = NULL,
-  out_dir = NULL,
-  file = NULL,
+  output_dir = NULL,
+  filename = NULL,
   overwrite = FALSE,
   suppress_zoom_legend = FALSE
 )
@@ -20,10 +20,10 @@ write_proteinorm_report(
 gives information on how to group samples for normalization. Must be supplied:
 some metrics can't be calculated for only one group.}
 
-\item{out_dir}{The directory in which to save the report. If not provided,
+\item{output_dir}{The directory in which to save the report. If not provided,
 will default to "protein_analysis/01_quality_control".}
 
-\item{file}{The file name of the report to be saved. Must end in .pdf. Will
+\item{filename}{The file name of the report to be saved. Must end in .pdf. Will
 default to "proteiNorm_Report.pdf" if no filename is provided.}
 
 \item{overwrite}{Should report file be overwritten if it already exists?

@@ -19,3 +19,4 @@ Imports a delimited metadata file, checking for some required columns.
 # No examples yet
 
 }
+\keyword{internal}
