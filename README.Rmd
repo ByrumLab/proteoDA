@@ -205,7 +205,7 @@ Then, we make the QC report. The QC report will actually work on either normaliz
 
 
 ```{r}
-write_qc_report(full_higgs_chain,
+write_qc_report(norm_data,
                 grouping_column = "group",
                 out_dir = "directory/to/save",
                 file = "QC_report.pdf",
@@ -221,21 +221,21 @@ Also note: this output from this function can't currently be chained (it doesn't
 This is an area where there are some big changes, which hopefully will make it easier to specify more complicated models. The first step is to use `add_design()` to add the statistical model. Besides the DIAlist, the only argument this function takes in is a formula of the desired statistical model. In the previous code of the package, this was done by specifying column names, and there were some limitations around model specification (intercept vs. no-intercept, inclusion of interactions, etc). Now, there's much more flexibility. The "default" model we often use (a no intercept model with "group" as the only statistical factor) would be:
 
 ```{r}
-norm_data <- add_design(data,
+norm_data <- add_design(norm_data,
                         design_formula = ~ 0 + group)
 ```
 
 You could also specify a model with intercepts:
 
 ```{r}
-norm_data <- add_design(data,
+norm_data <- add_design(norm_data,
                         design_formula = ~ group)
 ```
 
 More complicated things like interactions:
 
 ```{r}
-norm_data <- add_design(data,
+norm_data <- add_design(norm_data,
                         design_formula = ~ treatment*genotype)
 ```
 
@@ -243,7 +243,7 @@ norm_data <- add_design(data,
 Or even go crazy including random factors (though you can only include one, and only for intercepts):
 
 ```{r}
-norm_data <- add_design(data,
+norm_data <- add_design(norm_data,
                         design_formula = ~ treatment*genotype + (1 | batch))
 ```
 
@@ -304,7 +304,7 @@ write_limma_tables(full_chain,
 
 
 ```{r}
-write_limma_plots(results_higgs,
+write_limma_plots(full_chain,
                   grouping_column = "group")
 ```
 
