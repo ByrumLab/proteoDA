@@ -18,3 +18,4 @@ FALSE indicates that the one or more dataframes do not have matching rownames wi
 \description{
 Internal function that checks that the rownames of set of dataframes have matching rownames in a reference set
 }
+\keyword{internal}

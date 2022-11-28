@@ -12,7 +12,7 @@
 #' @return A data frame containing the selected metric,
 #'   ready to be used for plotting.
 #'
-#' @export
+#' @keywords internal
 #'
 #' @seealso \code{\link{norm_metrics}}
 #'
@@ -65,6 +65,7 @@ eval_pn_metric_for_plot <- function(normList,
 #' @importFrom ggplot2 theme_bw theme element_text element_blank element_rect
 #' @importFrom ggplot2 xlab ylab ggtitle coord_cartesian unit facet_wrap
 #'
+#' @keywords internal
 #' @examples
 #' # No examples yet
 #'
@@ -163,7 +164,7 @@ pn_density_plot <- function(plotData) {
 #'
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_PCV <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
@@ -175,7 +176,7 @@ pn_plot_PCV <- function(normList, grouping) {
 }
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_PMAD <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
@@ -187,7 +188,7 @@ pn_plot_PMAD <- function(normList, grouping) {
 }
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_PEV <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
@@ -199,7 +200,7 @@ pn_plot_PEV <- function(normList, grouping) {
 }
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_COR <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
@@ -211,7 +212,7 @@ pn_plot_COR <- function(normList, grouping) {
 }
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
 
@@ -263,7 +264,7 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
 
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_MD <- function(normList, grouping) {
 

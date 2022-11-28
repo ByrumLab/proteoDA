@@ -44,7 +44,7 @@ remove_commas <- function(x) {
 #'
 #' @return A factor vector
 #'
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet
@@ -70,7 +70,8 @@ make_factor <- function(x, prefix = "X") {
 #'   differences
 #'
 #' @return A vector of all pairwise differences between the elements in the vector
-#' @export
+#'
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet
@@ -88,7 +89,8 @@ all_pw_diffs <- function(vector) {
 #' @param group A vector of group names.
 #'
 #' @return A vector of colors for each unique group
-#' @export
+#'
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet
@@ -146,6 +148,8 @@ colorGroup <- function(group) {
 #' @return If filename checks out, returns invisible TRUE. Otherwise, throws
 #' error.
 #'
+#' @keywords internal
+#'
 #' @examples
 #' # No examples yet
 validate_filename <- function(filename, allowed_exts, check_space = T) {
@@ -176,6 +180,8 @@ validate_filename <- function(filename, allowed_exts, check_space = T) {
 #'
 #' @return A string of the file extension. When no extension was detected, an empty string.
 #'
+#' @keywords internal
+#'
 #' @examples
 #' # No examples yet
 file_extension <- function(filepath) {
@@ -195,6 +201,8 @@ file_extension <- function(filepath) {
 #'
 #' @return A numeric vector of appropriate length, named if input was named, with
 #'   per-row variances.
+#'
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet.
@@ -216,6 +224,8 @@ rowVars <- function(x, ...) {
 #' @return A numeric vector of appropriate length, named if input was named, with
 #'   per-row standard deviations
 #'
+#' @keywords internal
+#'
 #' @examples
 #' # No examples yet.
 rowSds <- function(x, ...) {
@@ -234,6 +244,8 @@ rowSds <- function(x, ...) {
 #' @return A numeric vector of appropriate length, named if input was named, with
 #'   per-row medians
 #'
+#' @keywords internal
+#'
 #' @examples
 #' # No examples yet.
 rowMedians <- function(x, ...) { # Much slower than the matrixStats version, which uses C
@@ -250,6 +262,8 @@ rowMedians <- function(x, ...) { # Much slower than the matrixStats version, whi
 #' @param ... Additional arguments to be passed to internal functions.
 #'   Meant for na.rm.
 #'
+#' @keywords internal
+#'
 #' @return A numeric vector of appropriate length, named if input was named, with
 #'   per-row MADs
 #'
@@ -264,6 +278,8 @@ rowMads <- function(x, ...) {
 #'
 #' @param obj A list of dataframes to evaluate
 #' @param ref_rows A vector of row names to which the row names of each obj dataframe will be compared
+#'
+#' @keywords internal
 #'
 #' @return A logical, with TRUE indicating all dataframes have matching rows in the reference set, and
 #' FALSE indicates that the one or more dataframes do not have matching rownames with the reference

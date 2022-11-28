@@ -16,9 +16,9 @@
 #'   some metrics can't be calculated for only one group.
 #' @param overwrite Should report file be overwritten if it already exists?
 #'   Default is FALSE.
-#' @param out_dir The directory in which to save the report. If not provided,
+#' @param output_dir The directory in which to save the report. If not provided,
 #'   will default to "protein_analysis/01_quality_control".
-#' @param file The file name of the report to be saved. Must end in .pdf. Will
+#' @param filename The file name of the report to be saved. Must end in .pdf. Will
 #'   default to "proteiNorm_Report.pdf" if no filename is provided.
 #' @param suppress_zoom_legend Should the legend be removed from the zoomed
 #'   log2ratio plot? Default is FALSE
@@ -39,8 +39,8 @@
 #'
 write_proteinorm_report <- function(DIAlist,
                                    grouping_column = NULL,
-                                   out_dir = NULL,
-                                   file = NULL,
+                                   output_dir = NULL,
+                                   filename = NULL,
                                    overwrite = FALSE,
                                    suppress_zoom_legend = FALSE) {
 
@@ -82,14 +82,14 @@ write_proteinorm_report <- function(DIAlist,
   }
 
   # Set default dir if not provided
-  if (is.null(out_dir)) {
-    out_dir <- file.path("protein_analysis", "01_quality_control")
-    cli::cli_inform(cli::col_yellow("{.arg out_dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
+  if (is.null(output_dir)) {
+    output_dir <- file.path("protein_analysis", "01_quality_control")
+    cli::cli_inform(cli::col_yellow("{.arg output_dir} argument is empty. Setting output directory to: {.path {output_dir}}"))
   }
   # Set default report name if not provided
-  if (is.null(file)) {
-    file <- "proteiNorm_Report.pdf"
-    cli::cli_inform(cli::col_yellow("{.arg file} argument is empty. Saving report to: {.path {out_dir}/{file}}"))
+  if (is.null(filename)) {
+    filename <- "proteiNorm_Report.pdf"
+    cli::cli_inform(cli::col_yellow("{.arg filename} argument is empty. Saving report to: {.path {output_dir}/{filename}}"))
   }
 
 
@@ -105,21 +105,21 @@ write_proteinorm_report <- function(DIAlist,
   ##################
 
  # Make directory if it doesn't exist
-  if (!dir.exists(out_dir)) {
-    dir.create(out_dir, recursive = T)
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = T)
   }
 
   # Check that the filename is a pdf
-  validate_filename(file, allowed_exts = c("pdf"))
+  validate_filename(filename, allowed_exts = c("pdf"))
 
   # If file already exists, inform about overwriting or through an error
-  if (file.exists(file.path(out_dir, file))) {
+  if (file.exists(file.path(output_dir, filename))) {
     if (overwrite) {
-      cli::cli_inform("{.path {file}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
+      cli::cli_inform("{.path {filename}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
     } else {
-      cli::cli_abort(c("{.path {file}} already exists in {.path {out_dir}}",
+      cli::cli_abort(c("{.path {filename}} already exists in {.path {output_dir}}",
                        "!" = "and {.arg overwrite} == {.val {overwrite}}",
-                       "i" = "Give {.arg file} a unique name or set {.arg overwrite} to {.val TRUE}"))
+                       "i" = "Give {.arg filename} a unique name or set {.arg overwrite} to {.val TRUE}"))
     }
   }
 
@@ -154,19 +154,19 @@ write_proteinorm_report <- function(DIAlist,
   plots_list <-  list(patchwork::patchworkGrob(page_1), page_2)
 
   # Then save
-  cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
-  ggsave(file.path(out_dir, file),
+  cli::cli_inform("Saving report to: {.path {file.path(output_dir, filename)}}")
+  ggsave(file.path(output_dir, filename),
          plot = gridExtra::marrangeGrob(grobs = plots_list, nrow = 1, ncol = 1, top = NA),
          height = 8.5,
          width = 11,
          units = "in")
 
-  if (!file.exists(file.path(out_dir, file))) {
-    cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
+  if (!file.exists(file.path(output_dir, filename))) {
+    cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
 
   cli::cli_inform(c("v" = "Success"))
 
-  invisible(file.path(out_dir, file))
+  invisible(file.path(output_dir, filename))
 }
 

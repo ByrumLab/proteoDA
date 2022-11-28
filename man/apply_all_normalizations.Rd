@@ -24,3 +24,4 @@ returning a list of the data normalized with each method. Used internally in
 # No examples yet
 
 }
+\keyword{internal}

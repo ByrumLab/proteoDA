@@ -47,3 +47,4 @@ of each metric.
 # No examples yet
 
 }
+\keyword{internal}

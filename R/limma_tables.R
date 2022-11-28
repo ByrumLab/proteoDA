@@ -109,9 +109,9 @@ write_limma_tables <- function(DIAlist,
                      lapply(X = names(DIAlist$results),
                             FUN = summarize_contrast_DE,
                             contrast_res_list = DIAlist$results))
-  summary$pval_thresh <- DIAlist$tags$DE_criteria$pval.thresh
-  summary$lfc_thresh <- DIAlist$tags$DE_criteria$lfc.thresh
-  summary$p_adj_method <- DIAlist$tags$DE_criteria$adj.method
+  summary$pval_thresh <- DIAlist$tags$DE_criteria$pval_thresh
+  summary$lfc_thresh <- DIAlist$tags$DE_criteria$lfc_thresh
+  summary$p_adj_method <- DIAlist$tags$DE_criteria$adj_method
 
   utils::write.csv(x = summary,
                    file = summary_output_file,
@@ -182,8 +182,8 @@ write_limma_tables <- function(DIAlist,
                     annotation = DIAlist$annotation,
                     data = DIAlist$data,
                     norm.method = DIAlist$tags$norm_method,
-                    pval.thresh = DIAlist$tags$DE_criteria$pval.thresh,
-                    lfc.thresh = DIAlist$tags$DE_criteria$lfc.thresh,
+                    pval_thresh = DIAlist$tags$DE_criteria$pval_thresh,
+                    lfc_thresh = DIAlist$tags$DE_criteria$lfc_thresh,
                     add_filter = add_filter)
 
   if (!file.exists(excel_output_file)) {
@@ -324,8 +324,8 @@ create_combined_results <- function(annotation,
 #' @param data A dataframe containing the average expression data for each sample.
 #' @param norm.method The method that was used to normalize the data for the
 #'   statistical model being output.
-#' @param pval.thresh The p-value threshold that was used to determine significance.
-#' @param lfc.thresh The logFC threshold that was used to determine significance.
+#' @param pval_thresh The p-value threshold that was used to determine significance.
+#' @param lfc_thresh The logFC threshold that was used to determine significance.
 #' @param add_filter Should per-column filters be added to the spreadsheet?
 #'
 #' @return Invisibly returns a list, where the first element is the filename
@@ -335,7 +335,7 @@ create_combined_results <- function(annotation,
 #' @examples
 #' # No examples yet
 write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
-                              pval.thresh, lfc.thresh, add_filter) {
+                              pval_thresh, lfc_thresh, add_filter) {
 
 
   # Maybe some argument processing
@@ -540,12 +540,12 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
     normStyle <- openxlsx::createStyle(fontColour="#000000", bgFill="#FFFFFF")
 
     fc.col    <- grep("logFC", colnames(stats)) + stat.start - 1
-    fc.rule1  <- paste0(">=", lfc.thresh)
-    fc.rule2  <- paste0("<=", -lfc.thresh)
+    fc.rule1  <- paste0(">=", lfc_thresh)
+    fc.rule2  <- paste0("<=", -lfc_thresh)
     fdr.col   <- grep("adj.P.Val", colnames(stats)) + stat.start - 1
-    fdr.rule  <- paste0("<=", pval.thresh)
+    fdr.rule  <- paste0("<=", pval_thresh)
     pval.col  <- grep("P.Value", colnames(stats)) + stat.start - 1
-    pval.rule <- paste0("<=", pval.thresh)
+    pval.rule <- paste0("<=", pval_thresh)
 
 
     openxlsx::conditionalFormatting(wb, sheet = sheetName,

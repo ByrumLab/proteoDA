@@ -15,8 +15,9 @@ A  data frame of cleaned up annotation data, with protein info
 \description{
 Third subfunction called by \code{\link{read_DIA_data}}. Processes the raw
 protein annotation strings to extract standard gene names,
-accession numbers, and Ids.
+accession numbers, and Ids. FOR INTERNAL UAMS USE.
 }
 \examples{
 # No examples yet
 }
+\keyword{internal}

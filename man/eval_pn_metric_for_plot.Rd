@@ -35,3 +35,4 @@ data matrices and outputs the results in a data frame for plotting.
 \seealso{
 \code{\link{norm_metrics}}
 }
+\keyword{internal}

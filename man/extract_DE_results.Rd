@@ -6,21 +6,21 @@
 \usage{
 extract_DE_results(
   DIAlist,
-  pval.thresh = 0.055,
-  lfc.thresh = 1,
-  adj.method = "BH"
+  pval_thresh = 0.055,
+  lfc_thresh = 1,
+  adj_method = "BH"
 )
 }
 \arguments{
 \item{DIAlist}{A DIAlist, which must contain a statistical design.}
 
-\item{pval.thresh}{The p-value threshold used to determine significance
-(significant when p < pval.thresh). Default is 0.055.}
+\item{pval_thresh}{The p-value threshold used to determine significance
+(significant when p < pval_thresh). Default is 0.055.}
 
-\item{lfc.thresh}{The logFC threshold used to determine significance
+\item{lfc_thresh}{The logFC threshold used to determine significance
 (significant when |logFC| > lfc.tresh). Default is 1. LogFC are base 2.}
 
-\item{adj.method}{The method used for adjusting P-values. Default is "BH",
+\item{adj_method}{The method used for adjusting P-values. Default is "BH",
 for the Benjamini-Hochberg correction}
 }
 \value{

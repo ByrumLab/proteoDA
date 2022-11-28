@@ -18,15 +18,7 @@ case all sample IDs are analyzed. These are determined from column names.}
 A prototype of our new S3 list type.
 }
 \description{
-A function to extract and load DIA MaxQuant data. The \code{read_DIA_data}
-function is the main function, and it calls a number
-of other subfunctions to process and prepare the data. See the links to
-subfunctions for more info. Returns a list of data from maxquant, along with
-some stats and other info. Also has some side effects: creates some log files.
-}
-\details{
-Subfunctions (DIA): \code{\link{read_maxquant_delim}},
-\code{\link{extract_protein_data}}.
+FOR INTERNAL UAMS USE, NEED TO UPDATE
 }
 \examples{
 # No examples yet

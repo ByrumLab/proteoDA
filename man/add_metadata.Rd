@@ -2,7 +2,7 @@
 % Please edit documentation in R/add_metadata.R
 \name{add_metadata}
 \alias{add_metadata}
-\title{Make a targets file}
+\title{Add metadata to a DIAlist}
 \usage{
 add_metadata(DIAlist, metadata_file)
 }
@@ -15,10 +15,7 @@ add_metadata(DIAlist, metadata_file)
 A prototype of our new S3 list type, with added metadata
 }
 \description{
-Creates a dataframe of "targets". Output depends on whether a metadata file
-is supplied, and whether the metadata and targets can be matched successfully
-(see Value, below). Calls two subfunctions: \code{\link{import_meta}} and
-\code{\link{get_dia_sample_number}}.
+Add a dataframe of metadata to a DIAlist object. For UAMS internal use.
 }
 \examples{
 # No examples yet

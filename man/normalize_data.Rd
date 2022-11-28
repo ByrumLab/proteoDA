@@ -6,13 +6,13 @@
 \usage{
 normalize_data(
   DIAlist,
-  method = c("log2", "median", "mean", "vsn", "quantile", "cycloess", "rlr", "gi")
+  norm_method = c("log2", "median", "mean", "vsn", "quantile", "cycloess", "rlr", "gi")
 )
 }
 \arguments{
 \item{DIAlist}{A DIAlist with raw data to be normalized.}
 
-\item{method}{A normalization method to use. Options are "log2", "median",
+\item{norm_method}{A normalization method to use. Options are "log2", "median",
 "mean", "vsn", "quantile", "cycloess", "rlr", and "gi".}
 }
 \value{

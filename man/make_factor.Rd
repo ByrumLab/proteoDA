@@ -24,3 +24,4 @@ instead.
 # No examples yet
 
 }
+\keyword{internal}

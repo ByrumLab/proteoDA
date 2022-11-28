@@ -21,3 +21,4 @@ plots in our reports.
 \examples{
 # No examples yet
 }
+\keyword{internal}

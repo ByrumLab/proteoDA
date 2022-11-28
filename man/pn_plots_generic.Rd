@@ -30,3 +30,4 @@ to create the final plot objects.
 # No examples yet
 
 }
+\keyword{internal}

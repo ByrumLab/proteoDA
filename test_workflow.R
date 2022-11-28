@@ -9,7 +9,7 @@ library(tidyverse)
 
 
 # For figuring out argument names
-#lsf.str("package:proteomicsDIA")
+# lsf.str("package:proteomicsDIA")
 
 CreatePackageReport("proteomicsDIA")
 
@@ -60,9 +60,6 @@ reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafi
 
 kaul <- add_metadata(kaul, "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv")
 
-target_porter <- make_targets("for_testing/Example Data/porter/metafile_DIA_TJT.csv",
-                              sample_IDs = colnames(ext_porter$data))
-
 # filter samples --------------------------------------------------------------
 sub_higgs <- filter_samples(higgs, group != "Pool")
 
@@ -79,9 +76,6 @@ sub_kaul <- filter_samples(kaul, group != "Pool")
 
 # filter proteins ---------------------------------------------------------
 
-sub_porter <- subset_targets(targets = target_porter,
-                             filter_list = list(group = "Pool",
-                                                sample = "S2117"))
 filtered_higgs <- filter_proteins_contaminants(sub_higgs) %>%
   filter_proteins_by_group(min_reps = 5, min_groups = 3)
 
@@ -106,7 +100,7 @@ filtered_kaul <- filter_proteins_contaminants(sub_kaul) %>%
 
 # Normalization report ----------------------------------------------------
 # Higgs
-write_proteinorm_report(full_higgs_chain,
+write_proteinorm_report(filtered_higgs,
                         grouping_column = "group",
                         file = "higgs_update_2.pdf", overwrite = T)
 
@@ -153,62 +147,63 @@ norm_zhan <- filtered_zhan %>%
   normalize_data("cycloess")
 
 # Make QC report ----------------------------------------------------------
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
+  filter_samples(group != "Pool") %>%
+  filter_proteins_contaminants() %>%
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
+  filter_proteins_by_proportion(min_prop = 1) %>%
+  normalize_data(norm_method = "cycloess")
+
 write_qc_report(full_higgs_chain,
                 grouping_column = "group",
-                file = "higgs_qc_update.pdf",
+                filename = "higgs_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(full_higgs_chain,
                 grouping_column = "group",
                 label_column = "sampleIDs",
-                file = "higgs_qc_update_samplelabs.pdf",
+                filename = "higgs_qc_update_samplelabs.pdf",
                 overwrite = T)
 
 write_qc_report(norm_ndu,
                 grouping_column = "group",
-                file = "ndu_qc_update.pdf",
+                filename = "ndu_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(norm_ndu,
-                file = "ndu_qc_update_batch.pdf",
+                filename = "ndu_qc_update_batch.pdf",
                 overwrite = T)
 
 
 write_qc_report(norm_lupashin,
                 grouping_column = "group",
-                file = "lupashin_qc_update.pdf",
+                filename = "lupashin_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(norm_zhan,
                 grouping_column = "group",
-                file = "zhan_qc_update.pdf",
+                filename = "zhan_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(norm_reb,
                 grouping_column = "group",
-                file = "rebello_qc_update.pdf",
+                filename = "rebello_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(norm_kaul,
                 grouping_column = "group",
-                file = "kaul_qc_update.pdf",
+                filename = "kaul_qc_update.pdf",
                 overwrite = T)
 
-write_qc_report(processed_data = norm_porter,
-                chosen_norm_method = "vsn",
-                grouping_column = "group",
-                file = "porter_qc_update.pdf",
-                overwrite = T)
-
-norm_porter$targets$group
 
 # Make design -------------------------------------------------------------
 norm_ndu$metadata <- norm_ndu$metadata %>%
   separate(group, into = c("treatment", "tissue"), remove = F)
 
-
 norm_kaul <- add_design(norm_kaul,
-                        ~ 0 +group + gender)
+                        ~ 0 + group + gender)
 
 norm_lupashin <- add_design(norm_lupashin,
                             design_formula = "~ 0 + group")
@@ -233,7 +228,7 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
   filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
   filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
   filter_proteins_by_proportion(min_prop = 1) %>%
-  normalize_data(method = "cycloess") %>%
+  normalize_data(norm_method = "cycloess") %>%
   add_design(~0 +group)
 
 # Make contrasts ----------------------------------------------------------
@@ -246,9 +241,7 @@ norm_ndu <- norm_ndu %>%
   add_contrasts(contrasts_file = "for_testing/Example Data/NDu_030822_DIA/input_files/kidney_contrasts.txt")
 
 #kaul
-norm_kaul$metadata$gender <- factor(norm_kaul$metadata$gender, levels = c("male", "female"))
-norm_kaul <- norm_kaul %>%
-  add_contrasts(contrasts_file = "for_testing/Example Data/kaul/contrasts_designfomula.csv")
+norm_kaul$metadata$gender <- factor(norm_kaul$metadata$gender, levels = c("female", "male"))
 
 
 # Lupashin
@@ -297,7 +290,7 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
   filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
   filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
   filter_proteins_by_proportion(min_prop = 1) %>%
-  normalize_data(method = "cycloess") %>%
+  normalize_data(norm_method = "cycloess") %>%
   add_design(~group)
 
 
@@ -362,9 +355,6 @@ write_limma_plots(results_reb,
 write_limma_plots(results_lupashin,
                   grouping_column = "group",
                   output_dir = "Lupashin_s3obj")
-
-
-
 
 write_limma_plots(results_ndu,
                   grouping_column = "group",

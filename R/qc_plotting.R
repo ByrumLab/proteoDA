@@ -14,7 +14,7 @@
 #' @return A ggplot object of the plot.
 #'
 #' @importFrom ggplot2 ggplot aes geom_violin scale_fill_manual theme_bw theme element_text element_blank ylab
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet
@@ -73,7 +73,7 @@ qc_violin_plot <- function(data,
 #'   Default is c(1,2), to plot the first two principal components.
 #'
 #' @return A ggplot object of the plot.
-#' @export
+#' @keywords internal
 #'
 #' @importFrom ggplot2 ggplot aes geom_point scale_color_manual theme_bw theme xlab ylab element_text
 #'
@@ -150,7 +150,7 @@ qc_pca_plot <- function(data,
 #'   is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.
 #'
 #' @return A ggplot object of the plot.
-#' @export
+#' @keywords internal
 #'
 #' @importFrom ggplot2 aes theme element_text margin
 #' @importFrom ggtree %<+%
@@ -231,7 +231,7 @@ qc_dendro_plot <- function(data,
 #'
 #' @return A \code{\link[grid:gTree]{grid::gTree}} object of the ComplexHeatmap,
 #'   which can be plotted with \code{\link[grid:grid.draw]{grid::grid.draw}}.
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet
@@ -330,7 +330,7 @@ qc_corr_hm <- function(data,
 #'
 #' @return A \code{\link[grid:gTree]{grid::gTree}} object of the ComplexHeatmap,
 #'   which can be plotted with \code{\link[grid:grid.draw]{grid::grid.draw}}.
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet.

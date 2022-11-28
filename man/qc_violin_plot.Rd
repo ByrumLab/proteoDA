@@ -27,3 +27,4 @@ argument on the x-axis.
 \examples{
 # No examples yet
 }
+\keyword{internal}

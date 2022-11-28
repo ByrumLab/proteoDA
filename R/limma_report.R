@@ -116,12 +116,12 @@ write_limma_plots <- function(DIAlist = NULL,
     # make and save static plots
     for (type in c("raw", "adjusted")) {
       volcano <- static_volcano_plot(data,
-                                     lfc.thresh = DIAlist$tags$DE_criteria$lfc.thresh,
-                                     pval.thresh = DIAlist$tags$DE_criteria$pval.thresh,
-                                     contrast = contrast, pval.type = type)
+                                     lfc_thresh = DIAlist$tags$DE_criteria$lfc_thresh,
+                                     pval_thresh = DIAlist$tags$DE_criteria$pval_thresh,
+                                     contrast = contrast, pval_type = type)
       MD <- static_MD_plot(data,
-                           lfc.thresh = DIAlist$tags$DE_criteria$lfc.thresh,
-                           contrast = contrast, pval.type = type)
+                           lfc_thresh = DIAlist$tags$DE_criteria$lfc_thresh,
+                           contrast = contrast, pval_type = type)
       ggsave(filename = file.path("static_plots", paste0(paste(contrast, "volcano", type, "pval", sep = "-"), ".pdf")),
              plot = volcano,
              height = 6,
@@ -184,6 +184,8 @@ write_limma_plots <- function(DIAlist = NULL,
 #'
 #' @return A data frame of model results for the given contrast
 #'
+#' @keywords internal
+#'
 #' @examples
 #' # No examples yet
 prep_plot_model_data <- function(model_results, contrast) {
@@ -213,26 +215,28 @@ prep_plot_model_data <- function(model_results, contrast) {
 #'
 #' @param data Per-contrast DE results to be plotted, as prepared by
 #'   \code{\link{prep_plot_model_data}}.
-#' @param lfc.thresh The logFC threshold used to determine significance
+#' @param lfc_thresh The logFC threshold used to determine significance
 #'   (significant when |logFC| > lfc.tresh). LogFC are base 2.
-#' @param pval.thresh The p-value threshold used to determine significance
-#'   (significant when p < pval.thresh).
+#' @param pval_thresh The p-value threshold used to determine significance
+#'   (significant when p < pval_thresh).
 #' @param contrast The contrast being plotted. Used for generating the plot title.
-#' @param pval.type The type of p-value to plot. Can be "raw" or "adjusted".
+#' @param pval_type The type of p-value to plot. Can be "raw" or "adjusted".
 #'
 #' @importFrom ggplot2 ggplot geom_vline geom_hline geom_point aes xlab ylab scale_color_manual scale_alpha_manual theme_bw ggtitle scale_y_continuous
 #'
 #' @return A ggplot object.
 #'
+#' @keywords internal
+#'
 #' @examples
 #' # No examples yet
-static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.type) {
+static_volcano_plot <- function(data, lfc_thresh, pval_thresh, contrast, pval_type) {
 
   base <- ggplot(data = data) +
-    geom_vline(xintercept = lfc.thresh*c(-1,1),
+    geom_vline(xintercept = lfc_thresh*c(-1,1),
                linetype = "dashed",
                color = "grey50") +
-    geom_hline(yintercept = -log10(pval.thresh),
+    geom_hline(yintercept = -log10(pval_thresh),
                linetype = "dashed",
                color = "grey50") +
     xlab("log FC") +
@@ -245,9 +249,9 @@ static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.ty
                                   "upReg" = 1),
                        name = "DE status") +
     theme_bw() +
-    ggtitle(paste0(stringr::str_replace(contrast, "_vs_", " vs "), ", ", pval.type, " p-value"))
+    ggtitle(paste0(stringr::str_replace(contrast, "_vs_", " vs "), ", ", pval_type, " p-value"))
 
-  if (pval.type == "raw") {
+  if (pval_type == "raw") {
     final <- base +
       geom_point(aes(x = .data$logFC,
                      y = -log10(.data$P.Value),
@@ -255,7 +259,7 @@ static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.ty
                      alpha = .data$sig.pval.fct), na.rm = T) +
       scale_y_continuous(breaks = seq(from = 0, to = ceiling(max(-log10(data$P.Value), na.rm = T)) + 1, by = 1)) +
       ylab("-log10(P)")
-  } else if (pval.type == "adjusted") {
+  } else if (pval_type == "adjusted") {
     final <- base +
       geom_point(aes(x = .data$logFC,
                      y = -log10(.data$adj.P.Val),
@@ -264,7 +268,7 @@ static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.ty
       scale_y_continuous(breaks = seq(from = 0, to = ceiling(max(-log10(data$adj.P.Val), na.rm = T)) + 1, by = 1)) +
       ylab("-log10(adjP)")
   } else{
-    stop("invalid value for pval.type")
+    stop("invalid value for pval_type")
   }
   final
 }
@@ -275,21 +279,22 @@ static_volcano_plot <- function(data, lfc.thresh, pval.thresh, contrast, pval.ty
 #'
 #' @param data Per-contrast DE results to be plotted, as prepared by
 #'   \code{\link{prep_plot_model_data}}.
-#' @param lfc.thresh The logFC threshold used to determine significance
+#' @param lfc_thresh The logFC threshold used to determine significance
 #'   (significant when |logFC| > lfc.tresh). LogFC are base 2.
 #' @param contrast The contrast being plotted. Used for generating the plot title.
-#' @param pval.type The type of p-value to plot. Can be "raw" or "adjusted".
+#' @param pval_type The type of p-value to plot. Can be "raw" or "adjusted".
 #'
 #' @return A ggplot object
 #'
 #' @importFrom ggplot2 ggplot geom_hline geom_point aes xlab ylab theme_bw ggtitle scale_color_manual scale_alpha_manual
+#' @keywords internal
 #'
 #' @examples
 #' # No examples yet
-static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
+static_MD_plot <- function(data, lfc_thresh, contrast, pval_type) {
 
   base <- ggplot(data = data) +
-    geom_hline(yintercept = lfc.thresh*c(-1,1),
+    geom_hline(yintercept = lfc_thresh*c(-1,1),
                linetype = "dashed",
                color = "grey50") +
     xlab("average normalized intensity") +
@@ -303,22 +308,22 @@ static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
                        name = "DE status") +
     ylab("log FC") +
     theme_bw() +
-    ggtitle(paste0(stringr::str_replace(contrast, "_vs_", " vs "), ", ", pval.type, " p-value"))
+    ggtitle(paste0(stringr::str_replace(contrast, "_vs_", " vs "), ", ", pval_type, " p-value"))
 
-  if (pval.type == "raw") {
+  if (pval_type == "raw") {
     final <- base +
       geom_point(aes(x = .data$AveExpr,
                      y = .data$logFC,
                      color = .data$sig.pval.fct,
                      alpha = .data$sig.pval.fct), na.rm = T)
-  } else if (pval.type == "adjusted") {
+  } else if (pval_type == "adjusted") {
     final <- base +
       geom_point(aes(x = .data$AveExpr,
                      y = .data$logFC,
                      color = .data$sig.FDR.fct,
                      alpha = .data$sig.FDR.fct), na.rm = T)
   } else{
-    stop("invalid value for pval.type")
+    stop("invalid value for pval_type")
   }
   final
 }
@@ -335,7 +340,7 @@ static_MD_plot <- function(data, lfc.thresh, contrast, pval.type) {
 #'
 #' @importFrom ggplot2 ggplot geom_histogram aes xlim theme_bw xlab theme element_rect
 #'
-#'
+#' @keywords internal
 #' @examples
 #' # No examples yet
 static_pval_histogram <- function(data, contrast) {

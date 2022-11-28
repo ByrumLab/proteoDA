@@ -21,3 +21,4 @@ Internal function for plotting p-value histograms of raw- and adjusted p-values
 \examples{
 # No examples yet
 }
+\keyword{internal}

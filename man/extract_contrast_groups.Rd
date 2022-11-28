@@ -22,3 +22,4 @@ Extract groups from a vector of contrasts
 # No examples yet
 
 }
+\keyword{internal}

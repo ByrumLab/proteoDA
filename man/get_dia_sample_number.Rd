@@ -24,3 +24,4 @@ Extracts the sample number from a vector of sample IDs
 \examples{
 # No examples yet
 }
+\keyword{internal}

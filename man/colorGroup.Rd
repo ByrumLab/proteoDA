@@ -19,3 +19,4 @@ Used to get colors for the groups in our missing value heatmaps.
 # No examples yet
 
 }
+\keyword{internal}
