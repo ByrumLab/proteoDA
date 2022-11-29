@@ -216,8 +216,7 @@ write_qc_report <- function(DIAlist,
   # When > 50 samples,
   # save plots individually on each page
   if (ncol(norm_data) > 50) {
-    plots_list <- list(violin_plot,
-                       pca_plot,
+    plots_list <- list(pca_plot,
                        dendro_plot,
                        correlation_heatmap,
                        miss_heatmap_cluster,
