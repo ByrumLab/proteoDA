@@ -29,9 +29,9 @@ write_limma_plots <- function(DIAlist = NULL,
                               grouping_column = NULL,
                               output_dir = NULL,
                               tmp_subdir = "tmp",
+                              alt_unique_key = NULL,
                               height = 1000,
                               width = 1000) {
-
 
   # Check input arguments generally
   validate_DIAlist(DIAlist)
@@ -111,8 +111,23 @@ write_limma_plots <- function(DIAlist = NULL,
     counts <- DIAlist$data[rownames(data),]
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
     anno <- DIAlist$annotation[rownames(data), ]
+    # Change unique ids if specified
+    if(!is.null(alt_unique_key)){
+      uk.intest <- alt_unique_key %in% colnames(DIAlist$annotation)
+      if(uk.intest) {
+        uk.duptest <- !any(duplicated(as.vector(DIAlist$annotation[alt_unique_key])))
+        if(uk.duptest){
+          rownames(counts) <- as.vector(DIAlist$annotation[rownames(data),alt_unique_key])
+          rownames(anno) <- as.vector(DIAlist$annotation[rownames(data),alt_unique_key])
+          rownames(data) <- as.vector(DIAlist$annotation[rownames(data),alt_unique_key])
+        } else {
+          cli::cli_abort("alt_unique_key was not unique")
+        }
+      } else {
+        cli::cli_abort("alt_unique_key was not found in annotation")
+      } 
+    }
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
-
     # make and save static plots
     for (type in c("raw", "adjusted")) {
       volcano <- static_volcano_plot(data,
