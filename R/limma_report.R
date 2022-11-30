@@ -13,6 +13,9 @@
 #'   plot files. No defaults, must be specified.
 #' @param tmp_subdir The subdirectory within the output directory in which to
 #'   store temporary files. Deleted by default. Default is "tmp".
+#' @param alt_unique_key This value relates to a column name in the
+#'  annotation that the user would prefer to appear as the title of protein
+#'  count XYPlots. The column selected must contain unique values for each protein.
 #' @param height The height of the interactive report objects, in pixels.
 #'   Default is 1000.
 #' @param width The width of the interactive report objects, in pixels.
