@@ -1,21 +1,23 @@
 #' Make interactive reports on DE
 #'
 #' A wrapper function that creates and saves interactive HTML reports summarizing
-#' differential expression analyses for each contrast. Creates one HTML report
+#' differential abundance analyses for each contrast. Creates one HTML report
 #' for each contrast. Also creates and saves a set of static .pdf plots. Current
 #' behavior is to overwrite any previous reports or other files with the same name.
 #'
 #' @param DIAlist A DIAlist object, with statistical results.
 #' @param grouping_column The name of the column in the metadata which
 #'   gives information on how to group samples for the interactive
-#'   expression plot.
+#'   abundance plot.
 #' @param output_dir The directory in which to create the reports and save the
 #'   plot files. No defaults, must be specified.
 #' @param tmp_subdir The subdirectory within the output directory in which to
 #'   store temporary files. Deleted by default. Default is "tmp".
-#' @param alt_unique_key This value relates to a column name in the
+#' @param key_column [OPTIONAL] This value relates to a column name in the
 #'  annotation that the user would prefer to appear as the title of protein
 #'  count XYPlots. The column selected must contain unique values for each protein.
+#'  For example: key_column="Uniprot_ID" could be possible list of unique ids in
+#'  your annotations.
 #' @param height The height of the interactive report objects, in pixels.
 #'   Default is 1000.
 #' @param width The width of the interactive report objects, in pixels.
@@ -32,7 +34,7 @@ write_limma_plots <- function(DIAlist = NULL,
                               grouping_column = NULL,
                               output_dir = NULL,
                               tmp_subdir = "tmp",
-                              alt_unique_key = NULL,
+                              key_column = NULL,
                               height = 1000,
                               width = 1000) {
 
@@ -115,19 +117,19 @@ write_limma_plots <- function(DIAlist = NULL,
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
     anno <- DIAlist$annotation[rownames(data), ]
     # Change unique ids if specified
-    if(!is.null(alt_unique_key)){
-      uk.intest <- alt_unique_key %in% colnames(DIAlist$annotation)
+    if(!is.null(key_column)){
+      uk.intest <- key_column %in% colnames(DIAlist$annotation)
       if(uk.intest) {
-        uk.duptest <- !any(duplicated(as.vector(DIAlist$annotation[alt_unique_key])))
+        uk.duptest <- !any(duplicated(as.vector(DIAlist$annotation[key_column])))
         if(uk.duptest){
-          rownames(counts) <- as.vector(DIAlist$annotation[rownames(data),alt_unique_key])
-          rownames(anno) <- as.vector(DIAlist$annotation[rownames(data),alt_unique_key])
-          rownames(data) <- as.vector(DIAlist$annotation[rownames(data),alt_unique_key])
+          rownames(counts) <- as.vector(DIAlist$annotation[rownames(data),key_column])
+          rownames(anno) <- as.vector(DIAlist$annotation[rownames(data),key_column])
+          rownames(data) <- as.vector(DIAlist$annotation[rownames(data),key_column])
         } else {
-          cli::cli_abort("alt_unique_key was not unique")
+          cli::cli_abort("key_column was not unique")
         }
       } else {
-        cli::cli_abort("alt_unique_key was not found in annotation")
+        cli::cli_abort("key_column was not found in annotation")
       } 
     }
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
