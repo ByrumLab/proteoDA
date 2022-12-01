@@ -9,6 +9,7 @@ write_limma_plots(
   grouping_column = NULL,
   output_dir = NULL,
   tmp_subdir = "tmp",
+  key_column = NULL,
   height = 1000,
   width = 1000
 )
@@ -18,13 +19,19 @@ write_limma_plots(
 
 \item{grouping_column}{The name of the column in the metadata which
 gives information on how to group samples for the interactive
-expression plot.}
+abundance plot.}
 
 \item{output_dir}{The directory in which to create the reports and save the
 plot files. No defaults, must be specified.}
 
 \item{tmp_subdir}{The subdirectory within the output directory in which to
 store temporary files. Deleted by default. Default is "tmp".}
+
+\item{key_column}{\link{OPTIONAL} This value relates to a column name in the
+annotation that the user would prefer to appear as the title of protein
+count XYPlots. The column selected must contain unique values for each protein.
+For example: key_column="Uniprot_ID" could be possible list of unique ids in
+your annotations.}
 
 \item{height}{The height of the interactive report objects, in pixels.
 Default is 1000.}
@@ -37,7 +44,7 @@ Invisibly returns the input DIAlist.
 }
 \description{
 A wrapper function that creates and saves interactive HTML reports summarizing
-differential expression analyses for each contrast. Creates one HTML report
+differential abundance analyses for each contrast. Creates one HTML report
 for each contrast. Also creates and saves a set of static .pdf plots. Current
 behavior is to overwrite any previous reports or other files with the same name.
 }
