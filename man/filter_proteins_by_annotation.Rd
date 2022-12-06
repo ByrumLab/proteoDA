@@ -2,22 +2,53 @@
 % Please edit documentation in R/filter_proteins.R
 \name{filter_proteins_by_annotation}
 \alias{filter_proteins_by_annotation}
-\title{Remove proteins by annotations}
+\title{Remove proteins based on annotation data}
 \usage{
 filter_proteins_by_annotation(DIAlist, condition)
 }
 \arguments{
-\item{DIAlist}{A DIAlist object to be filtered}
+\item{DIAlist}{A DIAlist object to be filtered.}
 
-\item{condition}{A logical expression indicating which samples to keep.}
+\item{condition}{An expression that returns a logical value, defined in terms
+of variables present in the annotation dataframe of the supplied DIAlist.
+Proteins are kept if the condition is TRUE for that protein.}
 }
 \value{
-A DIAlist with some proteins filtered out
+A DIAlist, with proteins that do not meet the condition removed.
 }
 \description{
-NEED TO REWRITE
+This function is used to remove proteins from a DIAlist, filtering using data
+in the annotation dataframe of the DIAlist. Proteins which do not produce a
+value of TRUE for the supplied condition are removed from both the data and
+annotation slots of the DIAlist. If condition evaluates to NA, the function
+will return an error.
 }
 \examples{
-# No examples yet
+\dontrun{
+# Suppose the DIAlist$annotation data frame contains three columns:
+# protein_ID = An alpha-numeric ID uniquely identifying a protein
+# protein_name = A character giving the protein name
+# molecular_weight = A numeric value, giving the protein's MW in kDa.
+
+# Remove a specific protein by ID
+filtered <- filter_proteins_by_annotation(DIAlist,
+                                          protein_ID != "abc123")
+
+# Remove any protein which contains "keratin" in the name:
+filtered <- filter_proteins_by_annotation(DIAlist,
+                                          !grepl(pattern = "keratin",
+                                                 x = protein_name))
+
+# Remove any protein with molecular weight < 30 kDa
+filtered <- filter_proteins_by_annotation(DIAlist,
+                                          molecular_weight > 30)
+
+
+# Filtering functions can be chained together
+filtered <- DIAlist |>
+  filter_proteins_by_annotation(!grepl(pattern = "keratin",
+                                       x = protein_name)) |>
+  filter_proteins_by_annotation(molecular_weight > 30)
+}
 
 }

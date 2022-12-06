@@ -36,6 +36,11 @@ validate_DIAlist <- function(x) {
   # Data must be a matrix or data frame
   # TODO: decide on this. Should it just be a data frame?
   # Is matrix allowed?
+
+
+  # TODO: should 0s be allowed in data? Or should they automatically be converted to NAs
+  # when creating the data part of the object?
+
   if (!any(c(is.data.frame(x$data), is.matrix(x$data)))) {
     cli::cli_abort("The {.arg data} slot of a DIAlist must be a dataframe or matrix")
   }
