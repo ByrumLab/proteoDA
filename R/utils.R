@@ -82,7 +82,7 @@ all_pw_diffs <- function(vector) {
 }
 
 
-#' Get colors for groups, function 2
+#' Get colors for groups
 #'
 #' Used to get colors for the groups in our missing value heatmaps.
 #'

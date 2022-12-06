@@ -37,7 +37,24 @@ test_that("all_pw_diffs works as expected", {
 })
 
 # colorGroup()
-# NEED TO ADD
+# don't want to test specific colors, exactly,
+# in case they change
+# Just check that it outputs unique colors with names
+test_that("colorGroup outputs unique colors", {
+
+  # SOme ouputputs, in different branches of the function
+  three_output <- colorGroup(c("A", "B", "C"))
+  eight_output <- colorGroup(c("A", "B", "C", "d", "e", "f", "g", "h"))
+
+  # Just test 1:12. >12 we use grDevices to get colors
+  for (N in 1:12) {
+    input <- as.character(1:N)
+    output <- colorGroup(input)
+    expect_true(length(names(output)) == N)
+    expect_true(length(unique(output)) == N)
+  }
+
+})
 
 # validate_filename()
 test_that("validate_filename works as expected", {
