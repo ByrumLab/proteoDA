@@ -2,23 +2,26 @@
 % Please edit documentation in R/filter_proteins.R
 \name{filter_proteins_contaminants}
 \alias{filter_proteins_contaminants}
-\title{Remove protein contaminant rows}
+\title{Remove protein contaminant}
 \usage{
 filter_proteins_contaminants(DIAlist)
 }
 \arguments{
-\item{DIAlist}{A DIAlist object to be filtered}
+\item{DIAlist}{A DIAlist object.}
 }
 \value{
-A DIAlist with contaminants filtered out
+A DIAlist, with contaminant proteins removed.
 }
 \description{
-Not sure if this should be a UAMS function only, or if
-it should stay public. Just calls the general function to
-filter proteins based on annotations, but with some presets
-that we use.
+THIS FUNCTION FOR UAMS INTERNAL USE. This function removes protein contaminants
+based on aspects of protein names that are speciic to UAMS-formatted data.
+Specifically, removes proteins which contain the strings "DECOY" or "Group of"
+in the Protein.Name column, derived from the data output by MaxQuant
 }
 \examples{
-# No examples yet
+\dontrun{
+filtered <- filter_proteins_contaminants(DIAlist)
+}
 
 }
+\keyword{UAMS}

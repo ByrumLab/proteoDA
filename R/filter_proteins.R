@@ -1,18 +1,22 @@
-#' Remove protein contaminant rows
+#' Remove protein contaminant
 #'
-#' Not sure if this should be a UAMS function only, or if
-#' it should stay public. Just calls the general function to
-#' filter proteins based on annotations, but with some presets
-#' that we use.
+#' THIS FUNCTION FOR UAMS INTERNAL USE. This function removes protein contaminants
+#' based on aspects of protein names that are speciic to UAMS-formatted data.
+#' Specifically, removes proteins which contain the strings "DECOY" or "Group of"
+#' in the Protein.Name column, derived from the data output by MaxQuant
 #'
-#' @param DIAlist A DIAlist object to be filtered
+#' @param DIAlist A DIAlist object.
 #'
-#' @return A DIAlist with contaminants filtered out
+#' @return A DIAlist, with contaminant proteins removed.
 #'
 #' @export
 #'
+#' @keywords UAMS
+#'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' filtered <- filter_proteins_contaminants(DIAlist)
+#' }
 #'
 filter_proteins_contaminants <- function(DIAlist) {
 
@@ -32,19 +36,50 @@ filter_proteins_contaminants <- function(DIAlist) {
 }
 
 
-#' Remove proteins by annotations
+#' Remove proteins based on annotation data
 #'
-#' NEED TO REWRITE
+#' This function is used to remove proteins from a DIAlist, filtering using data
+#' in the annotation dataframe of the DIAlist. Proteins which do not produce a
+#' value of TRUE for the supplied condition are removed from both the data and
+#' annotation slots of the DIAlist. If condition evaluates to NA, the function
+#' will return an error.
 #'
-#' @param DIAlist A DIAlist object to be filtered
-#' @param condition A logical expression indicating which samples to keep.
+#' @param DIAlist A DIAlist object to be filtered.
+#' @param condition An expression that returns a logical value, defined in terms
+#'   of variables present in the annotation dataframe of the supplied DIAlist.
+#'   Proteins are kept if the condition is TRUE for that protein.
 #'
-#' @return A DIAlist with some proteins filtered out
+#' @return A DIAlist, with proteins that do not meet the condition removed.
 #'
 #' @export
 #'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' # Suppose the DIAlist$annotation data frame contains three columns:
+#' # protein_ID = An alpha-numeric ID uniquely identifying a protein
+#' # protein_name = A character giving the protein name
+#' # molecular_weight = A numeric value, giving the protein's MW in kDa.
+#'
+#' # Remove a specific protein by ID
+#' filtered <- filter_proteins_by_annotation(DIAlist,
+#'                                           protein_ID != "abc123")
+#'
+#' # Remove any protein which contains "keratin" in the name:
+#' filtered <- filter_proteins_by_annotation(DIAlist,
+#'                                           !grepl(pattern = "keratin",
+#'                                                  x = protein_name))
+#'
+#' # Remove any protein with molecular weight < 30 kDa
+#' filtered <- filter_proteins_by_annotation(DIAlist,
+#'                                           molecular_weight > 30)
+#'
+#'
+#' # Filtering functions can be chained together
+#' filtered <- DIAlist |>
+#'   filter_proteins_by_annotation(!grepl(pattern = "keratin",
+#'                                        x = protein_name)) |>
+#'   filter_proteins_by_annotation(molecular_weight > 30)
+#' }
 #'
 filter_proteins_by_annotation <- function(DIAlist, condition) {
 
@@ -87,25 +122,59 @@ filter_proteins_by_annotation <- function(DIAlist, condition) {
 }
 
 
-#' Filter protein data by number of samples in group.
+#' Filter protein data by number of quantified samples in group.
 #'
-#' NEED TO REWRITE
+#' This function is used to remove proteins from a DIAlist, filtering out proteins
+#' based on levels of missing data in the data dataframe of the DIAlist. The
+#' grouping_column must be a column in the metadata of the DIAlist which lists the
+#' group membership for each sample. The min_reps and min_groups arguments determine
+#' the number of replicates/samples per group (min_reps) and number of groups
+#' (min_groups) in which a protein must have a non-zero, non-missing intensity values
+#' in order to be retained. If the data in the DIAlist contains intensity values of 0,
+#' these are replaced with NAs.
 #'
-#' @param DIAlist A DIAlist to be filtered
+#' @param DIAlist A DIAlist object to be filtered.
 #' @param min_reps The minimum number of replicates/samples within a group
 #'   that need to have non-zero intensity for a given protein/peptide for that
 #'   peptide to be considered as quantified within a group.
 #' @param min_groups The minimum number of groups that must have at
 #'   least min_reps non-zero samples for a given protein/peptide to be retained.
-#' @param grouping_column The name of the column in the metadata which
-#'   lists the experimental group names. Default is "group"
+#' @param grouping_column The name of the column in the metadata which provides
+#'   the group membership for each sample. Default is "group".
 #'
-#' @return A filtered DIAlist
+#' @return A DIAlist, with proteins that are not present in sufficient samples
+#'   and groups removed.
 #' @export
 #'
 #' @examples
-#' # No examples yet
 #'
+#' \dontrun{
+#'   # Suppose the DIAlist contains data from 20 samples across 4
+#'   # experimental groups (5 samples per group), with the group membership
+#'   # listed in a column names "group"
+#'
+#'   # Strict filtering:
+#'   # no missing data
+#'   # Proteins must be present in all samples in all groups
+#'   filtered <- filter_proteins_by_group(DIAlist,
+#'                                        min_reps = 5,
+#'                                        min_groups = 4,
+#'                                        grouping_column = "group")
+#'   # Lax filtering:
+#'   # protein must be present in at least one sample in each group
+#'   filtered <- filter_proteins_by_group(DIAlist,
+#'                                        min_reps = 1,
+#'                                        min_groups = 4,
+#'                                        grouping_column = "group")
+#'
+#'  # Filtering functions can be chained together
+#'  filtered <- DIAlist |>
+#'    filter_proteins_by_annotation(!grepl(pattern = "keratin",
+#'                                         x = protein_name)) |>
+#'    filter_proteins_by_group(min_reps = 1,
+#'                             min_groups = 4,
+#'                             grouping_column = "group")
+#' }
 #'
 filter_proteins_by_group <- function(DIAlist,
                                      min_reps = NULL,
@@ -214,19 +283,57 @@ filter_proteins_by_group <- function(DIAlist,
 }
 
 
-#' Filter protein data by proportion.
+#' Filter protein data by proportion of quantified samples in group.
 #'
-#' NEED TO REWRITE. Not that it rounds integer values down.
+#' This function is used to remove proteins from a DIAlist, filtering out proteins
+#' based on levels of missing data in the data dataframe of the DIAlist. The
+#' grouping_column must be a column in the metadata of the DIAlist which lists the
+#' group membership for each sample. Proteins must have a non-zero, non-missing intensity
+#' value in at least min_prop of samples within each group in order to be retained.
+#' When min_prop leads to a non-integer value for a given group, it is rounded up:
+#' e.g., with 10 samples in a group and a min_prop of 0.75, a protein must be present in
+#' at least 8 samples to be retained. If the data in the DIAlist contains intensity values of 0,
+#' these are replaced with NAs.
+#'
+#' \code{filter_proteins_by_proportion()} is useful when sample sizes are not constant
+#' across groups, allowing similar levels of missingness across groups even when sample sizes
+#' are imbalanced.
 #'
 #' @inheritParams  filter_proteins_by_group
 #' @param min_prop The minimum proportion of samples within a group
 #'   in which a protein must be found for it to be retained.
+#'   Must be a numeric value from 0 to 1.
 #'
-#' @return A filtered DIAlist
+#' @return A DIAlist, with proteins that are not present in sufficient samples
+#'   removed.
 #' @export
 #'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#'   # Suppose the DIAlist contains data from 40 samples across 2
+#'   # experimental groups, with 15 samples in one group and 25 in the other.
+#'   # and group membership listed in a column names "group"
+#'
+#'   # Strict filtering:
+#'   # no missing data
+#'   # Proteins must be present in all samples in all groups
+#'   filtered <- filter_proteins_by_proportion(DIAlist,
+#'                                             min_prop = 1,
+#'                                             grouping_column = "group")
+#'   # moderate filtering:
+#'   # protein must be present in at 50% of samples within each group.
+#'   # That is, 8 samples in the group of 15 and 13 samples in the group of 25.
+#'   filtered <- filter_proteins_by_proportion(DIAlist,
+#'                                             min_prop = 0.5,
+#'                                             grouping_column = "group")
+#'
+#'   # Filtering functions can be chained together
+#'   filtered <- DIAlist |>
+#'     filter_proteins_by_annotation(!grepl(pattern = "keratin",
+#'                                          x = protein_name)) |>
+#'     filter_proteins_by_proportion(min_prop = 0.5,
+#'                                   grouping_column = "group")
+#' }
 #'
 #'
 filter_proteins_by_proportion <- function(DIAlist,
@@ -249,7 +356,7 @@ filter_proteins_by_proportion <- function(DIAlist,
   }
 
   if (min_prop < 0 | min_prop > 1) {
-    cli::cli_abort(c("{.arg min_prop} must be between 0 and 1, not {.val {min_prop}}"))
+    cli::cli_abort(c("{.arg min_prop} must be from 0 and 1, not {.val {min_prop}}"))
   }
 
   cli::cli_inform("Keeping only protein entries with intensity > 0 in at least {.val {min_prop*100}}% of samples in each group")
@@ -262,7 +369,7 @@ filter_proteins_by_proportion <- function(DIAlist,
   # Prep for filtering by getting a vector of group memberships per sample
   # and calculating the threshold for each group
   group_membership <- as.character(DIAlist$metadata[, grouping_column])
-  group_thresholds <-  floor(table(as.character(DIAlist$metadata[, grouping_column]))*min_prop)
+  group_thresholds <-  ceiling(table(as.character(DIAlist$metadata[, grouping_column]))*min_prop)
 
   # Build a results dataframe in advance, empty for now
   protein_passes_threshold_per_group <- as.data.frame(

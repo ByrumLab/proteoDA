@@ -2,7 +2,7 @@
 % Please edit documentation in R/filter_proteins.R
 \name{filter_proteins_by_group}
 \alias{filter_proteins_by_group}
-\title{Filter protein data by number of samples in group.}
+\title{Filter protein data by number of quantified samples in group.}
 \usage{
 filter_proteins_by_group(
   DIAlist,
@@ -12,7 +12,7 @@ filter_proteins_by_group(
 )
 }
 \arguments{
-\item{DIAlist}{A DIAlist to be filtered}
+\item{DIAlist}{A DIAlist object to be filtered.}
 
 \item{min_reps}{The minimum number of replicates/samples within a group
 that need to have non-zero intensity for a given protein/peptide for that
@@ -21,17 +21,51 @@ peptide to be considered as quantified within a group.}
 \item{min_groups}{The minimum number of groups that must have at
 least min_reps non-zero samples for a given protein/peptide to be retained.}
 
-\item{grouping_column}{The name of the column in the metadata which
-lists the experimental group names. Default is "group"}
+\item{grouping_column}{The name of the column in the metadata which provides
+the group membership for each sample. Default is "group".}
 }
 \value{
-A filtered DIAlist
+A DIAlist, with proteins that are not present in sufficient samples
+and groups removed.
 }
 \description{
-NEED TO REWRITE
+This function is used to remove proteins from a DIAlist, filtering out proteins
+based on levels of missing data in the data dataframe of the DIAlist. The
+grouping_column must be a column in the metadata of the DIAlist which lists the
+group membership for each sample. The min_reps and min_groups arguments determine
+the number of replicates/samples per group (min_reps) and number of groups
+(min_groups) in which a protein must have a non-zero, non-missing intensity values
+in order to be retained. If the data in the DIAlist contains intensity values of 0,
+these are replaced with NAs.
 }
 \examples{
-# No examples yet
 
+\dontrun{
+  # Suppose the DIAlist contains data from 20 samples across 4
+  # experimental groups (5 samples per group), with the group membership
+  # listed in a column names "group"
+
+  # Strict filtering:
+  # no missing data
+  # Proteins must be present in all samples in all groups
+  filtered <- filter_proteins_by_group(DIAlist,
+                                       min_reps = 5,
+                                       min_groups = 4,
+                                       grouping_column = "group")
+  # Lax filtering:
+  # protein must be present in at least one sample in each group
+  filtered <- filter_proteins_by_group(DIAlist,
+                                       min_reps = 1,
+                                       min_groups = 4,
+                                       grouping_column = "group")
+
+ # Filtering functions can be chained together
+ filtered <- DIAlist |>
+   filter_proteins_by_annotation(!grepl(pattern = "keratin",
+                                        x = protein_name)) |>
+   filter_proteins_by_group(min_reps = 1,
+                            min_groups = 4,
+                            grouping_column = "group")
+}
 
 }
