@@ -2,7 +2,7 @@
 % Please edit documentation in R/limma_report.R
 \name{write_limma_plots}
 \alias{write_limma_plots}
-\title{Make interactive reports on DE}
+\title{Make interactive reports on differential abundance}
 \usage{
 write_limma_plots(
   DIAlist = NULL,
@@ -27,9 +27,9 @@ plot files. No defaults, must be specified.}
 \item{tmp_subdir}{The subdirectory within the output directory in which to
 store temporary files. Deleted by default. Default is "tmp".}
 
-\item{key_column}{\link{OPTIONAL} This value relates to a column name in the
-annotation that the user would prefer to appear as the title of protein
-count XYPlots. The column selected must contain unique values for each protein.
+\item{key_column}{Optional. The name of a column in the annotation data frame which gives
+unique protein IDs. If provided, values form this column will appear as the title for the
+protein intensity plots in the report. The column must contain unique values for each protein.
 For example: key_column="Uniprot_ID" could be possible list of unique ids in
 your annotations.}
 
@@ -43,11 +43,35 @@ Default is 1000.}
 Invisibly returns the input DIAlist.
 }
 \description{
-A wrapper function that creates and saves interactive HTML reports summarizing
-differential abundance analyses for each contrast. Creates one HTML report
-for each contrast. Also creates and saves a set of static .pdf plots. Current
-behavior is to overwrite any previous reports or other files with the same name.
+Creates and saves interactive HTML reports summarizing
+differential abundance analyses for each contrast in the results slot of the DIAlist.
+Creates one HTML report for each contrast. Also creates a subfolder containing static .pdf
+versions of all interactive plots. Currently, overwrites any previous reports
+or other files with the same name.
 }
 \examples{
+\dontrun{
+  # Using defaults
+  write_limma_plots(DIAlist,
+                    grouping_column = "treatment")
+
+  # Adjust size of report
+  write_limma_plots(DIAlist,
+                    grouping_column = "treatment",
+                    height = 1500,
+                    width = 1500)
+
+ # Customize output directory
+ write_limma_plots(DIAlist,
+                   grouping_column = "treatment",
+                   output_dir = "DA_results")
+
+ # Add titles to the intensity plot,
+ # using the values in the protein_id column
+ # in the annotation of the DIAlist
+ write_limma_plots(DIAlist,
+                   grouping_column = "treatment",
+                   key_column = "protein_id")
+}
 # No examples yet
 }
