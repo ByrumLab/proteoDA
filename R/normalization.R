@@ -1,17 +1,43 @@
 #' Normalize data in a DIAlist
 #'
-#' Normalizes the raw data in a DIAlist.
+#' Normalizes data in a DIAlist, using one of the available normalization options (see Details).
 #'
-#' @param DIAlist A DIAlist with raw data to be normalized.
+#' Available normalization methods: \itemize{
+#'   \item log2- Binary (base2) log transformation.
+#'   \item median- Divides each sample by the per-sample median, then multiplies all samples
+#'     by the average of the per-sample medians.
+#'   \item mean- Divides each sample by the per-sample mean, then multiplies all samples
+#'     by the average of the per-sample means.
+#'   \item vsn- Variance-stabilizing normalization (vsn),
+#'     using the \code{\link[vsn:justvsn]{vsn::justvsn}} function.
+#'   \item quantile- Quantile normalization, using the
+#'     \code{\link[preprocessCore:normalize.quantiles]{preprocessCore::normalize.quantiles}}
+#'      function.
+#'   \item cycloess- Cyclic Loess normalization, using the
+#'     \code{\link[limma:normalizeCyclicLoess]{limma::normalizeCyclicLoess}}
+#'     function.
+#'   \item rlr- Global linear regression normalization, inspired by the
+#'     \code{NormalyzerDE::performGlobalRLRNormalization}
+#'     function, but with a slightly different implementation.
+#'   \item gi- Global intensity normalization, inspired by the
+#'     \code{NormalyzerDE::globalIntensityNormalization}
+#'     function, but with a slightly different implementation. Divides each sample by the
+#'     total intensity for each sample, then multiplies all samples by the median of per-sample
+#'     intensities.
+#'  }
+#'
+#' @param DIAlist A DIAlist containing non-normalized data.
 #' @param norm_method A normalization method to use. Options are "log2", "median",
-#'   "mean", "vsn", "quantile", "cycloess", "rlr", and "gi".
+#'   "mean", "vsn", "quantile", "cycloess", "rlr", and "gi". Default is "log2".
 #'
 #' @return A DIAlist with normalized data.
 #'
 #' @export
 #'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' norm_data <- normalize_data(DIAlist, "log2")
+#' }
 #'
 normalize_data <- function(DIAlist,
                            norm_method = c("log2", "median", "mean", "vsn", "quantile",
@@ -49,56 +75,18 @@ normalize_data <- function(DIAlist,
 }
 
 
-#' Apply all normalizations to a dataframe
-#'
-#' Takes in raw intensity data and applies 8 different normalization methods,
-#' returning a list of the data normalized with each method. Used internally in
-#' \code{\link{write_proteinorm_report}}.
-#'
-#' @param data A dataframe of raw data to be normalized. Rows are proteins and
-#'   columns are raw intensity data.
-#'
-#' @return A list length 8, where each item in the list is a
-#'       named dataframe. Names give the normalization method, and the dataframe
-#'       gives the normalized intensity data
-#'
-#' @keywords internal
-#' @examples
-#' # No examples yet
-#'
-apply_all_normalizations <- function(data) {
-
-  normList <- NULL
-
-  ## apply normalization methods using functions listed above.
-  ## NOTE: most of the normalizations use log2(intensity) as input except
-  ## VSN which normalizes using raw intensities with no log2 transformation.
-  normList[["log2"]]     <- log2Norm(dat = data)
-  normList[["median"]]   <- medianNorm(logDat = normList[["log2"]])
-  normList[["mean"]]     <- meanNorm(logDat = normList[["log2"]])
-  normList[["vsn"]]      <- vsnNorm(dat = data)
-  normList[["quantile"]] <- quantileNorm(logDat = normList[["log2"]])
-  normList[["cycloess"]] <- cycloessNorm(logDat = normList[["log2"]])
-  normList[["rlr"]]      <- rlrNorm(logDat = normList[["log2"]])
-  normList[["gi"]]       <- giNorm(dat = data)
-
-  normList
-}
-
-
-
 #' Normalization functions
 #'
-#' A set of functions that normalize sample data (in columns of a data frame
+#' A set of functions that normalize data (in columns of a data frame
 #' or matrix), according to various methods: \itemize{
-#'   \item log2Norm- A binary (base2) log transformation
-#'   \item medianNorm- Divides by per-sample median, then multiplies by the
-#'     average of the per-sample medians.
-#'   \item meanNorm- Divides by per-sample mean, then multiplies by the
-#'     average of the per-sample means
-#'   \item vsnNorm-  Variance-stabilizing normalization (vsn),
+#'   \item log2Norm- Binary (base2) log transformation.
+#'   \item medianNorm- Divides each sample by the per-sample median, then multiplies all samples
+#'     by the average of the per-sample medians.
+#'   \item meanNorm- Divides each sample by the per-sample mean, then multiplies all samples
+#'     by the average of the per-sample means.
+#'   \item vsnNorm- Variance-stabilizing normalization (vsn),
 #'     using the \code{\link[vsn:justvsn]{vsn::justvsn}} function.
-#'   \item quantileNorm-  Quantile normalization, using the
+#'   \item quantileNorm- Quantile normalization, using the
 #'     \code{\link[preprocessCore:normalize.quantiles]{preprocessCore::normalize.quantiles}}
 #'      function.
 #'   \item cycloessNorm- Cyclic Loess normalization, using the
@@ -109,15 +97,14 @@ apply_all_normalizations <- function(data) {
 #'     function, but with a slightly different implementation.
 #'   \item giNorm- Global intensity normalization, inspired by the
 #'     \code{NormalyzerDE::globalIntensityNormalization}
-#'     function, but with a slightly different implementation. In brief,
-#'     normalizes each sample/column by dividing by the total intensity for the
-#'     sample and multiplying by the median of per-sample intensities. Thus,
-#'     like mean or median normalization, but using sum instead of
-#' }
+#'     function, but with a slightly different implementation. Divides each sample by the
+#'     total intensity for each sample, then multiplies all samples by the median of per-sample
+#'     intensities.
+#'  }
 #'
 #'
 #' @param dat A numeric data frame, where each row is a protein and columns
-#'   are the raw, unstandardized intensities
+#'   are the raw intensities
 #' @param logDat A numeric data frame, where each row is a protein and columns
 #'   are log2-transformed intensities.
 #'
@@ -125,11 +112,7 @@ apply_all_normalizations <- function(data) {
 #'
 #' @name norm_functions
 #'
-#' @examples
-#' # No examples yet
-#'
 NULL
-#> NULL
 
 
 

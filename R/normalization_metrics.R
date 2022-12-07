@@ -1,5 +1,5 @@
 
-#' Functions for calculating metrics for normalized data
+#' Metrics to evaluate normalization methods
 #'
 #' A set of functions that take in normalized sample data and a grouping factor
 #' and calculate some metric of of variability, error, etc., that we can use
@@ -32,11 +32,7 @@
 #'   keep_protein_ID = TRUE, a dataframe in which rows are proteins, columns are
 #'   are the log2ratio for a pairwise comparisons, and rownames give protein ID.
 #'
-#'
 #' @name norm_metrics
-#'
-#' @examples
-#' # No examples yet
 #'
 
 
@@ -112,8 +108,7 @@ COR <- function(data, groups) {
 
 
 #' @rdname norm_metrics
-#' @param keep_protein_ID Should protein ID information be retained? Default is False,
-#'   in which case \code{keep_protein_ID}
+#' @param keep_protein_ID Should protein ID information be retained? Default is FALSE.
 #' @keywords internal
 #'
 # log2ratio

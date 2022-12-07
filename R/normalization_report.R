@@ -170,3 +170,40 @@ write_proteinorm_report <- function(DIAlist,
   invisible(file.path(output_dir, filename))
 }
 
+
+#' Apply all normalizations to a dataframe
+#'
+#' Takes in raw intensity data and applies 8 different normalization methods,
+#' returning a list of the data normalized with each method. Used internally in
+#' \code{\link{write_proteinorm_report}}.
+#'
+#' @param data A dataframe of raw data to be normalized. Rows are proteins and
+#'   columns are raw intensity data.
+#'
+#' @return A list length 8, where each item in the list is a
+#'       named dataframe. Names give the normalization method, and the dataframe
+#'       gives the normalized intensity data
+#'
+#' @keywords internal
+#' @examples
+#' # No examples yet
+#'
+apply_all_normalizations <- function(data) {
+
+  normList <- NULL
+
+  ## apply normalization methods using functions listed above.
+  ## NOTE: most of the normalizations use log2(intensity) as input except
+  ## VSN which normalizes using raw intensities with no log2 transformation.
+  normList[["log2"]]     <- log2Norm(dat = data)
+  normList[["median"]]   <- medianNorm(logDat = normList[["log2"]])
+  normList[["mean"]]     <- meanNorm(logDat = normList[["log2"]])
+  normList[["vsn"]]      <- vsnNorm(dat = data)
+  normList[["quantile"]] <- quantileNorm(logDat = normList[["log2"]])
+  normList[["cycloess"]] <- cycloessNorm(logDat = normList[["log2"]])
+  normList[["rlr"]]      <- rlrNorm(logDat = normList[["log2"]])
+  normList[["gi"]]       <- giNorm(dat = data)
+
+  normList
+}
+
