@@ -1,32 +1,28 @@
 
-#' Loading DIA data from MaxQuant
+#' Load DIA data from a MaxQuant Samples Report
 #'
-#' FOR INTERNAL UAMS USE, NEED TO UPDATE
+#' THIS FUNCTION FOR UAMS INTERNAL USE. This function reads in and parses a UAMS-formatted
+#' MaxQuant Samples Report file and creates a DIAlist object containing protein intensity data
+#' and annotation data.
 #'
-#' @param input_file The file of Maxquant data to be imported. Format and filetype
-#'   vary depending on the type of data to be analyzed. If not supplied, R will
-#'   ask you to pick a file from the file browser.
-#' @param sample_IDs Optional: a vector of sample IDs to analyze. Default is NULL, in which
-#'   case all sample IDs are analyzed. These are determined from column names.
+#' @param input_file A MaxQuant Samples Report file to be imported.
+#' @param sample_IDs Optional: a vector of sample IDs to import. Default is NULL, in which
+#'   case all sample IDs (determined from column names in the MaxQuant Samples Report) are
+#'   imported.
 #'
-#' @return A prototype of our new S3 list type.
+#' @return A DIAlist containing data and annotation information.
+#'
+#' @keywords UAMS
 #'
 #' @export
 #'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' data <- read_DIA_data("path/to/Samples_Report.csv")
+#' }
 #'
 read_DIA_data <- function(input_file = NULL,
                           sample_IDs = NULL) {
-
-
-  ## if no file is input by user the open file dialog box is
-  ## called to allow the user to navigate to and select the file.
-  if (is.null(input_file)) {
-    input_file <- file.choose()
-  }
-
-
 
   ## IMPORT DATA
   ## the first 10 lines are skipped and last line removed. column 1 (.X)
@@ -49,7 +45,7 @@ read_DIA_data <- function(input_file = NULL,
   raw_data[, ][raw_data[, ] == "Missing Value"] <- "0"
 
   clean_data <- as.data.frame(apply(raw_data, MARGIN = 2, remove_commas), row.names = rownames(raw_data))
-  clean_annot <- extract_protein_data(raw_annotation)
+  clean_annot <- parse_protein_data(raw_annotation)
 
   # For now, check that nrows are equal, but
   # TODO: remove this once the checker does it for us
@@ -60,9 +56,6 @@ read_DIA_data <- function(input_file = NULL,
   num_extracted <- nrow(clean_data)
 
   cli::cli_inform(c("Intensity data for {.val {num_extracted}} DIA protein entries and {.val {num_samples}} samples extracted"))
-
-  cli::cli_inform(c("v" = "Success!!"))
-
 
   ## return a list of data.frame containing the extracted quality
   ## filtered intensity data, corresponding extracted annotation,
@@ -84,20 +77,17 @@ read_DIA_data <- function(input_file = NULL,
 
 #' Import MaxQuant data
 #'
-#' First subfunction called by \code{\link{read_DIA_data}}. Reads in the tabular
-#' data and does some checks for required columns.
+#' THIS FUNCTION FOR UAMS INTERNAL USE. This is a subfunction of \code{\link{read_DIA_data}},
+#' used to read in tabular data. This function is not meant to be called by users.
 #'
 #' @inheritParams read_DIA_data
 #'
-#' @return a data frame, where each row is a (raw) protein, the first
-#'        few columns are protein ID data, and the last columns are the individual
+#' @return A data frame, where each row is a (raw) protein, the first
+#'        few columns are annotation data, and the last columns are the individual
 #'        sample intensities (as character vectors).
 #'
-#' @keywords internal
+#' @keywords UAMS, internal
 #'
-#' @examples
-#' # No examples yet
-
 read_maxquant_delim <-function(input_file) {
   ## check that the file is a csv, tsv, or text file
   filext <- stringr::str_to_lower(file_extension(input_file))
@@ -135,44 +125,24 @@ read_maxquant_delim <-function(input_file) {
   ## name of column 1 is changed to 'id'
   if (colnames(data)[1] == "X.") {colnames(data)[1] <- "id"}
 
-
-  # TODO: decicde what to do about required columns for non-UAMS end users
-
-  ## checks to make sure the input file contains the required annotation/contamination
-  ## columns. This ensures that the file imported correctly and helps to identify
-  ## sampleIDs columns and extract targets info. later.
-  # if (!all(reqCols %in% colnames(data))) {
-  #   missing_cols <- reqCols[reqCols %notin% colnames(data)]
-  #   cli::cli_abort(c("Problem with columns in input file.",
-  #                    "x" = "Required column(s) not present in {.file {input_file}}",
-  #                    "x" = "Missing column{?s}: {missing_cols}"))
-  # } else {
-  #   cli::cli_inform("DIA protein file {.file {input_file}} imported")
-  #   cli::cli_inform("Input file contains {num_input} protein entries")
-
-  output <- data
-  # }
-
-  output
+  data
 }
 
 
-
-#' Extract protein data
+#' Parse protein data
 #'
-#' Third subfunction called by \code{\link{read_DIA_data}}. Processes the raw
-#' protein annotation strings to extract standard gene names,
-#' accession numbers, and Ids. FOR INTERNAL UAMS USE.
-#'
-#' @param annotation_data Annotation data from which to extract protein data.
-#' @return A  data frame of cleaned up annotation data, with protein info
+#' THIS FUNCTION FOR UAMS INTERNAL USE. This is a subfunction of \code{\link{read_DIA_data}},
+#' used to parse protein annotation data out of the data imported from a MaxQuant file.
+#' This function is not meant to be called by users.
 #'
 #'
-#' @keywords internal
+#' @param annotation_data Annotation data from which to parse protein data.
+#' @return A data frame of cleaned annotation data.
 #'
-#' @examples
-#' # No examples yet
-extract_protein_data <- function(annotation_data) {
+#'
+#' @keywords UAMS, internal
+#'
+parse_protein_data <- function(annotation_data) {
 
   ## extract gene name, gene symbol, and uniprot id info. from the Fasta.header
   ## append to qfilterData add unique protein ID (proKey = uniprot_GN_id

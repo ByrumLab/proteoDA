@@ -2,7 +2,7 @@
 % Please edit documentation in R/filter_proteins.R
 \name{filter_proteins_by_group}
 \alias{filter_proteins_by_group}
-\title{Filter protein data by number of quantified samples in group.}
+\title{Filter protein data by number of quantified samples in group}
 \usage{
 filter_proteins_by_group(
   DIAlist,

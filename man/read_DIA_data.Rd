@@ -2,25 +2,29 @@
 % Please edit documentation in R/data_import.R
 \name{read_DIA_data}
 \alias{read_DIA_data}
-\title{Loading DIA data from MaxQuant}
+\title{Load DIA data from a MaxQuant Samples Report}
 \usage{
 read_DIA_data(input_file = NULL, sample_IDs = NULL)
 }
 \arguments{
-\item{input_file}{The file of Maxquant data to be imported. Format and filetype
-vary depending on the type of data to be analyzed. If not supplied, R will
-ask you to pick a file from the file browser.}
+\item{input_file}{A MaxQuant Samples Report file to be imported.}
 
-\item{sample_IDs}{Optional: a vector of sample IDs to analyze. Default is NULL, in which
-case all sample IDs are analyzed. These are determined from column names.}
+\item{sample_IDs}{Optional: a vector of sample IDs to import. Default is NULL, in which
+case all sample IDs (determined from column names in the MaxQuant Samples Report) are
+imported.}
 }
 \value{
-A prototype of our new S3 list type.
+A DIAlist containing data and annotation information.
 }
 \description{
-FOR INTERNAL UAMS USE, NEED TO UPDATE
+THIS FUNCTION FOR UAMS INTERNAL USE. This function reads in and parses a UAMS-formatted
+MaxQuant Samples Report file and creates a DIAlist object containing protein intensity data
+and annotation data.
 }
 \examples{
-# No examples yet
+\dontrun{
+data <- read_DIA_data("path/to/Samples_Report.csv")
+}
 
 }
+\keyword{UAMS}

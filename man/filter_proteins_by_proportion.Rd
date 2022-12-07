@@ -2,7 +2,7 @@
 % Please edit documentation in R/filter_proteins.R
 \name{filter_proteins_by_proportion}
 \alias{filter_proteins_by_proportion}
-\title{Filter protein data by proportion of quantified samples in group.}
+\title{Filter protein data by proportion of quantified samples in group}
 \usage{
 filter_proteins_by_proportion(DIAlist, min_prop, grouping_column = "group")
 }
