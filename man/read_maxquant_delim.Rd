@@ -7,20 +7,16 @@
 read_maxquant_delim(input_file)
 }
 \arguments{
-\item{input_file}{The file of Maxquant data to be imported. Format and filetype
-vary depending on the type of data to be analyzed. If not supplied, R will
-ask you to pick a file from the file browser.}
+\item{input_file}{A MaxQuant Samples Report file to be imported.}
 }
 \value{
-a data frame, where each row is a (raw) protein, the first
-few columns are protein ID data, and the last columns are the individual
+A data frame, where each row is a (raw) protein, the first
+few columns are annotation data, and the last columns are the individual
 sample intensities (as character vectors).
 }
 \description{
-First subfunction called by \code{\link{read_DIA_data}}. Reads in the tabular
-data and does some checks for required columns.
+THIS FUNCTION FOR UAMS INTERNAL USE. This is a subfunction of \code{\link{read_DIA_data}},
+used to read in tabular data. This function is not meant to be called by users.
 }
-\examples{
-# No examples yet
-}
+\keyword{UAMS,}
 \keyword{internal}

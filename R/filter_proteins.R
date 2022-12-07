@@ -3,7 +3,7 @@
 #' THIS FUNCTION FOR UAMS INTERNAL USE. This function removes protein contaminants
 #' based on aspects of protein names that are speciic to UAMS-formatted data.
 #' Specifically, removes proteins which contain the strings "DECOY" or "Group of"
-#' in the Protein.Name column, derived from the data output by MaxQuant
+#' in the Protein.Name column, derived from the data output by MaxQuant.
 #'
 #' @param DIAlist A DIAlist object.
 #'
@@ -122,7 +122,7 @@ filter_proteins_by_annotation <- function(DIAlist, condition) {
 }
 
 
-#' Filter protein data by number of quantified samples in group.
+#' Filter protein data by number of quantified samples in group
 #'
 #' This function is used to remove proteins from a DIAlist, filtering out proteins
 #' based on levels of missing data in the data dataframe of the DIAlist. The
@@ -283,7 +283,7 @@ filter_proteins_by_group <- function(DIAlist,
 }
 
 
-#' Filter protein data by proportion of quantified samples in group.
+#' Filter protein data by proportion of quantified samples in group
 #'
 #' This function is used to remove proteins from a DIAlist, filtering out proteins
 #' based on levels of missing data in the data dataframe of the DIAlist. The
