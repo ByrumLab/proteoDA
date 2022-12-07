@@ -2,7 +2,7 @@
 % Please edit documentation in R/normalization_report.R
 \name{write_proteinorm_report}
 \alias{write_proteinorm_report}
-\title{Create proteinorm report}
+\title{Create a normalization report}
 \usage{
 write_proteinorm_report(
   DIAlist,
@@ -21,31 +21,44 @@ gives information on how to group samples for normalization. Must be supplied:
 some metrics can't be calculated for only one group.}
 
 \item{output_dir}{The directory in which to save the report. If not provided,
-will default to "protein_analysis/01_quality_control".}
+will default to "protein_analysis/01_quality_control". If the directory does not
+exist, it will be created.}
 
 \item{filename}{The file name of the report to be saved. Must end in .pdf. Will
-default to "proteiNorm_Report.pdf" if no filename is provided.}
+default to "proteiNorm_Report.pdf" if no file name is provided.}
 
 \item{overwrite}{Should report file be overwritten if it already exists?
 Default is FALSE.}
 
 \item{suppress_zoom_legend}{Should the legend be removed from the zoomed
-log2ratio plot? Default is FALSE}
+log2ratio plot? Default is FALSE.}
 }
 \value{
-Invisibly, the filename of the created report
+If report is created successfully, invisibly returns the input DIAlist.
 }
 \description{
-Creates and saves as a PDF report a variety of plots which give
+Saves a PDF report containing a variety of plots which give
 information about the performance of different normalization metrics.
+The report is useful for choosing a normalization method to
+use for downstream analysis.
 }
 \examples{
-# No examples yet
+\dontrun{
+# Group samples according to group identities
+# in the "treatment" column of the metadata
+write_proteinorm_report(DIAlist,
+                        grouping_column = "treatment")
 
+# Change the default directory and file names
+write_proteinorm_report(DIAlist,
+                        grouping_column = "treatment",
+                        output_dir = "my/chosen/directory",
+                        filename = "my_report.pdf")
+
+# Overwrite an existing report
+write_proteinorm_report(DIAlist,
+                        grouping_column = "treatment",
+                        overwrite = T)
 }
-\seealso{
-\code{\link{norm_metrics}},
-\code{\link{eval_pn_metric_for_plot}},
-\code{\link{pn_plots_generic}},
-\code{\link{pn_plots}},
+
 }

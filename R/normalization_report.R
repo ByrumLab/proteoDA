@@ -1,14 +1,15 @@
-## This file contains one function,
-## which create the proteinorm report
 
-## It uses functions in a variety of files:
+
+## write_proteinorm_report uses functions in multiple other files:
 ## normalization_metrics.R contains functions for numerically evaluating normalization methods
 ## normalization_plotting.R contains functions to plot these metrics
 
-#' Create proteinorm report
+#' Create a normalization report
 #'
-#' Creates and saves as a PDF report a variety of plots which give
+#' Saves a PDF report containing a variety of plots which give
 #' information about the performance of different normalization metrics.
+#' The report is useful for choosing a normalization method to
+#' use for downstream analysis.
 #'
 #' @param DIAlist A DIAlist.
 #' @param grouping_column The name of the column in the metadata which
@@ -17,25 +18,37 @@
 #' @param overwrite Should report file be overwritten if it already exists?
 #'   Default is FALSE.
 #' @param output_dir The directory in which to save the report. If not provided,
-#'   will default to "protein_analysis/01_quality_control".
+#'   will default to "protein_analysis/01_quality_control". If the directory does not
+#'   exist, it will be created.
 #' @param filename The file name of the report to be saved. Must end in .pdf. Will
-#'   default to "proteiNorm_Report.pdf" if no filename is provided.
+#'   default to "proteiNorm_Report.pdf" if no file name is provided.
 #' @param suppress_zoom_legend Should the legend be removed from the zoomed
-#'   log2ratio plot? Default is FALSE
+#'   log2ratio plot? Default is FALSE.
 #'
-#' @return Invisibly, the filename of the created report
+#' @return If report is created successfully, invisibly returns the input DIAlist.
 #'
 #' @importFrom ggplot2 ggsave
 #'
 #' @export
 #'
-#' @seealso \code{\link{norm_metrics}},
-#'   \code{\link{eval_pn_metric_for_plot}},
-#'   \code{\link{pn_plots_generic}},
-#'   \code{\link{pn_plots}},
-#'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' # Group samples according to group identities
+#' # in the "treatment" column of the metadata
+#' write_proteinorm_report(DIAlist,
+#'                         grouping_column = "treatment")
+#'
+#' # Change the default directory and file names
+#' write_proteinorm_report(DIAlist,
+#'                         grouping_column = "treatment",
+#'                         output_dir = "my/chosen/directory",
+#'                         filename = "my_report.pdf")
+#'
+#' # Overwrite an existing report
+#' write_proteinorm_report(DIAlist,
+#'                         grouping_column = "treatment",
+#'                         overwrite = T)
+#' }
 #'
 write_proteinorm_report <- function(DIAlist,
                                    grouping_column = NULL,
@@ -165,28 +178,24 @@ write_proteinorm_report <- function(DIAlist,
     cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
 
-  cli::cli_inform(c("v" = "Success"))
-
-  invisible(file.path(output_dir, filename))
+  validate_DIAlist(DIAlist)
 }
 
 
-#' Apply all normalizations to a dataframe
+#' Apply all normalization methods to a set of raw data
 #'
 #' Takes in raw intensity data and applies 8 different normalization methods,
 #' returning a list of the data normalized with each method. Used internally in
 #' \code{\link{write_proteinorm_report}}.
 #'
-#' @param data A dataframe of raw data to be normalized. Rows are proteins and
+#' @param data A dataframe or matrix of raw data to be normalized. Rows are proteins and
 #'   columns are raw intensity data.
 #'
 #' @return A list length 8, where each item in the list is a
-#'       named dataframe. Names give the normalization method, and the dataframe
-#'       gives the normalized intensity data
+#'       named matrix. Names give the normalization method, and the matrix
+#'       contains the normalized data.
 #'
 #' @keywords internal
-#' @examples
-#' # No examples yet
 #'
 apply_all_normalizations <- function(data) {
 

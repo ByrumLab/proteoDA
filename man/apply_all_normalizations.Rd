@@ -2,26 +2,22 @@
 % Please edit documentation in R/normalization_report.R
 \name{apply_all_normalizations}
 \alias{apply_all_normalizations}
-\title{Apply all normalizations to a dataframe}
+\title{Apply all normalization methods to a set of raw data}
 \usage{
 apply_all_normalizations(data)
 }
 \arguments{
-\item{data}{A dataframe of raw data to be normalized. Rows are proteins and
+\item{data}{A dataframe or matrix of raw data to be normalized. Rows are proteins and
 columns are raw intensity data.}
 }
 \value{
 A list length 8, where each item in the list is a
-named dataframe. Names give the normalization method, and the dataframe
-gives the normalized intensity data
+named matrix. Names give the normalization method, and the matrix
+contains the normalized data.
 }
 \description{
 Takes in raw intensity data and applies 8 different normalization methods,
 returning a list of the data normalized with each method. Used internally in
 \code{\link{write_proteinorm_report}}.
-}
-\examples{
-# No examples yet
-
 }
 \keyword{internal}
