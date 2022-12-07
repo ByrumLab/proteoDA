@@ -2,7 +2,7 @@
 % Please edit documentation in R/normalization_plotting.R
 \name{eval_pn_metric_for_plot}
 \alias{eval_pn_metric_for_plot}
-\title{Evaluate a normalization metric}
+\title{Evaluate a normalization metric across a list of normalized data}
 \usage{
 eval_pn_metric_for_plot(
   normList,
@@ -11,8 +11,7 @@ eval_pn_metric_for_plot(
 )
 }
 \arguments{
-\item{normList}{A named list of normalized data matrices. Generally, the "normList"
-slot of the list that is output by .}
+\item{normList}{A named list of normalized data matrices.}
 
 \item{grouping}{A character or factor vector, listing the group(s) the samples
 belong to.}
@@ -26,13 +25,8 @@ ready to be used for plotting.
 }
 \description{
 Applies a metric (see \code{\link{norm_metrics}}) across a list of normalized
-data matrices and outputs the results in a data frame for plotting.
-}
-\examples{
-# No examples yet
-
-}
-\seealso{
-\code{\link{norm_metrics}}
+data matrices (most likely produced by \code{\link{apply_all_normalizations}})
+and outputs the results in a data frame ready to be used with internal plotting
+functions (see \code{\link{pn_plots_generic}}).
 }
 \keyword{internal}

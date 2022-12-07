@@ -23,8 +23,7 @@ pn_plot_log2ratio(normList, grouping, zoom = F, legend = T)
 pn_plot_MD(normList, grouping)
 }
 \arguments{
-\item{normList}{A named list of normalized data matrices. Generally, the "normList"
-slot of the list that is output by .}
+\item{normList}{A named list of normalized data matrices.}
 
 \item{grouping}{A character or factor vector, listing the group(s) the samples
 belong to.}
@@ -42,9 +41,5 @@ A set of functions that take in normalized sample data and a grouping factor
 and calculate some metric of of variability, error, etc., that we can use
 to evaluate normalization methods. See \code{\link{norm_metrics}} for explanations
 of each metric.
-}
-\examples{
-# No examples yet
-
 }
 \keyword{internal}
