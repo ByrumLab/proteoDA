@@ -193,8 +193,9 @@ write_qc_report(norm_zhan,
 
 write_qc_report(norm_reb,
                 grouping_column = "group",
-                filename = "rebello_qc_update.pdf",
-                overwrite = T)
+                filename = "rebello_qc_update_changes.pdf",
+                overwrite = T, standardize = T, top_proteins = nrow(norm_reb$data),
+                pca_axes = c(2, 5))
 
 write_qc_report(norm_kaul,
                 grouping_column = "group",

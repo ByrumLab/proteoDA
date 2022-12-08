@@ -66,7 +66,7 @@ write_norm_report <- function(DIAlist,
   ## Check args and set defaults ##
   #################################
 
-  validate_DIAlist(DIAlist)
+  input_DIAlist <- validate_DIAlist(DIAlist)
 
   if (!is.null(DIAlist$tags$normalized)) {
     if (DIAlist$tags$normalized) {
@@ -182,7 +182,7 @@ write_norm_report <- function(DIAlist,
     cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
 
-  invisible(validate_DIAlist(DIAlist))
+  invisible(input_DIAlist)
 }
 
 
