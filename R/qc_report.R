@@ -14,7 +14,7 @@
 #' } See the documentation of these subfunctions for more info.
 #'
 #'
-#' @inheritParams write_proteinorm_report
+#' @inheritParams write_norm_report
 #' @param label_column Optional. The name of column within the targets data frame
 #'   which contains labels to use for plotting figures. When not supplied,
 #'   defaults to using the column names of the data in processed_data.
