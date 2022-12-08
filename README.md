@@ -234,11 +234,11 @@ GitHub issue!
 Next, we make the proteinorm normalization report:
 
 ``` r
-write_proteinorm_report(data,
-                        grouping_column = "group",
-                        out_dir = "directory/to/save/",
-                        file = "filename.pdf", # See note below
-                        overwrite = T)
+write_norm_report(data,
+                  grouping_column = "group",
+                  out_dir = "directory/to/save/",
+                  file = "filename.pdf", # See note below
+                  overwrite = T)
 ```
 
 In the S3 version of the package, this function has no defaults for

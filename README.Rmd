@@ -177,11 +177,11 @@ This more modular way of filtering hopefully makes it easier to add other filter
 Next, we make the proteinorm normalization report:
 
 ```{r}
-write_proteinorm_report(data,
-                        grouping_column = "group",
-                        out_dir = "directory/to/save/",
-                        file = "filename.pdf", # See note below
-                        overwrite = T)
+write_norm_report(data,
+                  grouping_column = "group",
+                  out_dir = "directory/to/save/",
+                  file = "filename.pdf", # See note below
+                  overwrite = T)
 ```
 
 In the S3 version of the package, this function has no defaults for `out_dir` and `file`: you need to specify those yourself. In the example above, I've explicitly chosen generic ones: these are not the structure that Stephanie wants. When we split our package into public and internal packages, we can set the defaults we want for our internal package. For now, you'll need to specify them by hand. 

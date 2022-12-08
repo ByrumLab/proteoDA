@@ -100,32 +100,32 @@ filtered_kaul <- filter_proteins_contaminants(sub_kaul) %>%
 
 # Normalization report ----------------------------------------------------
 # Higgs
-write_proteinorm_report(filtered_higgs,
+write_norm_report(filtered_higgs,
                         grouping_column = "group",
                         file = "higgs_update_2.pdf", overwrite = T)
 
 # Ndu
-write_proteinorm_report(filtered_ndu,
+write_norm_report(filtered_ndu,
                         grouping_column = "group",
                         file = "ndu_update_2.pdf", overwrite = T)
 
 # Lupashin
-write_proteinorm_report(filtered_lupashin,
+write_norm_report(filtered_lupashin,
                         grouping_column = "group",
                         file = "lupashin_update_2.pdf", overwrite = T, suppress_zoom_legend = T)
 # Zhan
-write_proteinorm_report(filtered_zhan_2,
+write_norm_report(filtered_zhan_2,
                         grouping_column = "group",
                         file = "zhan_update_2.pdf", overwrite = T)
 
 # Rebello
-write_proteinorm_report(filtered_reb,
+write_norm_report(filtered_reb,
                         grouping_column = "group",
                         file = "rebello_update_2.pdf",
                         overwrite = T)
 
 # Kaul
-write_proteinorm_report(filtered_kaul,
+write_norm_report(filtered_kaul,
                         grouping_column = "group",
                         file = "kaul_update_2.pdf",
                         overwrite = T, suppress_zoom_legend = T)
