@@ -26,7 +26,4 @@ A ggplot object.
 \description{
 Internal function for plotting static versions of volcano plots.
 }
-\examples{
-# No examples yet
-}
 \keyword{internal}

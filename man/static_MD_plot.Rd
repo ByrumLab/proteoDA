@@ -18,12 +18,9 @@ static_MD_plot(data, lfc_thresh, contrast, pval_type)
 \item{pval_type}{The type of p-value to plot. Can be "raw" or "adjusted".}
 }
 \value{
-A ggplot object
+A ggplot object.
 }
 \description{
 Internal function for plotting static versions of MD plots.
-}
-\examples{
-# No examples yet
 }
 \keyword{internal}

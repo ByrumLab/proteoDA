@@ -145,6 +145,7 @@ pn_density_plot <- function(plotData) {
 #' of each metric.
 #'
 #' @inheritParams eval_pn_metric_for_plot
+#' @inheritParams write_norm_report
 #' @param zoom Should the plot cover the full range of log2ratios, or zoom
 #'   in around 0? Default is FALSE.
 #' @param legend Should the plot include the legend? Default is TRUE.
@@ -256,7 +257,7 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
 #' @rdname pn_plots
 #' @keywords internal
 #'
-pn_plot_MD <- function(normList, grouping) {
+pn_plot_MD <- function(normList, grouping, use_ggrastr = F) {
 
   # Assemble data for plotting
   log2ratios <- NULL
@@ -279,9 +280,23 @@ pn_plot_MD <- function(normList, grouping) {
   plotData$method <- factor(plotData$method, levels = names(normList))
 
   # make plot
-  plotData |>
-  ggplot(aes(x = .data$mean_intensity, y = .data$values)) +
-    geom_point(alpha = 0.3, na.rm = T) +
+  # possibly using ggrastr
+  if (use_ggrastr) {
+    if (!requireNamespace("ggrastr", quietly = TRUE)) {
+      cli::cli_abort(c("Package \"ggrastr\" must be installed in order to use it."))
+    }
+
+    base_plot <- plotData |>
+      ggplot(aes(x = .data$mean_intensity, y = .data$values)) +
+      ggrastr::geom_point_rast(alpha = 0.3, na.rm = T)
+  } else {
+    base_plot <- plotData |>
+      ggplot(aes(x = .data$mean_intensity, y = .data$values)) +
+      geom_point(alpha = 0.3, na.rm = T)
+
+  }
+
+  base_plot +
     geom_hline(yintercept = 0, color = "dodgerblue3") +
     geom_smooth(method = "lm", formula = "y ~ x", na.rm = T, color = "darkorange") +
     facet_wrap("method", ncol = 4) +

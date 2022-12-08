@@ -13,12 +13,9 @@ static_pval_histogram(data, contrast)
 \item{contrast}{The contrast being plotted. Used for generating the plot title.}
 }
 \value{
-A ggplot object
+A ggplot object.
 }
 \description{
-Internal function for plotting p-value histograms of raw- and adjusted p-values
-}
-\examples{
-# No examples yet
+Internal function for plotting p-value histograms of raw- and adjusted p-values.
 }
 \keyword{internal}
