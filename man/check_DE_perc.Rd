@@ -16,7 +16,7 @@ check_DE_perc(
 \item{DE_outcomes_table}{DE results dataframe. Should be the output of
 \code{\link[limma:decideTests]{limma::decideTests}}, coerced to a dataframe.}
 
-\item{DE_warn_threshold}{Proporion of DE genes at which we warn user.}
+\item{DE_warn_threshold}{Proportion of DE genes at which we warn user.}
 
 \item{pval_thresh}{P-value threshold used.}
 
@@ -29,9 +29,6 @@ A vector of numeric values giving the \% of significant DE proteins within
 each contrast.
 }
 \description{
-Internal utility function, used in \code{\link{extract_DE_results}} to
+Internal utility function, used in \code{\link{extract_DA_results}} to
 check if assumptions are met.
-}
-\examples{
-# No examples yet
 }

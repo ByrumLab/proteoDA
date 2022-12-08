@@ -53,7 +53,7 @@ write_limma_tables <- function(DIAlist,
   # tell user to set it first if not
   if (is.null(DIAlist$results)) {
     cli::cli_abort(c("Input DIAlist does not have a results design",
-                     "i" = "Run {.code DIAlist <- extract_DE_results(DIAlist, ~ formula)}"))
+                     "i" = "Run {.code DIAlist <- extract_DA_results(DIAlist, ~ formula)}"))
   }
 
 
