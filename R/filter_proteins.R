@@ -23,7 +23,7 @@ filter_proteins_contaminants <- function(DIAlist) {
   # avoid R CMD check
   Protein.Name <- NULL
 
-  out <- filter_proteins_by_annotation(DIAlist, !(stringr::str_detect(Protein.Name, "DECOY"))) %>%
+  out <- filter_proteins_by_annotation(DIAlist, !(stringr::str_detect(Protein.Name, "DECOY"))) |>
     filter_proteins_by_annotation(!(stringr::str_detect(Protein.Name, "Group of")))
 
   num_proteins_in <- nrow(DIAlist$annotation)

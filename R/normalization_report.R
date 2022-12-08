@@ -178,7 +178,7 @@ write_norm_report <- function(DIAlist,
     cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
 
-  validate_DIAlist(DIAlist)
+  invisible(validate_DIAlist(DIAlist))
 }
 
 

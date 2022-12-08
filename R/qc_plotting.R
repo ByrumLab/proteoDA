@@ -39,7 +39,7 @@ qc_violin_plot <- function(data,
   # make and return plot
   # Must merge with sample info first, to get order correct
   merge(sample_group_info,
-        utils::stack(as.data.frame(data)), sort = F) %>%
+        utils::stack(as.data.frame(data)), sort = F) |>
     ggplot(aes(x = as.factor(.data$ind), y = .data$values, fill = .data$group)) +
     geom_violin(draw_quantiles = c(0.5),
                 na.rm = T,
@@ -116,7 +116,7 @@ qc_pca_plot <- function(data,
 
   # Make the plot
   plot <- merge(plot_data,
-        sample_group_info) %>%
+        sample_group_info) |>
     ggplot(aes(x = .data$x, y = .data$y, color = .data$group, label = .data$ind)) +
     geom_point() +
     scale_color_manual(values = colorGroup(groups), limits = unique(groups), name = NULL) +

@@ -42,7 +42,7 @@ higgs <- add_metadata(higgs, "for_testing/Example Data/09_Higgs_072721_DIA_AG/me
 
 ndu <- add_metadata(ndu, "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv") # worked
 
-ndu_chain <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") %>%
+ndu_chain <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") |>
   add_metadata("for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv")
 
 ndu_chain2 <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") |>
@@ -65,7 +65,7 @@ sub_higgs <- filter_samples(higgs, group != "Pool")
 
 sub_ndu <- filter_samples(ndu, group != "Pool")
 
-sub_lupashin <- filter_samples(lupashin, group != "Pool") %>%
+sub_lupashin <- filter_samples(lupashin, group != "Pool") |>
   filter_samples(!stringr::str_detect(group, "input"))
 
 sub_zhan <- filter_samples(zhan, group != "Pool")
@@ -76,25 +76,25 @@ sub_kaul <- filter_samples(kaul, group != "Pool")
 
 # filter proteins ---------------------------------------------------------
 
-filtered_higgs <- filter_proteins_contaminants(sub_higgs) %>%
+filtered_higgs <- filter_proteins_contaminants(sub_higgs) |>
   filter_proteins_by_group(min_reps = 5, min_groups = 3)
 
-filtered_ndu <- filter_proteins_contaminants(sub_ndu) %>%
+filtered_ndu <- filter_proteins_contaminants(sub_ndu) |>
   filter_proteins_by_group(min_reps = 3, min_groups = 1)
 
-filtered_lupashin <- filter_proteins_contaminants(sub_lupashin) %>%
+filtered_lupashin <- filter_proteins_contaminants(sub_lupashin) |>
   filter_proteins_by_group(min_reps = 1, min_groups = 1)
 
-filtered_zhan <- filter_proteins_contaminants(sub_zhan) %>%
+filtered_zhan <- filter_proteins_contaminants(sub_zhan) |>
   filter_proteins_by_group(min_reps = 13, min_groups = 2)
 
-filtered_zhan_2 <- filter_proteins_contaminants(sub_zhan) %>%
+filtered_zhan_2 <- filter_proteins_contaminants(sub_zhan) |>
   filter_proteins_by_proportion(min_prop = 0.66)
 
-filtered_reb  <- filter_proteins_contaminants(sub_reb) %>%
+filtered_reb  <- filter_proteins_contaminants(sub_reb) |>
   filter_proteins_by_group(min_reps = 2, min_groups = 1)
 
-filtered_kaul <- filter_proteins_contaminants(sub_kaul) %>%
+filtered_kaul <- filter_proteins_contaminants(sub_kaul) |>
   filter_proteins_by_group(min_reps = 4, min_groups = 2)
 
 
@@ -131,29 +131,29 @@ write_norm_report(filtered_kaul,
                         overwrite = T, suppress_zoom_legend = T)
 
 # Normalize data ----------------------------------------------------------
-norm_kaul <- filtered_kaul %>%
+norm_kaul <- filtered_kaul |>
   normalize_data("quantile")
 
-norm_lupashin <- filtered_lupashin %>%
+norm_lupashin <- filtered_lupashin |>
   normalize_data("rlr")
 
-norm_ndu <- filtered_ndu %>%
+norm_ndu <- filtered_ndu |>
   normalize_data("median")
 
-norm_reb <- filtered_reb %>%
+norm_reb <- filtered_reb |>
   normalize_data("vsn")
 
-norm_zhan <- filtered_zhan %>%
+norm_zhan <- filtered_zhan |>
   normalize_data("cycloess")
 
 # Make QC report ----------------------------------------------------------
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
-  filter_samples(group != "Pool") %>%
-  filter_proteins_contaminants() %>%
-  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
-  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
-  filter_proteins_by_proportion(min_prop = 1) %>%
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") |>
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") |>
+  filter_samples(group != "Pool") |>
+  filter_proteins_contaminants() |>
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) |>
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) |>
+  filter_proteins_by_proportion(min_prop = 1) |>
   normalize_data(norm_method = "cycloess")
 
 write_qc_report(full_higgs_chain,
@@ -199,7 +199,7 @@ write_qc_report(norm_kaul,
 
 
 # Make design -------------------------------------------------------------
-norm_ndu$metadata <- norm_ndu$metadata %>%
+norm_ndu$metadata <- norm_ndu$metadata |>
   separate(group, into = c("treatment", "tissue"), remove = F)
 
 norm_kaul <- add_design(norm_kaul,
@@ -221,14 +221,14 @@ norm_reb <- add_design(norm_reb,
 norm_zhan <- add_design(norm_zhan,
                         ~group*sex)
 
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
-  filter_samples(group != "Pool") %>%
-  filter_proteins_contaminants() %>%
-  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
-  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
-  filter_proteins_by_proportion(min_prop = 1) %>%
-  normalize_data(norm_method = "cycloess") %>%
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") |>
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") |>
+  filter_samples(group != "Pool") |>
+  filter_proteins_contaminants() |>
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) |>
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) |>
+  filter_proteins_by_proportion(min_prop = 1) |>
+  normalize_data(norm_method = "cycloess") |>
   add_design(~0 +group)
 
 # Make contrasts ----------------------------------------------------------
@@ -236,8 +236,8 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
 # Will be good test of later code, can let higgs run the model without contrasts
 
 # Ndu
-norm_ndu <- norm_ndu %>%
-  add_design(~ 0 + group) %>%
+norm_ndu <- norm_ndu |>
+  add_design(~ 0 + group) |>
   add_contrasts(contrasts_file = "for_testing/Example Data/NDu_030822_DIA/input_files/kidney_contrasts.txt")
 
 #kaul
@@ -245,23 +245,23 @@ norm_kaul$metadata$gender <- factor(norm_kaul$metadata$gender, levels = c("femal
 
 
 # Lupashin
-norm_lupashin <- norm_lupashin %>%
+norm_lupashin <- norm_lupashin |>
   add_contrasts(contrasts_file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv")
-norm_lupashin <- norm_lupashin %>%
+norm_lupashin <- norm_lupashin |>
   add_contrasts(contrasts_file = "for_testing/Example Data/lupashin_030222/contrasts.csv")
 
 # Zhan
-norm_zhan <- norm_zhan %>%
-  add_design(~0 + group) %>%
+norm_zhan <- norm_zhan |>
+  add_design(~0 + group) |>
   add_contrasts(contrasts_file = "for_testing/Example Data/Zhan_DIA_217_samples/input_files/contrasts.txt")
 
-norm_zhan <- norm_zhan %>%
-  add_design(~0 + group) %>%
+norm_zhan <- norm_zhan |>
+  add_design(~0 + group) |>
   add_contrasts(contrasts_vector = c("test=HiR-LoR"))
 
 # Rebello
-norm_reb <- norm_reb %>%
-  add_design(~0 + group) %>%
+norm_reb <- norm_reb |>
+  add_design(~0 + group) |>
   add_contrasts(contrasts_file = "for_testing/Example Data/rebello/contrasts.csv")
 
 
@@ -279,18 +279,18 @@ fit_reb <- fit_limma_model(norm_reb)
 fit_kaul <- fit_limma_model(norm_kaul)
 
 
-fit_ndu_random <- norm_ndu %>%
-  add_design(design_formula = "~ 0 + treatment + (1 | tissue)") %>%
+fit_ndu_random <- norm_ndu |>
+  add_design(design_formula = "~ 0 + treatment + (1 | tissue)") |>
   fit_limma_model()
 
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") %>%
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") %>%
-  filter_samples(group != "Pool") %>%
-  filter_proteins_contaminants() %>%
-  filter_proteins_by_group(min_reps = 4, min_groups = 3) %>%
-  filter_proteins_by_group(min_reps = 5, min_groups = 3) %>%
-  filter_proteins_by_proportion(min_prop = 1) %>%
-  normalize_data(norm_method = "cycloess") %>%
+full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") |>
+  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") |>
+  filter_samples(group != "Pool") |>
+  filter_proteins_contaminants() |>
+  filter_proteins_by_group(min_reps = 4, min_groups = 3) |>
+  filter_proteins_by_group(min_reps = 5, min_groups = 3) |>
+  filter_proteins_by_proportion(min_prop = 1) |>
+  normalize_data(norm_method = "cycloess") |>
   add_design(~group)
 
 

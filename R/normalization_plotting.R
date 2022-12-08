@@ -75,7 +75,7 @@ pn_mean_plot <- function(plotData) {
                         se = sds$value/sqrt(ns$value))
 
   # make the plot
-  result <- summary  %>%
+  result <- summary  |>
     ggplot(aes(col = .data$method)) +
     geom_pointrange(aes(x = .data$method, y = .data$mean,
                         ymin = .data$mean - .data$se,
@@ -99,7 +99,7 @@ pn_mean_plot <- function(plotData) {
 #'
 pn_violin_plot <- function(plotData) {
   # make the plot
-  result <- plotData  %>%
+  result <- plotData  |>
     ggplot(aes(fill = .data$method)) +
     geom_violin(aes(x = .data$method, y = .data$value),
                 draw_quantiles = c(0.5),
@@ -121,7 +121,7 @@ pn_violin_plot <- function(plotData) {
 #'
 pn_density_plot <- function(plotData) {
   # make the plot
-  result <- plotData  %>%
+  result <- plotData  |>
     ggplot(aes(color = .data$method, group = .data$method)) +
     geom_vline(aes(xintercept = 0), col = "grey80") +
     geom_line(aes(x = .data$value),
@@ -159,7 +159,7 @@ pn_density_plot <- function(plotData) {
 pn_plot_PCV <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
-                          metric = "PCV") %>%
+                          metric = "PCV") |>
     pn_mean_plot() +
     ylab("Pooled Coefficient of Variation") +
     ggtitle("PCV")
@@ -171,7 +171,7 @@ pn_plot_PCV <- function(normList, grouping) {
 pn_plot_PMAD <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
-                          metric = "PMAD") %>%
+                          metric = "PMAD") |>
     pn_mean_plot() +
     ylab("Median Absolute Deviation") +
     ggtitle("PMAD")
@@ -183,7 +183,7 @@ pn_plot_PMAD <- function(normList, grouping) {
 pn_plot_PEV <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
-                          metric = "PEV") %>%
+                          metric = "PEV") |>
     pn_mean_plot() +
     ylab("Pooled Estimate of Variance") +
     ggtitle("PEV")
@@ -195,7 +195,7 @@ pn_plot_PEV <- function(normList, grouping) {
 pn_plot_COR <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
-                          metric = "COR") %>%
+                          metric = "COR") |>
     pn_violin_plot() +
     ylab("Intragroup Correlation") +
     ggtitle("COR")
@@ -219,7 +219,7 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
   max_xlim <- 0.5 * max(stats::aggregate(value ~ method, data = plotData, FUN = function(x) max(stats::density(x, na.rm = T)$x))$value)
 
   # Build base plot
-  base <- plotData %>%
+  base <- plotData |>
     pn_density_plot() +
     xlab("") +
     ylab("Density") +
@@ -279,7 +279,7 @@ pn_plot_MD <- function(normList, grouping) {
   plotData$method <- factor(plotData$method, levels = names(normList))
 
   # make plot
-  plotData %>%
+  plotData |>
   ggplot(aes(x = .data$mean_intensity, y = .data$values)) +
     geom_point(alpha = 0.3, na.rm = T) +
     geom_hline(yintercept = 0, color = "dodgerblue3") +

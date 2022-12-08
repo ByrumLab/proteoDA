@@ -38,7 +38,7 @@ add_design <- function(DIAlist,
   if (formula_has_random) {
     form_fixed_only <- stats::drop.terms(stats::terms(formula),
                                   dropx = which(stringr::str_detect(formula_terms, "\\|")))
-    elements <- formula_terms[stringr::str_detect(formula_terms, "\\|")] %>%
+    elements <- formula_terms[stringr::str_detect(formula_terms, "\\|")] |>
       stringr::str_split_fixed(pattern = "\\|", n = 2)
 
     random_factor <- stringr::str_remove_all(elements[[2]], " ")

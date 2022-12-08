@@ -221,17 +221,15 @@ write_limma_plots <- function(DIAlist = NULL,
 #' Prepare per-contrast model data for plotting
 #'
 #' Internal function used to prepare a results dataframe for both static and interactive
-#' plots in our reports.
+#' plots in reports.
 #'
 #' @param model_results The results slot of a DIAlist object.
-#' @param contrast The name of the contrast for which to prep the model data
+#' @param contrast The name of the contrast for which to prep the model data.
 #'
-#' @return A data frame of model results for the given contrast
+#' @return A data frame of model results for the given contrast.
 #'
 #' @keywords internal
 #'
-#' @examples
-#' # No examples yet
 prep_plot_model_data <- function(model_results, contrast) {
   # Get just the contrast we're interested in,
   # rename cols,
@@ -272,8 +270,6 @@ prep_plot_model_data <- function(model_results, contrast) {
 #'
 #' @keywords internal
 #'
-#' @examples
-#' # No examples yet
 static_volcano_plot <- function(data, lfc_thresh, pval_thresh, contrast, pval_type) {
 
   base <- ggplot(data = data) +
@@ -328,13 +324,11 @@ static_volcano_plot <- function(data, lfc_thresh, pval_thresh, contrast, pval_ty
 #' @param contrast The contrast being plotted. Used for generating the plot title.
 #' @param pval_type The type of p-value to plot. Can be "raw" or "adjusted".
 #'
-#' @return A ggplot object
+#' @return A ggplot object.
 #'
 #' @importFrom ggplot2 ggplot geom_hline geom_point aes xlab ylab theme_bw ggtitle scale_color_manual scale_alpha_manual
 #' @keywords internal
 #'
-#' @examples
-#' # No examples yet
 static_MD_plot <- function(data, lfc_thresh, contrast, pval_type) {
 
   base <- ggplot(data = data) +
@@ -374,19 +368,18 @@ static_MD_plot <- function(data, lfc_thresh, contrast, pval_type) {
 
 #' Make a p-value histogram plot
 #'
-#' Internal function for plotting p-value histograms of raw- and adjusted p-values
+#' Internal function for plotting p-value histograms of raw- and adjusted p-values.
 #'
 #' @param data Per-contrast DE results to be plotted, as prepared by
 #'   \code{\link{prep_plot_model_data}}.
 #' @param contrast The contrast being plotted. Used for generating the plot title.
 #'
-#' @return A ggplot object
+#' @return A ggplot object.
 #'
 #' @importFrom ggplot2 ggplot geom_histogram aes xlim theme_bw xlab theme element_rect
 #'
 #' @keywords internal
-#' @examples
-#' # No examples yet
+#'
 static_pval_histogram <- function(data, contrast) {
   output <- ggplot(data) +
     geom_histogram(aes(x = .data$P.Value), binwidth = 0.025, color = "black", na.rm = T) +
