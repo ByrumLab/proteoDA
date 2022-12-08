@@ -42,6 +42,4 @@ workbook object.
 Internal function for creating a nicely formatted Excel spreadsheet of
 differential expression results.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}

@@ -17,14 +17,14 @@ write_limma_tables(
 )
 }
 \arguments{
-\item{DIAlist}{A DIAlist object, with statistical results.}
+\item{DIAlist}{A DIAlist object, with statistical results in the results slot.}
 
 \item{ilab}{The ilab identifier for this project.}
 
 \item{output_dir}{The directory in which to output tables. If not specified,
 will construct a directory based on the ilab name and type of analysis.}
 
-\item{overwrite}{Should results files be overwritten? Default is F.}
+\item{overwrite}{Should results files be overwritten? Default is FALSE.}
 
 \item{contrasts_subdir}{The subdirectory within output_dir to write the per-contrast
 result .csv files. If not specified, will be "per_contrast_results".}
@@ -49,15 +49,34 @@ Invisibly returns the input DIAlist.
 This function prepares and then saves a number of tables of results:
 \enumerate{
 \item A .csv summarizing the number of direction of differentially
-expressed genes for each contrast.
-\item An Excel spreadsheet of the normalized expression and
-statistical results for all contrasts.
+expressed genes for each contrast (see \code{summary_csv}).
+\item An Excel spreadsheet of the intensity and
+statistical results for all contrasts/terms in the results slot of the
+DIAlist (see \code{spreadsheet_xlsx}).
 \item A results .csv file with the same data as the Excel spreadsheet,
-but without all the formatting.
+but in a flat .csv file withour formatting (see \code{combined_file_csv}).
 \item A folder of results .csv file which contain the results for each
 contrast.
 }
 }
 \examples{
-# No examples yet
+\dontrun{
+  # Using defaults
+  write_limma_tables(DIAlist)
+
+
+ # Customize output directory
+ # and filenames
+ write_limma_tables(DIAlist,
+                    output_dir = "DA_results",
+                    contrasts_subdir = "by_contrast",
+                    summary_csv = "my_summary.csv",
+                    combined_file_csv = "all_results.csv",
+                    spreadsheet_xlsx = "all_results.xlsx")
+
+ # If the xlsx files have issues, try removing the
+ # per-column filters in the spreadsheet
+ write_limma_tables(DIAlist,
+                    add_filter = F)
+}
 }

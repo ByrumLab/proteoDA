@@ -53,7 +53,7 @@
 #'                    grouping_column = "treatment",
 #'                    key_column = "protein_id")
 #' }
-#' # No examples yet
+#'
 write_limma_plots <- function(DIAlist = NULL,
                               grouping_column = NULL,
                               output_dir = NULL,
@@ -63,7 +63,7 @@ write_limma_plots <- function(DIAlist = NULL,
                               width = 1000) {
 
   # Check input arguments generally
-  validate_DIAlist(DIAlist)
+  input_DIAlist <- validate_DIAlist(DIAlist)
 
   # Make sure there's a design matrix present already,
   # tell user to set it first if not
@@ -214,7 +214,7 @@ write_limma_plots <- function(DIAlist = NULL,
   cli::cli_inform("Returning working directory to {.path {old_wd}}")
   setwd(old_wd)
 
-  invisible(validate_DIAlist(DIAlist))
+  invisible(input_DIAlist)
 }
 
 

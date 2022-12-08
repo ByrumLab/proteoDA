@@ -14,12 +14,10 @@ create_combined_results(annotation, data, statlist)
 \item{statlist}{A list of per-contrast DE results.}
 }
 \value{
-A dataframe of the combined results
+A dataframe of the combined results.
 }
 \description{
 Internal function used to write the combined statistical results to a .csv
 file.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}
