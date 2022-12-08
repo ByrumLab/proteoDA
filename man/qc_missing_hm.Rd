@@ -15,8 +15,7 @@ qc_missing_hm(
 }
 \arguments{
 \item{data}{A data frame of intensity data, likely normalized. Rows should be
-proteins and columns should be samples. Generally, a single element in the
-normList slot of the object returned by .}
+proteins and columns should be samples.}
 
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
@@ -40,9 +39,5 @@ which can be plotted with \code{\link[grid:grid.draw]{grid::grid.draw}}.
 \description{
 Makes a ComplexHeatmap object showing a heatmap of missing values in the
 input data.
-}
-\examples{
-# No examples yet.
-
 }
 \keyword{internal}

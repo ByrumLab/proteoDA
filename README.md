@@ -248,9 +248,8 @@ that Stephanie wants. When we split our package into public and internal
 packages, we can set the defaults we want for our internal package. For
 now, you’ll need to specify them by hand.
 
-Also note: this output from this function can’t currently be chained (it
-doesn’t output the DIAlist object). I’m still thinking about whether to
-change that.
+This function invisibly returns the input data/DIAlist, so it can be
+chained if desired (though you may not want to).
 
 ### Normalize data
 
@@ -288,9 +287,8 @@ that Stephanie wants. When we split our package into public and internal
 packages, we can set the defaults we want for our internal package. For
 now, you’ll need to specify them by hand.
 
-Also note: this output from this function can’t currently be chained (it
-doesn’t output the DIAlist object). I’m still thinking about whether to
-change that.
+This function invisibly returns the input data/DIAlist, so it can be
+chained if desired (though you may not want to).
 
 ### Specifying the statistical model
 

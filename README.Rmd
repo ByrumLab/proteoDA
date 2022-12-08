@@ -186,7 +186,7 @@ write_norm_report(data,
 
 In the S3 version of the package, this function has no defaults for `out_dir` and `file`: you need to specify those yourself. In the example above, I've explicitly chosen generic ones: these are not the structure that Stephanie wants. When we split our package into public and internal packages, we can set the defaults we want for our internal package. For now, you'll need to specify them by hand. 
 
-Also note: this output from this function can't currently be chained (it doesn't output the DIAlist object). I'm still thinking about whether to change that. 
+This function invisibly returns the input data/DIAlist, so it can be chained if desired (though you may not want to). 
 
 ### Normalize data
 
@@ -214,7 +214,7 @@ write_qc_report(norm_data,
 
 This function is like the normalization report: it has no defaults for `out_dir` and `file`: you need to specify those yourself. In the example above, I've explicitly chosen generic ones: these are not the structure that Stephanie wants. When we split our package into public and internal packages, we can set the defaults we want for our internal package. For now, you'll need to specify them by hand. 
 
-Also note: this output from this function can't currently be chained (it doesn't output the DIAlist object). I'm still thinking about whether to change that. 
+This function invisibly returns the input data/DIAlist, so it can be chained if desired (though you may not want to). 
 
 ### Specifying the statistical model
 

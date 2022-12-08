@@ -2,7 +2,7 @@
 % Please edit documentation in R/qc_report.R
 \name{write_qc_report}
 \alias{write_qc_report}
-\title{Create quality control report}
+\title{Create a quality control report}
 \usage{
 write_qc_report(
   DIAlist,
@@ -40,45 +40,32 @@ default to "QC_Report.pdf" if no filename is provided.}
 \item{overwrite}{Should report file be overwritten if it already exists?
 Default is FALSE.}
 
-\item{top_proteins}{The number of most variable proteins to use for the analysis.
-Default is 500.}
+\item{top_proteins}{The number of most variable proteins to use
+for the PCA and dendrogram clustering. Default is 500.}
 
 \item{standardize}{Should input data be standardized to a mean of 0 and std.dev of
-1? If input data are not yet standardized, should be TRUE. Default is TRUE.}
+1 before performing PCA and dendrogram clustering? If input data are
+not yet standardized, should be TRUE. Default is TRUE.}
 
 \item{pca_axes}{A numeric vector of length 2 which lists the PC axes to plot.
 Default is c(1,2), to plot the first two principal components.}
 
-\item{dist_metric}{The metric used to define distance for clustering. Default is
-"euclidean". See \code{\link[stats:dist]{stats::hclust}} for options.}
+\item{dist_metric}{The metric used to define distance for dendrogram clustering.
+Default is "euclidean". See \code{\link[stats:dist]{stats::hclust}} for options.}
 
-\item{clust_method}{The agglomeration method to use for clustering. Default
-is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.}
+\item{clust_method}{The agglomeration method to use for dendrogram clustering.
+Default is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.}
 
 \item{show_all_proteins}{Should all proteins be shown in missing value heatmap,
 of only those with missing data? Default is F (only those with missing data).}
 }
 \value{
-Invisibly returns a list with three slots: \enumerate{
-\item "plots"- A large list, where each element in the list is the returned
-object from the corresponding plotting function for that type of plot.
-\item "stats"- A dataframe with statistics on the data.
-\item "param"- A dataframe giving the parameters used for making the report.
-}
+If report is created successfully, invisibly returns the input DIAlist.
 }
 \description{
-Creates, and optionally saves as a PDF report, a bunch of plots which give
-information on the distribution, clustering, and correlation of protein intensities
-across samples for the chosen normalization method. By default, the PCA and
-clustering analyses are performed on the top 500 most variable proteins. This
-function is a wrapper that calls many subfunctions: \itemize{
-\item Makes violin plots of per-sample intensities
-with \code{\link{qc_violin_plot}}.
-\item Performs and plots a PCA with \code{\link{qc_pca_plot}}.
-\item Does hierarchical clustering and plots a dendrogram with
-\code{\link{qc_dendro_plot}}.
-\item Plots a correlation heatmap with \code{\link{qc_corr_hm}}.
-} See the documentation of these subfunctions for more info.
+Saves a PDF report containing a variety of plots which provide information on the
+distribution, clustering, and correlation of protein intensities
+across samples. See arguments for options for customizing the report.
 }
 \examples{
 # No examples yet
