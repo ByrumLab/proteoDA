@@ -24,6 +24,8 @@
 #'   default to "proteiNorm_Report.pdf" if no file name is provided.
 #' @param suppress_zoom_legend Should the legend be removed from the zoomed
 #'   log2ratio plot? Default is FALSE.
+#' @param use_ggrastr Should the \code{ggrastr} package be used to decrease
+#'   file size? Default is FALSE. Requires installation of \code{ggrastr}.
 #'
 #' @return If report is created successfully, invisibly returns the input DIAlist.
 #'
@@ -51,11 +53,12 @@
 #' }
 #'
 write_norm_report <- function(DIAlist,
-                                   grouping_column = NULL,
-                                   output_dir = NULL,
-                                   filename = NULL,
-                                   overwrite = FALSE,
-                                   suppress_zoom_legend = FALSE) {
+                              grouping_column = NULL,
+                              output_dir = NULL,
+                              filename = NULL,
+                              overwrite = FALSE,
+                              suppress_zoom_legend = FALSE,
+                              use_ggrastr = FALSE) {
 
 
 
@@ -154,7 +157,7 @@ write_norm_report <- function(DIAlist,
     patchwork::plot_layout(ncol = 3)
 
   # Second page: the faceted MD plots
-  page_2 <- pn_plot_MD(normList, groups)
+  page_2 <- pn_plot_MD(normList, groups, use_ggrastr)
 
   ###############################
   ## Save plots, check, return ##
@@ -172,7 +175,8 @@ write_norm_report <- function(DIAlist,
          plot = gridExtra::marrangeGrob(grobs = plots_list, nrow = 1, ncol = 1, top = NA),
          height = 8.5,
          width = 11,
-         units = "in")
+         units = "in",
+         useDingbats = T)
 
   if (!file.exists(file.path(output_dir, filename))) {
     cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))

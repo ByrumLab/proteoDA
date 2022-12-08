@@ -104,6 +104,10 @@ write_norm_report(filtered_higgs,
                         grouping_column = "group",
                         file = "higgs_update_2.pdf", overwrite = T)
 
+write_norm_report(filtered_higgs,
+                  grouping_column = "group",
+                  file = "higgs_update_2_ggrastr.pdf", overwrite = T, use_ggrastr = T)
+
 # Ndu
 write_norm_report(filtered_ndu,
                         grouping_column = "group",

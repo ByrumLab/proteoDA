@@ -20,7 +20,7 @@ pn_plot_COR(normList, grouping)
 
 pn_plot_log2ratio(normList, grouping, zoom = F, legend = T)
 
-pn_plot_MD(normList, grouping)
+pn_plot_MD(normList, grouping, use_ggrastr = F)
 }
 \arguments{
 \item{normList}{A named list of normalized data matrices.}
@@ -32,6 +32,9 @@ belong to.}
 in around 0? Default is FALSE.}
 
 \item{legend}{Should the plot include the legend? Default is TRUE.}
+
+\item{use_ggrastr}{Should the \code{ggrastr} package be used to decrease
+file size? Default is FALSE. Requires installation of \code{ggrastr}.}
 }
 \value{
 A ggplot object of the plot.

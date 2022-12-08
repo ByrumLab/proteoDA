@@ -10,7 +10,8 @@ write_norm_report(
   output_dir = NULL,
   filename = NULL,
   overwrite = FALSE,
-  suppress_zoom_legend = FALSE
+  suppress_zoom_legend = FALSE,
+  use_ggrastr = FALSE
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ Default is FALSE.}
 
 \item{suppress_zoom_legend}{Should the legend be removed from the zoomed
 log2ratio plot? Default is FALSE.}
+
+\item{use_ggrastr}{Should the \code{ggrastr} package be used to decrease
+file size? Default is FALSE. Requires installation of \code{ggrastr}.}
 }
 \value{
 If report is created successfully, invisibly returns the input DIAlist.

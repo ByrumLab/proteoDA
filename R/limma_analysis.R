@@ -44,6 +44,11 @@ fit_limma_model <- function(DIAlist) {
 
   # With a random factor
   if (!is.null(DIAlist$design$random_factor)) {
+
+    if (!requireNamespace("statmod", quietly = TRUE)) {
+      cli::cli_abort(c("Package \"statmod\" must be installed to model a random effect"))
+    }
+
     block <- DIAlist$metadata[, DIAlist$design$random_factor, drop = T]
     corfit <- limma::duplicateCorrelation(object = DIAlist$data,
                                           design = DIAlist$design$design_matrix,
@@ -54,7 +59,7 @@ fit_limma_model <- function(DIAlist) {
 
     if (corfit$consensus.correlation < 0.1) {
       cli::cli_inform(cli::col_yellow(c("Estimated intra-block correlation is low.",
-                                        "Consider using a model withno random effect.")))
+                                        "Consider using a model with no random effect.")))
     }
     intra_block_cor <- corfit$consensus.correlation
   } else { # No random factor
