@@ -3,7 +3,7 @@
 export(add_contrasts)
 export(add_design)
 export(add_metadata)
-export(extract_DE_results)
+export(extract_DA_results)
 export(filter_proteins_by_annotation)
 export(filter_proteins_by_group)
 export(filter_proteins_by_proportion)

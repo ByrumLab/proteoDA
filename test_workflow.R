@@ -302,13 +302,13 @@ fit_higgs <- fit_limma_model(full_higgs_chain)
 
 
 # Extract results ---------------------------------------------------------
-results_lupashin <- extract_DE_results(fit_lupashin)
-results_ndu <- extract_DE_results(fit_ndu)
-results_ndu_random <- extract_DE_results(fit_ndu_random)
-results_zhan <- extract_DE_results(fit_zhan)
-results_reb <- extract_DE_results(fit_reb)
-results_kaul <- extract_DE_results(fit_kaul)
-results_higgs <- extract_DE_results(fit_higgs)
+results_lupashin <- extract_DA_results(fit_lupashin)
+results_ndu <- extract_DA_results(fit_ndu)
+results_ndu_random <- extract_DA_results(fit_ndu_random)
+results_zhan <- extract_DA_results(fit_zhan)
+results_reb <- extract_DA_results(fit_reb)
+results_kaul <- extract_DA_results(fit_kaul)
+results_higgs <- extract_DA_results(fit_higgs, extract_intercept = F)
 names(results_higgs$results)
 
 

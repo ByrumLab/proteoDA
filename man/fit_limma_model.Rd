@@ -2,7 +2,7 @@
 % Please edit documentation in R/limma_analysis.R
 \name{fit_limma_model}
 \alias{fit_limma_model}
-\title{Fit the limma differential expression model}
+\title{Fit the limma differential abundance model}
 \usage{
 fit_limma_model(DIAlist)
 }
@@ -10,10 +10,10 @@ fit_limma_model(DIAlist)
 \item{DIAlist}{A DIAlist, which must contain a statistical design.}
 }
 \value{
-A DIAlist object, with the model fit.
+A DIAlist object, with the model fit added in the eBayes_fit slot.
 }
 \description{
-Fits the limma differential expresison model to the expression data, following
+Fits the limma differential abundance model to the intensity data, following
 the specified design and (optional) contrast matrices. When a random factor is included,
 uses \code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}} to estimate
 the intra-block correlation within groups. Uses \code{\link[limma:lmFit]{limma::lmFit}}
@@ -23,6 +23,8 @@ and then recomputes moderated statistics following limma's empirical Bayes
 model with \code{\link[limma:eBayes]{limma::eBayes}}.
 }
 \examples{
-# No examples yet
+\dontrun{
+model_fit <- fit_limma_model(DIAlist)
+}
 
 }

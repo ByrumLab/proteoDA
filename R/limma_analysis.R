@@ -1,6 +1,6 @@
-#' Fit the limma differential expression model
+#' Fit the limma differential abundance model
 #'
-#' Fits the limma differential expresison model to the expression data, following
+#' Fits the limma differential abundance model to the intensity data, following
 #' the specified design and (optional) contrast matrices. When a random factor is included,
 #' uses \code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}} to estimate
 #' the intra-block correlation within groups. Uses \code{\link[limma:lmFit]{limma::lmFit}}
@@ -11,12 +11,14 @@
 #'
 #' @param DIAlist A DIAlist, which must contain a statistical design.
 #'
-#' @return A DIAlist object, with the model fit.
+#' @return A DIAlist object, with the model fit added in the eBayes_fit slot.
 #'
 #' @export
 #'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' model_fit <- fit_limma_model(DIAlist)
+#' }
 #'
 
 fit_limma_model <- function(DIAlist) {
@@ -101,27 +103,46 @@ fit_limma_model <- function(DIAlist) {
   validate_DIAlist(DIAlist)
 }
 
-#' Extract differential expression results from a model fit
+#' Extract differential abundance results from a model fit
 #'
-#' Extracts statistical results describing differential expression from the.
+#' Extracts tables of statistical results from the model fit created by
+#' \code{\link{fit_limma_model}} and add them to the results slot of the DIAlist.
+#' The results are a list of tables, one for each contrast/term specific in the
+#' statistical design. In models with intercepts these are ignored by default,
+#' but can be output by setting extract_intercept to TRUE. See
+#' \code{\link[limma:decideTests]{limma::decideTests}} and
+#' \code{\link[limma:topTable]{limma::topTable}} for information on the statistical results.
 #'
-#'
-#' @param DIAlist A DIAlist, which must contain a statistical design.
+#' @param DIAlist A DIAlist, which must contain a model fit.
 #' @param pval_thresh The p-value threshold used to determine significance
 #'   (significant when p < pval_thresh). Default is 0.055.
 #' @param lfc_thresh The logFC threshold used to determine significance
 #'   (significant when |logFC| > lfc.tresh). Default is 1. LogFC are base 2.
-#' @param adj_method The method used for adjusting P-values. Default is "BH",
-#'   for the Benjamini-Hochberg correction
+#' @param adj_method The method used for adjusting P-values. Possible values are
+#'   "none", "BH", "BY", and "holm". Default is "BH", for the Benjamini-Hochberg
+#'   correction. See \code{\link[stats:p.adjust]{stats::p.adjust}} for details.
+#' @param extract_intercept For models with an intercept term, should results for
+#'   the intercept be extracted? Default if FALSE.
 #'
-#' @param DIAlist A DIAlist, which must contain a statistical design.
-#'
-#' @return A DIAlist object, with differential expression results.
+#' @return A DIAlist object, with differential abundance results added
+#'   to the results slot.
 #' @export
 #'
 #' @examples
-#' # No examples yet
-extract_DE_results <- function(DIAlist, pval_thresh = 0.055, lfc_thresh = 1, adj_method = "BH") {
+#' \dontrun{
+#' # Using default thresholds and p-value adjustment
+#' results <- extract_DA_results(DIAlist)
+#'
+#' # Relax significance and log fold-change thresholds
+#' results <- extract_DA_results(DIAlist,
+#'                               pval_thresh = 0.1,
+#'                               lfc_thresh = 0)
+#'
+#' # Include intercept term in results
+#' results <- extract_DA_results(DIAlist,
+#'                               extract_intercept = T)
+#' }
+extract_DA_results <- function(DIAlist, pval_thresh = 0.055, lfc_thresh = 1, adj_method = "BH", extract_intercept = F) {
 
   # check args
   adj_method <- rlang::arg_match(
@@ -167,6 +188,19 @@ extract_DE_results <- function(DIAlist, pval_thresh = 0.055, lfc_thresh = 1, adj
   outcomes_table_rawp <- as.data.frame(limma::decideTests(efit, adjust.method = "none", p.value = pval_thresh, lfc = lfc_thresh))
   outcomes_table_adjp <- as.data.frame(limma::decideTests(efit, adjust.method = adj_method, p.value = pval_thresh, lfc = lfc_thresh))
 
+  # Remove intercept term
+  # if we're not extracting it
+  if (!extract_intercept) {
+    # Get the non-intercept indices, based on contrast names
+    # use string searching instead of index, so it shouldn't for no-intercept models
+    non_intercept_terms <- which(!stringr::str_detect(stringr::str_to_lower(contrast_names), "intercept"))
+
+    outcomes_table_rawp <- outcomes_table_rawp[,non_intercept_terms, drop = F]
+    outcomes_table_adjp <- outcomes_table_adjp[,non_intercept_terms, drop = F]
+    contrast_names <- contrast_names[non_intercept_terms]
+  }
+
+
   perc_sig_rawp <- check_DE_perc(outcomes_table_rawp, pval_thresh = pval_thresh, lfc_thresh = lfc_thresh, adj_method = "none")
   perc_sig_adjp <- check_DE_perc(outcomes_table_adjp, pval_thresh = pval_thresh, lfc_thresh = lfc_thresh, adj_method = adj_method)
 
@@ -197,12 +231,12 @@ extract_DE_results <- function(DIAlist, pval_thresh = 0.055, lfc_thresh = 1, adj
 
 #' Check percentage of DE genes
 #'
-#' Internal utility function, used in \code{\link{extract_DE_results}} to
+#' Internal utility function, used in \code{\link{extract_DA_results}} to
 #' check if assumptions are met.
 #'
 #' @param DE_outcomes_table DE results dataframe. Should be the output of
 #' \code{\link[limma:decideTests]{limma::decideTests}}, coerced to a dataframe.
-#' @param DE_warn_threshold Proporion of DE genes at which we warn user.
+#' @param DE_warn_threshold Proportion of DE genes at which we warn user.
 #' @param pval_thresh P-value threshold used.
 #' @param lfc_thresh logFC threshold used.
 #' @param adj_method P-value adjustment method used.
@@ -210,21 +244,19 @@ extract_DE_results <- function(DIAlist, pval_thresh = 0.055, lfc_thresh = 1, adj
 #' @return A vector of numeric values giving the % of significant DE proteins within
 #'   each contrast.
 #'
-#' @examples
-#' # No examples yet
 check_DE_perc <- function(DE_outcomes_table, DE_warn_threshold = 0.2, pval_thresh, lfc_thresh, adj_method) {
   perc_sig <- colSums(DE_outcomes_table != 0, na.rm = T)/colSums(!is.na(DE_outcomes_table))
 
   # Don't check the intercept column, if it exists
-  perc_sig <- perc_sig[names(perc_sig) %notin% c("Intercept")]
+  perc_sig <- perc_sig[names(perc_sig) %notin% c("Intercept", "intercept")]
 
   if (any(perc_sig > DE_warn_threshold)) {
     above_thresh <- names(perc_sig)[perc_sig > DE_warn_threshold]
     thresh_perc <- DE_warn_threshold*100
     cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is DE in {cli::qty(length(above_thresh))} {?a/some} term{?s}",
-                      "!" = "Criteria for DE: |logFC| > {.val {lfc_thresh}}, p-value < {.val {pval_thresh}}, p.value adjustment = {.val {adj_method}}",
+                      "!" = "Criteria for DA: |logFC| > {.val {lfc_thresh}}, p-value < {.val {pval_thresh}}, p.value adjustment = {.val {adj_method}}",
                       "!" = "{cli::qty(length(above_thresh))} Problematic term{?s}: {.val {above_thresh}}",
-                      "!" = "Assumption that most genes/proteins/phospho are not DE may be violated"))
+                      "!" = "Assumption that most proteins are not DA may be violated"))
   }
 
   perc_sig

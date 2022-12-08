@@ -136,7 +136,7 @@ together, using either the base R pipe `|>` or the tidyverse/magrittr
 `%>%`. So, the above code can be condensed to:
 
 ``` r
-data <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv")  %>% 
+data <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv")  |> 
   add_metadata(metadata_file = "path/to/metdata.csv") 
 ```
 
@@ -168,7 +168,7 @@ data <- filter_samples(data, !stringr::str_detect(sample, "sampleX"))
 Again, these can be chained together:
 
 ``` r
-data <- filter_samples(data, group != "Pool") %>% 
+data <- filter_samples(data, group != "Pool") |> 
   filter_samples(!stringr::str_detect(sample, "sampleX"))
 ```
 
@@ -217,7 +217,7 @@ data <- filter_proteins_by_proportion(data,
 Again, these can be chained:
 
 ``` r
-data <- filter_proteins_contaminants(data) %>% 
+data <- filter_proteins_contaminants(data) |> 
   filter_proteins_by_group(min_reps = 5, min_groups = 3, grouping_column = "group")
 ```
 
@@ -258,7 +258,7 @@ After looking at the normalization report and deciding what
 normalization method to use, you normalize the data:
 
 ``` r
-norm_data <- data %>%
+norm_data <- data |>
   normalize_data("quantile")
 ```
 
@@ -347,7 +347,7 @@ norm_data <- add_contrasts(norm_data,
                            contrasts_file = "path/to/contrasts.txt")
 
 # Specify by hand
-norm_data <- norm_data %>%
+norm_data <- norm_data |>
   add_contrasts(contrasts_vector = c("example=groupA-groupB"))
 ```
 
@@ -363,32 +363,32 @@ sure your contrasts and statistical design make sense together.
 
 After you add the statistical design, you fit the limma model with
 `fit_limma_model()` and get tables of differential expression results
-with `extract_DE_results()`. `fit_limma_model()` adds the `eBayes_fit`
-slot to the DIAlist, and `extract_DE_results()` adds the `results` slot
+with `extract_DA_results()`. `fit_limma_model()` adds the `eBayes_fit`
+slot to the DIAlist, and `extract_DA_results()` adds the `results` slot
 as a list with one element for each statistical term/contrast.
 
 ``` r
-final <- fit_limma_model(norm_data) %>% 
-  extract_DE_results(pval_thresh = 0.055, lfc_thresh = 1, adj_method = "BH")
+final <- fit_limma_model(norm_data) |> 
+  extract_DA_results(pval_thresh = 0.055, lfc_thresh = 1, adj_method = "BH")
 ```
 
 Besides the report functions above, the whole analysis could in theory
 be chained together into one pipeline:
 
 ``` r
-full_chain <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv")  %>% 
-  add_metadata(metadata_file = "path/to/metdata.csv") %>% 
-  filter_samples(group != "Pool") %>% 
-  filter_samples(!stringr::str_detect(sample, "sampleX")) %>% 
-  filter_proteins_contaminants() %>% 
+full_chain <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv")  |> 
+  add_metadata(metadata_file = "path/to/metdata.csv") |> 
+  filter_samples(group != "Pool") |> 
+  filter_samples(!stringr::str_detect(sample, "sampleX")) |> 
+  filter_proteins_contaminants() |> 
   filter_proteins_by_group(min_reps = 5, 
                            min_groups = 3, 
-                           grouping_column = "group") %>% 
-  normalize_data("quantile") %>% 
-  add_design(~ treatment*genotype + (1 | batch)) %>% 
-  add_contrasts(contrasts_vector = c("example=groupA-groupB")) %>% 
-  fit_limma_model() %>% 
-  extract_DE_results()
+                           grouping_column = "group") |> 
+  normalize_data("quantile") |> 
+  add_design(~ treatment*genotype + (1 | batch)) |> 
+  add_contrasts(contrasts_vector = c("example=groupA-groupB")) |> 
+  fit_limma_model() |> 
+  extract_DA_results()
 ```
 
 ### Writing final reports
