@@ -1,6 +1,6 @@
 
 
-## write_proteinorm_report uses functions in multiple other files:
+## write_norm_report uses functions in multiple other files:
 ## normalization_metrics.R contains functions for numerically evaluating normalization methods
 ## normalization_plotting.R contains functions to plot these metrics
 
@@ -35,22 +35,22 @@
 #' \dontrun{
 #' # Group samples according to group identities
 #' # in the "treatment" column of the metadata
-#' write_proteinorm_report(DIAlist,
+#' write_norm_report(DIAlist,
 #'                         grouping_column = "treatment")
 #'
 #' # Change the default directory and file names
-#' write_proteinorm_report(DIAlist,
+#' write_norm_report(DIAlist,
 #'                         grouping_column = "treatment",
 #'                         output_dir = "my/chosen/directory",
 #'                         filename = "my_report.pdf")
 #'
 #' # Overwrite an existing report
-#' write_proteinorm_report(DIAlist,
+#' write_norm_report(DIAlist,
 #'                         grouping_column = "treatment",
 #'                         overwrite = T)
 #' }
 #'
-write_proteinorm_report <- function(DIAlist,
+write_norm_report <- function(DIAlist,
                                    grouping_column = NULL,
                                    output_dir = NULL,
                                    filename = NULL,
@@ -186,7 +186,7 @@ write_proteinorm_report <- function(DIAlist,
 #'
 #' Takes in raw intensity data and applies 8 different normalization methods,
 #' returning a list of the data normalized with each method. Used internally in
-#' \code{\link{write_proteinorm_report}}.
+#' \code{\link{write_norm_report}}.
 #'
 #' @param data A dataframe or matrix of raw data to be normalized. Rows are proteins and
 #'   columns are raw intensity data.

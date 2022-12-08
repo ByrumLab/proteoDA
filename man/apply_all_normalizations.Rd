@@ -18,6 +18,6 @@ contains the normalized data.
 \description{
 Takes in raw intensity data and applies 8 different normalization methods,
 returning a list of the data normalized with each method. Used internally in
-\code{\link{write_proteinorm_report}}.
+\code{\link{write_norm_report}}.
 }
 \keyword{internal}
