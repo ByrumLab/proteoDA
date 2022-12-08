@@ -60,7 +60,5 @@ filter_samples <- function(DIAlist, condition) {
   cli::cli_inform("{cli::qty(nrow(meta_removed))} Sample{?s} removed:")
   print(meta_removed)
 
-  cli::cli_inform(c("v" = "Success"))
-
   DIAlist
 }

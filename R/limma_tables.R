@@ -346,7 +346,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   wb<-openxlsx::createWorkbook()
 
   # Set up annotation columns -----------------------------------------------
-  newNames <- stringr::str_replace_all(colnames(annotation), "[._]", " ") %>%
+  newNames <- stringr::str_replace_all(colnames(annotation), "[._]", " ") |>
     stringr::str_replace("UniprotID", "UniProt ID")
   annot.title <- "Protein Annotation"
   data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive Intensities")

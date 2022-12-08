@@ -1,8 +1,4 @@
 
-#' @importFrom magrittr %>%
-#' @export
-magrittr::`%>%`
-
 #' Removes commas in character representation of a number
 #'
 #' @param x Character string of a number, with commas in it.
@@ -185,7 +181,7 @@ validate_filename <- function(filename, allowed_exts, check_space = T) {
 #' @examples
 #' # No examples yet
 file_extension <- function(filepath) {
-  ext <- stringr::str_extract(filepath, "\\.[0-9A-Za-z]+$") %>%
+  ext <- stringr::str_extract(filepath, "\\.[0-9A-Za-z]+$") |>
     stringr::str_remove_all("\\.")
   if (is.na(ext)) ext <- ""
   ext

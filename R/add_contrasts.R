@@ -164,14 +164,14 @@ extract_contrast_groups <- function(contrast.vec) {
 
   # Basically replicating a lot of the stuff that
   # is already there, but with stringr. Though I have no idea what some of this is for
-  processed_contrasts <-  contrasts %>%
-    stringr::str_remove_all(" ") %>% # remove blank spaces
-    stringr::str_remove_all("\\/[[:digit:]]+") %>% ## removes division by one digit number (/2)
-    stringr::str_remove_all("\\-[[:digit:]]+") %>% ## removes subtraction by one digit number (-2)
-    stringr::str_remove_all("\\+[[:digit:]]+") %>% ## removes addition of one digit number (+2)
-    stringr::str_remove_all("\\*[[:digit:]]+") %>% ## removes multiplication by one digit number (*2)
-    stringr::str_replace_all("\\+", "-") %>%       ## replaces + with - (+ -> -)
-    stringr::str_remove_all("[[()]]") %>%          ## remove parentheses
+  processed_contrasts <-  contrasts |>
+    stringr::str_remove_all(" ") |> # remove blank spaces
+    stringr::str_remove_all("\\/[[:digit:]]+") |> ## removes division by one digit number (/2)
+    stringr::str_remove_all("\\-[[:digit:]]+") |> ## removes subtraction by one digit number (-2)
+    stringr::str_remove_all("\\+[[:digit:]]+") |> ## removes addition of one digit number (+2)
+    stringr::str_remove_all("\\*[[:digit:]]+") |> ## removes multiplication by one digit number (*2)
+    stringr::str_replace_all("\\+", "-") |>       ## replaces + with - (+ -> -)
+    stringr::str_remove_all("[[()]]") |>          ## remove parentheses
     stringr::str_replace_all("\\/", "-")           ## replaces / with -
 
   # Split on "-", to get just the groups.
