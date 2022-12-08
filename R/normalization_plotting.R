@@ -1,10 +1,11 @@
-#' Evaluate a normalization metric
+#' Evaluate a normalization metric across a list of normalized data
 #'
 #' Applies a metric (see \code{\link{norm_metrics}}) across a list of normalized
-#' data matrices and outputs the results in a data frame for plotting.
+#' data matrices (most likely produced by \code{\link{apply_all_normalizations}})
+#' and outputs the results in a data frame ready to be used with internal plotting
+#' functions (see \code{\link{pn_plots_generic}}).
 #'
-#' @param normList A named list of normalized data matrices. Generally, the "normList"
-#'   slot of the list that is output by .
+#' @param normList A named list of normalized data matrices.
 #' @param grouping A character or factor vector, listing the group(s) the samples
 #'   belong to.
 #' @param metric The normalization metric to calculate. Can be "PCV",
@@ -13,11 +14,6 @@
 #'   ready to be used for plotting.
 #'
 #' @keywords internal
-#'
-#' @seealso \code{\link{norm_metrics}}
-#'
-#' @examples
-#' # No examples yet
 #'
 eval_pn_metric_for_plot <- function(normList,
                                     grouping,
@@ -66,9 +62,6 @@ eval_pn_metric_for_plot <- function(normList,
 #' @importFrom ggplot2 xlab ylab ggtitle coord_cartesian unit facet_wrap
 #'
 #' @keywords internal
-#' @examples
-#' # No examples yet
-#'
 #' @rdname pn_plots_generic
 #'
 pn_mean_plot <- function(plotData) {
@@ -158,9 +151,6 @@ pn_density_plot <- function(plotData) {
 #' @return A ggplot object of the plot.
 #'
 #' @name pn_plots
-#'
-#' @examples
-#' # No examples yet
 #'
 
 #' @rdname pn_plots
@@ -300,5 +290,3 @@ pn_plot_MD <- function(normList, grouping) {
     theme_bw() +
     theme(panel.grid = element_blank())
 }
-
-
