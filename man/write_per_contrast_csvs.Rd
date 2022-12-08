@@ -23,6 +23,4 @@ successfully written.
 Internal function used to write per-contrast statistical results to a .csv
 file.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}
