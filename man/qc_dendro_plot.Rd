@@ -32,7 +32,7 @@ for the PCA and dendrogram clustering. Default is 500.}
 not yet standardized, should be TRUE. Default is TRUE.}
 
 \item{dist_metric}{The metric used to define distance for dendrogram clustering.
-Default is "euclidean". See \code{\link[stats:dist]{stats::hclust}} for options.}
+Default is "euclidean". See \code{\link[stats:dist]{stats::dist}} for options.}
 
 \item{clust_method}{The agglomeration method to use for dendrogram clustering.
 Default is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.}

@@ -5,6 +5,9 @@
 #' across samples. See arguments for options for customizing the report.
 #'
 #' @inheritParams write_norm_report
+#' @param color_column The name of the column in the metadata which
+#'   gives information on how to color samples in plots within the report. If not
+#'   supplied, all samples will be the same color.
 #' @param label_column Optional. The name of column within the targets data frame
 #'   which contains labels to use for plotting figures. When not supplied,
 #'   defaults to using the column names of the data in processed_data.
@@ -18,7 +21,7 @@
 #' @param pca_axes  A numeric vector of length 2 which lists the PC axes to plot.
 #'   Default is c(1,2), to plot the first two principal components.
 #' @param dist_metric The metric used to define distance for dendrogram clustering.
-#'   Default is "euclidean". See \code{\link[stats:dist]{stats::hclust}} for options.
+#'   Default is "euclidean". See \code{\link[stats:dist]{stats::dist}} for options.
 #' @param clust_method The agglomeration method to use for dendrogram clustering.
 #'   Default is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.
 #' @param show_all_proteins Should all proteins be shown in missing value heatmap,
@@ -31,11 +34,35 @@
 #' @importFrom ggplot2 ggsave
 #'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' # Color samples according to group identities
+#' # in the "treatment" column of the metadata
+#' write_qc_report(DIAlist,
+#'                 color_column = "treatment")
 #'
+#' # Change the default directory and file names
+#' write_qc_report(DIAlist,
+#'                 color_column = "treatment",
+#'                 output_dir = "my/chosen/directory",
+#'                 filename = "my_report.pdf")
+#'
+#' # Overwrite an existing report
+#' write_qc_report(DIAlist,
+#'                 color_column = "treatment",
+#'                 overwrite = T)
+#'
+#' # Customize PCA and clustering plots
+#' write_qc_report(DIAlist,
+#'                 color_column = "treatment",
+#'                 top_proteins = 1000,
+#'                 pca_aces = c(2,3),
+#'                 dist_metric = "manhattan",
+#'                 clust_method = "average")
+#'
+#' }
 
 write_qc_report <- function(DIAlist,
-                            grouping_column = NULL,
+                            color_column = NULL,
                             label_column = NULL,
                             output_dir = NULL,
                             filename = NULL,
@@ -67,17 +94,17 @@ write_qc_report <- function(DIAlist,
 
   # If provided, check that grouping column exists in the target dataframe
   # And set it
-  if (!is.null(grouping_column)) {
-    if (length(grouping_column) != 1) {
-      cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
-                       "i" = "Only specify one column name for {.arg grouping_column}"))
+  if (!is.null(color_column)) {
+    if (length(color_column) != 1) {
+      cli::cli_abort(c("Length of {.arg color_column} does not equal 1",
+                       "i" = "Only specify one column name for {.arg color_column}"))
 
     }
-    if (grouping_column %notin% colnames(DIAlist$metadata)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in the metadata of {.arg DIAlist}",
+    if (color_column %notin% colnames(DIAlist$metadata)) {
+      cli::cli_abort(c("Column {.arg {color_column}} not found in the metadata of {.arg DIAlist}",
                        "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
     }
-    groups <- as.character(DIAlist$metadata[,grouping_column])
+    groups <- as.character(DIAlist$metadata[,color_column])
   } else { # If no groups provided, set them but warn user
     groups <- rep("group", ncol(DIAlist$data))
     cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples in {.arg DIAlist} as one group."))
@@ -146,7 +173,7 @@ write_qc_report <- function(DIAlist,
   violin_plot <- qc_violin_plot(data = norm_data,
                                 groups = groups,
                                 sample_labels = sample_labels) +
-    ggtitle(paste0("Grouped by ", grouping_column))
+    ggtitle(paste0("Colored by ", color_column))
 
   # Change label if data aren't normalized
   if (!normalized) {
@@ -163,7 +190,7 @@ write_qc_report <- function(DIAlist,
                           top_proteins = top_proteins,
                           standardize = standardize,
                           pca_axes = pca_axes) +
-    ggtitle(paste0("PCA, colored by ", grouping_column))
+    ggtitle(paste0("PCA, colored by ", color_column))
 
 
   # dendrogram
@@ -176,7 +203,7 @@ write_qc_report <- function(DIAlist,
                                 clust_method = clust_method) +
     ggtitle(paste0("Cluster method: ", clust_method, "\n",
                    "Distance metric: ", dist_metric, "\n",
-                   "Colored by: ", grouping_column))
+                   "Colored by: ", color_column))
 
   # correlation heatmap
   correlation_heatmap <- qc_corr_hm(data = norm_data,
@@ -188,7 +215,7 @@ write_qc_report <- function(DIAlist,
                                         groups = groups,
                                         sample_labels = sample_labels,
                                         column_sort = "cluster",
-                                        group_var_name = grouping_column,
+                                        group_var_name = color_column,
                                         show_all_proteins = show_all_proteins)
 
   # missing value heatmap <- cluster by grouping column
@@ -196,7 +223,7 @@ write_qc_report <- function(DIAlist,
                                         groups = groups,
                                         sample_labels = sample_labels,
                                         column_sort = "group",
-                                        group_var_name = grouping_column,
+                                        group_var_name = color_column,
                                         show_all_proteins = show_all_proteins)
 
   ###############################
