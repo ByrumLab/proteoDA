@@ -5,6 +5,9 @@
 #' Specifically, removes proteins which contain the strings "DECOY" or "Group of"
 #' in the Protein.Name column, derived from the data output by MaxQuant.
 #'
+#'
+#'make some changes
+#'
 #' @param DIAlist A DIAlist object.
 #'
 #' @return A DIAlist, with contaminant proteins removed.
