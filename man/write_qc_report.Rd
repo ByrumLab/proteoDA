@@ -6,7 +6,7 @@
 \usage{
 write_qc_report(
   DIAlist,
-  grouping_column = NULL,
+  color_column = NULL,
   label_column = NULL,
   output_dir = NULL,
   filename = NULL,
@@ -22,9 +22,9 @@ write_qc_report(
 \arguments{
 \item{DIAlist}{A DIAlist.}
 
-\item{grouping_column}{The name of the column in the metadata which
-gives information on how to group samples for normalization. Must be supplied:
-some metrics can't be calculated for only one group.}
+\item{color_column}{The name of the column in the metadata which
+gives information on how to color samples in plots within the report. If not
+supplied, all samples will be the same color.}
 
 \item{label_column}{Optional. The name of column within the targets data frame
 which contains labels to use for plotting figures. When not supplied,
@@ -51,7 +51,7 @@ not yet standardized, should be TRUE. Default is TRUE.}
 Default is c(1,2), to plot the first two principal components.}
 
 \item{dist_metric}{The metric used to define distance for dendrogram clustering.
-Default is "euclidean". See \code{\link[stats:dist]{stats::hclust}} for options.}
+Default is "euclidean". See \code{\link[stats:dist]{stats::dist}} for options.}
 
 \item{clust_method}{The agglomeration method to use for dendrogram clustering.
 Default is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.}
@@ -68,6 +68,30 @@ distribution, clustering, and correlation of protein intensities
 across samples. See arguments for options for customizing the report.
 }
 \examples{
-# No examples yet
+\dontrun{
+# Color samples according to group identities
+# in the "treatment" column of the metadata
+write_qc_report(DIAlist,
+                color_column = "treatment")
 
+# Change the default directory and file names
+write_qc_report(DIAlist,
+                color_column = "treatment",
+                output_dir = "my/chosen/directory",
+                filename = "my_report.pdf")
+
+# Overwrite an existing report
+write_qc_report(DIAlist,
+                color_column = "treatment",
+                overwrite = T)
+
+# Customize PCA and clustering plots
+write_qc_report(DIAlist,
+                color_column = "treatment",
+                top_proteins = 1000,
+                pca_aces = c(2,3),
+                dist_metric = "manhattan",
+                clust_method = "average")
+
+}
 }

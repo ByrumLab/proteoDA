@@ -206,7 +206,7 @@ Then, we make the QC report. The QC report will actually work on either normaliz
 
 ```{r}
 write_qc_report(norm_data,
-                grouping_column = "group",
+                color_column = "group",
                 out_dir = "directory/to/save",
                 file = "QC_report.pdf",
                 overwrite = T)

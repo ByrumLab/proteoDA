@@ -274,7 +274,7 @@ this on normalized data.
 
 ``` r
 write_qc_report(norm_data,
-                grouping_column = "group",
+                color_column = "group",
                 out_dir = "directory/to/save",
                 file = "QC_report.pdf",
                 overwrite = T)

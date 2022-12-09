@@ -161,18 +161,18 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
   normalize_data(norm_method = "cycloess")
 
 write_qc_report(full_higgs_chain,
-                grouping_column = "group",
+                color_column = "group",
                 filename = "higgs_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(full_higgs_chain,
-                grouping_column = "group",
+                color_column = "group",
                 label_column = "sampleIDs",
                 filename = "higgs_qc_update_samplelabs.pdf",
                 overwrite = T)
 
 write_qc_report(norm_ndu,
-                grouping_column = "group",
+                color_column = "group",
                 filename = "ndu_qc_update.pdf",
                 overwrite = T)
 
@@ -182,23 +182,23 @@ write_qc_report(norm_ndu,
 
 
 write_qc_report(norm_lupashin,
-                grouping_column = "group",
+                color_column = "group",
                 filename = "lupashin_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(norm_zhan,
-                grouping_column = "group",
+                color_column = "group",
                 filename = "zhan_qc_update.pdf",
                 overwrite = T)
 
 write_qc_report(norm_reb,
-                grouping_column = "group",
+                color_column = "group",
                 filename = "rebello_qc_update_changes.pdf",
                 overwrite = T, standardize = T, top_proteins = nrow(norm_reb$data),
                 pca_axes = c(2, 5))
 
 write_qc_report(norm_kaul,
-                grouping_column = "group",
+                color_column = "group",
                 filename = "kaul_qc_update.pdf",
                 overwrite = T)
 
