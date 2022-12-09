@@ -1,6 +1,6 @@
 #' Prepare limma contrasts matrix
 #'
-#' Create the contrasts matrix, for use in limma.
+#' Create the contrasts matrix, for use in limma. MAKE SOME CHANGES.
 #'
 #' @param DIAlist A DIAlist. Must have a non-empty statistical design.
 #' @param contrasts_vector A vector of contrasts

@@ -18,7 +18,7 @@ Must be a .csv, .tsv, or .txt file.}
 A DIAlist with added contrasts
 }
 \description{
-Create the contrasts matrix, for use in limma.
+Create the contrasts matrix, for use in limma. MAKE SOME CHANGES.
 }
 \examples{
 # No examples yet
