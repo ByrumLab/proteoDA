@@ -9,18 +9,25 @@ add_contrasts(DIAlist, contrasts_vector = NULL, contrasts_file = NULL)
 \arguments{
 \item{DIAlist}{A DIAlist. Must have a non-empty statistical design.}
 
-\item{contrasts_vector}{A vector of contrasts}
+\item{contrasts_vector}{A vector of contrasts.}
 
 \item{contrasts_file}{The path to the contrasts file listing the desired contrasts.
 Must be a .csv, .tsv, or .txt file.}
 }
 \value{
-A DIAlist with added contrasts
+A DIAlist with added contrasts associated with the limma design
 }
 \description{
-Create the contrasts matrix, for use in limma. MAKE SOME CHANGES.
+Create the contrasts matrix, for use in a limma model. This function utilizes the limma makeContrasts
+function with a user provided file of a list of comparisons. Note: The label on the plots is defined
+bye what is written in the contrast statement prior to the equal sign..
 }
 \examples{
-# No examples yet
+\dontrun{
+# An example of a .csv file with three comparisons
+Treatment1_vs_Control= Treatment1 - Control
+Treatment2_vs_Control= Treatment2 - Control
+Treatment2_vs_Treatment1= Treatment2 - Treatment1
+}
 
 }
