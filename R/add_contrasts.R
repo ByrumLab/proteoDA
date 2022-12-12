@@ -1,17 +1,32 @@
 #' Prepare limma contrasts matrix
 #'
-#' Create the contrasts matrix, for use in limma.
+#' Create the contrasts matrix, for use in a limma model. This function utilizes the
+#' function \link[limma:makeContrasts]{limma::makeContrasts} with a user provided file or vector of a list of comparisons.
+#' Note: The label on the plots is defined by what is written in the contrast statement prior to the equal sign.
+#'
 #'
 #' @param DIAlist A DIAlist. Must have a non-empty statistical design.
-#' @param contrasts_vector A vector of contrasts
+#' @param contrasts_vector A vector of contrasts.
 #' @param contrasts_file The path to the contrasts file listing the desired contrasts.
 #'   Must be a .csv, .tsv, or .txt file.
 #'
-#' @return A DIAlist with added contrasts
+#' @return A DIAlist with added contrasts associated with the limma design
 #' @export
 #'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' # An example of a .csv file with three comparisons
+#' data -> add_contrasts(data, contrasts_file = "path/to/file.csv")
+#'
+#' # file info
+#' Treatment1_vs_Control= Treatment1 - Control
+#' Treatment2_vs_Control= Treatment2 - Control
+#' Treatment2_vs_Treatment1= Treatment2 - Treatment1
+#'
+#' # An example using a vector
+#' data -> add_contrasts(contrasts_vector = c("Treat1_vs_Control=Treat1-Control",
+#'      "Treat2_vs_Control=Treat2-Control"))
+#' }
 #'
 add_contrasts <- function(DIAlist,
                           contrasts_vector = NULL,

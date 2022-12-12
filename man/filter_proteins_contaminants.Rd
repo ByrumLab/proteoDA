@@ -14,9 +14,9 @@ A DIAlist, with contaminant proteins removed.
 }
 \description{
 THIS FUNCTION FOR UAMS INTERNAL USE. This function removes protein contaminants
-based on aspects of protein names that are speciic to UAMS-formatted data.
+based on aspects of protein names that are specific to UAMS-formatted data.
 Specifically, removes proteins which contain the strings "DECOY" or "Group of"
-in the Protein.Name column, derived from the data output by MaxQuant.
+in the Protein.Name column, derived from the data output by Scaffold DIA.
 }
 \examples{
 \dontrun{
