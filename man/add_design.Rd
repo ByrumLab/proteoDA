@@ -2,18 +2,18 @@
 % Please edit documentation in R/add_design.R
 \name{add_design}
 \alias{add_design}
-\title{Prepare limma model design matrix.}
+\title{Prepare limma model design matrix}
 \usage{
 add_design(DIAlist, design_formula = NULL)
 }
 \arguments{
-\item{DIAlist}{The DIAlist of normalized proteins}
+\item{DIAlist}{The DIAlist of normalized proteins.}
 
 \item{design_formula}{A string for the design matrix using intercept, no intercept,
 additive, or interaction models. See examples below.}
 }
 \value{
-A DIAlist object with a design
+A DIAlist object with a design.
 }
 \description{
 A design matrix is a model matrix of explanatory variables of a set of objects. Each row represents

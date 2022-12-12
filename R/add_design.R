@@ -1,14 +1,14 @@
-#' Prepare limma model design matrix.
+#' Prepare limma model design matrix
 #'
 #' A design matrix is a model matrix of explanatory variables of a set of objects. Each row represents
 #' individual samples and the columns represent the sample groups and factors. This function utilizes the
 #' function \link[limma:modelMatrix]{limma::modelMatrix}.
 #'
-#' @param DIAlist The DIAlist of normalized proteins
+#' @param DIAlist The DIAlist of normalized proteins.
 #' @param design_formula  A string for the design matrix using intercept, no intercept,
 #' additive, or interaction models. See examples below.
 #'
-#' @return A DIAlist object with a design
+#' @return A DIAlist object with a design.
 #' @export
 #'
 #' @examples
