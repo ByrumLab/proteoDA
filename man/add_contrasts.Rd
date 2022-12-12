@@ -19,7 +19,7 @@ A DIAlist with added contrasts associated with the limma design
 }
 \description{
 Create the contrasts matrix, for use in a limma model. This function utilizes the
-function \link[limma::makeContrasts]{limma::makeContrasts} with a user provided file or vector of a list of comparisons.
+function \link[limma:makeContrasts]{limma::makeContrasts} with a user provided file or vector of a list of comparisons.
 Note: The label on the plots is defined by what is written in the contrast statement prior to the equal sign.
 }
 \examples{
