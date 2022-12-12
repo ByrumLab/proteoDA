@@ -6,7 +6,6 @@
 #' in the Protein.Name column, derived from the data output by Scaffold DIA.
 #'
 #'
-#'make some changes
 #'
 #' @param DIAlist A DIAlist object.
 #'
