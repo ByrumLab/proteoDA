@@ -7,17 +7,26 @@
 add_metadata(DIAlist, metadata_file)
 }
 \arguments{
-\item{DIAlist}{A DIAlist to which metadata will be added}
+\item{DIAlist}{A DIAlist to which metadata will be added.}
 
-\item{metadata_file}{A metadata file, giving info on the samples.}
+\item{metadata_file}{A metadata file defining sample information necessary for the statistical design.}
 }
 \value{
-A prototype of our new S3 list type, with added metadata
+An S3 list type with added metadata.
 }
 \description{
-Add a dataframe of metadata to a DIAlist object. For UAMS internal use.
+Add a dataframe of metadata to a DIAlist object. The metadata file defines the
+sample labels, groups, and other factors (such as batch, gender, age, paired samples, etc.)
+required for the analysis and design matrix.
 }
 \examples{
-# No examples yet
+\dontrun{
+
+data <- add_metadata(data, "path/to/metadata_file.csv")
+
+# An example metadata file contains columns: number, sample, batch, group. The number column
+in the metadata must match the sample name in the data file. For instance, metadata file number "1"
+corresponds to data column "Sample_01". This matching defines the other factors about the sample.
+}
 
 }
