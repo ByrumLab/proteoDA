@@ -62,12 +62,12 @@ filter_samples <- function(DIAlist, condition) {
   # Add a col, keep, with the evaluation of the condition expression.
   condition_call <- substitute(condition)
   in_meta <- within(in_meta, {
-    keep <- eval(condition_call)
+    sample_to_be_kept <- eval(condition_call)
   })
 
   # Do subseting, keeping removed samples for stats.
-  meta_removed <- subset(in_meta, subset = !keep, select = c(-keep))
-  meta_kept <- subset(in_meta, subset = keep, select = c(-keep))
+  meta_removed <- subset(in_meta, subset = !sample_to_be_kept, select = c(-sample_to_be_kept))
+  meta_kept <- subset(in_meta, subset = sample_to_be_kept, select = c(-sample_to_be_kept))
 
   # Check that sample numbers match
   if (nrow(meta_removed) + nrow(meta_kept) != nrow(in_meta)) {
