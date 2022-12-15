@@ -7,19 +7,47 @@
 filter_samples(DIAlist, condition)
 }
 \arguments{
-\item{DIAlist}{The DIAlist to be filtered}
+\item{DIAlist}{A DIAlist object to be filtered.}
 
-\item{condition}{A logical expression indicating which samples to keep.}
+\item{condition}{An expression that returns a logical value, defined in terms
+of variables present in the metadata dataframe of the supplied DIAlist.
+Samples are kept if the condition is TRUE for that sample.}
 }
 \value{
-A prototype of our new S3 list type.
+A DIAlist, with samples that do not meet the condition removed.
 }
 \description{
-NEED TO REWRITE
+This function is used to remove samples from a DIAlist, filtering using data
+in the metadata dataframe of the DIAlist. Samples which do not produce a
+value of TRUE for the supplied condition are removed from the data, annotation,
+and metadata slots of the DIAlist. If condition evaluates to NA, the function
+will return an error.
 }
 \examples{
 \dontrun{
-DIAlist <- filter_samples(DIAlist, group != "Pool")
-}
+# Suppose the DIAlist$metadata data frame contains three columns:
+# sample_ID = An alpha-numeric ID uniquely identifying a sample
+# treatment = A character listing the treatment group a sample belongs to
+# year = A numeric value listing the year a sample was collected
 
+# Remove a specific sample by ID
+filtered <- filter_samples(DIAlist,
+                           sample_ID != "abc123")
+
+# Remove any sample which contains the string "control" in the treatment:
+filtered <- filter_samples(DIAlist,
+                           grepl(pattern = "control",
+                                 x = treatment))
+
+# Remove any sample from before 2010
+filtered <- filter_samples(DIAlist,
+                           year >= 2010)
+
+
+# Filtering functions can be chained together
+filtered <- DIAlist |>
+  filter_samples(grepl(pattern = "control",
+                       x = treatment)) |>
+  filter_samples(year >= 2010)
+}
 }
