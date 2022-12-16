@@ -72,9 +72,9 @@ README for an example workflow for the old pipeline.
 ## New s3 object structure
 
 The new version of the pipeline is based around a new S3 class,
-`DIAlist` (probably need to change the name to something more general).
-It holds all the info for a single quantitative proteomics experiment,
-and all our functions take it as input. Its a list, with 7 slots:
+`DAList`. It holds all the info for a single quantitative proteomics
+experiment, and all our functions take it as input. Its a list, with 7
+slots:
 
 1)  data- MS intensity data, where each row is a protein and each column
     is a sample.
@@ -94,10 +94,10 @@ and all our functions take it as input. Its a list, with 7 slots:
 For the public R package, users will have to make the first three slots
 all at once, and then our functions are used to process the data and add
 the rest of the slots. For our internal usage, we have some functions to
-import data and metadata and assemble a DIAlist object.
+import data and metadata and assemble a DAList object.
 
 All of the functions in the pipeline check for a proper structure of the
-DIAlist object, both when it is input into the function and before it
+DAList object, both when it is input into the function and before it
 returns the result. We still need to improve these checks and think of
 all the edge cases to test for.
 
@@ -124,13 +124,13 @@ into the intensity data and annotation data. It doesn’t do any filtering
 out of decoys or contaminants, as the old data import function did.
 
 After importing the raw data, we import metadata and add it to the
-DIAlist object:
+DAList object:
 
 ``` r
-data <- add_metadata(DIAlist = data, metadata_file = "path/to/metdata.csv") 
+data <- add_metadata(DAList = data, metadata_file = "path/to/metdata.csv") 
 ```
 
-One thing to note: all the functions in the pipeline take the DIAlist
+One thing to note: all the functions in the pipeline take the DAList
 object as their first argument/input. So, most functions can be piped
 together, using either the base R pipe `|>` or the tidyverse/magrittr
 `%>%`. So, the above code can be condensed to:
@@ -173,7 +173,7 @@ data <- filter_samples(data, group != "Pool") |>
 ```
 
 The filtering functions that are applied are tracked in the `tags` slot
-of the DIAlist object. Any samples that are filtered out are
+of the DAList object. Any samples that are filtered out are
 automatically removed from the data as well.
 
 #### Protein/gene filtering
@@ -248,7 +248,7 @@ that Stephanie wants. When we split our package into public and internal
 packages, we can set the defaults we want for our internal package. For
 now, you’ll need to specify them by hand.
 
-This function invisibly returns the input data/DIAlist, so it can be
+This function invisibly returns the input data/DAList, so it can be
 chained if desired (though you may not want to).
 
 ### Normalize data
@@ -262,8 +262,8 @@ norm_data <- data |>
 ```
 
 This function replaces the unnormalized data in the `data` slot of the
-`DIAlist` with normalized data, and updates the `tags` to record that
-the dat are normalized and the method of normalization.
+`DAList` with normalized data, and updates the `tags` to record that the
+dat are normalized and the method of normalization.
 
 ### QC report
 
@@ -287,15 +287,15 @@ that Stephanie wants. When we split our package into public and internal
 packages, we can set the defaults we want for our internal package. For
 now, you’ll need to specify them by hand.
 
-This function invisibly returns the input data/DIAlist, so it can be
+This function invisibly returns the input data/DAList, so it can be
 chained if desired (though you may not want to).
 
 ### Specifying the statistical model
 
 This is an area where there are some big changes, which hopefully will
 make it easier to specify more complicated models. The first step is to
-use `add_design()` to add the statistical model. Besides the DIAlist,
-the only argument this function takes in is a formula of the desired
+use `add_design()` to add the statistical model. Besides the DAList, the
+only argument this function takes in is a formula of the desired
 statistical model. In the previous code of the package, this was done by
 specifying column names, and there were some limitations around model
 specification (intercept vs. no-intercept, inclusion of interactions,
@@ -362,7 +362,7 @@ sure your contrasts and statistical design make sense together.
 After you add the statistical design, you fit the limma model with
 `fit_limma_model()` and get tables of differential expression results
 with `extract_DA_results()`. `fit_limma_model()` adds the `eBayes_fit`
-slot to the DIAlist, and `extract_DA_results()` adds the `results` slot
+slot to the DAList, and `extract_DA_results()` adds the `results` slot
 as a list with one element for each statistical term/contrast.
 
 ``` r

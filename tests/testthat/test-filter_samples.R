@@ -6,7 +6,7 @@ test_that("filter_samples removes sample data as expected", {
   # An initial, ugly test to start getting things going.
   # But, should probably move this to a separate script
   # within the test quite where I make a few different objects for testing
-  # Maybe do this after I create an user function for making an initial DIAlist?
+  # Maybe do this after I create an user function for making an initial DAList?
 
 
   # Assemble a data frame to test filtering on
@@ -16,7 +16,7 @@ test_that("filter_samples removes sample data as expected", {
   test_data <- as.data.frame(matrix(data = 1:100, nrow = 10))
   colnames(test_data) <- test_metadata$sample_ID
   test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
-  to_filter <- new_DIAlist(x = list(data = test_data,
+  to_filter <- new_DAList(x = list(data = test_data,
                                     annotation = test_annotation,
                                     metadata = test_metadata
 
@@ -31,7 +31,7 @@ test_that("filter_samples removes sample data as expected", {
   filtered_data <- as.data.frame(matrix(data = 1:100, nrow = 10))[,1:5]
   colnames(filtered_data) <- filtered_metadata$sample_ID
   filtered_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
-  filtered <- new_DIAlist(x = list(data = filtered_data,
+  filtered <- new_DAList(x = list(data = filtered_data,
                                    annotation = filtered_annotation,
                                    metadata = filtered_metadata
 

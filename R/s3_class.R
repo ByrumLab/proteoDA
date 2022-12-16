@@ -1,33 +1,30 @@
-#' DIAlist internal constructor
+#' DAList internal constructor
 #'
-#' Internal function for constructing a DIAlist object with no/minimal checks.
+#' Internal function for constructing a DAList object with no/minimal checks.
 #'
-#' @param x An object to be converted into our DIAlist type
+#' @param x An object to be converted into our DAList type
 #'
-#' @return A prototype of our new S3 list type (currently just a list).
+#' @return A DAList object derived from x
 #'
-#' @examples
-#' # No examples yet
 #'
-new_DIAlist <- function(x = list()) {
+new_DAList <- function(x = list()) {
   stopifnot(is.list(x))
 
-  structure(x, class = "DIAlist")
+  structure(x, class = "DAList")
 }
 
 
-#' DIAlist internal constructor
+#' DAList validator
 #'
-#' Internal function for constructing a DIAlist object with no/minimal checks.
+#' Internal function for validating a DAList object
 #'
-#' @param x An object to be converted into our DIAlist type
+#' @param x An object to be tested if it is a valid DAList.
 #'
-#' @return A prototype of our new S3 list type (currently just a list).
+#' @return If x was a valid DAList, returns x
 #'
-#' @examples
-#' # No examples yet
+#' @keywords internal
 #'
-validate_DIAlist <- function(x) {
+validate_DAList <- function(x) {
 
   # This will get complicated
   # TODO: maybe separate out into separate functions to check each slot??
@@ -42,22 +39,22 @@ validate_DIAlist <- function(x) {
   # when creating the data part of the object?
 
   if (!any(c(is.data.frame(x$data), is.matrix(x$data)))) {
-    cli::cli_abort("The {.arg data} slot of a DIAlist must be a dataframe or matrix")
+    cli::cli_abort("The {.arg data} slot of a DAList must be a dataframe or matrix")
   }
 
   # Data must be numeric
   if (!all(apply(x$data, 2, is.numeric))) {
-    cli::cli_abort("The {.arg data} slot of a DIAlist must contain only numeric data")
+    cli::cli_abort("The {.arg data} slot of a DAList must contain only numeric data")
   }
 
   # data and annotation slots should have same number of rows
   if (nrow(x$data) != nrow(x$annotation)) {
-    cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DIAlist must have the same number of rows")
+    cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DAList must have the same number of rows")
   }
 
   # Data and annotation should have matching rownames
   if (!(all(rownames(x$data) == rownames(x$annotation)))) {
-    cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DIAlist must match")
+    cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DAList must match")
   }
 
 
@@ -102,21 +99,15 @@ validate_DIAlist <- function(x) {
 
     # # data and annotation slots should have same number of rows
     # if (nrow(x$data) != nrow(x$annotation)) {
-    #   cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DIAlist must have the same number of rows")
+    #   cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DAList must have the same number of rows")
     # }
     #
     # # Data and annotation should have matching rownames
     # if (!(all(rownames(x$data) == rownames(x$annotation)))) {
-    #   cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DIAlist must match")
+    #   cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DAList must match")
     # }
 
   }
-
-
-
-
-
-
 
   # If all checks pass, return input
   x

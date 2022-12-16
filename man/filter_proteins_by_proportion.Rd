@@ -4,10 +4,10 @@
 \alias{filter_proteins_by_proportion}
 \title{Filter protein data by proportion of quantified samples in group}
 \usage{
-filter_proteins_by_proportion(DIAlist, min_prop, grouping_column = "group")
+filter_proteins_by_proportion(DAList, min_prop, grouping_column = "group")
 }
 \arguments{
-\item{DIAlist}{A DIAlist object to be filtered.}
+\item{DAList}{A DAList object to be filtered.}
 
 \item{min_prop}{The minimum proportion of samples within a group
 in which a protein must be found for it to be retained.
@@ -17,18 +17,18 @@ Must be a numeric value from 0 to 1.}
 the group membership for each sample. Default is "group".}
 }
 \value{
-A DIAlist, with proteins that are not present in sufficient samples
+A DAList, with proteins that are not present in sufficient samples
 removed.
 }
 \description{
-This function is used to remove proteins from a DIAlist, filtering out proteins
-based on levels of missing data in the data dataframe of the DIAlist. The
-grouping_column must be a column in the metadata of the DIAlist which lists the
+This function is used to remove proteins from a DAList, filtering out proteins
+based on levels of missing data in the data dataframe of the DAList. The
+grouping_column must be a column in the metadata of the DAList which lists the
 group membership for each sample. Proteins must have a non-zero, non-missing intensity
 value in at least min_prop of samples within each group in order to be retained.
 When min_prop leads to a non-integer value for a given group, it is rounded up:
 e.g., with 10 samples in a group and a min_prop of 0.75, a protein must be present in
-at least 8 samples to be retained. If the data in the DIAlist contains intensity values of 0,
+at least 8 samples to be retained. If the data in the DAList contains intensity values of 0,
 these are replaced with NAs.
 }
 \details{
@@ -38,25 +38,25 @@ are imbalanced.
 }
 \examples{
 \dontrun{
-  # Suppose the DIAlist contains data from 40 samples across 2
+  # Suppose the DAList contains data from 40 samples across 2
   # experimental groups, with 15 samples in one group and 25 in the other.
   # and group membership listed in a column names "group"
 
   # Strict filtering:
   # no missing data
   # Proteins must be present in all samples in all groups
-  filtered <- filter_proteins_by_proportion(DIAlist,
+  filtered <- filter_proteins_by_proportion(DAList,
                                             min_prop = 1,
                                             grouping_column = "group")
   # moderate filtering:
   # protein must be present in at 50\% of samples within each group.
   # That is, 8 samples in the group of 15 and 13 samples in the group of 25.
-  filtered <- filter_proteins_by_proportion(DIAlist,
+  filtered <- filter_proteins_by_proportion(DAList,
                                             min_prop = 0.5,
                                             grouping_column = "group")
 
   # Filtering functions can be chained together
-  filtered <- DIAlist |>
+  filtered <- DAList |>
     filter_proteins_by_annotation(!grepl(pattern = "keratin",
                                          x = protein_name)) |>
     filter_proteins_by_proportion(min_prop = 0.5,

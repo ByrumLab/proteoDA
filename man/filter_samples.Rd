@@ -2,50 +2,50 @@
 % Please edit documentation in R/filter_samples.R
 \name{filter_samples}
 \alias{filter_samples}
-\title{Filter samples from a DIAlist}
+\title{Filter samples from a DAList}
 \usage{
-filter_samples(DIAlist, condition)
+filter_samples(DAList, condition)
 }
 \arguments{
-\item{DIAlist}{A DIAlist object to be filtered.}
+\item{DAList}{A DAList object to be filtered.}
 
 \item{condition}{An expression that returns a logical value, defined in terms
-of variables present in the metadata dataframe of the supplied DIAlist.
+of variables present in the metadata dataframe of the supplied DAList.
 Samples are kept if the condition is TRUE for that sample.}
 }
 \value{
-A DIAlist, with samples that do not meet the condition removed.
+A DAList, with samples that do not meet the condition removed.
 }
 \description{
-This function is used to remove samples from a DIAlist, filtering using data
-in the metadata dataframe of the DIAlist. Samples which do not produce a
+This function is used to remove samples from a DAList, filtering using data
+in the metadata dataframe of the DAList. Samples which do not produce a
 value of TRUE for the supplied condition are removed from the data, annotation,
-and metadata slots of the DIAlist. If condition evaluates to NA, the function
+and metadata slots of the DAList. If condition evaluates to NA, the function
 will return an error.
 }
 \examples{
 \dontrun{
-# Suppose the DIAlist$metadata data frame contains three columns:
+# Suppose the DAList$metadata data frame contains three columns:
 # sample_ID = An alpha-numeric ID uniquely identifying a sample
 # treatment = A character listing the treatment group a sample belongs to
 # year = A numeric value listing the year a sample was collected
 
 # Remove a specific sample by ID
-filtered <- filter_samples(DIAlist,
+filtered <- filter_samples(DAList,
                            sample_ID != "abc123")
 
 # Remove any sample which contains the string "control" in the treatment:
-filtered <- filter_samples(DIAlist,
+filtered <- filter_samples(DAList,
                            grepl(pattern = "control",
                                  x = treatment))
 
 # Remove any sample from before 2010
-filtered <- filter_samples(DIAlist,
+filtered <- filter_samples(DAList,
                            year >= 2010)
 
 
 # Filtering functions can be chained together
-filtered <- DIAlist |>
+filtered <- DAList |>
   filter_samples(grepl(pattern = "control",
                        x = treatment)) |>
   filter_samples(year >= 2010)

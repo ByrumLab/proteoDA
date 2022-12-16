@@ -2,12 +2,12 @@
 % Please edit documentation in R/add_metadata.R
 \name{add_metadata}
 \alias{add_metadata}
-\title{Add metadata to a DIAlist}
+\title{Add metadata to a DAList}
 \usage{
-add_metadata(DIAlist, metadata_file)
+add_metadata(DAList, metadata_file)
 }
 \arguments{
-\item{DIAlist}{A DIAlist to which metadata will be added.}
+\item{DAList}{A DAList to which metadata will be added.}
 
 \item{metadata_file}{A metadata file defining sample information necessary for the statistical design.}
 }
@@ -15,7 +15,7 @@ add_metadata(DIAlist, metadata_file)
 An S3 list type with added metadata.
 }
 \description{
-Add a dataframe of metadata to a DIAlist object. The metadata file defines the
+Add a dataframe of metadata to a DAList object. The metadata file defines the
 sample labels, groups, and other factors (such as batch, gender, age, paired samples, etc.)
 required for the analysis and design matrix.
 }

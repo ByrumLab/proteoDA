@@ -5,7 +5,7 @@
 \title{Create a quality control report}
 \usage{
 write_qc_report(
-  DIAlist,
+  DAList,
   color_column = NULL,
   label_column = NULL,
   output_dir = NULL,
@@ -20,7 +20,7 @@ write_qc_report(
 )
 }
 \arguments{
-\item{DIAlist}{A DIAlist.}
+\item{DAList}{A DAList.}
 
 \item{color_column}{The name of the column in the metadata which
 gives information on how to color samples in plots within the report. If not
@@ -60,7 +60,7 @@ Default is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options
 of only those with missing data? Default is F (only those with missing data).}
 }
 \value{
-If report is created successfully, invisibly returns the input DIAlist.
+If report is created successfully, invisibly returns the input DAList.
 }
 \description{
 Saves a PDF report containing a variety of plots which provide information on the
@@ -71,22 +71,22 @@ across samples. See arguments for options for customizing the report.
 \dontrun{
 # Color samples according to group identities
 # in the "treatment" column of the metadata
-write_qc_report(DIAlist,
+write_qc_report(DAList,
                 color_column = "treatment")
 
 # Change the default directory and file names
-write_qc_report(DIAlist,
+write_qc_report(DAList,
                 color_column = "treatment",
                 output_dir = "my/chosen/directory",
                 filename = "my_report.pdf")
 
 # Overwrite an existing report
-write_qc_report(DIAlist,
+write_qc_report(DAList,
                 color_column = "treatment",
                 overwrite = T)
 
 # Customize PCA and clustering plots
-write_qc_report(DIAlist,
+write_qc_report(DAList,
                 color_column = "treatment",
                 top_proteins = 1000,
                 pca_aces = c(2,3),

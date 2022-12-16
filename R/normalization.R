@@ -1,6 +1,6 @@
-#' Normalize data in a DIAlist
+#' Normalize data in a DAList
 #'
-#' Normalizes data in a DIAlist, using one of the available normalization options (see Details).
+#' Normalizes data in a DAList, using one of the available normalization options (see Details).
 #'
 #' Available normalization methods: \itemize{
 #'   \item log2- Binary (base2) log transformation.
@@ -26,30 +26,30 @@
 #'     intensities.
 #'  }
 #'
-#' @param DIAlist A DIAlist containing non-normalized data.
+#' @param DAList A DAList containing non-normalized data.
 #' @param norm_method A normalization method to use. Options are "log2", "median",
 #'   "mean", "vsn", "quantile", "cycloess", "rlr", and "gi". Default is "log2".
 #'
-#' @return A DIAlist with normalized data.
+#' @return A DAList with normalized data.
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' norm_data <- normalize_data(DIAlist, "log2")
+#' norm_data <- normalize_data(DAList, "log2")
 #' }
 #'
-normalize_data <- function(DIAlist,
+normalize_data <- function(DAList,
                            norm_method = c("log2", "median", "mean", "vsn", "quantile",
                                       "cycloess", "rlr", "gi")) {
 
   norm_method <- rlang::arg_match(norm_method)
 
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 
-  if (!is.null(DIAlist$tags$normalized)) {
-    if (DIAlist$tags$normalized) {
-      cli::cli_abort("Data in DIAlist are already normalized.")
+  if (!is.null(DAList$tags$normalized)) {
+    if (DAList$tags$normalized) {
+      cli::cli_abort("Data in DAList are already normalized.")
     }
   }
 
@@ -57,9 +57,9 @@ normalize_data <- function(DIAlist,
   # log2 transformed data
   if (norm_method %in% c("log2", "vsn", "gi")) {
     normalized_data <- do.call(what = paste0(norm_method, "Norm"),
-                               args = list(dat = DIAlist$data))
+                               args = list(dat = DAList$data))
   } else if (norm_method %in% c("median", "mean", "quantile", "cycloess", "rlr")) {
-    log2_dat <- log2Norm(dat = DIAlist$data)
+    log2_dat <- log2Norm(dat = DAList$data)
     normalized_data <- do.call(what = paste0(norm_method, "Norm"),
                                args = list(logDat = log2_dat))
   } else {
@@ -67,11 +67,11 @@ normalize_data <- function(DIAlist,
   }
 
   # Updata data
-  DIAlist$data <- normalized_data
-  DIAlist$tags$normalized <- T
-  DIAlist$tags$norm_method <- norm_method
+  DAList$data <- normalized_data
+  DAList$tags$normalized <- T
+  DAList$tags$norm_method <- norm_method
 
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 }
 
 

@@ -5,7 +5,7 @@
 \title{Create a normalization report}
 \usage{
 write_norm_report(
-  DIAlist,
+  DAList,
   grouping_column = NULL,
   output_dir = NULL,
   filename = NULL,
@@ -15,7 +15,7 @@ write_norm_report(
 )
 }
 \arguments{
-\item{DIAlist}{A DIAlist.}
+\item{DAList}{A DAList.}
 
 \item{grouping_column}{The name of the column in the metadata which
 gives information on how to group samples for normalization. Must be supplied:
@@ -38,7 +38,7 @@ log2ratio plot? Default is FALSE.}
 file size? Default is FALSE. Requires installation of \code{ggrastr}.}
 }
 \value{
-If report is created successfully, invisibly returns the input DIAlist.
+If report is created successfully, invisibly returns the input DAList.
 }
 \description{
 Saves a PDF report containing a variety of plots which give
@@ -50,17 +50,17 @@ use for downstream analysis.
 \dontrun{
 # Group samples according to group identities
 # in the "treatment" column of the metadata
-write_norm_report(DIAlist,
+write_norm_report(DAList,
                         grouping_column = "treatment")
 
 # Change the default directory and file names
-write_norm_report(DIAlist,
+write_norm_report(DAList,
                         grouping_column = "treatment",
                         output_dir = "my/chosen/directory",
                         filename = "my_report.pdf")
 
 # Overwrite an existing report
-write_norm_report(DIAlist,
+write_norm_report(DAList,
                         grouping_column = "treatment",
                         overwrite = T)
 }

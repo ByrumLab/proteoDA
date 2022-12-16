@@ -14,11 +14,11 @@ case all sample IDs (determined from column names in the MaxQuant Samples Report
 imported.}
 }
 \value{
-A DIAlist containing data and annotation information.
+A DAList containing data and annotation information.
 }
 \description{
 THIS FUNCTION FOR UAMS INTERNAL USE. This function reads in and parses a UAMS-formatted
-MaxQuant Samples Report file and creates a DIAlist object containing protein intensity data
+MaxQuant Samples Report file and creates a DAList object containing protein intensity data
 and annotation data.
 }
 \examples{

@@ -5,7 +5,7 @@
 \title{Make interactive reports on differential abundance}
 \usage{
 write_limma_plots(
-  DIAlist = NULL,
+  DAList = NULL,
   grouping_column = NULL,
   output_dir = NULL,
   tmp_subdir = "tmp",
@@ -15,7 +15,7 @@ write_limma_plots(
 )
 }
 \arguments{
-\item{DIAlist}{A DIAlist object, with statistical results.}
+\item{DAList}{A DAList object, with statistical results.}
 
 \item{grouping_column}{The name of the column in the metadata which
 gives information on how to group samples for the interactive
@@ -40,11 +40,11 @@ Default is 1000.}
 Default is 1000.}
 }
 \value{
-Invisibly returns the input DIAlist.
+Invisibly returns the input DAList.
 }
 \description{
 Creates and saves interactive HTML reports summarizing
-differential abundance analyses for each contrast in the results slot of the DIAlist.
+differential abundance analyses for each contrast in the results slot of the DAList.
 Creates one HTML report for each contrast. Also creates a subfolder containing static .pdf
 versions of all interactive plots. Currently, overwrites any previous reports
 or other files with the same name.
@@ -52,24 +52,24 @@ or other files with the same name.
 \examples{
 \dontrun{
   # Using defaults
-  write_limma_plots(DIAlist,
+  write_limma_plots(DAList,
                     grouping_column = "treatment")
 
   # Adjust size of report
-  write_limma_plots(DIAlist,
+  write_limma_plots(DAList,
                     grouping_column = "treatment",
                     height = 1500,
                     width = 1500)
 
  # Customize output directory
- write_limma_plots(DIAlist,
+ write_limma_plots(DAList,
                    grouping_column = "treatment",
                    output_dir = "DA_results")
 
  # Add titles to the intensity plot,
  # using the values in the protein_id column
- # in the annotation of the DIAlist
- write_limma_plots(DIAlist,
+ # in the annotation of the DAList
+ write_limma_plots(DAList,
                    grouping_column = "treatment",
                    key_column = "protein_id")
 }

@@ -5,12 +5,12 @@
 #' Note: The label on the plots is defined by what is written in the contrast statement prior to the equal sign.
 #'
 #'
-#' @param DIAlist A DIAlist. Must have a non-empty statistical design.
+#' @param DAList A DAList. Must have a non-empty statistical design.
 #' @param contrasts_vector A vector of contrasts.
 #' @param contrasts_file The path to the contrasts file listing the desired contrasts.
 #'   Must be a .csv, .tsv, or .txt file.
 #'
-#' @return A DIAlist with added contrasts associated with the limma design
+#' @return A DAList with added contrasts associated with the limma design
 #' @export
 #'
 #' @examples
@@ -28,18 +28,18 @@
 #'      "Treat2_vs_Control=Treat2-Control"))
 #' }
 #'
-add_contrasts <- function(DIAlist,
+add_contrasts <- function(DAList,
                           contrasts_vector = NULL,
                           contrasts_file = NULL) {
 
   # Check input arguments generally
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 
   # Make sure there's a design matrix present already,
   # tell user to set it first if not
-  if (is.null(DIAlist$design)) {
-    cli::cli_abort(c("Input DIAlist does not have a statistical design",
-                     "i" = "Run {.code DIAlist <- add_design(DIAlist, ~ formula)} before adding contrasts"))
+  if (is.null(DAList$design)) {
+    cli::cli_abort(c("Input DAList does not have a statistical design",
+                     "i" = "Run {.code DAList <- add_design(DAList, ~ formula)} before adding contrasts"))
   }
 
   # Must have either contrasts vec or contrasts file, not both.
@@ -89,34 +89,34 @@ add_contrasts <- function(DIAlist,
 
   # if the groups defined in the contrast file do no match the design
   # then error
-  if (!all(unique(unlist(contrast_groups)) %in% colnames(DIAlist$design$design_matrix))) {
-    invalidGroups <- unique(unlist(contrast_groups))[unique(unlist(contrast_groups)) %notin% colnames(DIAlist$design$design_matrix)]
+  if (!all(unique(unlist(contrast_groups)) %in% colnames(DAList$design$design_matrix))) {
+    invalidGroups <- unique(unlist(contrast_groups))[unique(unlist(contrast_groups)) %notin% colnames(DAList$design$design_matrix)]
 
     cli::cli_abort(c("Some groups present in the contrasts are not present in the design matrix",
                      "!" = "{cli::qty(length(invalidGroups))} Contrast group{?s} {.val {invalidGroups}} not found in the colnames of the design matrix",
                      "i" = "Check for typos in the contrasts",
                      "i" = "Make sure all groups for which you define contrasts are included in the design matrix.",
-                     "i" = "Use {.code colnames(DIAlist$design$design_matrix)} to see the names of the design matrix.",
+                     "i" = "Use {.code colnames(DAList$design$design_matrix)} to see the names of the design matrix.",
                      "i" = "If using an intercpet model, you may need to reorder/relevel your factors."))
   }
 
   # Get contrasts with limma
-  contrasts <- limma::makeContrasts(contrasts = contrast_vec_squish, levels = DIAlist$design$design_matrix)
+  contrasts <- limma::makeContrasts(contrasts = contrast_vec_squish, levels = DAList$design$design_matrix)
   colnames(contrasts) <- stringr::str_remove(colnames(contrasts), "=.*")
 
-  if (!is.null(DIAlist$design$contrast_matrix) | !is.null(DIAlist$design$contrast_vector)) {
-    cli::cli_inform("DIAlist already contains contrasts. Overwriting.")
+  if (!is.null(DAList$design$contrast_matrix) | !is.null(DAList$design$contrast_vector)) {
+    cli::cli_inform("DAList already contains contrasts. Overwriting.")
     # Get rid of any old stuff
-    DIAlist$design$contrast_matrix <- NULL
-    DIAlist$design$contrast_vector <- NULL
+    DAList$design$contrast_matrix <- NULL
+    DAList$design$contrast_vector <- NULL
   }
 
   # Set everything here
-  DIAlist$design$contrast_matrix <- contrasts
-  DIAlist$design$contrast_vector <- contrasts_vector
+  DAList$design$contrast_matrix <- contrasts
+  DAList$design$contrast_vector <- contrasts_vector
 
 
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 }
 
 
