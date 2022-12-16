@@ -6,7 +6,6 @@
 \usage{
 write_limma_tables(
   DIAlist,
-  ilab = NULL,
   output_dir = NULL,
   overwrite = F,
   contrasts_subdir = NULL,
@@ -19,10 +18,9 @@ write_limma_tables(
 \arguments{
 \item{DIAlist}{A DIAlist object, with statistical results in the results slot.}
 
-\item{ilab}{The ilab identifier for this project.}
-
 \item{output_dir}{The directory in which to output tables. If not specified,
-will construct a directory based on the ilab name and type of analysis.}
+defaults to "protein_analysis/02_diff_abundance" in the current
+working directory.}
 
 \item{overwrite}{Should results files be overwritten? Default is FALSE.}
 
@@ -30,13 +28,13 @@ will construct a directory based on the ilab name and type of analysis.}
 result .csv files. If not specified, will be "per_contrast_results".}
 
 \item{summary_csv}{The filename of the csv file giving a summary of the number
-of DE genes per contrast. If not specified, will be "DE_summary.csv".}
+of DA genes per contrast. If not specified, will be "DA_summary.csv".}
 
 \item{combined_file_csv}{The filename of the combined results csv file. If
 not specified, will be combined_results.csv.}
 
 \item{spreadsheet_xlsx}{The filename of the Excel spreadsheet containing the
-results. If not specified, will construct a name based on the ilab identifier.}
+results. If not specified, will be results.xlsx.}
 
 \item{add_filter}{Should per-column filters be added to the spreadsheet?
 Default is TRUE. These can sometimes cause unstable spreadsheet files,
@@ -63,7 +61,6 @@ contrast.
 \dontrun{
   # Using defaults
   write_limma_tables(DIAlist)
-
 
  # Customize output directory
  # and filenames
