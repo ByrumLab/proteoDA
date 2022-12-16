@@ -2,24 +2,24 @@
 % Please edit documentation in R/normalization.R
 \name{normalize_data}
 \alias{normalize_data}
-\title{Normalize data in a DIAlist}
+\title{Normalize data in a DAList}
 \usage{
 normalize_data(
-  DIAlist,
+  DAList,
   norm_method = c("log2", "median", "mean", "vsn", "quantile", "cycloess", "rlr", "gi")
 )
 }
 \arguments{
-\item{DIAlist}{A DIAlist containing non-normalized data.}
+\item{DAList}{A DAList containing non-normalized data.}
 
 \item{norm_method}{A normalization method to use. Options are "log2", "median",
 "mean", "vsn", "quantile", "cycloess", "rlr", and "gi". Default is "log2".}
 }
 \value{
-A DIAlist with normalized data.
+A DAList with normalized data.
 }
 \description{
-Normalizes data in a DIAlist, using one of the available normalization options (see Details).
+Normalizes data in a DAList, using one of the available normalization options (see Details).
 }
 \details{
 Available normalization methods: \itemize{
@@ -48,7 +48,7 @@ intensities.
 }
 \examples{
 \dontrun{
-norm_data <- normalize_data(DIAlist, "log2")
+norm_data <- normalize_data(DAList, "log2")
 }
 
 }

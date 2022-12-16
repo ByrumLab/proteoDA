@@ -1,11 +1,11 @@
 
-#' Add metadata to a DIAlist
+#' Add metadata to a DAList
 #'
-#' Add a dataframe of metadata to a DIAlist object. The metadata file defines the
+#' Add a dataframe of metadata to a DAList object. The metadata file defines the
 #' sample labels, groups, and other factors (such as batch, gender, age, paired samples, etc.)
 #' required for the analysis and design matrix.
 #'
-#' @param DIAlist A DIAlist to which metadata will be added.
+#' @param DAList A DAList to which metadata will be added.
 #' @param metadata_file A metadata file defining sample information necessary for the statistical design.
 #'
 #' @return An S3 list type with added metadata.
@@ -22,20 +22,20 @@
 #' corresponds to data column "Sample_01". This matching defines the other factors about the sample.
 #' }
 #'
-add_metadata <- function(DIAlist,
+add_metadata <- function(DAList,
                          metadata_file) {
 
 
 
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 
-  if (!is.null(DIAlist$metadata)) {
-    cli::cli_abort(c("!" = "input DIAlist already contains metadata"))
+  if (!is.null(DAList$metadata)) {
+    cli::cli_abort(c("!" = "input DAList already contains metadata"))
 
   }
 
   ## extract sample number from sample_IDs and use as data key
-  number  <- get_dia_sample_number(sample_IDs = colnames(DIAlist$data))
+  number  <- get_dia_sample_number(sample_IDs = colnames(DAList$data))
 
   # Import the metadata
   # which has some formatting rules (see documentation)
@@ -64,9 +64,9 @@ add_metadata <- function(DIAlist,
   }
 
   ## create basic targets info.
-  targets <- data.frame(sampleIDs = colnames(DIAlist$data),
+  targets <- data.frame(sampleIDs = colnames(DAList$data),
                         number = number,
-                        row.names = colnames(DIAlist$data))
+                        row.names = colnames(DAList$data))
 
   ## use sample number info. to sort targets info. so that it is in the same order
   ## as the meta data file. combine targets and metadata into a single data.frame
@@ -82,13 +82,13 @@ add_metadata <- function(DIAlist,
   # NEEDED FOR OUR CURRENT DATA, SHOULD rethink for public
   if ("sample" %in% colnames(targets)) {
     rownames(targets) <- targets$sample
-    colnames(DIAlist$data) <- rownames(targets)
+    colnames(DAList$data) <- rownames(targets)
 
     cli::cli_inform(cli::col_yellow("\"sample\" column found in the input metadata file: renamed column names of {.arg data} and row names of {.arg metadata} to sample names"))
   }
 
-  DIAlist$metadata <- targets
-  validate_DIAlist(DIAlist)
+  DAList$metadata <- targets
+  validate_DAList(DAList)
 }
 
 

@@ -4,16 +4,16 @@
 \alias{add_design}
 \title{Prepare limma model design matrix}
 \usage{
-add_design(DIAlist, design_formula = NULL)
+add_design(DAList, design_formula = NULL)
 }
 \arguments{
-\item{DIAlist}{The DIAlist of normalized proteins.}
+\item{DAList}{The DAList of normalized proteins.}
 
 \item{design_formula}{A string for the design matrix using intercept, no intercept,
 additive, or interaction models. See examples below.}
 }
 \value{
-A DIAlist object with a design.
+A DAList object with a design.
 }
 \description{
 A design matrix is a model matrix of explanatory variables of a set of objects. Each row represents

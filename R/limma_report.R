@@ -1,12 +1,12 @@
 #' Make interactive reports on differential abundance
 #'
 #' Creates and saves interactive HTML reports summarizing
-#' differential abundance analyses for each contrast in the results slot of the DIAlist.
+#' differential abundance analyses for each contrast in the results slot of the DAList.
 #' Creates one HTML report for each contrast. Also creates a subfolder containing static .pdf
 #' versions of all interactive plots. Currently, overwrites any previous reports
 #' or other files with the same name.
 #'
-#' @param DIAlist A DIAlist object, with statistical results.
+#' @param DAList A DAList object, with statistical results.
 #' @param grouping_column The name of the column in the metadata which
 #'   gives information on how to group samples for the interactive
 #'   abundance plot.
@@ -24,7 +24,7 @@
 #' @param width The width of the interactive report objects, in pixels.
 #'   Default is 1000.
 #'
-#' @return Invisibly returns the input DIAlist.
+#' @return Invisibly returns the input DAList.
 #'
 #' @importFrom ggplot2 ggsave
 #' @export
@@ -32,29 +32,29 @@
 #' @examples
 #' \dontrun{
 #'   # Using defaults
-#'   write_limma_plots(DIAlist,
+#'   write_limma_plots(DAList,
 #'                     grouping_column = "treatment")
 #'
 #'   # Adjust size of report
-#'   write_limma_plots(DIAlist,
+#'   write_limma_plots(DAList,
 #'                     grouping_column = "treatment",
 #'                     height = 1500,
 #'                     width = 1500)
 #'
 #'  # Customize output directory
-#'  write_limma_plots(DIAlist,
+#'  write_limma_plots(DAList,
 #'                    grouping_column = "treatment",
 #'                    output_dir = "DA_results")
 #'
 #'  # Add titles to the intensity plot,
 #'  # using the values in the protein_id column
-#'  # in the annotation of the DIAlist
-#'  write_limma_plots(DIAlist,
+#'  # in the annotation of the DAList
+#'  write_limma_plots(DAList,
 #'                    grouping_column = "treatment",
 #'                    key_column = "protein_id")
 #' }
 #'
-write_limma_plots <- function(DIAlist = NULL,
+write_limma_plots <- function(DAList = NULL,
                               grouping_column = NULL,
                               output_dir = NULL,
                               tmp_subdir = "tmp",
@@ -63,13 +63,13 @@ write_limma_plots <- function(DIAlist = NULL,
                               width = 1000) {
 
   # Check input arguments generally
-  input_DIAlist <- validate_DIAlist(DIAlist)
+  input_DAList <- validate_DAList(DAList)
 
   # Make sure there's a design matrix present already,
   # tell user to set it first if not
-  if (is.null(DIAlist$results)) {
-    cli::cli_abort(c("Input DIAlist does not have a results design",
-                     "i" = "Run {.code DIAlist <- extract_DA_results(DIAlist, ~ formula)}"))
+  if (is.null(DAList$results)) {
+    cli::cli_abort(c("Input DAList does not have a results design",
+                     "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
   }
 
   # If provided, check that grouping column exists in the target dataframe
@@ -82,12 +82,12 @@ write_limma_plots <- function(DIAlist = NULL,
                        "i" = "Only specify one column name for {.arg grouping_column}"))
 
     }
-    if (grouping_column %notin% colnames(DIAlist$metadata)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DIAlist}",
-                       "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
+    if (grouping_column %notin% colnames(DAList$metadata)) {
+      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DAList}",
+                       "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
     }
     # And set it
-    groups <- as.character(DIAlist$metadata[,grouping_column])
+    groups <- as.character(DAList$metadata[,grouping_column])
   }
 
   # check height and width
@@ -127,28 +127,28 @@ write_limma_plots <- function(DIAlist = NULL,
             to = "report_template.Rmd", overwrite = T)
 
   contrast_count <- 1
-  num_contrasts <- length(names(DIAlist$results))
+  num_contrasts <- length(names(DAList$results))
 
   # TODO:
   # Add overwriting checks?
 
   # Loop over contrasts, making static plots and reports for each
-  for (contrast in names(DIAlist$results)) {
+  for (contrast in names(DAList$results)) {
 
     # Prep data
-    data <- prep_plot_model_data(DIAlist$results, contrast)
-    counts <- DIAlist$data[rownames(data),]
+    data <- prep_plot_model_data(DAList$results, contrast)
+    counts <- DAList$data[rownames(data),]
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
-    anno <- DIAlist$annotation[rownames(data), ]
+    anno <- DAList$annotation[rownames(data), ]
     # Change unique ids if specified
     if(!is.null(key_column)){
-      uk.intest <- key_column %in% colnames(DIAlist$annotation)
+      uk.intest <- key_column %in% colnames(DAList$annotation)
       if(uk.intest) {
-        uk.duptest <- !any(duplicated(as.vector(DIAlist$annotation[key_column])))
+        uk.duptest <- !any(duplicated(as.vector(DAList$annotation[key_column])))
         if(uk.duptest){
-          rownames(counts) <- as.vector(DIAlist$annotation[rownames(data),key_column])
-          rownames(anno) <- as.vector(DIAlist$annotation[rownames(data),key_column])
-          rownames(data) <- as.vector(DIAlist$annotation[rownames(data),key_column])
+          rownames(counts) <- as.vector(DAList$annotation[rownames(data),key_column])
+          rownames(anno) <- as.vector(DAList$annotation[rownames(data),key_column])
+          rownames(data) <- as.vector(DAList$annotation[rownames(data),key_column])
         } else {
           cli::cli_abort("key_column was not unique")
         }
@@ -160,11 +160,11 @@ write_limma_plots <- function(DIAlist = NULL,
     # make and save static plots
     for (type in c("raw", "adjusted")) {
       volcano <- static_volcano_plot(data,
-                                     lfc_thresh = DIAlist$tags$DE_criteria$lfc_thresh,
-                                     pval_thresh = DIAlist$tags$DE_criteria$pval_thresh,
+                                     lfc_thresh = DAList$tags$DE_criteria$lfc_thresh,
+                                     pval_thresh = DAList$tags$DE_criteria$pval_thresh,
                                      contrast = contrast, pval_type = type)
       MD <- static_MD_plot(data,
-                           lfc_thresh = DIAlist$tags$DE_criteria$lfc_thresh,
+                           lfc_thresh = DAList$tags$DE_criteria$lfc_thresh,
                            contrast = contrast, pval_type = type)
       ggsave(filename = file.path("static_plots", paste0(paste(contrast, "volcano", type, "pval", sep = "-"), ".pdf")),
              plot = volcano,
@@ -214,7 +214,7 @@ write_limma_plots <- function(DIAlist = NULL,
   cli::cli_inform("Returning working directory to {.path {old_wd}}")
   setwd(old_wd)
 
-  invisible(input_DIAlist)
+  invisible(input_DAList)
 }
 
 
@@ -223,7 +223,7 @@ write_limma_plots <- function(DIAlist = NULL,
 #' Internal function used to prepare a results dataframe for both static and interactive
 #' plots in reports.
 #'
-#' @param model_results The results slot of a DIAlist object.
+#' @param model_results The results slot of a DAList object.
 #' @param contrast The name of the contrast for which to prep the model data.
 #'
 #' @return A data frame of model results for the given contrast.

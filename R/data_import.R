@@ -2,7 +2,7 @@
 #' Load DIA data from a MaxQuant Samples Report
 #'
 #' THIS FUNCTION FOR UAMS INTERNAL USE. This function reads in and parses a UAMS-formatted
-#' MaxQuant Samples Report file and creates a DIAlist object containing protein intensity data
+#' MaxQuant Samples Report file and creates a DAList object containing protein intensity data
 #' and annotation data.
 #'
 #' @param input_file A MaxQuant Samples Report file to be imported.
@@ -10,7 +10,7 @@
 #'   case all sample IDs (determined from column names in the MaxQuant Samples Report) are
 #'   imported.
 #'
-#' @return A DIAlist containing data and annotation information.
+#' @return A DAList containing data and annotation information.
 #'
 #' @keywords UAMS
 #'
@@ -70,7 +70,7 @@ read_DIA_data <- function(input_file = NULL,
     tags = NULL
   )
 
-  validate_DIAlist(new_DIAlist(out))
+  validate_DAList(new_DAList(out))
 }
 
 

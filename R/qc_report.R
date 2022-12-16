@@ -27,7 +27,7 @@
 #' @param show_all_proteins Should all proteins be shown in missing value heatmap,
 #'  of only those with missing data? Default is F (only those with missing data).
 #'
-#' @return If report is created successfully, invisibly returns the input DIAlist.
+#' @return If report is created successfully, invisibly returns the input DAList.
 #'
 #' @export
 #'
@@ -37,22 +37,22 @@
 #' \dontrun{
 #' # Color samples according to group identities
 #' # in the "treatment" column of the metadata
-#' write_qc_report(DIAlist,
+#' write_qc_report(DAList,
 #'                 color_column = "treatment")
 #'
 #' # Change the default directory and file names
-#' write_qc_report(DIAlist,
+#' write_qc_report(DAList,
 #'                 color_column = "treatment",
 #'                 output_dir = "my/chosen/directory",
 #'                 filename = "my_report.pdf")
 #'
 #' # Overwrite an existing report
-#' write_qc_report(DIAlist,
+#' write_qc_report(DAList,
 #'                 color_column = "treatment",
 #'                 overwrite = T)
 #'
 #' # Customize PCA and clustering plots
-#' write_qc_report(DIAlist,
+#' write_qc_report(DAList,
 #'                 color_column = "treatment",
 #'                 top_proteins = 1000,
 #'                 pca_aces = c(2,3),
@@ -61,7 +61,7 @@
 #'
 #' }
 
-write_qc_report <- function(DIAlist,
+write_qc_report <- function(DAList,
                             color_column = NULL,
                             label_column = NULL,
                             output_dir = NULL,
@@ -78,17 +78,17 @@ write_qc_report <- function(DIAlist,
   ## Check args and set defaults ##
   #################################
 
-  input_DIAlist <- validate_DIAlist(DIAlist)
+  input_DAList <- validate_DAList(DAList)
 
-  if (!is.null(DIAlist$tags$normalized)) {
-    if (!DIAlist$tags$normalized) {
-      cli::cli_warn("Data in DIAlist are not normalized. Writing QC report for raw data.")
+  if (!is.null(DAList$tags$normalized)) {
+    if (!DAList$tags$normalized) {
+      cli::cli_warn("Data in DAList are not normalized. Writing QC report for raw data.")
       normalized <- F
     } else {
       normalized <- T
     }
   } else {
-    cli::cli_warn("Data in DIAlist are not normalized. Writing QC report for raw data.")
+    cli::cli_warn("Data in DAList are not normalized. Writing QC report for raw data.")
     normalized <- F
   }
 
@@ -100,14 +100,14 @@ write_qc_report <- function(DIAlist,
                        "i" = "Only specify one column name for {.arg color_column}"))
 
     }
-    if (color_column %notin% colnames(DIAlist$metadata)) {
-      cli::cli_abort(c("Column {.arg {color_column}} not found in the metadata of {.arg DIAlist}",
-                       "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
+    if (color_column %notin% colnames(DAList$metadata)) {
+      cli::cli_abort(c("Column {.arg {color_column}} not found in the metadata of {.arg DAList}",
+                       "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
     }
-    groups <- as.character(DIAlist$metadata[,color_column])
+    groups <- as.character(DAList$metadata[,color_column])
   } else { # If no groups provided, set them but warn user
-    groups <- rep("group", ncol(DIAlist$data))
-    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples in {.arg DIAlist} as one group."))
+    groups <- rep("group", ncol(DAList$data))
+    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples in {.arg DAList} as one group."))
   }
 
   # If provided, check that label column is present in the metadata
@@ -118,13 +118,13 @@ write_qc_report <- function(DIAlist,
                        "i" = "Only specify one column name for {.arg label_column}"))
 
     }
-    if (label_column %notin% colnames(DIAlist$metadata)) {
-      cli::cli_abort(c("Column {.arg {label_column}} not found in the metadata of {.arg DIAlist}",
-                       "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
+    if (label_column %notin% colnames(DAList$metadata)) {
+      cli::cli_abort(c("Column {.arg {label_column}} not found in the metadata of {.arg DAList}",
+                       "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
     }
-    sample_labels <- as.character(DIAlist$metadata[,label_column])
+    sample_labels <- as.character(DAList$metadata[,label_column])
   } else { # Use colnames of the data if not provided
-    sample_labels <- colnames(DIAlist$data)
+    sample_labels <- colnames(DAList$data)
   }
 
   ############
@@ -163,7 +163,7 @@ write_qc_report <- function(DIAlist,
   }
 
   # Select data from chosen normalization method for further use
-  norm_data <- DIAlist$data
+  norm_data <- DAList$data
 
   #######################
   ## MAKE PLOT OBJECTS ##
@@ -270,5 +270,5 @@ write_qc_report <- function(DIAlist,
     cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
 
-  invisible(input_DIAlist)
+  invisible(input_DAList)
 }

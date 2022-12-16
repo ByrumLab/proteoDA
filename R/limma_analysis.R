@@ -9,51 +9,51 @@
 #' and then recomputes moderated statistics following limma's empirical Bayes
 #' model with \code{\link[limma:eBayes]{limma::eBayes}}.
 #'
-#' @param DIAlist A DIAlist, which must contain a statistical design.
+#' @param DAList A DAList, which must contain a statistical design.
 #'
-#' @return A DIAlist object, with the model fit added in the eBayes_fit slot.
+#' @return A DAList object, with the model fit added in the eBayes_fit slot.
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' model_fit <- fit_limma_model(DIAlist)
+#' model_fit <- fit_limma_model(DAList)
 #' }
 #'
 
-fit_limma_model <- function(DIAlist) {
+fit_limma_model <- function(DAList) {
 
   # Check input arguments generally
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 
   # Make sure there's a design matrix present already,
   # tell user to set it first if not
-  if (is.null(DIAlist$design)) {
-    cli::cli_abort(c("Input DIAlist does not have a statistical design",
-                     "i" = "Run {.code DIAlist <- add_design(DIAlist, ~ formula)} before fitting model"))
+  if (is.null(DAList$design)) {
+    cli::cli_abort(c("Input DAList does not have a statistical design",
+                     "i" = "Run {.code DAList <- add_design(DAList, ~ formula)} before fitting model"))
   }
 
   # Warn user if data aren't normalized, unlikely
   # to want to do stats on non-normalized data
-  if (is.null(DIAlist$tags$normalized)) {
-    cli::cli_inform("Data in DIAlist are not normalized. You may wish to normalize before fitting model.")
+  if (is.null(DAList$tags$normalized)) {
+    cli::cli_inform("Data in DAList are not normalized. You may wish to normalize before fitting model.")
   }
-  if (!is.null(DIAlist$tags$normalized)) {
-    if (!DIAlist$tags$normalized) {
-      cli::cli_inform("Data in DIAlist are not normalized. You may wish to normalize before fitting model.")
+  if (!is.null(DAList$tags$normalized)) {
+    if (!DAList$tags$normalized) {
+      cli::cli_inform("Data in DAList are not normalized. You may wish to normalize before fitting model.")
     }
   }
 
   # With a random factor
-  if (!is.null(DIAlist$design$random_factor)) {
+  if (!is.null(DAList$design$random_factor)) {
 
     if (!requireNamespace("statmod", quietly = TRUE)) {
       cli::cli_abort(c("Package \"statmod\" must be installed to model a random effect"))
     }
 
-    block <- DIAlist$metadata[, DIAlist$design$random_factor, drop = T]
-    corfit <- limma::duplicateCorrelation(object = DIAlist$data,
-                                          design = DIAlist$design$design_matrix,
+    block <- DAList$metadata[, DAList$design$random_factor, drop = T]
+    corfit <- limma::duplicateCorrelation(object = DAList$data,
+                                          design = DAList$design$design_matrix,
                                           block = block)
 
     corfit_display <- round(corfit$consensus.correlation, 3)
@@ -70,14 +70,14 @@ fit_limma_model <- function(DIAlist) {
   }
 
   # Fit the initial model
-  fit <- limma::lmFit(object = DIAlist$data,
-                      design = DIAlist$design$design_matrix,
+  fit <- limma::lmFit(object = DAList$data,
+                      design = DAList$design$design_matrix,
                       block = block,
                       correlation = intra_block_cor)
 
   # If contrasts are specified, re-fit
-  if (!is.null(DIAlist$design$contrast_matrix)) {
-    fit <- limma::contrasts.fit(fit = fit, contrasts = DIAlist$design$contrast_matrix)
+  if (!is.null(DAList$design$contrast_matrix)) {
+    fit <- limma::contrasts.fit(fit = fit, contrasts = DAList$design$contrast_matrix)
   }
 
   # Annoying statmod issue still...
@@ -89,31 +89,31 @@ fit_limma_model <- function(DIAlist) {
   efit <- limma::eBayes(fit = fit, robust = TRUE)
 
   # If there are already results, warn about overwriting
-  if (!is.null(DIAlist$eBayes_fit) | !is.null(DIAlist$results)) {
-    cli::cli_inform("DIAlist already contains statistical results. Overwriting.")
+  if (!is.null(DAList$eBayes_fit) | !is.null(DAList$results)) {
+    cli::cli_inform("DAList already contains statistical results. Overwriting.")
     # Get rid of any old stuff
-    DIAlist$eBayes_fit <- NULL
-    DIAlist$results <- NULL
+    DAList$eBayes_fit <- NULL
+    DAList$results <- NULL
   }
 
   # Add results
-  DIAlist$eBayes_fit <- efit
+  DAList$eBayes_fit <- efit
 
   # Validate and return
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 }
 
 #' Extract differential abundance results from a model fit
 #'
 #' Extracts tables of statistical results from the model fit created by
-#' \code{\link{fit_limma_model}} and add them to the results slot of the DIAlist.
+#' \code{\link{fit_limma_model}} and add them to the results slot of the DAList.
 #' The results are a list of tables, one for each contrast/term specific in the
 #' statistical design. In models with intercepts these are ignored by default,
 #' but can be output by setting extract_intercept to TRUE. See
 #' \code{\link[limma:decideTests]{limma::decideTests}} and
 #' \code{\link[limma:topTable]{limma::topTable}} for information on the statistical results.
 #'
-#' @param DIAlist A DIAlist, which must contain a model fit.
+#' @param DAList A DAList, which must contain a model fit.
 #' @param pval_thresh The p-value threshold used to determine significance
 #'   (significant when p < pval_thresh). Default is 0.055.
 #' @param lfc_thresh The logFC threshold used to determine significance
@@ -124,25 +124,25 @@ fit_limma_model <- function(DIAlist) {
 #' @param extract_intercept For models with an intercept term, should results for
 #'   the intercept be extracted? Default if FALSE.
 #'
-#' @return A DIAlist object, with differential abundance results added
+#' @return A DAList object, with differential abundance results added
 #'   to the results slot.
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' # Using default thresholds and p-value adjustment
-#' results <- extract_DA_results(DIAlist)
+#' results <- extract_DA_results(DAList)
 #'
 #' # Relax significance and log fold-change thresholds
-#' results <- extract_DA_results(DIAlist,
+#' results <- extract_DA_results(DAList,
 #'                               pval_thresh = 0.1,
 #'                               lfc_thresh = 0)
 #'
 #' # Include intercept term in results
-#' results <- extract_DA_results(DIAlist,
+#' results <- extract_DA_results(DAList,
 #'                               extract_intercept = T)
 #' }
-extract_DA_results <- function(DIAlist, pval_thresh = 0.055, lfc_thresh = 1, adj_method = "BH", extract_intercept = F) {
+extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_method = "BH", extract_intercept = F) {
 
   # check args
   adj_method <- rlang::arg_match(
@@ -163,25 +163,25 @@ extract_DA_results <- function(DIAlist, pval_thresh = 0.055, lfc_thresh = 1, adj
   }
 
   # validate the input dataset
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 
   # Make sure there's an eBayes fit already
   # tell user to set it first if not
-  if (is.null(DIAlist$eBayes_fit)) {
-    cli::cli_abort(c("Input DIAlist does not have a model fit",
-                     "i" = "Run {.code DIAlist <- fit_limma_model(DIAlist)} to fit a model."))
+  if (is.null(DAList$eBayes_fit)) {
+    cli::cli_abort(c("Input DAList does not have a model fit",
+                     "i" = "Run {.code DAList <- fit_limma_model(DAList)} to fit a model."))
   }
 
 
   # check if there are already results, warn about overwriting if so
-  if (!is.null(DIAlist$results)) {
-    cli::cli_inform("DIAlist already contains DE results. Overwriting.")
+  if (!is.null(DAList$results)) {
+    cli::cli_inform("DAList already contains DE results. Overwriting.")
     # Get rid of any old stuff
-    DIAlist$results <- NULL
+    DAList$results <- NULL
   }
 
   # Grab fit object and extract results from it
-  efit <- DIAlist$eBayes_fit
+  efit <- DAList$eBayes_fit
   contrast_names <- colnames(efit$coefficients)
 
   # Get dfs where 0 = insig, -1 is sig downregulated, and 1 is sig upregulated
@@ -219,13 +219,13 @@ extract_DA_results <- function(DIAlist, pval_thresh = 0.055, lfc_thresh = 1, adj
   names(results_per_contrast) <- contrast_names
 
   # Add results
-  DIAlist$results <- results_per_contrast
-  DIAlist$tags$DE_criteria$pval_thresh <- pval_thresh
-  DIAlist$tags$DE_criteria$lfc_thresh <- lfc_thresh
-  DIAlist$tags$DE_criteria$adj_method <- adj_method
+  DAList$results <- results_per_contrast
+  DAList$tags$DE_criteria$pval_thresh <- pval_thresh
+  DAList$tags$DE_criteria$lfc_thresh <- lfc_thresh
+  DAList$tags$DE_criteria$adj_method <- adj_method
 
   # Validate and return
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 }
 
 

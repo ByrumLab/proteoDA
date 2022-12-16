@@ -4,10 +4,10 @@
 \alias{add_contrasts}
 \title{Prepare limma contrasts matrix}
 \usage{
-add_contrasts(DIAlist, contrasts_vector = NULL, contrasts_file = NULL)
+add_contrasts(DAList, contrasts_vector = NULL, contrasts_file = NULL)
 }
 \arguments{
-\item{DIAlist}{A DIAlist. Must have a non-empty statistical design.}
+\item{DAList}{A DAList. Must have a non-empty statistical design.}
 
 \item{contrasts_vector}{A vector of contrasts.}
 
@@ -15,7 +15,7 @@ add_contrasts(DIAlist, contrasts_vector = NULL, contrasts_file = NULL)
 Must be a .csv, .tsv, or .txt file.}
 }
 \value{
-A DIAlist with added contrasts associated with the limma design
+A DAList with added contrasts associated with the limma design
 }
 \description{
 Create the contrasts matrix, for use in a limma model. This function utilizes the

@@ -4,13 +4,13 @@
 \alias{filter_proteins_contaminants}
 \title{Remove protein contaminant}
 \usage{
-filter_proteins_contaminants(DIAlist)
+filter_proteins_contaminants(DAList)
 }
 \arguments{
-\item{DIAlist}{A DIAlist object.}
+\item{DAList}{A DAList object.}
 }
 \value{
-A DIAlist, with contaminant proteins removed.
+A DAList, with contaminant proteins removed.
 }
 \description{
 THIS FUNCTION FOR UAMS INTERNAL USE. This function removes protein contaminants
@@ -20,7 +20,7 @@ in the Protein.Name column, derived from the data output by Scaffold DIA.
 }
 \examples{
 \dontrun{
-filtered <- filter_proteins_contaminants(DIAlist)
+filtered <- filter_proteins_contaminants(DAList)
 }
 
 }

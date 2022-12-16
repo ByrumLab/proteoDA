@@ -5,7 +5,7 @@
 \title{Write tables of limma results}
 \usage{
 write_limma_tables(
-  DIAlist,
+  DAList,
   output_dir = NULL,
   overwrite = F,
   contrasts_subdir = NULL,
@@ -16,7 +16,7 @@ write_limma_tables(
 )
 }
 \arguments{
-\item{DIAlist}{A DIAlist object, with statistical results in the results slot.}
+\item{DAList}{A DAList object, with statistical results in the results slot.}
 
 \item{output_dir}{The directory in which to output tables. If not specified,
 defaults to "protein_analysis/02_diff_abundance" in the current
@@ -41,7 +41,7 @@ Default is TRUE. These can sometimes cause unstable spreadsheet files,
 try setting to FALSE if you're having issues with the Excel output.}
 }
 \value{
-Invisibly returns the input DIAlist.
+Invisibly returns the input DAList.
 }
 \description{
 This function prepares and then saves a number of tables of results:
@@ -50,7 +50,7 @@ This function prepares and then saves a number of tables of results:
 expressed genes for each contrast (see \code{summary_csv}).
 \item An Excel spreadsheet of the intensity and
 statistical results for all contrasts/terms in the results slot of the
-DIAlist (see \code{spreadsheet_xlsx}).
+DAList (see \code{spreadsheet_xlsx}).
 \item A results .csv file with the same data as the Excel spreadsheet,
 but in a flat .csv file withour formatting (see \code{combined_file_csv}).
 \item A folder of results .csv file which contain the results for each
@@ -60,11 +60,11 @@ contrast.
 \examples{
 \dontrun{
   # Using defaults
-  write_limma_tables(DIAlist)
+  write_limma_tables(DAList)
 
  # Customize output directory
  # and filenames
- write_limma_tables(DIAlist,
+ write_limma_tables(DAList,
                     output_dir = "DA_results",
                     contrasts_subdir = "by_contrast",
                     summary_csv = "my_summary.csv",
@@ -73,7 +73,7 @@ contrast.
 
  # If the xlsx files have issues, try removing the
  # per-column filters in the spreadsheet
- write_limma_tables(DIAlist,
+ write_limma_tables(DAList,
                     add_filter = F)
 }
 }

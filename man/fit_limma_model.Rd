@@ -4,13 +4,13 @@
 \alias{fit_limma_model}
 \title{Fit the limma differential abundance model}
 \usage{
-fit_limma_model(DIAlist)
+fit_limma_model(DAList)
 }
 \arguments{
-\item{DIAlist}{A DIAlist, which must contain a statistical design.}
+\item{DAList}{A DAList, which must contain a statistical design.}
 }
 \value{
-A DIAlist object, with the model fit added in the eBayes_fit slot.
+A DAList object, with the model fit added in the eBayes_fit slot.
 }
 \description{
 Fits the limma differential abundance model to the intensity data, following
@@ -24,7 +24,7 @@ model with \code{\link[limma:eBayes]{limma::eBayes}}.
 }
 \examples{
 \dontrun{
-model_fit <- fit_limma_model(DIAlist)
+model_fit <- fit_limma_model(DAList)
 }
 
 }

@@ -11,7 +11,7 @@
 #' The report is useful for choosing a normalization method to
 #' use for downstream analysis.
 #'
-#' @param DIAlist A DIAlist.
+#' @param DAList A DAList.
 #' @param grouping_column The name of the column in the metadata which
 #'   gives information on how to group samples for normalization. Must be supplied:
 #'   some metrics can't be calculated for only one group.
@@ -27,7 +27,7 @@
 #' @param use_ggrastr Should the \code{ggrastr} package be used to decrease
 #'   file size? Default is FALSE. Requires installation of \code{ggrastr}.
 #'
-#' @return If report is created successfully, invisibly returns the input DIAlist.
+#' @return If report is created successfully, invisibly returns the input DAList.
 #'
 #' @importFrom ggplot2 ggsave
 #'
@@ -37,22 +37,22 @@
 #' \dontrun{
 #' # Group samples according to group identities
 #' # in the "treatment" column of the metadata
-#' write_norm_report(DIAlist,
+#' write_norm_report(DAList,
 #'                         grouping_column = "treatment")
 #'
 #' # Change the default directory and file names
-#' write_norm_report(DIAlist,
+#' write_norm_report(DAList,
 #'                         grouping_column = "treatment",
 #'                         output_dir = "my/chosen/directory",
 #'                         filename = "my_report.pdf")
 #'
 #' # Overwrite an existing report
-#' write_norm_report(DIAlist,
+#' write_norm_report(DAList,
 #'                         grouping_column = "treatment",
 #'                         overwrite = T)
 #' }
 #'
-write_norm_report <- function(DIAlist,
+write_norm_report <- function(DAList,
                               grouping_column = NULL,
                               output_dir = NULL,
                               filename = NULL,
@@ -66,11 +66,11 @@ write_norm_report <- function(DIAlist,
   ## Check args and set defaults ##
   #################################
 
-  input_DIAlist <- validate_DIAlist(DIAlist)
+  input_DAList <- validate_DAList(DAList)
 
-  if (!is.null(DIAlist$tags$normalized)) {
-    if (DIAlist$tags$normalized) {
-      cli::cli_abort("Data in DIAlist are already normalized. Cannot evaluate normalization metrics")
+  if (!is.null(DAList$tags$normalized)) {
+    if (DAList$tags$normalized) {
+      cli::cli_abort("Data in DAList are already normalized. Cannot evaluate normalization metrics")
     }
   }
 
@@ -84,12 +84,12 @@ write_norm_report <- function(DIAlist,
                        "i" = "Only specify one column name for {.arg grouping_column}"))
 
     }
-    if (grouping_column %notin% colnames(DIAlist$metadata)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DIAlist}",
-                       "i" = "Check the column names with {.code colnames(DIAlist$metadata)}."))
+    if (grouping_column %notin% colnames(DAList$metadata)) {
+      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DAList}",
+                       "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
     }
     # And set it
-    groups <- as.character(DIAlist$metadata[,grouping_column])
+    groups <- as.character(DAList$metadata[,grouping_column])
     # And give error if there's only one group
     if (length(unique(groups)) < 2) {
       cli::cli_abort(c("Column {.arg {grouping_column}} does not contain at least two different groups",
@@ -113,7 +113,7 @@ write_norm_report <- function(DIAlist,
   ## Do all normalizations ##
   ###########################
   cli::cli_inform("Starting normalizations")
-  normList <- apply_all_normalizations(DIAlist$data)
+  normList <- apply_all_normalizations(DAList$data)
   cli::cli_inform("Normalizations finished")
 
   ##################
@@ -182,7 +182,7 @@ write_norm_report <- function(DIAlist,
     cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
 
-  invisible(input_DIAlist)
+  invisible(input_DAList)
 }
 
 

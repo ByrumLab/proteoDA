@@ -6,14 +6,14 @@
 #'     expressed genes for each contrast (see \code{summary_csv}).
 #'   \item An Excel spreadsheet of the intensity and
 #'     statistical results for all contrasts/terms in the results slot of the
-#'     DIAlist (see \code{spreadsheet_xlsx}).
+#'     DAList (see \code{spreadsheet_xlsx}).
 #'   \item A results .csv file with the same data as the Excel spreadsheet,
 #'     but in a flat .csv file withour formatting (see \code{combined_file_csv}).
 #'   \item A folder of results .csv file which contain the results for each
 #'     contrast.
 #' }
 #'
-#' @param DIAlist A DIAlist object, with statistical results in the results slot.
+#' @param DAList A DAList object, with statistical results in the results slot.
 #' @param output_dir The directory in which to output tables. If not specified,
 #'   defaults to "protein_analysis/02_diff_abundance" in the current
 #'   working directory.
@@ -31,18 +31,18 @@
 #'   try setting to FALSE if you're having issues with the Excel output.
 #'
 #'
-#' @return Invisibly returns the input DIAlist.
+#' @return Invisibly returns the input DAList.
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #'   # Using defaults
-#'   write_limma_tables(DIAlist)
+#'   write_limma_tables(DAList)
 #'
 #'  # Customize output directory
 #'  # and filenames
-#'  write_limma_tables(DIAlist,
+#'  write_limma_tables(DAList,
 #'                     output_dir = "DA_results",
 #'                     contrasts_subdir = "by_contrast",
 #'                     summary_csv = "my_summary.csv",
@@ -51,10 +51,10 @@
 #'
 #'  # If the xlsx files have issues, try removing the
 #'  # per-column filters in the spreadsheet
-#'  write_limma_tables(DIAlist,
+#'  write_limma_tables(DAList,
 #'                     add_filter = F)
 #' }
-write_limma_tables <- function(DIAlist,
+write_limma_tables <- function(DAList,
                                output_dir = NULL,
                                overwrite = F,
                                contrasts_subdir = NULL,
@@ -64,13 +64,13 @@ write_limma_tables <- function(DIAlist,
                                add_filter = T) {
 
   # Check input arguments generally
-  input_DIAlist <- validate_DIAlist(DIAlist)
+  input_DAList <- validate_DAList(DAList)
 
   # Make sure there's a design matrix present already,
   # tell user to set it first if not
-  if (is.null(DIAlist$results)) {
-    cli::cli_abort(c("Input DIAlist does not have a results design",
-                     "i" = "Run {.code DIAlist <- extract_DA_results(DIAlist, ~ formula)}"))
+  if (is.null(DAList$results)) {
+    cli::cli_abort(c("Input DAList does not have a results design",
+                     "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
   }
 
 
@@ -119,12 +119,12 @@ write_limma_tables <- function(DIAlist,
   cli::cli_inform("Writing DE summary table to {.path {summary_output_file}}")
 
   summary <- do.call("rbind",
-                     lapply(X = names(DIAlist$results),
+                     lapply(X = names(DAList$results),
                             FUN = summarize_contrast_DA,
-                            contrast_res_list = DIAlist$results))
-  summary$pval_thresh <- DIAlist$tags$DE_criteria$pval_thresh
-  summary$lfc_thresh <- DIAlist$tags$DE_criteria$lfc_thresh
-  summary$p_adj_method <- DIAlist$tags$DE_criteria$adj_method
+                            contrast_res_list = DAList$results))
+  summary$pval_thresh <- DAList$tags$DE_criteria$pval_thresh
+  summary$lfc_thresh <- DAList$tags$DE_criteria$lfc_thresh
+  summary$p_adj_method <- DAList$tags$DE_criteria$adj_method
 
   utils::write.csv(x = summary,
                    file = summary_output_file,
@@ -138,12 +138,12 @@ write_limma_tables <- function(DIAlist,
   # Write per-contrast csvs -------------------------------------------------
   per_contrast_dir <- file.path(output_dir, contrasts_subdir)
   cli::cli_inform("Writing per-contrast results {.path .csv}
-                  {cli::qty(length(DIAlist$results))} file{?s} to {.path {per_contrast_dir}}")
+                  {cli::qty(length(DAList$results))} file{?s} to {.path {per_contrast_dir}}")
 
 
-  contrast_csv_success <- write_per_contrast_csvs(annotation_df = DIAlist$annotation,
-                                                  data = DIAlist$data,
-                                                  results_statlist = DIAlist$results,
+  contrast_csv_success <- write_per_contrast_csvs(annotation_df = DAList$annotation,
+                                                  data = DAList$data,
+                                                  results_statlist = DAList$results,
                                                   output_dir = per_contrast_dir)
   if (!all(contrast_csv_success)) {
     failed <- names(contrast_csv_success)[!contrast_csv_success]
@@ -159,9 +159,9 @@ write_limma_tables <- function(DIAlist,
 
 
   ## combine annotation, data, and per contrast results
-  combined_results <- create_combined_results(annotation = DIAlist$annotation,
-                                              data = DIAlist$data,
-                                              statlist = DIAlist$results)
+  combined_results <- create_combined_results(annotation = DAList$annotation,
+                                              data = DAList$data,
+                                              statlist = DAList$results)
 
   ## write combined results csv
   combined_results_csv <- combined_results
@@ -191,20 +191,20 @@ write_limma_tables <- function(DIAlist,
 
 
   write_limma_excel(filename = excel_output_file,
-                    statlist = DIAlist$results,
-                    annotation = DIAlist$annotation,
-                    data = DIAlist$data,
-                    norm.method = DIAlist$tags$norm_method,
-                    pval_thresh = DIAlist$tags$DE_criteria$pval_thresh,
-                    lfc_thresh = DIAlist$tags$DE_criteria$lfc_thresh,
+                    statlist = DAList$results,
+                    annotation = DAList$annotation,
+                    data = DAList$data,
+                    norm.method = DAList$tags$norm_method,
+                    pval_thresh = DAList$tags$DE_criteria$pval_thresh,
+                    lfc_thresh = DAList$tags$DE_criteria$lfc_thresh,
                     add_filter = add_filter)
 
   if (!file.exists(excel_output_file)) {
     cli::cli_abort(c("Failed to write combined results Excel spreadsheet to {.path {excel_output_file}}"))
   }
 
-  # If everything works, return input DIAlist
-  invisible(input_DIAlist)
+  # If everything works, return input DAList
+  invisible(input_DAList)
 }
 
 

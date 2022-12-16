@@ -4,11 +4,11 @@
 #' individual samples and the columns represent the sample groups and factors. This function utilizes the
 #' function \link[limma:modelMatrix]{limma::modelMatrix}.
 #'
-#' @param DIAlist The DIAlist of normalized proteins.
+#' @param DAList The DAList of normalized proteins.
 #' @param design_formula  A string for the design matrix using intercept, no intercept,
 #' additive, or interaction models. See examples below.
 #'
-#' @return A DIAlist object with a design.
+#' @return A DAList object with a design.
 #' @export
 #'
 #' @examples
@@ -34,19 +34,19 @@
 #'}
 #'
 #'
-add_design <- function(DIAlist,
+add_design <- function(DAList,
                        design_formula = NULL) {
 
   # Check input arguments generally
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 
   # validate and parse formula
   formula <- validate_formula(design_formula)
 
   # Check that the terms in the user-supplied formula are present in
   # the metadata
-  if (!all(all.vars(formula) %in% colnames(DIAlist$metadata))) {
-    problem_terms <- all.vars(formula)[all.vars(formula) %notin% colnames(DIAlist$metadata)]
+  if (!all(all.vars(formula) %in% colnames(DAList$metadata))) {
+    problem_terms <- all.vars(formula)[all.vars(formula) %notin% colnames(DAList$metadata)]
 
     cli::cli_abort(c("{cli::qty(problem_terms)} Term{?s} in {.arg design_formula} not found in metadata.",
                      "x" = "Missing term{?s}: {problem_terms}"))
@@ -68,27 +68,27 @@ add_design <- function(DIAlist,
   }
 
   # Make the model matrix
-  design_matrix <- stats::model.matrix(form_fixed_only, data = DIAlist$metadata)
+  design_matrix <- stats::model.matrix(form_fixed_only, data = DAList$metadata)
   extratext <- rownames(attr(stats::terms(form_fixed_only), which="factors"))
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\(Intercept\\)", "Intercept")
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\:", ".")
   colnames(design_matrix) <- stringr::str_remove_all(colnames(design_matrix), paste(extratext, collapse="|"))
 
-  if (!is.null(DIAlist$design)) {
-    cli::cli_inform("DIAlist already contains a statistical design. Overwriting.")
+  if (!is.null(DAList$design)) {
+    cli::cli_inform("DAList already contains a statistical design. Overwriting.")
     # Get rid of any old stuff
-    DIAlist$design <- NULL
+    DAList$design <- NULL
   }
 
-  DIAlist$design <- list(design_formula = paste0(as.character(formula), collapse = ""),
+  DAList$design <- list(design_formula = paste0(as.character(formula), collapse = ""),
                          design_matrix = design_matrix)
 
   # If theres a random factor, add it in
   if (formula_has_random) {
-    DIAlist$design$random_factor <- random_factor
+    DAList$design$random_factor <- random_factor
   }
 
-  validate_DIAlist(DIAlist)
+  validate_DAList(DAList)
 }
 
 
