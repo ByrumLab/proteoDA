@@ -35,22 +35,17 @@ read_DIA_data <- function(input_file = NULL,
   # And annotation columns (all other cols)
   raw_annotation <- maxquant_data[,stringr::str_detect(colnames(maxquant_data), ".mzML$", negate = T)]
 
-  ## REPLACE MISSING VALUES WITH ZERO
-  ## intensity data is not a numeric data.frame and requires
-  ## additional processing numbers are character strings separated
-  ## by commas (4,000,000), some cells contain text 'Missing Value'
-  ## if the protein does not have detectable expression.
-  ## replace 'Missing Value' with zeros, remove comma's, convert
-  ## data in each column to numeric values
-  raw_data[, ][raw_data[, ] == "Missing Value"] <- "0"
+
+  # intensity data is not a numeric data.frame and requires
+  # additional processing numbers are character strings separated
+  # by commas (4,000,000), some cells contain text 'Missing Value'
+  # if the protein does not have detectable expression.
+  # replace 'Missing Value' with NA, remove comma's, convert
+  # data in each column to numeric values
+  raw_data[, ][raw_data[, ] == "Missing Value"] <- NA
 
   clean_data <- as.data.frame(apply(raw_data, MARGIN = 2, remove_commas), row.names = rownames(raw_data))
   clean_annot <- parse_protein_data(raw_annotation)
-
-  # For now, check that nrows are equal, but
-  # TODO: remove this once the checker does it for us
-  stopifnot(nrow(clean_data) == nrow(clean_annot))
-  stopifnot(rownames(clean_data) == rownames(clean_annot))
 
   num_samples   <- ncol(clean_data)
   num_extracted <- nrow(clean_data)
