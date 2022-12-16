@@ -14,18 +14,18 @@
 #' }
 #'
 #' @param DIAlist A DIAlist object, with statistical results in the results slot.
-#' @param ilab The ilab identifier for this project.
 #' @param output_dir The directory in which to output tables. If not specified,
-#'   will construct a directory based on the ilab name and type of analysis.
+#'   defaults to "protein_analysis/02_diff_abundance" in the current
+#'   working directory.
 #' @param overwrite Should results files be overwritten? Default is FALSE.
 #' @param contrasts_subdir The subdirectory within output_dir to write the per-contrast
 #'   result .csv files. If not specified, will be "per_contrast_results".
 #' @param summary_csv The filename of the csv file giving a summary of the number
-#'   of DE genes per contrast. If not specified, will be "DE_summary.csv".
+#'   of DA genes per contrast. If not specified, will be "DA_summary.csv".
 #' @param combined_file_csv The filename of the combined results csv file. If
 #'   not specified, will be combined_results.csv.
 #' @param spreadsheet_xlsx The filename of the Excel spreadsheet containing the
-#'   results. If not specified, will construct a name based on the ilab identifier.
+#'   results. If not specified, will be results.xlsx.
 #' @param add_filter Should per-column filters be added to the spreadsheet?
 #'   Default is TRUE. These can sometimes cause unstable spreadsheet files,
 #'   try setting to FALSE if you're having issues with the Excel output.
@@ -39,7 +39,6 @@
 #' \dontrun{
 #'   # Using defaults
 #'   write_limma_tables(DIAlist)
-#'
 #'
 #'  # Customize output directory
 #'  # and filenames
@@ -56,7 +55,6 @@
 #'                     add_filter = F)
 #' }
 write_limma_tables <- function(DIAlist,
-                               ilab = NULL,
                                output_dir = NULL,
                                overwrite = F,
                                contrasts_subdir = NULL,
@@ -78,13 +76,13 @@ write_limma_tables <- function(DIAlist,
 
   # Assign defaults if not overridden above
   if (is.null(output_dir)) {
-    output_dir <- file.path("protein_analysis","02_diff_expression")
+    output_dir <- file.path("protein_analysis","02_diff_abundance")
   }
   if (is.null(contrasts_subdir)) {
     contrasts_subdir <- "per_contrast_results"
   }
   if (is.null(summary_csv)) {
-    summary_csv <- "DE_summary.csv"
+    summary_csv <- "DA_summary.csv"
   }
 
   if (is.null(combined_file_csv)) {
@@ -92,11 +90,7 @@ write_limma_tables <- function(DIAlist,
   }
 
   if (is.null(spreadsheet_xlsx)) {
-    if (is.null(ilab)) {
-      spreadsheet_xlsx <- "results.xlsx"
-    } else {
-      spreadsheet_xlsx <- paste(ilab, "results.xlsx", sep = "_")
-    }
+    spreadsheet_xlsx <- "results.xlsx"
   }
 
   # Validate filenames

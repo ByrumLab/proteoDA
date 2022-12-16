@@ -320,7 +320,6 @@ write_limma_tables(results_lupashin,
                    overwrite = T)
 
 write_limma_tables(results_ndu,
-                   output_dir = "Ndu_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_ndu_random,
