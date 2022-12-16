@@ -35,9 +35,6 @@ validate_DAList <- function(x) {
   # Is matrix allowed?
 
 
-  # TODO: should 0s be allowed in data? Or should they automatically be converted to NAs
-  # when creating the data part of the object?
-
   if (!any(c(is.data.frame(x$data), is.matrix(x$data)))) {
     cli::cli_abort("The {.arg data} slot of a DAList must be a dataframe or matrix")
   }
