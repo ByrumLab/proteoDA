@@ -16,11 +16,9 @@ test_that("filter_samples removes sample data as expected", {
   test_data <- as.data.frame(matrix(data = 1:100, nrow = 10))
   colnames(test_data) <- test_metadata$sample_ID
   test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
-  to_filter <- new_DAList(x = list(data = test_data,
-                                    annotation = test_annotation,
-                                    metadata = test_metadata
-
-  ))
+  to_filter <- DAList(data = test_data,
+                      annotation = test_annotation,
+                      metadata = test_metadata)
 
   rm(test_data, test_annotation, test_metadata)
 
@@ -31,11 +29,9 @@ test_that("filter_samples removes sample data as expected", {
   filtered_data <- as.data.frame(matrix(data = 1:100, nrow = 10))[,1:5]
   colnames(filtered_data) <- filtered_metadata$sample_ID
   filtered_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
-  filtered <- new_DAList(x = list(data = filtered_data,
-                                   annotation = filtered_annotation,
-                                   metadata = filtered_metadata
-
-  ))
+  filtered <- DAList(data = filtered_data,
+                     annotation = filtered_annotation,
+                     metadata = filtered_metadata)
 
   expect_equal(filter_samples(to_filter, keeper == T), filtered)
   expect_equal(filter_samples(to_filter, sample_ID %notin% paste0("sample", 6:10)), filtered)

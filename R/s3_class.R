@@ -14,6 +14,55 @@ new_DAList <- function(x = list()) {
 }
 
 
+#' Create a DAList
+#'
+#' A function to create a DAList from existing data.
+#'
+#' @param data
+#' @param annotation
+#' @param metadata
+#' @param design
+#' @param eBayes_fit
+#' @param results
+#' @param tags
+#'
+#' @return A DAList object
+#'
+#' @export
+#'
+#'
+DAList <- function(data,
+                   annotation,
+                   metadata,
+                   design = NULL,
+                   eBayes_fit = NULL,
+                   results = NULL,
+                   tags = NULL) {
+
+  # Do some testing or checking?
+  # In particular, try to re-order elements, rename data columns
+  # or sample IDs, anything like that?
+
+
+  # User internal constructor to make into DAList
+  out <- new_DAList(
+    x = list(data = data,
+             annotation = annotation,
+             metadata = metadata,
+             design = design,
+             eBayes_fit = eBayes_fit,
+             results = results,
+             tags = tags)
+    )
+
+
+  # Check validity
+  validate_DAList(out)
+
+}
+
+
+
 #' DAList validator
 #'
 #' Internal function for validating a DAList object
@@ -26,15 +75,36 @@ new_DAList <- function(x = list()) {
 #'
 validate_DAList <- function(x) {
 
-  # This will get complicated
-  # TODO: maybe separate out into separate functions to check each slot??
-  # Kinda depends on dependencies between slots...
+  ## Check overall structure
 
-  # Data must be a matrix or data frame
-  # TODO: decide on this. Should it just be a data frame?
-  # Is matrix allowed?
+  # Should be 7 elements with the correct names
+  slots <- c("data", "annotation", "metadata", "design", "eBayes_fit", "results", "tags")
 
+  # Check for proper number and order
+  if (!identical(names(x), slots)) {
+    # Possible problems: missing slots, extra slots, or wrong order.
+    # Technically, may have multiple of these problems, but users can solve one at a time
 
+    # May be missing slots
+    missing_slots <- slots[slots %notin% names(x)]
+    if (length(missing_slots) > 0) {
+      cli::cli_abort("The DAList is missing the following slot{?s}: {missing_slots}")
+    }
+    # May have extra slots
+    extra_slots <- names(x)[names(x) %notin% slots]
+    if (length(extra_slots) > 0) {
+      cli::cli_abort("The DAList contains the following extra slot{?s}: {extra_slots}")
+    }
+
+    # Otherwise, out of order.
+    # Reorder with warning
+    cli::cli_alert("Slots in DAList out of order. Reordering.")
+    x <- x[slots]
+  }
+
+  ## Check each element
+
+  # Data
   if (!any(c(is.data.frame(x$data), is.matrix(x$data)))) {
     cli::cli_abort("The {.arg data} slot of a DAList must be a dataframe or matrix")
   }
@@ -44,6 +114,7 @@ validate_DAList <- function(x) {
     cli::cli_abort("The {.arg data} slot of a DAList must contain only numeric data")
   }
 
+  # Data and annotation should match
   # data and annotation slots should have same number of rows
   if (nrow(x$data) != nrow(x$annotation)) {
     cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DAList must have the same number of rows")
@@ -54,9 +125,11 @@ validate_DAList <- function(x) {
     cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DAList must match")
   }
 
+  # TODO Annotation-specific checks??
 
-  # CHECKS FOR TARGETS/METADATA
-  # Maybe need more??
+
+  # Metadata checks
+  # TODO add more?
   if (!is.null(x$metadata)) {
     if (nrow(x$metadata) != ncol(x$data)) {
       cli::cli_abort("The number of samples in the metadata ({nrow(x$metadata)}) do not match the number of samples in the data ({ncol(x$data)})")
@@ -66,7 +139,7 @@ validate_DAList <- function(x) {
     }
   }
 
-  # Checks for design:
+  # TODO Checks for design:
   # If design matrix exists, needs to have same # of rows as metadata
   # also, rownames of design matrix need to equal colnames of data
 
@@ -75,17 +148,17 @@ validate_DAList <- function(x) {
   # And, if you have a random effect, must have a matrix and formula?
 
 
-  # Checks for contrasts
+  # TODO Checks for contrasts
   # If you have a contrasts, must have a design
   # if you have a contrasts_vec, must have contrasts_matrix and vice versa?
 
-  # Checks for eBayes fit
+  # TODO Checks for eBayes fit
   # if not null, then the first item should be an MArrayLM. If random effect,
   # should have a non-null correlation term. If no random effect,
   # should have a null correlation term.
 
 
-  # Checks for results
+  # TODO Checks for results
   if (!is.null(x$results)) {
 
     # if not null, pval_thresh, lfc_thresh, and adj_method should be set in tags??
@@ -105,6 +178,9 @@ validate_DAList <- function(x) {
     # }
 
   }
+
+  # TODO Any tags checks?
+  # Not sure...
 
   # If all checks pass, return input
   x
