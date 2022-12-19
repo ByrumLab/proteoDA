@@ -131,13 +131,12 @@ filter_proteins_by_annotation <- function(DAList, condition) {
 #' grouping_column must be a column in the metadata of the DAList which lists the
 #' group membership for each sample. The min_reps and min_groups arguments determine
 #' the number of replicates/samples per group (min_reps) and number of groups
-#' (min_groups) in which a protein must have a non-zero, non-missing intensity values
-#' in order to be retained. If the data in the DAList contains intensity values of 0,
-#' these are replaced with NAs.
+#' (min_groups) in which a protein must have non-missing intensity values
+#' in order to be retained.
 #'
 #' @param DAList A DAList object to be filtered.
 #' @param min_reps The minimum number of replicates/samples within a group
-#'   that need to have non-zero intensity for a given protein/peptide for that
+#'   that need to have non-missing intensity for a given protein/peptide for that
 #'   peptide to be considered as quantified within a group.
 #' @param min_groups The minimum number of groups that must have at
 #'   least min_reps non-zero samples for a given protein/peptide to be retained.
@@ -236,16 +235,14 @@ filter_proteins_by_group <- function(DAList,
                      "i" = "Lower either {.arg min_reps} or {.arg min_groups} so that enough groups meet the threshold"))
   }
 
-  cli::cli_inform("Keeping only protein entries with intensity > 0 in at least {.val {min_reps}} sample{?s} {cli::qty(min_reps)} in at least {.val {min_groups}} group{?s} {cli::qty(min_groups)}")
+  cli::cli_inform("Keeping only protein entries with non-missing intensity in at least {.val {min_reps}} sample{?s} {cli::qty(min_reps)} in at least {.val {min_groups}} group{?s} {cli::qty(min_groups)}")
 
   ## FILTERING
-  ## zeros, if they exist, are replaced with NA
   tmpData <- DAList$data
-  tmpData[,][tmpData[,] == 0] <- NA
 
-  ## calc. no samples in each group with intensities > 0
+  ## calc. no samples in each group with non-missing intensity
   # Build a results dataframe in advance, empty for now
-  nonzero_samples_per_group_and_gene <- as.data.frame(
+  nonmissing_samples_per_group_and_gene <- as.data.frame(
     matrix(
       data = NA,
       nrow = nrow(tmpData),
@@ -262,12 +259,12 @@ filter_proteins_by_group <- function(DAList,
     # count up the the number of samples in that group with
     # non-missing intensities for each protein/row
     # and add that to the results
-    nonzero_samples_per_group_and_gene[, i] <- rowSums(!is.na(one_group_data))
+    nonmissing_samples_per_group_and_gene[, i] <- rowSums(!is.na(one_group_data))
   }
 
 
   # Then, find out which proteins/rows have the min number of reps in at least enough groups
-  protein_meets_threshold <- apply(nonzero_samples_per_group_and_gene, 1, FUN = function(x) {sum(x >= min_reps) >= min_groups })
+  protein_meets_threshold <- apply(nonmissing_samples_per_group_and_gene, 1, FUN = function(x) {sum(x >= min_reps) >= min_groups })
   # And filter
   kept_proteins <- tmpData[protein_meets_threshold, ]
   removed_proteins <- tmpData[!protein_meets_threshold, ]
@@ -290,12 +287,11 @@ filter_proteins_by_group <- function(DAList,
 #' This function is used to remove proteins from a DAList, filtering out proteins
 #' based on levels of missing data in the data dataframe of the DAList. The
 #' grouping_column must be a column in the metadata of the DAList which lists the
-#' group membership for each sample. Proteins must have a non-zero, non-missing intensity
+#' group membership for each sample. Proteins must have a non-missing intensity
 #' value in at least min_prop of samples within each group in order to be retained.
 #' When min_prop leads to a non-integer value for a given group, it is rounded up:
 #' e.g., with 10 samples in a group and a min_prop of 0.75, a protein must be present in
-#' at least 8 samples to be retained. If the data in the DAList contains intensity values of 0,
-#' these are replaced with NAs.
+#' at least 8 samples to be retained.
 #'
 #' \code{filter_proteins_by_proportion()} is useful when sample sizes are not constant
 #' across groups, allowing similar levels of missingness across groups even when sample sizes
@@ -361,12 +357,9 @@ filter_proteins_by_proportion <- function(DAList,
     cli::cli_abort(c("{.arg min_prop} must be from 0 and 1, not {.val {min_prop}}"))
   }
 
-  cli::cli_inform("Keeping only protein entries with intensity > 0 in at least {.val {min_prop*100}}% of samples in each group")
+  cli::cli_inform("Keeping only protein entries with non-missing intensity in at least {.val {min_prop*100}}% of samples in each group")
 
-
-  ## zeros, if they exist, are replaced with NA
   tmpData <- DAList$data
-  tmpData[,][tmpData[,] == 0] <- NA
 
   # Prep for filtering by getting a vector of group memberships per sample
   # and calculating the threshold for each group

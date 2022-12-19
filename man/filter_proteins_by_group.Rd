@@ -15,7 +15,7 @@ filter_proteins_by_group(
 \item{DAList}{A DAList object to be filtered.}
 
 \item{min_reps}{The minimum number of replicates/samples within a group
-that need to have non-zero intensity for a given protein/peptide for that
+that need to have non-missing intensity for a given protein/peptide for that
 peptide to be considered as quantified within a group.}
 
 \item{min_groups}{The minimum number of groups that must have at
@@ -34,9 +34,8 @@ based on levels of missing data in the data dataframe of the DAList. The
 grouping_column must be a column in the metadata of the DAList which lists the
 group membership for each sample. The min_reps and min_groups arguments determine
 the number of replicates/samples per group (min_reps) and number of groups
-(min_groups) in which a protein must have a non-zero, non-missing intensity values
-in order to be retained. If the data in the DAList contains intensity values of 0,
-these are replaced with NAs.
+(min_groups) in which a protein must have non-missing intensity values
+in order to be retained.
 }
 \examples{
 

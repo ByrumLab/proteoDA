@@ -24,12 +24,11 @@ removed.
 This function is used to remove proteins from a DAList, filtering out proteins
 based on levels of missing data in the data dataframe of the DAList. The
 grouping_column must be a column in the metadata of the DAList which lists the
-group membership for each sample. Proteins must have a non-zero, non-missing intensity
+group membership for each sample. Proteins must have a non-missing intensity
 value in at least min_prop of samples within each group in order to be retained.
 When min_prop leads to a non-integer value for a given group, it is rounded up:
 e.g., with 10 samples in a group and a min_prop of 0.75, a protein must be present in
-at least 8 samples to be retained. If the data in the DAList contains intensity values of 0,
-these are replaced with NAs.
+at least 8 samples to be retained.
 }
 \details{
 \code{filter_proteins_by_proportion()} is useful when sample sizes are not constant
