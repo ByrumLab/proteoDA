@@ -16,15 +16,20 @@ new_DAList <- function(x = list()) {
 
 #' Create a DAList
 #'
-#' A function to create a DAList from existing data.
+#' A function to create a DAList from existing data. Need to add in notes and further
+#' documentation as we decide on exactly what requirements we have.
+#' In particular, should note that: data and annotation need to have the same number of
+#' rows and should already be in order. Columns in data should be same as number of rows in metadata.
+#' TODO: need to expand on documentation as we finalize things. Also need to decide if we
+#' should include all the other slots (design through tags). Also need to add examples.
 #'
-#' @param data
-#' @param annotation
-#' @param metadata
-#' @param design
-#' @param eBayes_fit
-#' @param results
-#' @param tags
+#' @param data A dataframe or matrix containing protein intensity data for each sample. Rows are proteins, columns are samples.
+#' @param annotation A dataframe containing protein annotation data. REQUIRED COLUMNS??
+#' @param metadata A dataframe containing metadata on each sample. REQUIRED COLUMNS?
+#' @param design Optional, possibly unneeded. But a list of design information.
+#' @param eBayes_fit Optional, possibly unneeded. An ebayes fit/MAarray object from limma ebayes
+#' @param results Optional, possibly unneeded. list of table of stats.
+#' @param tags Optional, possibly unneeded. List of tags.
 #'
 #' @return A DAList object
 #'
