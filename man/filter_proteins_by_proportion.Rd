@@ -29,8 +29,8 @@ value in at least min_prop of samples within each group in order to be retained.
 When min_prop leads to a non-integer value for a given group, it is rounded up:
 e.g., with 10 samples in a group and a min_prop of 0.75, a protein must be present in
 at least 8 samples to be retained. This function assumes that all missing values are encoded
-as NA. See \link{\code{zero_to_missing}} and \link{\code{missing_to_zero}} for helper
-functions to convert missing vlaues to and from 0.
+as NA. See \code{\link{zero_to_missing}} and \code{\link{missing_to_zero}} for helper
+functions to convert missing values to and from 0.
 }
 \details{
 \code{filter_proteins_by_proportion()} is useful when sample sizes are not constant

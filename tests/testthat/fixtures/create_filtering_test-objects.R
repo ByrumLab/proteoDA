@@ -95,5 +95,86 @@ saveRDS(object = filtered_MW, file = "tests/testthat/fixtures/filter_protein_ann
 rm(list = ls())
 
 
+# Protein filter, by group number non-missing ----------------------------------
+test_metadata <- data.frame(sample_ID = paste0("sample", 1:12),
+                            group = c(rep("A", 4),
+                                      rep("B", 4),
+                                      rep("C", 4)))
+rownames(test_metadata) <- test_metadata$sample_ID
+test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
+
+test_data <- as.data.frame(matrix(data = 1:120, nrow = 10))
+colnames(test_data) <- test_metadata$sample_ID
+
+# Set proteins to different levels of missingness
+# Protein 1 not present in first group at all
+# protein 2 only present in 1 sample in first two groups
+# protein 3 only present in 1 sample in all groups
+# Make last sample all 0s. This shouldn't affect things
+test_data[1,1:4] <- NA
+test_data[2,c(1,5)] <- NA
+test_data[3, c(1:3, 5:7, 9:11)] <- NA
+test_data[,12] <- 0
+
+input <- DAList(data = test_data,
+                annotation = test_annotation,
+                metadata = test_metadata)
+saveRDS(object = input, file = "tests/testthat/fixtures/filter_proteins_by_group_input.rds")
+
+
+# min_reps = 2, min_groups = 1
+# should filter out protein 3
+output_21 <- DAList(data = test_data[-3,],
+                    annotation = test_annotation[-3,,drop = F],
+                    metadata = test_metadata,
+                    tags = list(filter_proteins_by_group = list(min_reps = 2,
+                                                                min_groups = 1,
+                                                                grouping_column = "group")))
+saveRDS(object = output_21, file = "tests/testthat/fixtures/filter_proteins_by_group_output21.rds")
+
+# min_reps = 1, min_groups = 3
+# should filter out protein 1
+output_13 <- DAList(data = test_data[-1,],
+                    annotation = test_annotation[-1,,drop = F],
+                    metadata = test_metadata,
+                    tags = list(filter_proteins_by_group = list(min_reps = 1,
+                                                                min_groups = 3,
+                                                                grouping_column = "group")))
+saveRDS(object = output_13, file = "tests/testthat/fixtures/filter_proteins_by_group_output13.rds")
+
+
+# min_reps = 2, min_groups = 3
+# should filter out protein 1 and 3
+output_23 <- DAList(data = test_data[c(-1,-3),],
+                    annotation = test_annotation[c(-1,-3),,drop = F],
+                    metadata = test_metadata,
+                    tags = list(filter_proteins_by_group = list(min_reps = 2,
+                                                                min_groups = 3,
+                                                                grouping_column = "group")))
+saveRDS(object = output_23, file = "tests/testthat/fixtures/filter_proteins_by_group_output23.rds")
+
+
+
+# min_reps = 3, min_groups = 3
+# should filter out proteins 1, and 3
+output_33 <- DAList(data = test_data[c(-1, -3),],
+                    annotation = test_annotation[c(-1, -3),,drop = F],
+                    metadata = test_metadata,
+                    tags = list(filter_proteins_by_group = list(min_reps = 3,
+                                                                min_groups = 3,
+                                                                grouping_column = "group")))
+saveRDS(object = output_33, file = "tests/testthat/fixtures/filter_proteins_by_group_output33.rds")
+
+# min_reps = 4, min_groups = 3
+# should filter out proteins 1, 2 and 3
+output_43 <- DAList(data = test_data[c(-1, -2, -3),],
+                    annotation = test_annotation[c(-1, -2, -3),,drop = F],
+                    metadata = test_metadata,
+                    tags = list(filter_proteins_by_group = list(min_reps = 4,
+                                                                min_groups = 3,
+                                                                grouping_column = "group")))
+saveRDS(object = output_43, file = "tests/testthat/fixtures/filter_proteins_by_group_output43.rds")
+
+
 
 

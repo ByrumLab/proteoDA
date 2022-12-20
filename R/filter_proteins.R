@@ -133,8 +133,8 @@ filter_proteins_by_annotation <- function(DAList, condition) {
 #' the number of replicates/samples per group (min_reps) and number of groups
 #' (min_groups) in which a protein must have non-missing intensity values
 #' in order to be retained. This function assumes that all missing values are encoded
-#' as NA. See \link{\code{zero_to_missing}} and \link{\code{missing_to_zero}} for helper
-#' functions to convert missing vlaues to and from 0.
+#' as NA. See \code{\link{zero_to_missing}} and \code{\link{missing_to_zero}} for helper
+#' functions to convert missing values to and from 0.
 #'
 #' @param DAList A DAList object to be filtered.
 #' @param min_reps The minimum number of replicates/samples within a group
@@ -256,7 +256,7 @@ filter_proteins_by_group <- function(DAList,
 
   for (i in seq_along(groups)) { # For each group
     # Select only the cols from that group
-    one_group_data <- tmpData[, group_membership == groups[i]]
+    one_group_data <- tmpData[, group_membership == groups[i], drop = F]
 
     # count up the the number of samples in that group with
     # non-missing intensities for each protein/row
@@ -268,15 +268,15 @@ filter_proteins_by_group <- function(DAList,
   # Then, find out which proteins/rows have the min number of reps in at least enough groups
   protein_meets_threshold <- apply(nonmissing_samples_per_group_and_gene, 1, FUN = function(x) {sum(x >= min_reps) >= min_groups })
   # And filter
-  kept_proteins <- tmpData[protein_meets_threshold, ]
-  removed_proteins <- tmpData[!protein_meets_threshold, ]
+  kept_proteins <- tmpData[protein_meets_threshold, , drop = F]
+  removed_proteins <- tmpData[!protein_meets_threshold, , drop = F]
 
   cli::cli_inform("Filtered {.val {nrow(removed_proteins)}} entr{?y/ies} {cli::qty(nrow(removed_proteins))} from the dataset leaving {.val {nrow(kept_proteins)}} entr{?y/ies} {cli::qty(nrow(kept_proteins))} for analysis")
 
   out <- DAList
   # Update data and annotation
   out$data <- kept_proteins
-  out$annotation <- out$annotation[rownames(out$data),]
+  out$annotation <- out$annotation[rownames(out$data), , drop = F]
   # add tags to track filtering
   out$tags$filter_proteins_by_group <- c(out$tags$filter_proteins_by_group, list(min_reps = min_reps, min_groups = min_groups, grouping_column = grouping_column))
 
@@ -294,8 +294,8 @@ filter_proteins_by_group <- function(DAList,
 #' When min_prop leads to a non-integer value for a given group, it is rounded up:
 #' e.g., with 10 samples in a group and a min_prop of 0.75, a protein must be present in
 #' at least 8 samples to be retained. This function assumes that all missing values are encoded
-#' as NA. See \link{\code{zero_to_missing}} and \link{\code{missing_to_zero}} for helper
-#' functions to convert missing vlaues to and from 0.
+#' as NA. See \code{\link{zero_to_missing}} and \code{\link{missing_to_zero}} for helper
+#' functions to convert missing values to and from 0.
 #'
 #' \code{filter_proteins_by_proportion()} is useful when sample sizes are not constant
 #' across groups, allowing similar levels of missingness across groups even when sample sizes
