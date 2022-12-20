@@ -36,8 +36,8 @@ group membership for each sample. The min_reps and min_groups arguments determin
 the number of replicates/samples per group (min_reps) and number of groups
 (min_groups) in which a protein must have non-missing intensity values
 in order to be retained. This function assumes that all missing values are encoded
-as NA. See \link{\code{zero_to_missing}} and \link{\code{missing_to_zero}} for helper
-functions to convert missing vlaues to and from 0.
+as NA. See \code{\link{zero_to_missing}} and \code{\link{missing_to_zero}} for helper
+functions to convert missing values to and from 0.
 }
 \examples{
 
