@@ -175,6 +175,76 @@ output_43 <- DAList(data = test_data[c(-1, -2, -3),],
                                                                 grouping_column = "group")))
 saveRDS(object = output_43, file = "tests/testthat/fixtures/filter_proteins_by_group_output43.rds")
 
+# Protein filter, by group proportion non-missing ----------------------------------
+test_metadata <- data.frame(sample_ID = paste0("sample", 1:12),
+                            group = c(rep("A", 4),
+                                      rep("B", 4),
+                                      rep("C", 4)))
+rownames(test_metadata) <- test_metadata$sample_ID
+test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
 
+test_data <- as.data.frame(matrix(data = 1:120, nrow = 10))
+colnames(test_data) <- test_metadata$sample_ID
 
+# Set proteins to different levels of missingness
+# Thresholds: 0, 25, 50, 75, 100
+# Protein 1 not present in first group at all
+# protein 2
+# protein 3 only present in 1 sample in all groups
+# Make last sample all 0s. This shouldn't affect things
 
+test_data[1,1:4] <- NA
+test_data[2,2:4] <- NA
+test_data[3,3:4] <- NA
+test_data[4,4] <- NA
+test_data[,12] <- 0
+
+input <- DAList(data = test_data,
+                annotation = test_annotation,
+                metadata = test_metadata)
+saveRDS(object = input, file = "tests/testthat/fixtures/filter_proteins_by_proportion_input.rds")
+
+# min_prop = 0
+# should remove nothing
+output_0 <- DAList(data = test_data[,],
+                    annotation = test_annotation[,,drop = F],
+                    metadata = test_metadata,
+                    tags = list(filter_proteins_by_proportion = list(min_prop = 0,
+                                                                     grouping_column = "group")))
+saveRDS(object = output_0, file = "tests/testthat/fixtures/filter_proteins_by_proportion_output0.rds")
+
+# min_prop = 25
+# should remove protein 1
+output_25 <- DAList(data = test_data[c(-1),],
+                   annotation = test_annotation[c(-1),,drop = F],
+                   metadata = test_metadata,
+                   tags = list(filter_proteins_by_proportion = list(min_prop = 0.25,
+                                                                    grouping_column = "group")))
+saveRDS(object = output_25, file = "tests/testthat/fixtures/filter_proteins_by_proportion_output25.rds")
+
+# min_prop = 50
+# should remove protein 1 and 2
+output_50 <- DAList(data = test_data[c(-1,-2),],
+                    annotation = test_annotation[c(-1,-2),,drop = F],
+                    metadata = test_metadata,
+                    tags = list(filter_proteins_by_proportion = list(min_prop = 0.50,
+                                                                     grouping_column = "group")))
+saveRDS(object = output_50, file = "tests/testthat/fixtures/filter_proteins_by_proportion_output50.rds")
+
+# min_prop = 75
+# should remove protein 1 and 2 and 3
+output_75 <- DAList(data = test_data[c(-1,-2, -3),],
+                    annotation = test_annotation[c(-1,-2, -3),,drop = F],
+                    metadata = test_metadata,
+                    tags = list(filter_proteins_by_proportion = list(min_prop = 0.75,
+                                                                     grouping_column = "group")))
+saveRDS(object = output_75, file = "tests/testthat/fixtures/filter_proteins_by_proportion_output75.rds")
+
+# min_prop = 1
+# should remove protein 1 and 2 and 3 and 4
+output_1 <- DAList(data = test_data[c(-1,-2, -3, -4),],
+                    annotation = test_annotation[c(-1,-2, -3, -4),,drop = F],
+                    metadata = test_metadata,
+                    tags = list(filter_proteins_by_proportion = list(min_prop = 1,
+                                                                     grouping_column = "group")))
+saveRDS(object = output_1, file = "tests/testthat/fixtures/filter_proteins_by_proportion_output1.rds")

@@ -74,3 +74,38 @@ test_that("filter_proteins_by_groups removes proteins as expected", {
   expect_equal(filter_proteins_by_group(input, min_reps = 3, min_groups = 3), output_33)
   expect_equal(filter_proteins_by_group(input, min_reps = 4, min_groups = 3), output_43)
 })
+
+# filter_proteins_by_proportion -----------------------------------------------
+
+test_that("filter_proteins_by_proportion gives error when group column is not present", {
+  input <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_input.rds"))
+
+  expect_error(filter_proteins_by_proportion(input, grouping_column = "xxx", min_prop = 0.5), "not found")
+})
+
+test_that("filter_proteins_by_proportion gives error when min_prop aren't specifed or are improper", {
+  input <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_input.rds"))
+
+  expect_error(filter_proteins_by_proportion(input), "min_prop")
+  expect_error(filter_proteins_by_proportion(input, min_prop = 1.5), "must be from 0 and 1")
+  expect_error(filter_proteins_by_proportion(input, min_prop = -1), "must be from 0 and 1")
+  expect_error(filter_proteins_by_proportion(input, min_prop = "xxx"), "must be from 0 and 1")
+})
+
+test_that("filter_proteins_by_proportion removes proteins as expected", {
+  input <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_input.rds"))
+  output_0 <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_output0.rds"))
+  output_25 <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_output25.rds"))
+  output_50 <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_output50.rds"))
+  output_75 <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_output75.rds"))
+  output_1 <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_output1.rds"))
+
+
+  expect_equal(filter_proteins_by_proportion(input, min_prop = 0), output_0)
+  expect_equal(filter_proteins_by_proportion(input, min_prop = 0.25), output_25)
+  expect_equal(filter_proteins_by_proportion(input, min_prop = 0.5), output_50)
+  expect_equal(filter_proteins_by_proportion(input, min_prop = 0.75), output_75)
+  expect_equal(filter_proteins_by_proportion(input, min_prop = 1), output_1)
+})
+
+

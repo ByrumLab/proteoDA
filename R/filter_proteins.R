@@ -401,7 +401,7 @@ filter_proteins_by_proportion <- function(DAList,
   out <- DAList
   # Update data and annotation
   out$data <- kept_proteins
-  out$annotation <- out$annotation[rownames(out$data),]
+  out$annotation <- out$annotation[rownames(out$data),, drop = F]
   # add tags to track filtering
   out$tags$filter_proteins_by_proportion <- c(out$tags$filter_proteins_by_proportion, list(min_prop = min_prop, grouping_column = grouping_column))
 
