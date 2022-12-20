@@ -21,7 +21,6 @@
 #' \dontrun{
 #'
 #' # Convert missing values to 0s
-#'
 #' # Default is to convert NAs to 0s
 #' no_missing <- missing_to_zero(DAList)
 #'
@@ -33,7 +32,13 @@
 #'
 #' }
 #'
+#' @name missing_data
+#'
 
+
+#' @rdname missing_data
+#' @export
+#'
 missing_to_zero <- function(DAList, missing_values = c(NA)) {
 
   if (!(class(DAList) %in% c("DAList"))) {
@@ -58,3 +63,28 @@ missing_to_zero <- function(DAList, missing_values = c(NA)) {
 
   validate_DAList(DAList)
 }
+
+
+#' @rdname missing_data
+#' @export
+#'
+zero_to_missing <- function(DAList) {
+
+  if (!(class(DAList) %in% c("DAList"))) {
+    cli::cli_abort("{.arg DAList} must be a DAList object")
+  }
+
+  # Set up new data
+  DAList <- validate_DAList(DAList)
+  new_data <- DAList$data
+
+  # Convert
+  new_data[new_data == 0] <- NA
+
+  # Add new data back
+  DAList$data <- new_data
+
+  validate_DAList(DAList)
+}
+
+

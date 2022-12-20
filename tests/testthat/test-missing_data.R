@@ -18,3 +18,10 @@ test_that("missing_to_zero converts custom missing values as expected", {
 
 })
 
+test_that("zero_to_missing converts 0 to NA as expected", {
+  input <- readRDS(test_path("fixtures", "zero_to_missing_input.rds"))
+  output <- readRDS(test_path("fixtures", "zero_to_missing_output.rds"))
+
+  expect_equal(zero_to_missing(input), output)
+})
+

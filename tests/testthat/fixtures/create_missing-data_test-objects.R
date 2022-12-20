@@ -43,3 +43,27 @@ saveRDS(object = output_neg9, file = "tests/testthat/fixtures/missing_to_zero_ou
 saveRDS(object = output_both, file = "tests/testthat/fixtures/missing_to_zero_output_both.rds")
 
 
+# Zero to missing objects -------------------------------------------------
+test_metadata <- data.frame(sample_ID = paste0("sample", 1:10))
+rownames(test_metadata) <- test_metadata$sample_ID
+test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
+
+test_data <- matrix(data = c(1:100), nrow = 10)
+diag(test_data) <- 0
+test_data <- as.data.frame(test_data)
+colnames(test_data) <- test_metadata$sample_ID
+
+input <- DAList(data = test_data,
+                annotation = test_annotation,
+                metadata = test_metadata)
+
+saveRDS(object = input, file = "tests/testthat/fixtures/zero_to_missing_input.rds")
+
+out_data <- test_data
+out_data[out_data == 0] <- NA
+
+output <- DAList(data = out_data,
+                 annotation = test_annotation,
+                 metadata = test_metadata)
+
+saveRDS(object = output, file = "tests/testthat/fixtures/zero_to_missing_output.rds")
