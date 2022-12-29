@@ -72,12 +72,13 @@ add_design <- function(DAList,
   extratext <- rownames(attr(stats::terms(form_fixed_only), which="factors"))
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\(Intercept\\)", "Intercept")
   colnames(design_matrix) <- stringr::str_replace_all(colnames(design_matrix), "\\:", ".")
-  colnames(design_matrix) <- stringr::str_remove_all(colnames(design_matrix), paste(extratext, collapse="|"))
+  # remove term names, but only from the beginning
+  colnames(design_matrix) <- stringr::str_remove_all(colnames(design_matrix), paste0("^", paste(extratext, collapse="|^")))
 
   if (!is.null(DAList$design)) {
     cli::cli_inform("DAList already contains a statistical design. Overwriting.")
     # Get rid of any old stuff
-    DAList$design <- NULL
+    DAList$design <- NA
   }
 
   DAList$design <- list(design_formula = paste0(as.character(formula), collapse = ""),
