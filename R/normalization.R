@@ -66,7 +66,7 @@ normalize_data <- function(DAList,
     cli::cli_abort("{.arg {norm_method}} is not a valid normalization method")
   }
 
-  # Updata data
+  # Update data
   DAList$data <- normalized_data
   DAList$tags$normalized <- T
   DAList$tags$norm_method <- norm_method
