@@ -81,7 +81,11 @@ pn_mean_plot <- function(plotData) {
                         ymin = .data$mean - .data$se,
                         ymax = .data$mean + .data$se),
                     pch = 18,
-                    size = 1.15) +
+                    size = 1.15,
+                    position = position_nudge(x = -0.2)) +
+    geom_point(aes(x = .data$method, .data$value),
+               position = position_jitterdodge(dodge.width = 0.2, jitter.width = 0.3),
+               data = plotData) +
     scale_color_manual(values = unname(binfcolors)) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90,

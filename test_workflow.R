@@ -104,19 +104,16 @@ write_norm_report(filtered_higgs,
                         grouping_column = "group",
                         file = "higgs_update_2.pdf", overwrite = T)
 
-write_norm_report(filtered_higgs,
-                  grouping_column = "group",
-                  file = "higgs_update_2_ggrastr.pdf", overwrite = T, use_ggrastr = T)
 
 # Ndu
 write_norm_report(filtered_ndu,
                         grouping_column = "group",
-                        file = "ndu_update_2.pdf", overwrite = T)
+                        file = "ndu_update_with_points_ggrastr.pdf", overwrite = T, use_ggrastr = T)
 
 # Lupashin
 write_norm_report(filtered_lupashin,
                         grouping_column = "group",
-                        file = "lupashin_update_2.pdf", overwrite = T, suppress_zoom_legend = T)
+                        file = "lupashin_update_with_points.pdf", overwrite = T, suppress_zoom_legend = T)
 # Zhan
 write_norm_report(filtered_zhan_2,
                         grouping_column = "group",
