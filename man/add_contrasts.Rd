@@ -33,7 +33,7 @@ Treatment2_vs_Control= Treatment2 - Control
 Treatment2_vs_Treatment1= Treatment2 - Treatment1
 
 # An example using a vector
-data -> add_contrasts(contrasts_vector = c("Treat1_vs_Control=Treat1-Control",
+data <- add_contrasts(contrasts_vector = c("Treat1_vs_Control=Treat1-Control",
      "Treat2_vs_Control=Treat2-Control"))
 }
 

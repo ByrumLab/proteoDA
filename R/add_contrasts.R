@@ -24,7 +24,7 @@
 #' Treatment2_vs_Treatment1= Treatment2 - Treatment1
 #'
 #' # An example using a vector
-#' data -> add_contrasts(contrasts_vector = c("Treat1_vs_Control=Treat1-Control",
+#' data <- add_contrasts(contrasts_vector = c("Treat1_vs_Control=Treat1-Control",
 #'      "Treat2_vs_Control=Treat2-Control"))
 #' }
 #'
@@ -85,12 +85,12 @@ add_contrasts <- function(DAList,
   contrast_vec_squish <- stringr::str_remove_all(contrasts_vector, " ")
 
   # extract groups included in each contrast
-  contrast_groups <- extract_contrast_groups(contrast.vec = contrast_vec_squish)
+  contrast_groups <- unique(unlist(extract_contrast_groups(contrast.vec = contrast_vec_squish)))
 
   # if the groups defined in the contrast file do no match the design
   # then error
-  if (!all(unique(unlist(contrast_groups)) %in% colnames(DAList$design$design_matrix))) {
-    invalidGroups <- unique(unlist(contrast_groups))[unique(unlist(contrast_groups)) %notin% colnames(DAList$design$design_matrix)]
+  if (!all(contrast_groups %in% colnames(DAList$design$design_matrix))) {
+    invalidGroups <- contrast_groups[contrast_groups %notin% colnames(DAList$design$design_matrix)]
 
     cli::cli_abort(c("Some groups present in the contrasts are not present in the design matrix",
                      "!" = "{cli::qty(length(invalidGroups))} Contrast group{?s} {.val {invalidGroups}} not found in the colnames of the design matrix",
@@ -136,15 +136,17 @@ validate_contrasts <- function(contrast_vector) {
   # Check that the contrast definition has an equals sign in it
   if (any(stringr::str_detect(contrast_vector, "=", negate = T))) {
     problem_rows <- which(stringr::str_detect(contrast_vector, "=", negate = T))
+    tmp <- as.numeric(length(problem_rows))
     cli::cli_abort(c("Formatting issue in contrasts",
-                     "!" = "{cli::qty(length(problem_rows))} Contrasts{?s} {.val {problem_rows}} {?do/does} not contain an {.val =}"))
+                     "!" = "{cli::qty(tmp)} Contrast{?s} {.val {problem_rows}} {cli::qty(tmp)} {?does/do} not contain an {.val =}"))
   }
 
   # Check that the contrast definition only has one equals sign
   if (any(stringr::str_count(contrast_vector, "=") > 1)) {
     problem_rows <- which(stringr::str_count(contrast_vector, "=") > 1)
+    tmp <- as.numeric(length(problem_rows))
     cli::cli_abort(c("Formatting issue in contrast file",
-                     "!" = "{cli::qty(length(problem_rows))} Contrasts{?s} {.val {problem_rows}} {?contain/contains} more than one {.val =}"))
+                     "!" = "{cli::qty(tmp)} Contrast{?s} {.val {problem_rows}} {cli::qty(tmp)} {?contains/contain} more than one {.val =}"))
   }
 
   # If we pass all checks, return contrasts invisibly
@@ -181,10 +183,8 @@ extract_contrast_groups <- function(contrast.vec) {
   # is already there, but with stringr. Though I have no idea what some of this is for
   processed_contrasts <-  contrasts |>
     stringr::str_remove_all(" ") |> # remove blank spaces
-    stringr::str_remove_all("\\/[[:digit:]]+") |> ## removes division by one digit number (/2)
-    stringr::str_remove_all("\\-[[:digit:]]+") |> ## removes subtraction by one digit number (-2)
-    stringr::str_remove_all("\\+[[:digit:]]+") |> ## removes addition of one digit number (+2)
-    stringr::str_remove_all("\\*[[:digit:]]+") |> ## removes multiplication by one digit number (*2)
+    stringr::str_remove_all("\\/[[:digit:]]+") |> ## removes division by number (/2, or /2000)
+    stringr::str_remove_all("\\*[[:digit:]]+") |> ## removes multiplication by number (*2, or *2000)
     stringr::str_replace_all("\\+", "-") |>       ## replaces + with - (+ -> -)
     stringr::str_remove_all("[[()]]") |>          ## remove parentheses
     stringr::str_replace_all("\\/", "-")           ## replaces / with -
