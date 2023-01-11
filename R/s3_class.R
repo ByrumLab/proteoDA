@@ -24,7 +24,7 @@ new_DAList <- function(x = list()) {
 #' should include all the other slots (design through tags). Also need to add examples.
 #'
 #' @param data A dataframe or matrix containing protein intensity data for each sample. Rows are proteins, columns are samples.
-#' @param annotation A dataframe containing protein annotation data. REQUIRED COLUMNS??
+#' @param annotation A dataframe containing protein annotation data. Must contain a column named uniprot_id containing unique entries for each row.
 #' @param metadata A dataframe containing metadata on each sample. REQUIRED COLUMNS?
 #' @param design Optional, possibly unneeded. But a list of design information.
 #' @param eBayes_fit Optional, possibly unneeded. An ebayes fit/MAarray object from limma ebayes
@@ -49,7 +49,23 @@ DAList <- function(data,
   # or sample IDs, anything like that?
 
 
-  # User internal constructor to make into DAList
+  # Check for a uniprot_id column in annotation
+  if ("uniprot_id" %notin% colnames(annotation)) {
+    cli::cli_abort("The annotation data must contain a column named \"uniprot_id\"")
+  }
+
+  # Check that the uniprot_id column contains only unique info
+  if (any(duplicated(annotation$uniprot_id))) {
+    cli::cli_abort(c("Entries in the {.val uniprot_id} column of the annotation are not unique.",
+                     "i" = "Find duplicate items with {.fun base::duplicated} or {.fun base::anyDuplicated} and make them unqiue"))
+  }
+
+  # Assign uniprot_id column as rownames for data and annotation
+  rownames(data) <- annotation$uniprot_id
+  rownames(annotation) <- annotation$uniprot_id
+
+
+  # Use internal constructor to make into DAList
   out <- new_DAList(
     x = list(data = data,
              annotation = annotation,
@@ -119,6 +135,19 @@ validate_DAList <- function(x) {
     cli::cli_abort("The {.arg data} slot of a DAList must contain only numeric data")
   }
 
+
+  # Annotation-specific checks
+  # Check for a uniprot_id column in annotation
+  if ("uniprot_id" %notin% colnames(x$annotation)) {
+    cli::cli_abort("The annotation data must contain a column named \"uniprot_id\"")
+  }
+
+  # Check that the uniprot_id column contains only unique info
+  if (any(duplicated(x$annotation$uniprot_id))) {
+    cli::cli_abort(c("Entries in the {.val uniprot_id} column of the annotation are not unique.",
+                     "i" = "Find duplicate items with {.fun base::duplicated} or {.fun base::anyDuplicated} and make them unqiue"))
+  }
+
   # Data and annotation should match
   # data and annotation slots should have same number of rows
   if (nrow(x$data) != nrow(x$annotation)) {
@@ -130,8 +159,10 @@ validate_DAList <- function(x) {
     cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DAList must match")
   }
 
-  # TODO Annotation-specific checks??
-
+  # rownames of data and annotation should equal the uniprot_id column in the annotation
+  if (!(all(rownames(x$data) == x$annotation$uniprot_id))) {
+    cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DAList must the {.val uniprot_id} column of the annotation.")
+  }
 
   # Metadata checks
   # TODO add more?

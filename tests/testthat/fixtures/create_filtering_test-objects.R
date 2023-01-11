@@ -13,7 +13,7 @@ test_metadata <- data.frame(sample_ID = paste0("sample", 1:10),
 rownames(test_metadata) <- test_metadata$sample_ID
 test_data <- as.data.frame(matrix(data = 1:100, nrow = 10))
 colnames(test_data) <- test_metadata$sample_ID
-test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
+test_annotation <- data.frame(uniprot_id = paste0("protein", 1:10))
 input <- DAList(data = test_data,
                 annotation = test_annotation,
                 metadata = test_metadata)
@@ -32,7 +32,7 @@ test_metadata <- data.frame(sample_ID = paste0("sample", 1:10))
 rownames(test_metadata) <- test_metadata$sample_ID
 test_data <- as.data.frame(matrix(data = 1:100, nrow = 10))
 colnames(test_data) <- test_metadata$sample_ID
-test_annotation <- data.frame(protein_ID = paste0("protein", 1:10),
+test_annotation <- data.frame(uniprot_id = paste0("protein", 1:10),
                               Protein.Name = c(rep("ok", 5),
                                                "DECOY",
                                                "DECOY",
@@ -62,7 +62,7 @@ test_metadata <- data.frame(sample_ID = paste0("sample", 1:10))
 rownames(test_metadata) <- test_metadata$sample_ID
 test_data <- as.data.frame(matrix(data = 1:100, nrow = 10))
 colnames(test_data) <- test_metadata$sample_ID
-test_annotation <- data.frame(protein_ID = paste0("protein", 1:10),
+test_annotation <- data.frame(uniprot_id = paste0("protein", 1:10),
                               Protein.Name = c(rep("ok", 9),
                                                "keratin"),
                               molecular_weight = c(1:10),
@@ -79,7 +79,7 @@ filtered$annotation <- filtered$annotation[1:9,]
 
 # set tags manually on separate objects
 filtered_ID <- filtered
-filtered_ID$tags$filter_proteins_by_annotation <- list(condition = substitute(protein_ID != "protein10"))
+filtered_ID$tags$filter_proteins_by_annotation <- list(condition = substitute(uniprot_id != "protein10"))
 
 filtered_name <- filtered
 filtered_name$tags$filter_proteins_by_annotation <- list(condition = substitute(!stringr::str_detect(Protein.Name, "keratin")))
@@ -101,7 +101,7 @@ test_metadata <- data.frame(sample_ID = paste0("sample", 1:12),
                                       rep("B", 4),
                                       rep("C", 4)))
 rownames(test_metadata) <- test_metadata$sample_ID
-test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
+test_annotation <- data.frame(uniprot_id = paste0("protein", 1:10))
 
 test_data <- as.data.frame(matrix(data = 1:120, nrow = 10))
 colnames(test_data) <- test_metadata$sample_ID
@@ -181,7 +181,7 @@ test_metadata <- data.frame(sample_ID = paste0("sample", 1:12),
                                       rep("B", 4),
                                       rep("C", 4)))
 rownames(test_metadata) <- test_metadata$sample_ID
-test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
+test_annotation <- data.frame(uniprot_id = paste0("protein", 1:10))
 
 test_data <- as.data.frame(matrix(data = 1:120, nrow = 10))
 colnames(test_data) <- test_metadata$sample_ID

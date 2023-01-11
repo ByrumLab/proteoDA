@@ -2,7 +2,7 @@
 # Missing to zero objects -------------------------------------------------
 test_metadata <- data.frame(sample_ID = paste0("sample", 1:10))
 rownames(test_metadata) <- test_metadata$sample_ID
-test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
+test_annotation <- data.frame(uniprot_id = paste0("protein", 1:10))
 
 test_data <- matrix(data = c(1:100), nrow = 10)
 diag(test_data) <- c(rep(NA, 5), rep(-9, 5))
@@ -46,7 +46,7 @@ saveRDS(object = output_both, file = "tests/testthat/fixtures/missing_to_zero_ou
 # Zero to missing objects -------------------------------------------------
 test_metadata <- data.frame(sample_ID = paste0("sample", 1:10))
 rownames(test_metadata) <- test_metadata$sample_ID
-test_annotation <- data.frame(protein_ID = paste0("protein", 1:10))
+test_annotation <- data.frame(uniprot_id = paste0("protein", 1:10))
 
 test_data <- matrix(data = c(1:100), nrow = 10)
 diag(test_data) <- 0

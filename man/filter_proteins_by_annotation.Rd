@@ -26,13 +26,13 @@ will return an error.
 \examples{
 \dontrun{
 # Suppose the DAList$annotation data frame contains three columns:
-# protein_ID = An alpha-numeric ID uniquely identifying a protein
+# uniprot_id = An alpha-numeric ID uniquely identifying a protein
 # protein_name = A character giving the protein name
 # molecular_weight = A numeric value, giving the protein's MW in kDa.
 
 # Remove a specific protein by ID
 filtered <- filter_proteins_by_annotation(DAList,
-                                          protein_ID != "abc123")
+                                          uniprot_id != "abc123")
 
 # Remove any protein which contains "keratin" in the name:
 filtered <- filter_proteins_by_annotation(DAList,
