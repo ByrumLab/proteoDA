@@ -161,7 +161,7 @@ validate_DAList <- function(x) {
 
   # rownames of data and annotation should equal the uniprot_id column in the annotation
   if (!(all(rownames(x$data) == x$annotation$uniprot_id))) {
-    cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DAList must the {.val uniprot_id} column of the annotation.")
+    cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DAList must equal the {.val uniprot_id} column of the annotation.")
   }
 
   # Metadata checks
