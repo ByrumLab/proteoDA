@@ -141,16 +141,17 @@ write_limma_plots <- function(DAList = NULL,
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
     anno <- DAList$annotation[rownames(data), ]
     # Change unique ids if specified
-    if(!is.null(key_column)){
+    if (!is.null(key_column)) {
       uk.intest <- key_column %in% colnames(DAList$annotation)
-      if(uk.intest) {
-        uk.duptest <- !any(duplicated(as.vector(DAList$annotation[key_column])))
-        if(uk.duptest){
-          rownames(counts) <- as.vector(DAList$annotation[rownames(data),key_column])
-          rownames(anno) <- as.vector(DAList$annotation[rownames(data),key_column])
-          rownames(data) <- as.vector(DAList$annotation[rownames(data),key_column])
+      if (uk.intest) {
+        temp_keys <- stringr::str_trunc(DAList$annotation[,key_column], width = 20, side = "right")
+        uk.duptest <- !any(duplicated(temp_keys))
+        if (uk.duptest) {
+          rownames(counts) <- temp_keys
+          rownames(anno) <- temp_keys
+          rownames(data) <- temp_keys
         } else {
-          cli::cli_abort("key_column was not unique")
+          cli::cli_abort("key_column was not unique after truncating to 15 characters")
         }
       } else {
         cli::cli_abort("key_column was not found in annotation")

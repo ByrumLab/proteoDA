@@ -76,26 +76,19 @@ sub_kaul <- filter_samples(kaul, group != "Pool")
 
 # filter proteins ---------------------------------------------------------
 
-filtered_higgs <- filter_proteins_contaminants(sub_higgs) |>
-  filter_proteins_by_group(min_reps = 5, min_groups = 3)
+filtered_higgs <- filter_proteins_by_group(sub_higgs, min_reps = 5, min_groups = 3)
 
-filtered_ndu <- filter_proteins_contaminants(sub_ndu) |>
-  filter_proteins_by_group(min_reps = 3, min_groups = 1)
+filtered_ndu <- filter_proteins_by_group(sub_ndu, min_reps = 3, min_groups = 1)
 
-filtered_lupashin <- filter_proteins_contaminants(sub_lupashin) |>
-  filter_proteins_by_group(min_reps = 1, min_groups = 1)
+filtered_lupashin <- filter_proteins_by_group(sub_lupashin, min_reps = 1, min_groups = 1)
 
-filtered_zhan <- filter_proteins_contaminants(sub_zhan) |>
-  filter_proteins_by_group(min_reps = 13, min_groups = 2)
+filtered_zhan <- filter_proteins_by_group(sub_zhan, min_reps = 13, min_groups = 2)
 
-filtered_zhan_2 <- filter_proteins_contaminants(sub_zhan) |>
-  filter_proteins_by_proportion(min_prop = 0.66)
+filtered_zhan_2 <- filter_proteins_by_proportion(sub_zhan, min_prop = 0.66)
 
-filtered_reb  <- filter_proteins_contaminants(sub_reb) |>
-  filter_proteins_by_group(min_reps = 2, min_groups = 1)
+filtered_reb  <- filter_proteins_by_group(sub_reb, min_reps = 2, min_groups = 1)
 
-filtered_kaul <- filter_proteins_contaminants(sub_kaul) |>
-  filter_proteins_by_group(min_reps = 4, min_groups = 2)
+filtered_kaul <- filter_proteins_by_group(sub_kaul, min_reps = 4, min_groups = 2)
 
 
 # Normalization report ----------------------------------------------------
@@ -151,7 +144,6 @@ norm_zhan <- filtered_zhan |>
 full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") |>
   add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") |>
   filter_samples(group != "Pool") |>
-  filter_proteins_contaminants() |>
   filter_proteins_by_group(min_reps = 4, min_groups = 3) |>
   filter_proteins_by_group(min_reps = 5, min_groups = 3) |>
   filter_proteins_by_proportion(min_prop = 1) |>
@@ -342,7 +334,7 @@ write_limma_tables(results_higgs,
 # testing report making ---------------------------------------------------
 write_limma_plots(results_reb,
                   grouping_column = "group",
-                  output_dir = "reb_s3obj")
+                  output_dir = "reb_s3obj", key_column = "Protein.Name")
 
 write_limma_plots(results_kaul,
                   grouping_column = "group",
