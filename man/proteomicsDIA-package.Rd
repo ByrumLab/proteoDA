@@ -11,5 +11,16 @@ A package for the differential proteomics anaalysis with DIA data.
 \author{
 \strong{Maintainer}: Timothy Thurman \email{tthurman@uams.edu}
 
+Authors:
+\itemize{
+  \item Charity Washam \email{cwasham@uams.edu}
+  \item Stephanie Byrum \email{sbyrum@uams.edu}
+}
+
+Other contributors:
+\itemize{
+  \item Jordan Bird \email{jtbird@uams.edu} [contributor]
+}
+
 }
 \keyword{internal}
