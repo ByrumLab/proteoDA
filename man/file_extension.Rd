@@ -18,3 +18,4 @@ Get the file extension from a file
 \examples{
 # No examples yet
 }
+\keyword{internal}

@@ -4,21 +4,21 @@
 \alias{static_volcano_plot}
 \title{Make a DE Volcano plot.}
 \usage{
-static_volcano_plot(data, lfc.thresh, pval.thresh, contrast, pval.type)
+static_volcano_plot(data, lfc_thresh, pval_thresh, contrast, pval_type)
 }
 \arguments{
 \item{data}{Per-contrast DE results to be plotted, as prepared by
 \code{\link{prep_plot_model_data}}.}
 
-\item{lfc.thresh}{The logFC threshold used to determine significance
+\item{lfc_thresh}{The logFC threshold used to determine significance
 (significant when |logFC| > lfc.tresh). LogFC are base 2.}
 
-\item{pval.thresh}{The p-value threshold used to determine significance
-(significant when p < pval.thresh).}
+\item{pval_thresh}{The p-value threshold used to determine significance
+(significant when p < pval_thresh).}
 
 \item{contrast}{The contrast being plotted. Used for generating the plot title.}
 
-\item{pval.type}{The type of p-value to plot. Can be "raw" or "adjusted".}
+\item{pval_type}{The type of p-value to plot. Can be "raw" or "adjusted".}
 }
 \value{
 A ggplot object.
@@ -26,6 +26,4 @@ A ggplot object.
 \description{
 Internal function for plotting static versions of volcano plots.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}

@@ -23,3 +23,4 @@ lower triangle, so we don't double-count pw comparisons
 # No examples yet
 
 }
+\keyword{internal}

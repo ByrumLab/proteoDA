@@ -8,8 +8,7 @@ qc_corr_hm(data, groups, sample_labels = NULL)
 }
 \arguments{
 \item{data}{A data frame of intensity data, likely normalized. Rows should be
-proteins and columns should be samples. Generally, a single element in the
-normList slot of the object returned by \code{\link{process_data}}.}
+proteins and columns should be samples.}
 
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
@@ -26,6 +25,4 @@ Plots a ComplexHeatmap object showing the pairwise correlations of intensities
 across samples. Samples are grouped by similarity on the x- and y-axis, with
 labels colored by group and batch.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}

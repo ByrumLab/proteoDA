@@ -1,5 +1,5 @@
 
-#' Functions for calculating metrics for normalized data
+#' Metrics to evaluate normalization methods
 #'
 #' A set of functions that take in normalized sample data and a grouping factor
 #' and calculate some metric of of variability, error, etc., that we can use
@@ -32,16 +32,12 @@
 #'   keep_protein_ID = TRUE, a dataframe in which rows are proteins, columns are
 #'   are the log2ratio for a pairwise comparisons, and rownames give protein ID.
 #'
-#'
 #' @name norm_metrics
-#'
-#' @examples
-#' # No examples yet
 #'
 
 
 #' @rdname norm_metrics
-#' @export
+#' @keywords internal
 #'
 # Pooled coefficient of variation (average of per-protein CVs)
 PCV <- function(data, groups) {
@@ -55,7 +51,7 @@ PCV <- function(data, groups) {
 }
 
 #' @rdname norm_metrics
-#' @export
+#' @keywords internal
 #'
 # Pooled median absolute deviation (median of per-protein MADs)
 PMAD <- function(data, groups) {
@@ -70,7 +66,7 @@ PMAD <- function(data, groups) {
 
 
 #' @rdname norm_metrics
-#' @export
+#' @keywords internal
 #'
 # Pooled estimate of variance
 PEV <- function(data, groups) {
@@ -87,7 +83,7 @@ PEV <- function(data, groups) {
 }
 
 #' @rdname norm_metrics
-#' @export
+#' @keywords internal
 #'
 # Within-group pairwise correlations.
 COR <- function(data, groups) {
@@ -112,9 +108,8 @@ COR <- function(data, groups) {
 
 
 #' @rdname norm_metrics
-#' @param keep_protein_ID Should protein ID information be retained? Default is False,
-#'   in which case \code{keep_protein_ID}
-#' @export
+#' @param keep_protein_ID Should protein ID information be retained? Default is FALSE.
+#' @keywords internal
 #'
 # log2ratio
 

@@ -4,8 +4,7 @@
 #' argument on the x-axis.
 #'
 #' @param data A data frame of intensity data, likely normalized. Rows should be
-#'   proteins and columns should be samples. Generally, a single element in the
-#'   normList slot of the object returned by \code{\link{process_data}}.
+#'   proteins and columns should be samples.
 #' @param groups A character or factor vector, listing the group(s) the samples
 #'   belong to.
 #' @param sample_labels Optional, a vector of sample labels to use. If not supplied,
@@ -14,10 +13,8 @@
 #' @return A ggplot object of the plot.
 #'
 #' @importFrom ggplot2 ggplot aes geom_violin scale_fill_manual theme_bw theme element_text element_blank ylab
-#' @export
+#' @keywords internal
 #'
-#' @examples
-#' # No examples yet
 qc_violin_plot <- function(data,
                            groups = NULL,
                            sample_labels = colnames(data)) {
@@ -39,7 +36,7 @@ qc_violin_plot <- function(data,
   # make and return plot
   # Must merge with sample info first, to get order correct
   merge(sample_group_info,
-        utils::stack(as.data.frame(data)), sort = F) %>%
+        utils::stack(as.data.frame(data)), sort = F) |>
     ggplot(aes(x = as.factor(.data$ind), y = .data$values, fill = .data$group)) +
     geom_violin(draw_quantiles = c(0.5),
                 na.rm = T,
@@ -56,7 +53,6 @@ qc_violin_plot <- function(data,
 }
 
 
-
 #' PCA plot for QC report
 #'
 #' Performs and then plots a principal component analysis of sample intensities.
@@ -65,20 +61,13 @@ qc_violin_plot <- function(data,
 #' only the 500 most variable proteins for the analysis.
 #'
 #' @inheritParams qc_violin_plot
-#' @param top_proteins The number of most variable proteins to use for the analysis.
-#'   Default is 500.
-#' @param standardize Should input data be standardized to a mean of 0 and std.dev of
-#'   1? If input data are not yet standardized, should be TRUE. Default is TRUE.
-#' @param pca_axes A numeric vector of length 2 which lists the PC axes to plot.
-#'   Default is c(1,2), to plot the first two principal components.
+#' @inheritParams write_qc_report
 #'
 #' @return A ggplot object of the plot.
-#' @export
+#' @keywords internal
 #'
 #' @importFrom ggplot2 ggplot aes geom_point scale_color_manual theme_bw theme xlab ylab element_text
 #'
-#' @examples
-#' # No examples yet
 qc_pca_plot <- function(data,
                         groups = NULL,
                         sample_labels = colnames(data),
@@ -116,7 +105,7 @@ qc_pca_plot <- function(data,
 
   # Make the plot
   plot <- merge(plot_data,
-        sample_group_info) %>%
+        sample_group_info) |>
     ggplot(aes(x = .data$x, y = .data$y, color = .data$group, label = .data$ind)) +
     geom_point() +
     scale_color_manual(values = colorGroup(groups), limits = unique(groups), name = NULL) +
@@ -144,19 +133,14 @@ qc_pca_plot <- function(data,
 #' uses only the 500 most variable proteins for the analysis.
 #'
 #' @inheritParams qc_pca_plot
-#' @param dist_metric The metric used to define distance for clustering. Default is
-#'   "euclidean". See \code{\link[stats:dist]{stats::hclust}} for options.
-#' @param clust_method The agglomeration method to use for clustering. Default
-#'   is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.
+#' @inheritParams write_qc_report
 #'
 #' @return A ggplot object of the plot.
-#' @export
+#' @keywords internal
 #'
 #' @importFrom ggplot2 aes theme element_text margin
 #' @importFrom ggtree %<+%
 #'
-#' @examples
-#' # No examples yet
 qc_dendro_plot <- function(data,
                            groups = NULL,
                            sample_labels = NULL,
@@ -220,7 +204,6 @@ qc_dendro_plot <- function(data,
 }
 
 
-
 #' Correlation heatmap for QC report
 #'
 #' Plots a ComplexHeatmap object showing the pairwise correlations of intensities
@@ -231,10 +214,8 @@ qc_dendro_plot <- function(data,
 #'
 #' @return A \code{\link[grid:gTree]{grid::gTree}} object of the ComplexHeatmap,
 #'   which can be plotted with \code{\link[grid:grid.draw]{grid::grid.draw}}.
-#' @export
+#' @keywords internal
 #'
-#' @examples
-#' # No examples yet
 qc_corr_hm <- function(data,
                        groups,
                        sample_labels = NULL) {
@@ -312,28 +293,21 @@ qc_corr_hm <- function(data,
   )
 }
 
-
-
-
 #' Create a missing values heatmap
 #'
 #' Makes a ComplexHeatmap object showing a heatmap of missing values in the
 #' input data.
 #'
 #' @inheritParams qc_pca_plot
+#' @inheritParams write_qc_report
 #' @param column_sort How should the columns of the heatmap be sorted? Options
 #'   are: "cluster"- sort by similarity in missing values, "group"- sort samples
 #'   by the grouping variable.
 #' @param group_var_name The name of the variable being used for group sorting.
-#' @param show_all_proteins Should all proteins be shown in missing value heatmap,
-#'  of only those with missing data? Default is F (only those with missing data).
 #'
 #' @return A \code{\link[grid:gTree]{grid::gTree}} object of the ComplexHeatmap,
 #'   which can be plotted with \code{\link[grid:grid.draw]{grid::grid.draw}}.
-#' @export
-#'
-#' @examples
-#' # No examples yet.
+#' @keywords internal
 #'
 qc_missing_hm <- function(data,
                           groups,

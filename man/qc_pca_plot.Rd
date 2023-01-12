@@ -15,8 +15,7 @@ qc_pca_plot(
 }
 \arguments{
 \item{data}{A data frame of intensity data, likely normalized. Rows should be
-proteins and columns should be samples. Generally, a single element in the
-normList slot of the object returned by \code{\link{process_data}}.}
+proteins and columns should be samples.}
 
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
@@ -24,11 +23,12 @@ belong to.}
 \item{sample_labels}{Optional, a vector of sample labels to use. If not supplied,
 defaults to using the column names in the data.}
 
-\item{top_proteins}{The number of most variable proteins to use for the analysis.
-Default is 500.}
+\item{top_proteins}{The number of most variable proteins to use
+for the PCA and dendrogram clustering. Default is 500.}
 
 \item{standardize}{Should input data be standardized to a mean of 0 and std.dev of
-1? If input data are not yet standardized, should be TRUE. Default is TRUE.}
+1 before performing PCA and dendrogram clustering? If input data are
+not yet standardized, should be TRUE. Default is TRUE.}
 
 \item{pca_axes}{A numeric vector of length 2 which lists the PC axes to plot.
 Default is c(1,2), to plot the first two principal components.}
@@ -42,6 +42,4 @@ Samples are colored according to the groups argument, with colors
 determined by the \code{\link{colorGroup}} function. By default, uses
 only the 500 most variable proteins for the analysis.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}

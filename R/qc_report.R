@@ -1,57 +1,71 @@
-#' Create quality control report
+#' Create a quality control report
 #'
-#' Creates, and optionally saves as a PDF report, a bunch of plots which give
-#' information on the distribution, clustering, and correlation of protein intensities
-#' across samples for the chosen normalization method. By default, the PCA and
-#' clustering analyses are performed on the top 500 most variable proteins. This
-#' function is a wrapper that calls many subfunctions: \itemize{
-#'   \item Makes violin plots of per-sample intensities
-#'     with \code{\link{qc_violin_plot}}.
-#'   \item Performs and plots a PCA with \code{\link{qc_pca_plot}}.
-#'   \item Does hierarchical clustering and plots a dendrogram with
-#'     \code{\link{qc_dendro_plot}}.
-#'   \item Plots a correlation heatmap with \code{\link{qc_corr_hm}}.
-#' } See the documentation of these subfunctions for more info.
+#' Saves a PDF report containing a variety of plots which provide information on the
+#' distribution, clustering, and correlation of protein intensities
+#' across samples. See arguments for options for customizing the report.
 #'
-#'
-#' @inheritParams write_proteinorm_report
-#' @param chosen_norm_method The normalization method for which to perform the QC analysis.
-#'   Should be a name of one of the datasets in normList.
+#' @inheritParams write_norm_report
+#' @param color_column The name of the column in the metadata which
+#'   gives information on how to color samples in plots within the report. If not
+#'   supplied, all samples will be the same color.
 #' @param label_column Optional. The name of column within the targets data frame
 #'   which contains labels to use for plotting figures. When not supplied,
 #'   defaults to using the column names of the data in processed_data.
-#' @param file The file name of the report to be saved. Must end in .pdf. Will
+#' @param filename The file name of the report to be saved. Must end in .pdf. Will
 #'   default to "QC_Report.pdf" if no filename is provided.
-#' @param top_proteins The number of most variable proteins to use for the analysis.
-#'   Default is 500.
+#' @param top_proteins The number of most variable proteins to use
+#'  for the PCA and dendrogram clustering. Default is 500.
 #' @param standardize Should input data be standardized to a mean of 0 and std.dev of
-#'   1? If input data are not yet standardized, should be TRUE. Default is TRUE.
+#'   1 before performing PCA and dendrogram clustering? If input data are
+#'   not yet standardized, should be TRUE. Default is TRUE.
 #' @param pca_axes  A numeric vector of length 2 which lists the PC axes to plot.
 #'   Default is c(1,2), to plot the first two principal components.
-#' @inheritParams qc_dendro_plot
-#' @inheritParams qc_missing_hm
+#' @param dist_metric The metric used to define distance for dendrogram clustering.
+#'   Default is "euclidean". See \code{\link[stats:dist]{stats::dist}} for options.
+#' @param clust_method The agglomeration method to use for dendrogram clustering.
+#'   Default is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.
+#' @param show_all_proteins Should all proteins be shown in missing value heatmap,
+#'  of only those with missing data? Default is F (only those with missing data).
 #'
-#' @return Invisibly returns a list with three slots: \enumerate{
-#'   \item "plots"- A large list, where each element in the list is the returned
-#'     object from the corresponding plotting function for that type of plot.
-#'   \item "stats"- A dataframe with statistics on the data.
-#'   \item "param"- A dataframe giving the parameters used for making the report.
-#' }
+#' @return If report is created successfully, invisibly returns the input DAList.
 #'
 #' @export
 #'
 #' @importFrom ggplot2 ggsave
 #'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' # Color samples according to group identities
+#' # in the "treatment" column of the metadata
+#' write_qc_report(DAList,
+#'                 color_column = "treatment")
 #'
+#' # Change the default directory and file names
+#' write_qc_report(DAList,
+#'                 color_column = "treatment",
+#'                 output_dir = "my/chosen/directory",
+#'                 filename = "my_report.pdf")
+#'
+#' # Overwrite an existing report
+#' write_qc_report(DAList,
+#'                 color_column = "treatment",
+#'                 overwrite = T)
+#'
+#' # Customize PCA and clustering plots
+#' write_qc_report(DAList,
+#'                 color_column = "treatment",
+#'                 top_proteins = 1000,
+#'                 pca_aces = c(2,3),
+#'                 dist_metric = "manhattan",
+#'                 clust_method = "average")
+#'
+#' }
 
-write_qc_report <- function(processed_data,
-                            chosen_norm_method = NULL,
-                            grouping_column = NULL,
+write_qc_report <- function(DAList,
+                            color_column = NULL,
                             label_column = NULL,
-                            out_dir = NULL,
-                            file = NULL,
+                            output_dir = NULL,
+                            filename = NULL,
                             overwrite = FALSE,
                             top_proteins = 500,
                             standardize = TRUE,
@@ -60,46 +74,43 @@ write_qc_report <- function(processed_data,
                             clust_method = "complete",
                             show_all_proteins = F) {
 
-  cli::cli_rule()
+  #################################
+  ## Check args and set defaults ##
+  #################################
 
-  #################
-  ## Check args  ##
-  #################
+  input_DAList <- validate_DAList(DAList)
 
-  # Check that processed_data has expected list structure
-  if (!all(c("normList", "targets", "filt", "param", "stats") %in% names(processed_data))) {
-    cli::cli_abort(c("{.arg processed_data} does not have expected structure:",
-                     "i" = "Is it the object created by running {.code process_data()}?."))
+  if (!is.null(DAList$tags$normalized)) {
+    if (!DAList$tags$normalized) {
+      cli::cli_warn("Data in DAList are not normalized. Writing QC report for raw data.")
+      normalized <- F
+    } else {
+      normalized <- T
+    }
+  } else {
+    cli::cli_warn("Data in DAList are not normalized. Writing QC report for raw data.")
+    normalized <- F
   }
-
-  # chosen_norm_method
-  chosen_norm_method <- rlang::arg_match(
-    arg = chosen_norm_method,
-    values = unique(c(
-      names(processed_data$normList), "log2", "median", "mean", "vsn", "quantile",
-      "cycloess", "rlr", "gi"
-    )), multiple = FALSE
-  )
 
   # If provided, check that grouping column exists in the target dataframe
   # And set it
-  if (!is.null(grouping_column)) {
-    if (length(grouping_column) != 1) {
-      cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
-                       "i" = "Only specify one column name for {.arg grouping_column}"))
+  if (!is.null(color_column)) {
+    if (length(color_column) != 1) {
+      cli::cli_abort(c("Length of {.arg color_column} does not equal 1",
+                       "i" = "Only specify one column name for {.arg color_column}"))
 
     }
-    if (grouping_column %notin% colnames(processed_data$targets)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in the targets dataframe of  in {.arg processed_data}",
-                       "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
+    if (color_column %notin% colnames(DAList$metadata)) {
+      cli::cli_abort(c("Column {.arg {color_column}} not found in the metadata of {.arg DAList}",
+                       "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
     }
-    groups <- as.character(processed_data$targets[,grouping_column])
+    groups <- as.character(DAList$metadata[,color_column])
   } else { # If no groups provided, set them but warn user
-    groups <- rep("group", ncol(processed_data$normList[[chosen_norm_method]]))
-    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples/columns in {.arg processed_data} as one group."))
+    groups <- rep("group", ncol(DAList$data))
+    cli::cli_inform(cli::col_yellow("{.arg groups} argument is empty. Considering all samples in {.arg DAList} as one group."))
   }
 
-  # If provided, check that label column is present in the target dataframe
+  # If provided, check that label column is present in the metadata
   # and set it
   if (!is.null(label_column)) {
     if (length(label_column) != 1) {
@@ -107,13 +118,13 @@ write_qc_report <- function(processed_data,
                        "i" = "Only specify one column name for {.arg label_column}"))
 
     }
-    if (label_column %notin% colnames(processed_data$targets)) {
-      cli::cli_abort(c("Column {.arg {label_column}} not found in the targets dataframe of  in {.arg processed_data}",
-                       "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
+    if (label_column %notin% colnames(DAList$metadata)) {
+      cli::cli_abort(c("Column {.arg {label_column}} not found in the metadata of {.arg DAList}",
+                       "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
     }
-    sample_labels <- processed_data$targets[,label_column]
-  } else { # Use colnames of the normlist if not provided
-    sample_labels <- colnames(processed_data$normList[[chosen_norm_method]])
+    sample_labels <- as.character(DAList$metadata[,label_column])
+  } else { # Use colnames of the data if not provided
+    sample_labels <- colnames(DAList$data)
   }
 
   ############
@@ -121,38 +132,38 @@ write_qc_report <- function(processed_data,
   ############
 
   # Set default dir if not provided
-  if (is.null(out_dir)) {
-    out_dir <- file.path("protein_analysis", "01_quality_control")
-    cli::cli_inform(cli::col_yellow("{.arg dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
+  if (is.null(output_dir)) {
+    output_dir <- file.path("protein_analysis", "01_quality_control")
+    cli::cli_inform(cli::col_yellow("{.arg output_dir} argument is empty. Setting output directory to: {.path {output_dir}}"))
   }
 
   # Set default report name if not provided
-  if (is.null(file)) {
-    file <- "QC_Report.pdf"
-    cli::cli_inform(cli::col_yellow("{.arg file} argument is empty. Saving report to: {.path {out_dir}/{file}}"))
+  if (is.null(filename)) {
+    filename <- "QC_Report.pdf"
+    cli::cli_inform(cli::col_yellow("{.arg filename} argument is empty. Saving report to: {.path {output_dir}/{filename}}"))
   }
 
   # Make directory if it doesn't exist
-  if (!dir.exists(out_dir)) {
-    dir.create(out_dir, recursive = T)
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = T)
   }
 
   # Check that the filename is a pdf
-  validate_filename(file, allowed_exts = c("pdf"))
+  validate_filename(filename, allowed_exts = c("pdf"))
 
   # Check if filename already exists
-  if (file.exists(file.path(out_dir, file))) {
+  if (file.exists(file.path(output_dir, filename))) {
     if (overwrite) {
-      cli::cli_inform("{.path {file}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
+      cli::cli_inform("{.path {filename}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
     } else {
-      cli::cli_abort(c("{.path {file}} already exists in {.path {out_dir}}",
+      cli::cli_abort(c("{.path {filename}} already exists in {.path {output_dir}}",
                        "!" = "and {.arg overwrite} == {.val {overwrite}}",
-                       "i" = "Give {.arg file} a unique name or set {.arg overwrite} to {.val TRUE}"))
+                       "i" = "Give {.arg filename} a unique name or set {.arg overwrite} to {.val TRUE}"))
     }
   }
 
   # Select data from chosen normalization method for further use
-  norm_data <- processed_data$normList[[chosen_norm_method]]
+  norm_data <- DAList$data
 
   #######################
   ## MAKE PLOT OBJECTS ##
@@ -160,9 +171,16 @@ write_qc_report <- function(processed_data,
 
   # Violin plot
   violin_plot <- qc_violin_plot(data = norm_data,
-                           groups = groups,
-                           sample_labels = sample_labels) +
-    ggtitle(paste0("Grouped by ", grouping_column))
+                                groups = groups,
+                                sample_labels = sample_labels) +
+    ggtitle(paste0("Colored by ", color_column))
+
+  # Change label if data aren't normalized
+  if (!normalized) {
+    violin_plot <- violin_plot +
+      ylab("Intensity")
+  }
+
 
 
   # PCA
@@ -172,7 +190,7 @@ write_qc_report <- function(processed_data,
                           top_proteins = top_proteins,
                           standardize = standardize,
                           pca_axes = pca_axes) +
-    ggtitle(paste0("PCA, colored by ", grouping_column))
+    ggtitle(paste0("PCA, colored by ", color_column))
 
 
   # dendrogram
@@ -185,7 +203,7 @@ write_qc_report <- function(processed_data,
                                 clust_method = clust_method) +
     ggtitle(paste0("Cluster method: ", clust_method, "\n",
                    "Distance metric: ", dist_metric, "\n",
-                   "Colored by: ", grouping_column))
+                   "Colored by: ", color_column))
 
   # correlation heatmap
   correlation_heatmap <- qc_corr_hm(data = norm_data,
@@ -197,7 +215,7 @@ write_qc_report <- function(processed_data,
                                         groups = groups,
                                         sample_labels = sample_labels,
                                         column_sort = "cluster",
-                                        group_var_name = grouping_column,
+                                        group_var_name = color_column,
                                         show_all_proteins = show_all_proteins)
 
   # missing value heatmap <- cluster by grouping column
@@ -205,7 +223,7 @@ write_qc_report <- function(processed_data,
                                         groups = groups,
                                         sample_labels = sample_labels,
                                         column_sort = "group",
-                                        group_var_name = grouping_column,
+                                        group_var_name = color_column,
                                         show_all_proteins = show_all_proteins)
 
   ###############################
@@ -215,8 +233,7 @@ write_qc_report <- function(processed_data,
   # When > 50 samples,
   # save plots individually on each page
   if (ncol(norm_data) > 50) {
-    plots_list <- list(violin_plot,
-                       pca_plot,
+    plots_list <- list(pca_plot,
                        dendro_plot,
                        correlation_heatmap,
                        miss_heatmap_cluster,
@@ -242,18 +259,16 @@ write_qc_report <- function(processed_data,
   }
 
   # Then save
-  cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
-  ggsave(file.path(out_dir, file),
+  cli::cli_inform("Saving report to: {.path {file.path(output_dir, filename)}}")
+  ggsave(file.path(output_dir, filename),
          plot = gridExtra::marrangeGrob(grobs = plots_list, nrow = 1, ncol = 1, top = NA),
          height = height,
          width = width,
          units = "in")
 
-  if (!file.exists(file.path(out_dir, file))) {
-    cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
+  if (!file.exists(file.path(output_dir, filename))) {
+    cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
-  cli::cli_rule()
-  cli::cli_inform(c("v" = "Success"))
 
-  invisible(file.path(out_dir, file))
+  invisible(input_DAList)
 }

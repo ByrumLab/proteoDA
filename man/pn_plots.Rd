@@ -20,11 +20,10 @@ pn_plot_COR(normList, grouping)
 
 pn_plot_log2ratio(normList, grouping, zoom = F, legend = T)
 
-pn_plot_MD(normList, grouping)
+pn_plot_MD(normList, grouping, use_ggrastr = F)
 }
 \arguments{
-\item{normList}{A named list of normalized data matrices. Generally, the "normList"
-slot of the list that is output by \code{\link{process_data}}.}
+\item{normList}{A named list of normalized data matrices.}
 
 \item{grouping}{A character or factor vector, listing the group(s) the samples
 belong to.}
@@ -33,6 +32,9 @@ belong to.}
 in around 0? Default is FALSE.}
 
 \item{legend}{Should the plot include the legend? Default is TRUE.}
+
+\item{use_ggrastr}{Should the \code{ggrastr} package be used to decrease
+file size? Default is FALSE. Requires installation of \code{ggrastr}.}
 }
 \value{
 A ggplot object of the plot.
@@ -43,7 +45,4 @@ and calculate some metric of of variability, error, etc., that we can use
 to evaluate normalization methods. See \code{\link{norm_metrics}} for explanations
 of each metric.
 }
-\examples{
-# No examples yet
-
-}
+\keyword{internal}

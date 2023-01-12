@@ -7,7 +7,7 @@
 \alias{PEV}
 \alias{COR}
 \alias{log2ratio}
-\title{Functions for calculating metrics for normalized data}
+\title{Metrics to evaluate normalization methods}
 \usage{
 PCV(data, groups)
 
@@ -26,8 +26,7 @@ are densities. For most uses, these are probably normalized data.}
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
 
-\item{keep_protein_ID}{Should protein ID information be retained? Default is False,
-in which case \code{keep_protein_ID}}
+\item{keep_protein_ID}{Should protein ID information be retained? Default is FALSE.}
 }
 \value{
 For PCV, PMAD, and PEV: a named vector, with length equal to the
@@ -57,7 +56,4 @@ between samples.
 log2-normalized intensity for each protein.
 }
 }
-\examples{
-# No examples yet
-
-}
+\keyword{internal}

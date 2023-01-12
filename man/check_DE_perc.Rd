@@ -7,31 +7,28 @@
 check_DE_perc(
   DE_outcomes_table,
   DE_warn_threshold = 0.2,
-  pval.thresh,
-  lfc.thresh,
-  adj.method
+  pval_thresh,
+  lfc_thresh,
+  adj_method
 )
 }
 \arguments{
 \item{DE_outcomes_table}{DE results dataframe. Should be the output of
 \code{\link[limma:decideTests]{limma::decideTests}}, coerced to a dataframe.}
 
-\item{DE_warn_threshold}{Proporion of DE genes at which we warn user.}
+\item{DE_warn_threshold}{Proportion of DE genes at which we warn user.}
 
-\item{pval.thresh}{P-value threshold used.}
+\item{pval_thresh}{P-value threshold used.}
 
-\item{lfc.thresh}{logFC threshold used.}
+\item{lfc_thresh}{logFC threshold used.}
 
-\item{adj.method}{P-value adjustment method used.}
+\item{adj_method}{P-value adjustment method used.}
 }
 \value{
 A vector of numeric values giving the \% of significant DE proteins within
 each contrast.
 }
 \description{
-Internal utility function, used in \code{\link{extract_limma_DE_results}} to
+Internal utility function, used in \code{\link{extract_DA_results}} to
 check if assumptions are met.
-}
-\examples{
-# No examples yet
 }

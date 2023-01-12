@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{colorGroup}
 \alias{colorGroup}
-\title{Get colors for groups, function 2}
+\title{Get colors for groups}
 \usage{
 colorGroup(group)
 }
@@ -19,3 +19,4 @@ Used to get colors for the groups in our missing value heatmaps.
 # No examples yet
 
 }
+\keyword{internal}

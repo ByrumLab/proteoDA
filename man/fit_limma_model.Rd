@@ -2,49 +2,29 @@
 % Please edit documentation in R/limma_analysis.R
 \name{fit_limma_model}
 \alias{fit_limma_model}
-\title{Fit the limma differential expression model}
+\title{Fit the limma differential abundance model}
 \usage{
-fit_limma_model(data, design_obj, contrasts_obj, paired = FALSE)
+fit_limma_model(DAList)
 }
 \arguments{
-\item{data}{The data on which to fit the limma model. In our pipeline,
-this should be a single normalized dataset from the normalized data.}
-
-\item{design_obj}{A list object output from \code{\link{make_design}} which
-specifies the statistical design.}
-
-\item{contrasts_obj}{A list object output from \code{\link{make_contrasts}}
-which specifies}
-
-\item{paired}{Is the statistical design paired (TRUE) or not (FALSE)? Default
-is FALSE.}
+\item{DAList}{A DAList, which must contain a statistical design.}
 }
 \value{
-A list with either six or seven slots: \enumerate{
-\item "eBayes_fit"- The results returned from \code{\link[limma:eBayes]{limma::eBayes}}.
-\item "contrasts_fit"- The results returned from
-\code{\link[limma:contrasts.fit]{limma::contrasts.fit}}.
-\item "lm_fit"- The results returned from
-\code{\link[limma:lmFit]{limma::lmFit}}.
-\item "data"- A data frame of the data that were input into the limma DE model.
-\item "design" - The design matrix used for model fitting.
-\item "contrasts"- The contrasts matrix used for model fitting.
-\item "corr_fit"- When paired == TRUE, output includes the results returned
-by \code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}}.
-}
+A DAList object, with the model fit added in the eBayes_fit slot.
 }
 \description{
-Fits the limma differential expresison model to the expression data, following
-the specified design and contrasts matrices. When paired = T, first estimates
-the inter-duplicate correlation across paired samples with
-\code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}}. Then,
-uses \code{\link[limma:lmFit]{limma::lmFit}} to fit the initial model,
-\code{\link[limma:contrasts.fit]{limma::contrasts.fit}} to re-parameterize
-the results in terms of your desired contrasts, and then recomputes moderated
-statistic following limma's empirical Bayes  model with
-\code{\link[limma:eBayes]{limma::eBayes}}.
+Fits the limma differential abundance model to the intensity data, following
+the specified design and (optional) contrast matrices. When a random factor is included,
+uses \code{\link[limma:duplicateCorrelation]{limma::duplicateCorrelation}} to estimate
+the intra-block correlation within groups. Uses \code{\link[limma:lmFit]{limma::lmFit}}
+to fit the initial model, optionally re-parameterizes the results in terms of
+contrasts with \code{\link[limma:contrasts.fit]{limma::contrasts.fit}},
+and then recomputes moderated statistics following limma's empirical Bayes
+model with \code{\link[limma:eBayes]{limma::eBayes}}.
 }
 \examples{
-# No examples yet
+\dontrun{
+model_fit <- fit_limma_model(DAList)
+}
 
 }

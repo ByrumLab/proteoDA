@@ -22,3 +22,4 @@ Have done testing, gives same results as the genefilter::rowVars() function.
 \examples{
 # No examples yet.
 }
+\keyword{internal}

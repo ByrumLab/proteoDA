@@ -7,18 +7,15 @@
 prep_plot_model_data(model_results, contrast)
 }
 \arguments{
-\item{model_results}{A model results object from
-\code{\link{extract_limma_DE_results}}.}
+\item{model_results}{The results slot of a DAList object.}
 
-\item{contrast}{The name of the contrast for which to prep the model data}
+\item{contrast}{The name of the contrast for which to prep the model data.}
 }
 \value{
-A data frame of model results for the given contrast
+A data frame of model results for the given contrast.
 }
 \description{
 Internal function used to prepare a results dataframe for both static and interactive
-plots in our reports.
+plots in reports.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}

@@ -7,19 +7,17 @@
 make_excel_hyperlinks(data, url.col, url)
 }
 \arguments{
-\item{data}{The data frame in which to add hyperlinks}
+\item{data}{The data frame in which to add hyperlinks.}
 
-\item{url.col}{The name of the column to add hyperlinks to}
+\item{url.col}{The name of the column to add hyperlinks to.}
 
-\item{url}{The url that will be prepended to the info in the column}
+\item{url}{The url that will be prepended to the info in the column.}
 }
 \value{
-The original dataframe, now with hyperlinks in the desired column
+The original dataframe, now with hyperlinks in the desired column.
 }
 \description{
 Internal functions to add hyperlinks to a column in a data frame to
 be exported to an excel file. Implicitly, works only on one column.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}

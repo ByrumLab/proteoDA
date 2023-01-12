@@ -8,8 +8,7 @@ qc_violin_plot(data, groups = NULL, sample_labels = colnames(data))
 }
 \arguments{
 \item{data}{A data frame of intensity data, likely normalized. Rows should be
-proteins and columns should be samples. Generally, a single element in the
-normList slot of the object returned by \code{\link{process_data}}.}
+proteins and columns should be samples.}
 
 \item{groups}{A character or factor vector, listing the group(s) the samples
 belong to.}
@@ -24,6 +23,4 @@ A ggplot object of the plot.
 Makes a violin plot of per-sample intensities. Samples are grouped by the "groups"
 argument on the x-axis.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}

@@ -1,52 +1,61 @@
 #' Write tables of limma results
 #'
-#' This wrapper function prepares and then saves a number of tables of results:
+#' This function prepares and then saves a number of tables of results:
 #' \enumerate{
 #'   \item A .csv summarizing the number of direction of differentially
-#'     expressed genes for each contrast.
-#'   \item An Excel spreadsheet of the normalized expression and
-#'     statistical results for all contrasts.
+#'     expressed genes for each contrast (see \code{summary_csv}).
+#'   \item An Excel spreadsheet of the intensity and
+#'     statistical results for all contrasts/terms in the results slot of the
+#'     DAList (see \code{spreadsheet_xlsx}).
 #'   \item A results .csv file with the same data as the Excel spreadsheet,
-#'     but without all the formatting.
+#'     but in a flat .csv file withour formatting (see \code{combined_file_csv}).
 #'   \item A folder of results .csv file which contain the results for each
 #'     contrast.
 #' }
 #'
-#' @param model_results A model results object returned by
-#'   \code{\link{extract_limma_DE_results}}.
-#' @param annotation A dataframe containing annotation data for this analysis.
-#'   In our pipeline, usually the "annot" slot from the object returned by
-#'   \code{\link{read_DIA_data}}.
-#' @param ilab The ilab identifier for this project.
-#' @param out_dir The directory in which to output tables. If not specified,
-#'   will construct a directory based on the ilab name and type of analysis.
-#' @param norm.method The method that was used to normalize the data for the
-#'   statistical model being output.
-#' @param overwrite Should results files be overwritten? Default is F.
-#' @param contrasts_subdir The subdirectory within out_dir to write the per-contrast
+#' @param DAList A DAList object, with statistical results in the results slot.
+#' @param output_dir The directory in which to output tables. If not specified,
+#'   defaults to "protein_analysis/02_diff_abundance" in the current
+#'   working directory.
+#' @param overwrite Should results files be overwritten? Default is FALSE.
+#' @param contrasts_subdir The subdirectory within output_dir to write the per-contrast
 #'   result .csv files. If not specified, will be "per_contrast_results".
 #' @param summary_csv The filename of the csv file giving a summary of the number
-#'   of DE genes per contrast. If not specified, will be "DE_summary.csv".
+#'   of DA genes per contrast. If not specified, will be "DA_summary.csv".
 #' @param combined_file_csv The filename of the combined results csv file. If
 #'   not specified, will be combined_results.csv.
 #' @param spreadsheet_xlsx The filename of the Excel spreadsheet containing the
-#'   results. If not specified, will construct a name based on the ilab identifier.
+#'   results. If not specified, will be results.xlsx.
 #' @param add_filter Should per-column filters be added to the spreadsheet?
 #'   Default is TRUE. These can sometimes cause unstable spreadsheet files,
 #'   try setting to FALSE if you're having issues with the Excel output.
 #'
 #'
-#' @return Invisibly returns a dataframe with the combined results.
+#' @return Invisibly returns the input DAList.
 #'
 #' @export
 #'
 #' @examples
-#' # No examples yet
-write_limma_tables <- function(model_results,
-                               annotation,
-                               ilab,
-                               out_dir = NULL,
-                               norm.method,
+#' \dontrun{
+#'   # Using defaults
+#'   write_limma_tables(DAList)
+#'
+#'  # Customize output directory
+#'  # and filenames
+#'  write_limma_tables(DAList,
+#'                     output_dir = "DA_results",
+#'                     contrasts_subdir = "by_contrast",
+#'                     summary_csv = "my_summary.csv",
+#'                     combined_file_csv = "all_results.csv",
+#'                     spreadsheet_xlsx = "all_results.xlsx")
+#'
+#'  # If the xlsx files have issues, try removing the
+#'  # per-column filters in the spreadsheet
+#'  write_limma_tables(DAList,
+#'                     add_filter = F)
+#' }
+write_limma_tables <- function(DAList,
+                               output_dir = NULL,
                                overwrite = F,
                                contrasts_subdir = NULL,
                                summary_csv = NULL,
@@ -54,15 +63,26 @@ write_limma_tables <- function(model_results,
                                spreadsheet_xlsx = NULL,
                                add_filter = T) {
 
+  # Check input arguments generally
+  input_DAList <- validate_DAList(DAList)
+
+  # Make sure there's a design matrix present already,
+  # tell user to set it first if not
+  if (is.null(DAList$results)) {
+    cli::cli_abort(c("Input DAList does not have a results design",
+                     "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
+  }
+
+
   # Assign defaults if not overridden above
-  if (is.null(out_dir)) {
-    out_dir <- file.path("protein_analysis","02_diff_expression")
+  if (is.null(output_dir)) {
+    output_dir <- file.path("protein_analysis","02_diff_abundance")
   }
   if (is.null(contrasts_subdir)) {
     contrasts_subdir <- "per_contrast_results"
   }
   if (is.null(summary_csv)) {
-    summary_csv <- "DE_summary.csv"
+    summary_csv <- "DA_summary.csv"
   }
 
   if (is.null(combined_file_csv)) {
@@ -70,7 +90,7 @@ write_limma_tables <- function(model_results,
   }
 
   if (is.null(spreadsheet_xlsx)) {
-    spreadsheet_xlsx <- paste0(ilab, "_results.xlsx")
+    spreadsheet_xlsx <- "results.xlsx"
   }
 
   # Validate filenames
@@ -79,59 +99,32 @@ write_limma_tables <- function(model_results,
   }
   validate_filename(spreadsheet_xlsx, allowed_exts = "xlsx")
 
-  # Check norm method
-  norm.method <- rlang::arg_match(
-    arg = norm.method,
-    values = norm.methods,
-    multiple = FALSE
-  )
-
 
   # Setup -------------------------------------------------------------------
-  cli::cli_rule()
-  if (dir.exists(out_dir)) {
+
+  if (dir.exists(output_dir)) {
     if (overwrite) {
-      cli::cli_inform("Directory {.path {out_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting files in directory.")
+      cli::cli_inform("Directory {.path {output_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting files in directory.")
     } else {
-      cli::cli_abort(c("Directory {.path {out_dir}} already exists",
+      cli::cli_abort(c("Directory {.path {output_dir}} already exists",
                        "!" = "and {.arg overwrite} == {.val {overwrite}}",
-                       "i" = "Rename {.arg out_dir} or set {.arg overwrite} to {.val TRUE}"))
+                       "i" = "Rename {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"))
     }
   } else {
-    dir.create(out_dir, recursive = T)
+    dir.create(output_dir, recursive = T)
   }
-
-  statlist <- model_results$stats_by_contrast
-  data <- model_results$data
-
-
-  # Make sure proteins in results have matching rows in annotation
-  passed_annot <- check_rows_in(obj = c(list(data = data, statlist)),
-                                ref_rows = rownames(annotation))
-  if (!passed_annot) {
-    cli::cli_abort(c("Not all proteins/rownames in {.arg model_results} have a matching rowname in {.arg annotation}",
-                     "i" = "Are these objects from the same dataset?"))
-  }
-  # Make sure proteins in results have matching rows in data
-  passed_data <- check_rows_in(obj=c(statlist), ref_rows = rownames(data))
-
-  if (!passed_data) {
-    cli::cli_abort(c("Not all proteins/rownames in the stats_by_contrast slot of {.arg model_results} have a matching rowname in the data slot of {.arg model_results}",
-                     "i" = "Double-check your model fitting."))
-  }
-
 
   # Write summary CSV -------------------------------------------------------
-  summary_output_file <- file.path(out_dir, summary_csv)
+  summary_output_file <- file.path(output_dir, summary_csv)
   cli::cli_inform("Writing DE summary table to {.path {summary_output_file}}")
 
   summary <- do.call("rbind",
-                     lapply(X = names(statlist),
-                            FUN = summarize_contrast_DE,
-                            contrast_res_list = statlist))
-  summary$pval_thresh <- model_results$pval.thresh
-  summary$lfc_thresh <- model_results$lfc.thresh
-  summary$p_adj_method <- model_results$adj.method
+                     lapply(X = names(DAList$results),
+                            FUN = summarize_contrast_DA,
+                            contrast_res_list = DAList$results))
+  summary$pval_thresh <- DAList$tags$DE_criteria$pval_thresh
+  summary$lfc_thresh <- DAList$tags$DE_criteria$lfc_thresh
+  summary$p_adj_method <- DAList$tags$DE_criteria$adj_method
 
   utils::write.csv(x = summary,
                    file = summary_output_file,
@@ -143,14 +136,14 @@ write_limma_tables <- function(model_results,
 
 
   # Write per-contrast csvs -------------------------------------------------
-  per_contrast_dir <- file.path(out_dir, contrasts_subdir)
+  per_contrast_dir <- file.path(output_dir, contrasts_subdir)
   cli::cli_inform("Writing per-contrast results {.path .csv}
-                  {cli::qty(length(statlist))} file{?s} to {.path {per_contrast_dir}}")
+                  {cli::qty(length(DAList$results))} file{?s} to {.path {per_contrast_dir}}")
 
 
-  contrast_csv_success <- write_per_contrast_csvs(annotation_df = annotation,
-                                                  data = data,
-                                                  results_statlist = statlist,
+  contrast_csv_success <- write_per_contrast_csvs(annotation_df = DAList$annotation,
+                                                  data = DAList$data,
+                                                  results_statlist = DAList$results,
                                                   output_dir = per_contrast_dir)
   if (!all(contrast_csv_success)) {
     failed <- names(contrast_csv_success)[!contrast_csv_success]
@@ -161,14 +154,14 @@ write_limma_tables <- function(model_results,
 
 
   # Write combined results csv ----------------------------------------------
-  combined_output_file <- file.path(out_dir, combined_file_csv)
+  combined_output_file <- file.path(output_dir, combined_file_csv)
   cli::cli_inform("Writing combined results table to {.path {combined_output_file}}")
 
 
   ## combine annotation, data, and per contrast results
-  combined_results <- create_combined_results(annotation = annotation,
-                                              data = data,
-                                              statlist = statlist)
+  combined_results <- create_combined_results(annotation = DAList$annotation,
+                                              data = DAList$data,
+                                              statlist = DAList$results)
 
   ## write combined results csv
   combined_results_csv <- combined_results
@@ -192,48 +185,43 @@ write_limma_tables <- function(model_results,
 
 
   # Write excel spreadsheet -------------------------------------------------
-  excel_output_file <- file.path(out_dir, spreadsheet_xlsx)
+  excel_output_file <- file.path(output_dir, spreadsheet_xlsx)
   cli::cli_inform("Writing combined results Excel spreadsheet to {.path {excel_output_file}}")
 
 
 
   write_limma_excel(filename = excel_output_file,
-                    statlist = statlist,
-                    annotation = annotation,
-                    data = data,
-                    norm.method = norm.method,
-                    pval.thresh = model_results$pval.thresh,
-                    lfc.thresh = model_results$lfc.thresh,
+                    statlist = DAList$results,
+                    annotation = DAList$annotation,
+                    data = DAList$data,
+                    norm.method = DAList$tags$norm_method,
+                    pval_thresh = DAList$tags$DE_criteria$pval_thresh,
+                    lfc_thresh = DAList$tags$DE_criteria$lfc_thresh,
                     add_filter = add_filter)
 
   if (!file.exists(excel_output_file)) {
     cli::cli_abort(c("Failed to write combined results Excel spreadsheet to {.path {excel_output_file}}"))
   }
 
-
-  # Finish ------------------------------------------------------------------
-
-  cli::cli_rule()
-  cli::cli_inform(c("v" = "Success"))
-  # If everything works, return combined results
-  invisible(combined_results)
+  # If everything works, return input DAList
+  invisible(input_DAList)
 }
 
 
 
-#' Summarize the number of DE proteins in a contrast
+#' Summarize the number of DA proteins in a contrast
 #'
 #' Internal function to summarize the number of DE genes/proteins for a given
 #' contrast.
 #'
-#' @param contrast_name The name of the contrast to summarize
-#' @param contrast_res_list A list of per-contrast DE results
+#' @param contrast_name The name of the contrast to summarize.
+#' @param contrast_res_list A list of per-contrast DA results.
 #'
-#' @return A data frame summarizing DE for the given contrast
+#' @return A data frame summarizing differential abundance for the given contrast.
 #'
-#' @examples
-#' # No examples yet
-summarize_contrast_DE <- function(contrast_name, contrast_res_list) {
+#' @keywords internal
+#'
+summarize_contrast_DA <- function(contrast_name, contrast_res_list) {
   tmp <- contrast_res_list[[contrast_name]][,c("sig.PVal", "sig.FDR")]
 
   data.frame(cbind(contrast = contrast_name,
@@ -255,11 +243,11 @@ summarize_contrast_DE <- function(contrast_name, contrast_res_list) {
 #' @param results_statlist A list of per-contrast DE results.
 #' @param output_dir The directory in which to save the per-contrast csv files.
 #'
+#' @keywords internal
+#'
 #' @return A logical vector indicting whether each contrast file was
 #'   successfully written.
 #'
-#' @examples
-#' # No examples yet
 write_per_contrast_csvs <- function(annotation_df,
                                     data,
                                     results_statlist,
@@ -312,10 +300,10 @@ write_per_contrast_csvs <- function(annotation_df,
 #' @param data A dataframe of normalized intensity data for each sample.
 #' @param statlist A list of per-contrast DE results.
 #'
-#' @return A dataframe of the combined results
+#' @return A dataframe of the combined results.
 #'
-#' @examples
-#' # No examples yet
+#' @keywords internal
+#'
 create_combined_results <- function(annotation,
                                     data,
                                     statlist) {
@@ -349,18 +337,18 @@ create_combined_results <- function(annotation,
 #' @param data A dataframe containing the average expression data for each sample.
 #' @param norm.method The method that was used to normalize the data for the
 #'   statistical model being output.
-#' @param pval.thresh The p-value threshold that was used to determine significance.
-#' @param lfc.thresh The logFC threshold that was used to determine significance.
+#' @param pval_thresh The p-value threshold that was used to determine significance.
+#' @param lfc_thresh The logFC threshold that was used to determine significance.
 #' @param add_filter Should per-column filters be added to the spreadsheet?
 #'
 #' @return Invisibly returns a list, where the first element is the filename
 #'   of the saved Excel spreadsheet and the second element is the openxlsx
 #'   workbook object.
 #'
-#' @examples
-#' # No examples yet
+#' @keywords internal
+#'
 write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
-                              pval.thresh, lfc.thresh, add_filter) {
+                              pval_thresh, lfc_thresh, add_filter) {
 
 
   # Maybe some argument processing
@@ -371,8 +359,9 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   wb<-openxlsx::createWorkbook()
 
   # Set up annotation columns -----------------------------------------------
-  newNames <- stringr::str_replace_all(colnames(annotation), "[._]", " ") %>%
-    stringr::str_replace("UniprotID", "UniProt ID")
+  newNames <- stringr::str_replace_all(colnames(annotation), pattern = "uniprot_id", replacement = "UniProt ID") |>
+    stringr::str_remove_all("[._]")
+
   annot.title <- "Protein Annotation"
   data.title <- paste("Log2", ifelse(normName == "Log2", "", normName), "Normalized Exclusive Intensities")
   sheetName <- "Protein Results"
@@ -565,12 +554,12 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
     normStyle <- openxlsx::createStyle(fontColour="#000000", bgFill="#FFFFFF")
 
     fc.col    <- grep("logFC", colnames(stats)) + stat.start - 1
-    fc.rule1  <- paste0(">=", lfc.thresh)
-    fc.rule2  <- paste0("<=", -lfc.thresh)
+    fc.rule1  <- paste0(">=", lfc_thresh)
+    fc.rule2  <- paste0("<=", -lfc_thresh)
     fdr.col   <- grep("adj.P.Val", colnames(stats)) + stat.start - 1
-    fdr.rule  <- paste0("<=", pval.thresh)
+    fdr.rule  <- paste0("<=", pval_thresh)
     pval.col  <- grep("P.Value", colnames(stats)) + stat.start - 1
-    pval.rule <- paste0("<=", pval.thresh)
+    pval.rule <- paste0("<=", pval_thresh)
 
 
     openxlsx::conditionalFormatting(wb, sheet = sheetName,
@@ -614,7 +603,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   # Save workbook
   openxlsx::saveWorkbook(wb = wb,
                          file = filename,
-                         overwrite = TRUE)
+                         overwrite = T)
 
   invisible(list(file = filename,
                  wb = wb))
@@ -626,14 +615,14 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
 #' Internal functions to add hyperlinks to a column in a data frame to
 #' be exported to an excel file. Implicitly, works only on one column.
 #'
-#' @param data The data frame in which to add hyperlinks
-#' @param url.col The name of the column to add hyperlinks to
-#' @param url The url that will be prepended to the info in the column
+#' @param data The data frame in which to add hyperlinks.
+#' @param url.col The name of the column to add hyperlinks to.
+#' @param url The url that will be prepended to the info in the column.
 #'
-#' @return The original dataframe, now with hyperlinks in the desired column
+#' @return The original dataframe, now with hyperlinks in the desired column.
 #'
-#' @examples
-#' # No examples yet
+#' @keywords internal
+#'
 make_excel_hyperlinks <- function(data, url.col, url) {
 
   ids <- data[,url.col]

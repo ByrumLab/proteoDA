@@ -2,49 +2,29 @@
 % Please edit documentation in R/data_import.R
 \name{read_DIA_data}
 \alias{read_DIA_data}
-\title{Loading Maxquant data}
+\title{Load DIA data from a MaxQuant Samples Report}
 \usage{
 read_DIA_data(input_file = NULL, sample_IDs = NULL)
 }
 \arguments{
-\item{input_file}{The file of Maxquant data to be imported. Format and filetype
-vary depending on the type of data to be analyzed. If not supplied, R will
-ask you to pick a file from the file browser.}
+\item{input_file}{A MaxQuant Samples Report file to be imported.}
 
-\item{sample_IDs}{Optional: a vector of sample IDs to analyze. Default is NULL, in which
-case all sample IDs are analyzed. These are determined from column names.}
+\item{sample_IDs}{Optional: a vector of sample IDs to import. Default is NULL, in which
+case all sample IDs (determined from column names in the MaxQuant Samples Report) are
+imported.}
 }
 \value{
-A list of extracted data, with 5 elements:
-\enumerate{
-\item "data", a dataframe with N rows and M cols, where N is proteins and M is
-individual sample intensities. Rownames in this data frame give a protein ID,
-in the form of UniprotID_Gene_name_id. These
-proteins have been partially filtered: contaminants removed.
-\item "annot". a dataframe with N rows and X cols, where N is proteins and the X
-cols are various protein annotation data. Rownames in this data frame give a protein ID,
-in the form of UniprotID_Gene_name_id.
-\item "param", a dataframe with 1 column giving the value of some of the
-parameters used to call the function, but also other info it parses from the
-file. Rownames give the info on what each value is.
-\item  "stats", a named list of statistics on sample #, contaminants
-removed, etc.
-\item a character vector of the ilab variable (also listed in the
-param dataframe).
-}
+A DAList containing data and annotation information.
 }
 \description{
-A function to extract and load DIA MaxQuant data. The \code{read_DIA_data}
-function is the main function, and it calls a number
-of other subfunctions to process and prepare the data. See the links to
-subfunctions for more info. Returns a list of data from maxquant, along with
-some stats and other info. Also has some side effects: creates some log files.
-}
-\details{
-Subfunctions (DIA): \code{\link{read_maxquant_delim}}, \code{\link{remove_contaminants}},
-\code{\link{extract_protein_data}}, \code{\link{make_log}}.
+THIS FUNCTION FOR UAMS INTERNAL USE. This function reads in and parses a UAMS-formatted
+MaxQuant Samples Report file and creates a DAList object containing protein intensity data
+and annotation data.
 }
 \examples{
-# No examples yet
+\dontrun{
+data <- read_DIA_data("path/to/Samples_Report.csv")
+}
 
 }
+\keyword{UAMS}

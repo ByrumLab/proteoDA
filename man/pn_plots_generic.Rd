@@ -26,7 +26,4 @@ create generic plots (e.g., means, violin plots, line plots). These generic plot
 are then passed to metric-specific plotting functions (see \code{\link{pn_plots}})
 to create the final plot objects.
 }
-\examples{
-# No examples yet
-
-}
+\keyword{internal}

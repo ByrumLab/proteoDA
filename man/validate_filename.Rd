@@ -25,3 +25,4 @@ extension is in the list of allowed extensions.
 \examples{
 # No examples yet
 }
+\keyword{internal}

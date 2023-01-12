@@ -10,8 +10,8 @@ write_limma_excel(
   annotation,
   data,
   norm.method,
-  pval.thresh,
-  lfc.thresh,
+  pval_thresh,
+  lfc_thresh,
   add_filter
 )
 }
@@ -27,9 +27,9 @@ write_limma_excel(
 \item{norm.method}{The method that was used to normalize the data for the
 statistical model being output.}
 
-\item{pval.thresh}{The p-value threshold that was used to determine significance.}
+\item{pval_thresh}{The p-value threshold that was used to determine significance.}
 
-\item{lfc.thresh}{The logFC threshold that was used to determine significance.}
+\item{lfc_thresh}{The logFC threshold that was used to determine significance.}
 
 \item{add_filter}{Should per-column filters be added to the spreadsheet?}
 }
@@ -42,6 +42,4 @@ workbook object.
 Internal function for creating a nicely formatted Excel spreadsheet of
 differential expression results.
 }
-\examples{
-# No examples yet
-}
+\keyword{internal}

@@ -1,60 +1,77 @@
-## This file contains one function,
-## which create the proteinorm report
 
-## It uses functions in a variety of files:
+
+## write_norm_report uses functions in multiple other files:
 ## normalization_metrics.R contains functions for numerically evaluating normalization methods
 ## normalization_plotting.R contains functions to plot these metrics
 
-#' Create proteinorm report
+#' Create a normalization report
 #'
-#' Creates and saves as a PDF report a variety of plots which give
+#' Saves a PDF report containing a variety of plots which give
 #' information about the performance of different normalization metrics.
+#' The report is useful for choosing a normalization method to
+#' use for downstream analysis.
 #'
-#' @param processed_data The output of the \code{\link{process_data}} function:
-#'   a list object containing processed data and sample information..
-#' @param grouping_column The name of column within the targets data frame which
+#' @param DAList A DAList.
+#' @param grouping_column The name of the column in the metadata which
 #'   gives information on how to group samples for normalization. Must be supplied:
 #'   some metrics can't be calculated for only one group.
 #' @param overwrite Should report file be overwritten if it already exists?
 #'   Default is FALSE.
-#' @param out_dir The directory in which to save the report. If not provided,
-#'   will default to "protein_analysis/01_quality_control".
-#' @param file The file name of the report to be saved. Must end in .pdf. Will
-#'   default to "proteiNorm_Report.pdf" if no filename is provided.
+#' @param output_dir The directory in which to save the report. If not provided,
+#'   will default to "protein_analysis/01_quality_control". If the directory does not
+#'   exist, it will be created.
+#' @param filename The file name of the report to be saved. Must end in .pdf. Will
+#'   default to "proteiNorm_Report.pdf" if no file name is provided.
 #' @param suppress_zoom_legend Should the legend be removed from the zoomed
-#'   log2ratio plot? Default is FALSE
+#'   log2ratio plot? Default is FALSE.
+#' @param use_ggrastr Should the \code{ggrastr} package be used to decrease
+#'   file size? Default is FALSE. Requires installation of \code{ggrastr}.
 #'
-#' @return Invisibly, the filename of the created report
+#' @return If report is created successfully, invisibly returns the input DAList.
 #'
 #' @importFrom ggplot2 ggsave
 #'
 #' @export
 #'
-#' @seealso \code{\link{norm_metrics}},
-#'   \code{\link{eval_pn_metric_for_plot}},
-#'   \code{\link{pn_plots_generic}},
-#'   \code{\link{pn_plots}},
-#'
 #' @examples
-#' # No examples yet
+#' \dontrun{
+#' # Group samples according to group identities
+#' # in the "treatment" column of the metadata
+#' write_norm_report(DAList,
+#'                         grouping_column = "treatment")
 #'
-write_proteinorm_report <- function(processed_data,
-                                   grouping_column = NULL,
-                                   out_dir = NULL,
-                                   file = NULL,
-                                   overwrite = FALSE,
-                                   suppress_zoom_legend = FALSE) {
+#' # Change the default directory and file names
+#' write_norm_report(DAList,
+#'                         grouping_column = "treatment",
+#'                         output_dir = "my/chosen/directory",
+#'                         filename = "my_report.pdf")
+#'
+#' # Overwrite an existing report
+#' write_norm_report(DAList,
+#'                         grouping_column = "treatment",
+#'                         overwrite = T)
+#' }
+#'
+write_norm_report <- function(DAList,
+                              grouping_column = NULL,
+                              output_dir = NULL,
+                              filename = NULL,
+                              overwrite = FALSE,
+                              suppress_zoom_legend = FALSE,
+                              use_ggrastr = FALSE) {
 
-  cli::cli_rule()
+
 
   #################################
   ## Check args and set defaults ##
   #################################
 
-  # Check that processed_data has expected list structure
-  if (!all(c("normList", "targets", "filt", "param", "stats") %in% names(processed_data))) {
-    cli::cli_abort(c("{.arg processed_data} does not have expected structure:",
-                     "i" = "Is it the object created by running {.code process_data()}?."))
+  input_DAList <- validate_DAList(DAList)
+
+  if (!is.null(DAList$tags$normalized)) {
+    if (DAList$tags$normalized) {
+      cli::cli_abort("Data in DAList are already normalized. Cannot evaluate normalization metrics")
+    }
   }
 
   # If provided, check that grouping column exists in the target dataframe
@@ -67,12 +84,12 @@ write_proteinorm_report <- function(processed_data,
                        "i" = "Only specify one column name for {.arg grouping_column}"))
 
     }
-    if (grouping_column %notin% colnames(processed_data$targets)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in the targets dataframe of  in {.arg processed_data}",
-                       "i" = "Check the column names with {.code colnames(processed_data$targets)}."))
+    if (grouping_column %notin% colnames(DAList$metadata)) {
+      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DAList}",
+                       "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
     }
     # And set it
-    groups <- as.character(processed_data$targets[,grouping_column])
+    groups <- as.character(DAList$metadata[,grouping_column])
     # And give error if there's only one group
     if (length(unique(groups)) < 2) {
       cli::cli_abort(c("Column {.arg {grouping_column}} does not contain at least two different groups",
@@ -81,39 +98,44 @@ write_proteinorm_report <- function(processed_data,
   }
 
   # Set default dir if not provided
-  if (is.null(out_dir)) {
-    out_dir <- file.path("protein_analysis", "01_quality_control")
-    cli::cli_inform(cli::col_yellow("{.arg out_dir} argument is empty. Setting output directory to: {.path {out_dir}}"))
+  if (is.null(output_dir)) {
+    output_dir <- file.path("protein_analysis", "01_quality_control")
+    cli::cli_inform(cli::col_yellow("{.arg output_dir} argument is empty. Setting output directory to: {.path {output_dir}}"))
   }
   # Set default report name if not provided
-  if (is.null(file)) {
-    file <- "proteiNorm_Report.pdf"
-    cli::cli_inform(cli::col_yellow("{.arg file} argument is empty. Saving report to: {.path {out_dir}/{file}}"))
+  if (is.null(filename)) {
+    filename <- "proteiNorm_Report.pdf"
+    cli::cli_inform(cli::col_yellow("{.arg filename} argument is empty. Saving report to: {.path {output_dir}/{filename}}"))
   }
 
-  # Extract normList from input data
-  normList <- processed_data$normList
+
+  ###########################
+  ## Do all normalizations ##
+  ###########################
+  cli::cli_inform("Starting normalizations")
+  normList <- apply_all_normalizations(DAList$data)
+  cli::cli_inform("Normalizations finished")
 
   ##################
   ## Set up files ##
   ##################
 
  # Make directory if it doesn't exist
-  if (!dir.exists(out_dir)) {
-    dir.create(out_dir, recursive = T)
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = T)
   }
 
   # Check that the filename is a pdf
-  validate_filename(file, allowed_exts = c("pdf"))
+  validate_filename(filename, allowed_exts = c("pdf"))
 
   # If file already exists, inform about overwriting or through an error
-  if (file.exists(file.path(out_dir, file))) {
+  if (file.exists(file.path(output_dir, filename))) {
     if (overwrite) {
-      cli::cli_inform("{.path {file}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
+      cli::cli_inform("{.path {filename}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting.")
     } else {
-      cli::cli_abort(c("{.path {file}} already exists in {.path {out_dir}}",
+      cli::cli_abort(c("{.path {filename}} already exists in {.path {output_dir}}",
                        "!" = "and {.arg overwrite} == {.val {overwrite}}",
-                       "i" = "Give {.arg file} a unique name or set {.arg overwrite} to {.val TRUE}"))
+                       "i" = "Give {.arg filename} a unique name or set {.arg overwrite} to {.val TRUE}"))
     }
   }
 
@@ -135,7 +157,7 @@ write_proteinorm_report <- function(processed_data,
     patchwork::plot_layout(ncol = 3)
 
   # Second page: the faceted MD plots
-  page_2 <- pn_plot_MD(normList, groups)
+  page_2 <- pn_plot_MD(normList, groups, use_ggrastr)
 
   ###############################
   ## Save plots, check, return ##
@@ -148,19 +170,53 @@ write_proteinorm_report <- function(processed_data,
   plots_list <-  list(patchwork::patchworkGrob(page_1), page_2)
 
   # Then save
-  cli::cli_inform("Saving report to: {.path {file.path(out_dir, file)}}")
-  ggsave(file.path(out_dir, file),
+  cli::cli_inform("Saving report to: {.path {file.path(output_dir, filename)}}")
+  ggsave(file.path(output_dir, filename),
          plot = gridExtra::marrangeGrob(grobs = plots_list, nrow = 1, ncol = 1, top = NA),
          height = 8.5,
          width = 11,
-         units = "in")
+         units = "in",
+         useDingbats = T)
 
-  if (!file.exists(file.path(out_dir, file))) {
-    cli::cli_abort(c("Failed to create {.path {file.path(out_dir, file)}}"))
+  if (!file.exists(file.path(output_dir, filename))) {
+    cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
-  cli::cli_rule()
-  cli::cli_inform(c("v" = "Success"))
 
-  invisible(file.path(out_dir, file))
+  invisible(input_DAList)
+}
+
+
+#' Apply all normalization methods to a set of raw data
+#'
+#' Takes in raw intensity data and applies 8 different normalization methods,
+#' returning a list of the data normalized with each method. Used internally in
+#' \code{\link{write_norm_report}}.
+#'
+#' @param data A dataframe or matrix of raw data to be normalized. Rows are proteins and
+#'   columns are raw intensity data.
+#'
+#' @return A list length 8, where each item in the list is a
+#'       named matrix. Names give the normalization method, and the matrix
+#'       contains the normalized data.
+#'
+#' @keywords internal
+#'
+apply_all_normalizations <- function(data) {
+
+  normList <- NULL
+
+  ## apply normalization methods using functions listed above.
+  ## NOTE: most of the normalizations use log2(intensity) as input except
+  ## VSN which normalizes using raw intensities with no log2 transformation.
+  normList[["log2"]]     <- log2Norm(dat = data)
+  normList[["median"]]   <- medianNorm(logDat = normList[["log2"]])
+  normList[["mean"]]     <- meanNorm(logDat = normList[["log2"]])
+  normList[["vsn"]]      <- vsnNorm(dat = data)
+  normList[["quantile"]] <- quantileNorm(logDat = normList[["log2"]])
+  normList[["cycloess"]] <- cycloessNorm(logDat = normList[["log2"]])
+  normList[["rlr"]]      <- rlrNorm(logDat = normList[["log2"]])
+  normList[["gi"]]       <- giNorm(dat = data)
+
+  normList
 }
 

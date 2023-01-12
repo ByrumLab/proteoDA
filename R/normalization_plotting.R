@@ -1,10 +1,11 @@
-#' Evaluate a normalization metric
+#' Evaluate a normalization metric across a list of normalized data
 #'
 #' Applies a metric (see \code{\link{norm_metrics}}) across a list of normalized
-#' data matrices and outputs the results in a data frame for plotting.
+#' data matrices (most likely produced by \code{\link{apply_all_normalizations}})
+#' and outputs the results in a data frame ready to be used with internal plotting
+#' functions (see \code{\link{pn_plots_generic}}).
 #'
-#' @param normList A named list of normalized data matrices. Generally, the "normList"
-#'   slot of the list that is output by \code{\link{process_data}}.
+#' @param normList A named list of normalized data matrices.
 #' @param grouping A character or factor vector, listing the group(s) the samples
 #'   belong to.
 #' @param metric The normalization metric to calculate. Can be "PCV",
@@ -12,12 +13,7 @@
 #' @return A data frame containing the selected metric,
 #'   ready to be used for plotting.
 #'
-#' @export
-#'
-#' @seealso \code{\link{norm_metrics}}
-#'
-#' @examples
-#' # No examples yet
+#' @keywords internal
 #'
 eval_pn_metric_for_plot <- function(normList,
                                     grouping,
@@ -61,13 +57,12 @@ eval_pn_metric_for_plot <- function(normList,
 #'
 #' @importFrom ggplot2 ggplot aes
 #' @importFrom ggplot2 geom_pointrange geom_violin geom_vline geom_line geom_point geom_hline geom_smooth
+#' @importFrom ggplot2 position_nudge position_jitterdodge
 #' @importFrom ggplot2 scale_fill_manual scale_color_manual
 #' @importFrom ggplot2 theme_bw theme element_text element_blank element_rect
 #' @importFrom ggplot2 xlab ylab ggtitle coord_cartesian unit facet_wrap
 #'
-#' @examples
-#' # No examples yet
-#'
+#' @keywords internal
 #' @rdname pn_plots_generic
 #'
 pn_mean_plot <- function(plotData) {
@@ -81,13 +76,17 @@ pn_mean_plot <- function(plotData) {
                         se = sds$value/sqrt(ns$value))
 
   # make the plot
-  result <- summary  %>%
+  result <- summary  |>
     ggplot(aes(col = .data$method)) +
     geom_pointrange(aes(x = .data$method, y = .data$mean,
                         ymin = .data$mean - .data$se,
                         ymax = .data$mean + .data$se),
                     pch = 18,
-                    size = 1.15) +
+                    size = 1.15,
+                    position = position_nudge(x = -0.2)) +
+    geom_point(aes(x = .data$method, .data$value),
+               position = position_jitterdodge(dodge.width = 0.2, jitter.width = 0.3),
+               data = plotData) +
     scale_color_manual(values = unname(binfcolors)) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90,
@@ -105,7 +104,7 @@ pn_mean_plot <- function(plotData) {
 #'
 pn_violin_plot <- function(plotData) {
   # make the plot
-  result <- plotData  %>%
+  result <- plotData  |>
     ggplot(aes(fill = .data$method)) +
     geom_violin(aes(x = .data$method, y = .data$value),
                 draw_quantiles = c(0.5),
@@ -127,7 +126,7 @@ pn_violin_plot <- function(plotData) {
 #'
 pn_density_plot <- function(plotData) {
   # make the plot
-  result <- plotData  %>%
+  result <- plotData  |>
     ggplot(aes(color = .data$method, group = .data$method)) +
     geom_vline(aes(xintercept = 0), col = "grey80") +
     geom_line(aes(x = .data$value),
@@ -151,6 +150,7 @@ pn_density_plot <- function(plotData) {
 #' of each metric.
 #'
 #' @inheritParams eval_pn_metric_for_plot
+#' @inheritParams write_norm_report
 #' @param zoom Should the plot cover the full range of log2ratios, or zoom
 #'   in around 0? Default is FALSE.
 #' @param legend Should the plot include the legend? Default is TRUE.
@@ -158,60 +158,57 @@ pn_density_plot <- function(plotData) {
 #'
 #' @name pn_plots
 #'
-#' @examples
-#' # No examples yet
-#'
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_PCV <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
-                          metric = "PCV") %>%
+                          metric = "PCV") |>
     pn_mean_plot() +
     ylab("Pooled Coefficient of Variation") +
     ggtitle("PCV")
 }
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_PMAD <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
-                          metric = "PMAD") %>%
+                          metric = "PMAD") |>
     pn_mean_plot() +
     ylab("Median Absolute Deviation") +
     ggtitle("PMAD")
 }
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_PEV <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
-                          metric = "PEV") %>%
+                          metric = "PEV") |>
     pn_mean_plot() +
     ylab("Pooled Estimate of Variance") +
     ggtitle("PEV")
 }
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_COR <- function(normList, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
-                          metric = "COR") %>%
+                          metric = "COR") |>
     pn_violin_plot() +
     ylab("Intragroup Correlation") +
     ggtitle("COR")
 }
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
 pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
 
@@ -228,7 +225,7 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
   max_xlim <- 0.5 * max(stats::aggregate(value ~ method, data = plotData, FUN = function(x) max(stats::density(x, na.rm = T)$x))$value)
 
   # Build base plot
-  base <- plotData %>%
+  base <- plotData |>
     pn_density_plot() +
     xlab("") +
     ylab("Density") +
@@ -263,9 +260,9 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
 
 
 #' @rdname pn_plots
-#' @export
+#' @keywords internal
 #'
-pn_plot_MD <- function(normList, grouping) {
+pn_plot_MD <- function(normList, grouping, use_ggrastr = F) {
 
   # Assemble data for plotting
   log2ratios <- NULL
@@ -288,9 +285,23 @@ pn_plot_MD <- function(normList, grouping) {
   plotData$method <- factor(plotData$method, levels = names(normList))
 
   # make plot
-  plotData %>%
-  ggplot(aes(x = .data$mean_intensity, y = .data$values)) +
-    geom_point(alpha = 0.3, na.rm = T) +
+  # possibly using ggrastr
+  if (use_ggrastr) {
+    if (!requireNamespace("ggrastr", quietly = TRUE)) {
+      cli::cli_abort(c("Package \"ggrastr\" must be installed in order to use it."))
+    }
+
+    base_plot <- plotData |>
+      ggplot(aes(x = .data$mean_intensity, y = .data$values)) +
+      ggrastr::geom_point_rast(alpha = 0.3, na.rm = T)
+  } else {
+    base_plot <- plotData |>
+      ggplot(aes(x = .data$mean_intensity, y = .data$values)) +
+      geom_point(alpha = 0.3, na.rm = T)
+
+  }
+
+  base_plot +
     geom_hline(yintercept = 0, color = "dodgerblue3") +
     geom_smooth(method = "lm", formula = "y ~ x", na.rm = T, color = "darkorange") +
     facet_wrap("method", ncol = 4) +
@@ -299,5 +310,3 @@ pn_plot_MD <- function(normList, grouping) {
     theme_bw() +
     theme(panel.grid = element_blank())
 }
-
-

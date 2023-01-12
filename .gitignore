@@ -1,6 +1,7 @@
 # Genral R stuff to ignore
 .Rproj.user
 .Rhistory
+.DS_Store
 
 
 # Data, results, and other files during package testing
@@ -20,10 +21,8 @@ targets*.csv
 protein_analysis/
 phospho_analysis/
 output_*/
-
-.DS_Store
-
 for_testing/package_test_scripts_091622/
-
 for_testing/bs_tab_listen.Rmd
 *_s3obj/*
+.Rdata
+.httr-oauth
