@@ -28,7 +28,6 @@ read_DIA_data <- function(input_file = NULL,
   ## the first 10 lines are skipped and last line removed. column 1 (.X)
   ## is renamed "id"
   maxquant_data <- read_maxquant_delim(input_file = input_file)
-  rownames(maxquant_data) <- paste0("protein", 1:nrow(maxquant_data))
 
   # Separate out data columns (which end in .mzML)
   raw_data <- maxquant_data[,stringr::str_detect(colnames(maxquant_data), ".mzML$")]
@@ -51,6 +50,22 @@ read_DIA_data <- function(input_file = NULL,
   num_extracted <- nrow(clean_data)
 
   cli::cli_inform(c("Intensity data for {.val {num_extracted}} DIA protein entries and {.val {num_samples}} samples extracted"))
+
+  # Now, need to remove decoys and contaminants
+  cli::cli_inform(c("Removing decoys and contaminants"))
+
+  for (removal_string in c("DECOY", "Group of")) {
+    keep <- !stringr::str_detect(clean_annot$Protein.Name, removal_string)
+    clean_data <- clean_data[keep,]
+    clean_annot <- clean_annot[keep,]
+    rm(keep)
+  }
+
+  rownames(clean_data) <- clean_annot$uniprot_id
+  rownames(clean_annot) <- clean_annot$uniprot_id
+
+  cli::cli_inform("{.val {num_extracted - nrow(clean_data)}} contaminant{?s} removed")
+  cli::cli_inform("{.val {nrow(clean_data)}} DIA protein entries retained")
 
   ## return a list of data.frame containing the extracted quality
   ## filtered intensity data, corresponding extracted annotation,
@@ -142,15 +157,14 @@ parse_protein_data <- function(annotation_data) {
   ## extract gene name, gene symbol, and uniprot id info. from the Fasta.header
   ## append to qfilterData add unique protein ID (proKey = uniprot_GN_id
   annotation_data$Accession.Number <- gsub("(.+?)(\\ .*)","\\1", stringr::str_extract(annotation_data$Protein.Name,"(?<=\\|)[^\\|]+(?=\\ )"))
-  annotation_data$UniprotID    <- stringr::str_extract(annotation_data$Protein.Name, "(?<=\\|)[^\\|]+(?=\\|)")
+  annotation_data$uniprot_id    <- stringr::str_extract(annotation_data$Protein.Name, "(?<=\\|)[^\\|]+(?=\\|)")
   annotation_data$Gene_name    <- stringr::str_extract(annotation_data$Protein.Name, "(?<=GN\\=)[^\\|]+(?= PE\\=)")
   annotation_data$Description  <- stringr::str_extract(annotation_data$Protein.Name, "(?<= )[^\\|]+(?= OS\\=)")
 
   annotColums <- diaAnnotationColums
-  annotColums <- c(annotColums, "UniprotID", "Gene_name","Description")
-  #rownames(annotation_data) <- paste(annotation_data$UniprotID, annotation_data$Gene_name, annotation_data$id, sep="_")
+  annotColums <- c(annotColums, "uniprot_id", "Gene_name","Description")
 
-  annotation_data[, unique(c(annotColums, "UniprotID", "Gene_name","Description"))]
+  annotation_data[, unique(c(annotColums, "uniprot_id", "Gene_name","Description"))]
 }
 
 

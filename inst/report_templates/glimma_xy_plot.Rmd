@@ -7,28 +7,28 @@ if ({{plot}} == "Volcano raw P") {
   xlab <- "logFC"
   ylab <- "negLog10rawP"
   status <- data$sig.PVal
-  cols_to_display <- c("Gene_name", "Description", "UniprotID", "logFC", "p", "adjusted_p")
+  cols_to_display <- c("Gene_name", "Description", "uniprot_id", "logFC", "p", "adjusted_p")
 } else if ({{plot}} == "Volcano adjusted P") {
   x <- data$logFC
   y <- data$negLog10adjP
   xlab <- "logFC"
   ylab <- "negLog10adjP"
   status <- data$sig.FDR
-  cols_to_display <- c("Gene_name", "Description", "UniprotID", "logFC", "p", "adjusted_p")
+  cols_to_display <- c("Gene_name", "Description", "uniprot_id", "logFC", "p", "adjusted_p")
 } else if ({{plot}} == "MD raw P") {
   x <- data$AveExpr
   y <- data$logFC
   xlab <- "AveExpr"
   ylab <- "logFC"
   status <- data$sig.PVal
-  cols_to_display <- c("Gene_name", "Description", "UniprotID", "AveExpr", "logFC", "p", "adjusted_p")
+  cols_to_display <- c("Gene_name", "Description", "uniprot_id", "AveExpr", "logFC", "p", "adjusted_p")
 } else if ({{plot}} == "MD adjusted P") {
   x <- data$AveExpr
   y <- data$logFC
   xlab <- "AveExpr"
   ylab <- "logFC"
   status <- data$sig.FDR
-  cols_to_display <- c("Gene_name", "Description", "UniprotID", "AveExpr", "logFC", "p", "adjusted_p")
+  cols_to_display <- c("Gene_name", "Description", "uniprot_id", "AveExpr", "logFC", "p", "adjusted_p")
 } else {
   stop("Invalid plot option")
 }

@@ -119,9 +119,8 @@ from MaxQuant:
 data <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv") 
 ```
 
-One thing to notes: this function just reads in the data and splits it
-into the intensity data and annotation data. It doesn’t do any filtering
-out of decoys or contaminants, as the old data import function did.
+This function also filters out contaminants and decoys during import,
+before converting everything into a DAList.
 
 After importing the raw data, we import metadata and add it to the
 DAList object:
@@ -185,16 +184,6 @@ we can filter proteins by information in their annotation data:
 data <- filter_proteins_by_annotation(data, Protein.Name != "bad protein")
 ```
 
-As with `filter_samples()`, this function takes an expression that
-evaluates to a logical condition that determines filtering. For our
-internal use, we have a function that filters out contaminant proteins
-(this used to happen in the data import step):
-
-``` r
-data <- filter_proteins_contaminants(data) 
-# this is just a wrapper around filter_proteins_by_annotation()
-```
-
 We can also filter proteins based on their degree of missing data across
 samples. One function, `filter_proteins_by_group()`, replicates the
 filtering we used to apply in the old `process_data()` function (e.g.,
@@ -212,13 +201,6 @@ uneven across groups:
 data <- filter_proteins_by_proportion(data, 
                                       min_prop = 1, # No missing data allowed
                                       grouping_column = "group")
-```
-
-Again, these can be chained:
-
-``` r
-data <- filter_proteins_contaminants(data) |> 
-  filter_proteins_by_group(min_reps = 5, min_groups = 3, grouping_column = "group")
 ```
 
 As with sample filtering, the protein filter functions that are applied
@@ -378,7 +360,6 @@ full_chain <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquan
   add_metadata(metadata_file = "path/to/metdata.csv") |> 
   filter_samples(group != "Pool") |> 
   filter_samples(!stringr::str_detect(sample, "sampleX")) |> 
-  filter_proteins_contaminants() |> 
   filter_proteins_by_group(min_reps = 5, 
                            min_groups = 3, 
                            grouping_column = "group") |> 

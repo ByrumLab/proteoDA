@@ -19,7 +19,7 @@ test_that("filter_proteins_by_annotation removes proteins as expected", {
   output_name <- readRDS(test_path("fixtures", "filter_protein_annotation_output_name.rds"))
   output_MW <- readRDS(test_path("fixtures", "filter_protein_annotation_output_MW.rds"))
 
-  expect_equal(filter_proteins_by_annotation(input, protein_ID != "protein10"), output_ID)
+  expect_equal(filter_proteins_by_annotation(input, uniprot_id != "protein10"), output_ID)
   expect_equal(filter_proteins_by_annotation(input, !stringr::str_detect(Protein.Name, "keratin")), output_name)
   expect_equal(filter_proteins_by_annotation(input, molecular_weight < 10), output_MW)
 })
