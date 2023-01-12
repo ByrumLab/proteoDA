@@ -151,6 +151,16 @@ write_norm_report <- function(DAList,
   e <- pn_plot_log2ratio(normList, groups)
   f <- pn_plot_log2ratio(normList, groups, zoom = T, legend = !suppress_zoom_legend)
 
+  # Add QC metrics to tags
+  DAList$tags$normQCmetrics <- list()
+  DAList$tags$normQCmetrics$grouping_column <- grouping_column
+  DAList$tags$normQCmetrics$PCV <- eval_pn_metric_for_plot(normList, groups, metric="PCV")
+  DAList$tags$normQCmetrics$PMAD <- eval_pn_metric_for_plot(normList, groups, metric="PMAD")
+  DAList$tags$normQCmetrics$PEV <- eval_pn_metric_for_plot(normList, groups, metric="PEV")
+  DAList$tags$normQCmetrics$COR <- eval_pn_metric_for_plot(normList, groups, metric="COR")
+
+
+  
 
 
   page_1 <- a + b + c + d + e + f +
@@ -182,7 +192,7 @@ write_norm_report <- function(DAList,
     cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
 
-  invisible(input_DAList)
+  return(DAList)
 }
 
 
