@@ -57,6 +57,7 @@ eval_pn_metric_for_plot <- function(normList,
 #'
 #' @importFrom ggplot2 ggplot aes
 #' @importFrom ggplot2 geom_pointrange geom_violin geom_vline geom_line geom_point geom_hline geom_smooth
+#' @importFrom ggplot2 position_nudge position_jitterdodge
 #' @importFrom ggplot2 scale_fill_manual scale_color_manual
 #' @importFrom ggplot2 theme_bw theme element_text element_blank element_rect
 #' @importFrom ggplot2 xlab ylab ggtitle coord_cartesian unit facet_wrap

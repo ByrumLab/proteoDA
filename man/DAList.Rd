@@ -17,7 +17,7 @@ DAList(
 \arguments{
 \item{data}{A dataframe or matrix containing protein intensity data for each sample. Rows are proteins, columns are samples.}
 
-\item{annotation}{A dataframe containing protein annotation data. REQUIRED COLUMNS??}
+\item{annotation}{A dataframe containing protein annotation data. Must contain a column named uniprot_id containing unique entries for each row.}
 
 \item{metadata}{A dataframe containing metadata on each sample. REQUIRED COLUMNS?}
 

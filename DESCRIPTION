@@ -1,9 +1,14 @@
 Package: proteomicsDIA
-Title: UAMS Internal Proteomics Package
-Version: 0.0.0.9000
+Title: UAMS Proteomics Package for differential abundance analysis
+Version: 0.0.0.9001
 Authors@R: 
-    person("Timothy", "Thurman", , "tthurman@uams.edu", role = c("aut", "cre"))
-Description: Functions for performing DIA proteomics analysis.
+    c(
+      person(given = "Timothy", family = "Thurman", email = "tthurman@uams.edu", role = c("aut", "cre")),
+      person(given = "Charity", family = "Washam", email = "cwasham@uams.edu", role = c("aut")),
+      person(given = "Jordan", family = "Bird", email = "jtbird@uams.edu", role = c("ctb")),
+      person(given = "Stephanie", family = "Byrum", email = "sbyrum@uams.edu", role = c("aut"))
+    )
+Description: Functions for performing differential abundance analysis of proteomic data.
 License: GPL (>= 3)
 biocViews:
 Imports:

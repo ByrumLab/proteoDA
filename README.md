@@ -6,19 +6,22 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-Our package is getting closer to being ready for publication. One major
-task we’ve been working on for publication is streamlining/standardizing
-the input and output of all functions to use a single list with a custom
-S3 class. This has required a pretty comprehensive re-write of all our
-functions, but hopefully does so in a way that makes the package easier
-to use.
+Our package is getting closer to being ready for publication. The
+package is now re-written to use a more public-friendly custom S3 class
+that keeps the R objects consistent across the pipeline and is easily
+chain/pipe-able.
 
-We’re at the point where it would be helpful for folks to test out the
-new S3-based pipeline. It would be especially helpful if folks could
-re-run some old projects using the new S3 pipeline and make sure the
-results match the old package version.
+We sill have a number of things to do to finish up the package:
 
-We also need a new name!
+-\[\] Renaming the package and separating it out into the public and
+private packages. The internal UAMS package should be minimal: it will
+call the public package as a dependency (possibly its only dependency),
+and will add a few functions for internal use and set the default
+arguments for some functions to things that are UAMS-appropriate. -\[\]
+Finishing the test writing for our functions. -\[\] Double-checking the
+documentation, README, and other text to make sure the use of our
+package is clear. -\[\] A few other open issues: check the GitHub page
+and maybe make a pull request with a fix!
 
 ## Contributing to package development
 
@@ -49,25 +52,13 @@ for developing the package, see below). You’ll also need the personal
 access token (PAT) that gives you access to the repository. Email Tim or
 Stephanie to get it. Once you have it, you can install the development
 version of `proteomicsDIA` from [GitHub](https://github.com/) with the
-`devtools::install_github()` function. To install the old style of the
-package:
+`devtools::install_github()` function:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("ByrumLab/proteomicsDIA",
                          auth_token = "COPY_PAT_HERE")
 ```
-
-And, to install the new version based on the S3 object:
-
-``` r
-# install.packages("devtools")
-devtools::install_github("ByrumLab/proteomicsDIA@s3_object",
-                         auth_token = "COPY_PAT_HERE")
-```
-
-You can only have one version installed at a time. See the end of the
-README for an example workflow for the old pipeline.
 
 ## New s3 object structure
 
@@ -119,9 +110,8 @@ from MaxQuant:
 data <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquant.csv") 
 ```
 
-One thing to notes: this function just reads in the data and splits it
-into the intensity data and annotation data. It doesn’t do any filtering
-out of decoys or contaminants, as the old data import function did.
+This function also filters out contaminants and decoys during import,
+before converting everything into a DAList.
 
 After importing the raw data, we import metadata and add it to the
 DAList object:
@@ -185,16 +175,6 @@ we can filter proteins by information in their annotation data:
 data <- filter_proteins_by_annotation(data, Protein.Name != "bad protein")
 ```
 
-As with `filter_samples()`, this function takes an expression that
-evaluates to a logical condition that determines filtering. For our
-internal use, we have a function that filters out contaminant proteins
-(this used to happen in the data import step):
-
-``` r
-data <- filter_proteins_contaminants(data) 
-# this is just a wrapper around filter_proteins_by_annotation()
-```
-
 We can also filter proteins based on their degree of missing data across
 samples. One function, `filter_proteins_by_group()`, replicates the
 filtering we used to apply in the old `process_data()` function (e.g.,
@@ -212,13 +192,6 @@ uneven across groups:
 data <- filter_proteins_by_proportion(data, 
                                       min_prop = 1, # No missing data allowed
                                       grouping_column = "group")
-```
-
-Again, these can be chained:
-
-``` r
-data <- filter_proteins_contaminants(data) |> 
-  filter_proteins_by_group(min_reps = 5, min_groups = 3, grouping_column = "group")
 ```
 
 As with sample filtering, the protein filter functions that are applied
@@ -378,7 +351,6 @@ full_chain <- read_DIA_data(input_file = "path/to/Samples Report of from Maxquan
   add_metadata(metadata_file = "path/to/metdata.csv") |> 
   filter_samples(group != "Pool") |> 
   filter_samples(!stringr::str_detect(sample, "sampleX")) |> 
-  filter_proteins_contaminants() |> 
   filter_proteins_by_group(min_reps = 5, 
                            min_groups = 3, 
                            grouping_column = "group") |> 
@@ -422,74 +394,3 @@ data import functions probably won’t work with other data. But, if you
 can get your data into the right structure to be put into our S3 object
 (see above), the rest of the functions should work (though some text
 labels might be incorrect: e.g., “protein” instead of “phospho”).
-
-### Example workflow- Old style
-
-Here’s an example workflow for using the “old” style of the package,
-without the S3 object. I’ve left it here for reference, but once we make
-the switch to the new style it won’t be relevant anymore.
-
-``` r
-# Load the proteomicsDIA package
-library(proteomicsDIA)
-
-# Extract Maxquant data
-extracted_data <- read_DIA_data("path/to/Samples Report of from Maxquant.csv")
-
-# make targets
-targets <- make_targets(input_file = "path/to/metdata.csv",
-                        sample_IDs = colnames(extracted_data$data))
-
-# If you want, can save the generated targets dataframe for internal checking
-write.csv(targets, file = "targets.csv")
-
-
-# Subset targets
-sub <- subset_targets(targets = targets, 
-                      filter_list = list(group = "pool",
-                                         sample = c("sampleA", "sampleB")))
-
-# Process data
-norm <- process_data(data = extracted_data$data,
-                     targets = sub$targets,
-                     min.reps = 5,
-                     min.grps = 3)
-# Make the proteinorm report
-write_proteinorm_report(processed_data = norm,
-                        grouping_column = "group")
-
-# Make the QC report
-write_qc_report(processed_data = norm, 
-                chosen_norm_method = "vsn",
-                grouping_column = "group")
-
-# Make the design matrix
-design <- make_design(targets=norm$targets,
-                      group_column = "group",
-                      factor_columns = NULL,
-                      paired_column = NULL)
-# Make the contrasts matrix
-contrasts <- make_contrasts(file = "path/to/contrasts/file.csv",
-                            design = design$design)
-
-# Fit the model
-fit <- fit_limma_model(data = norm$normList[["vsn"]], # choose your normalization method
-                       design_obj = design,
-                       contrasts_obj = contrasts)
-
-# Extract the differential expression results
-results <- extract_limma_DE_results(limma_fit = fit)
-
-# Save the tables of results
-write_limma_tables(model_results = results,
-                    norm.method = "vsn",
-                    annotation = extracted_data$annot,
-                    ilab = "example_1234")
-# And save the plots and interactive report
-write_limma_plots(model_results = results,
-                   annotation =  extracted_data$annot,
-                   groups = norm$targets$group,
-                   output_dir = "example_1234")
-
-# If you see any typos or things that aren't clear, let me know!
-```
