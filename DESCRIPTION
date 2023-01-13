@@ -1,6 +1,6 @@
-Package: proteomicsDIA
-Title: UAMS Proteomics Package for differential abundance analysis
-Version: 0.0.0.9001
+Package: proteoDA
+Title: A package for streamlined differential abundance analysis of proteomic data
+Version: 0.0.0.9002
 Authors@R: 
     c(
       person(given = "Timothy", family = "Thurman", email = "tthurman@uams.edu", role = c("aut", "cre")),
