@@ -1,17 +1,9 @@
 
-# library(pkgnet)
-# library(tictoc)
-# library(microbenchmark)
+
 library(devtools)
 library(tidyverse)
-# library(profvis)
 
 
-
-# For figuring out argument names
-# lsf.str("package:proteomicsDIA")
-
-CreatePackageReport("proteomicsDIA")
 
 # Pipeline ----------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# proteomicsDIA
+# proteoDA
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -51,12 +51,12 @@ installation is a little more complicated that usual. You’ll need the
 for developing the package, see below). You’ll also need the personal
 access token (PAT) that gives you access to the repository. Email Tim or
 Stephanie to get it. Once you have it, you can install the development
-version of `proteomicsDIA` from [GitHub](https://github.com/) with the
+version of `proteoDA` from [GitHub](https://github.com/) with the
 `devtools::install_github()` function:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("ByrumLab/proteomicsDIA",
+devtools::install_github("ByrumLab/proteoDA",
                          auth_token = "COPY_PAT_HERE")
 ```
 
@@ -204,22 +204,22 @@ GitHub issue!
 
 ### Normalization report
 
-Next, we make the proteinorm normalization report:
+Next, we make the normalization report:
 
 ``` r
 write_norm_report(data,
                   grouping_column = "group",
-                  out_dir = "directory/to/save/",
+                  output_dir = "directory/to/save/",
                   file = "filename.pdf", # See note below
                   overwrite = T)
 ```
 
 In the S3 version of the package, this function has no defaults for
-`out_dir` and `file`: you need to specify those yourself. In the example
-above, I’ve explicitly chosen generic ones: these are not the structure
-that Stephanie wants. When we split our package into public and internal
-packages, we can set the defaults we want for our internal package. For
-now, you’ll need to specify them by hand.
+`output_dir` and `file`: you need to specify those yourself. In the
+example above, I’ve explicitly chosen generic ones: these are not the
+structure that Stephanie wants. When we split our package into public
+and internal packages, we can set the defaults we want for our internal
+package. For now, you’ll need to specify them by hand.
 
 This function invisibly returns the input data/DAList, so it can be
 chained if desired (though you may not want to).
@@ -248,17 +248,17 @@ this on normalized data.
 ``` r
 write_qc_report(norm_data,
                 color_column = "group",
-                out_dir = "directory/to/save",
+                output_dir = "directory/to/save",
                 file = "QC_report.pdf",
                 overwrite = T)
 ```
 
 This function is like the normalization report: it has no defaults for
-`out_dir` and `file`: you need to specify those yourself. In the example
-above, I’ve explicitly chosen generic ones: these are not the structure
-that Stephanie wants. When we split our package into public and internal
-packages, we can set the defaults we want for our internal package. For
-now, you’ll need to specify them by hand.
+`output_dir` and `file`: you need to specify those yourself. In the
+example above, I’ve explicitly chosen generic ones: these are not the
+structure that Stephanie wants. When we split our package into public
+and internal packages, we can set the defaults we want for our internal
+package. For now, you’ll need to specify them by hand.
 
 This function invisibly returns the input data/DAList, so it can be
 chained if desired (though you may not want to).

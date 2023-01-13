@@ -1,4 +1,4 @@
 library(testthat)
-library(proteomicsDIA)
+library(proteoDA)
 
-test_check("proteomicsDIA")
+test_check("proteoDA")
