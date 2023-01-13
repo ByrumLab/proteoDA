@@ -4,7 +4,7 @@
 \name{proteomicsDIA-package}
 \alias{proteomicsDIA}
 \alias{proteomicsDIA-package}
-\title{proteomicsDIA: UAMS Internal Proteomics Package}
+\title{proteomicsDIA: UAMS Proteomics Package for differential abundance analysis}
 \description{
 A package for the differential proteomics anaalysis with DIA data.
 }

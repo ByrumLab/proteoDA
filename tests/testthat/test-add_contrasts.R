@@ -50,22 +50,79 @@ test_that("add_contrasts gives useful error when contrasts_file is not found", {
 })
 
 test_that("add_contrasts gives useful error when contrasts_file has more than one column", {
+  input <- readRDS(test_path("fixtures", "add_contrasts_input.rds"))
 
+  expect_error(
+    add_contrasts(input,
+                  contrasts_file = test_path("fixtures", "bad_contrast_mult_col.csv")),
+    "more than one column")
 })
 
 test_that("add_contrasts gives useful error when groups in contrast are not present in the design", {
+  input <- readRDS(test_path("fixtures", "add_contrasts_input.rds"))
 
+  expect_error(
+    add_contrasts(input,
+                  contrasts_file = test_path("fixtures", "bad_contrast_wrong_group.csv")),
+    "XXX")
 })
 
 test_that("add_contrasts notifies user when overwriting an existing contrast", {
 
+  input <- readRDS(test_path("fixtures", "add_contrasts_input.rds"))
+  existing_contrast <- input |>
+    add_contrasts(contrasts_vector = c("Treatment_vs_Control= treatment - control"))
+
+
+  expect_message(
+    add_contrasts(existing_contrast,
+                  contrasts_vector = c("Treatment_vs_Control= treatment - control")),
+    "DAList already contains contrasts. Overwriting."
+  )
 })
 
 test_that("add_contrasts outputs proper contrast when contrasts_vector is supplied", {
+  input <- readRDS(test_path("fixtures", "add_contrasts_input.rds"))
 
+  contrast <- c("Treatment_vs_Control= treatment - control")
+
+  output <- add_contrasts(input,
+                          contrasts_vector = contrast)
+
+  expected_matrix <-
+    matrix(data = c(-1,1),
+           nrow = 2,
+           ncol = 1,
+           dimnames = list(
+             Levels = c("control", "treatment"),
+             Contrasts = c("Treatment_vs_Control")
+           )
+    )
+
+  expect_equal(output$design$contrast_vector, contrast)
+  expect_equal(output$design$contrast_matrix, expected_matrix)
 })
 
 test_that("add_contrasts outputs proper contrast when contrasts_file is supplied", {
+  input <- readRDS(test_path("fixtures", "add_contrasts_input.rds"))
+
+  contrast <- c("Treatment_vs_Control= treatment - control")
+
+  output <- add_contrasts(input,
+                          contrasts_file = test_path("fixtures", "good_contrast.csv"))
+
+  expected_matrix <-
+    matrix(data = c(-1,1),
+           nrow = 2,
+           ncol = 1,
+           dimnames = list(
+             Levels = c("control", "treatment"),
+             Contrasts = c("Treatment_vs_Control")
+           )
+    )
+
+  expect_equal(output$design$contrast_vector, contrast)
+  expect_equal(output$design$contrast_matrix, expected_matrix)
 
 })
 
