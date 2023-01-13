@@ -152,12 +152,7 @@ write_norm_report <- function(DAList,
   f <- pn_plot_log2ratio(normList, groups, zoom = T, legend = !suppress_zoom_legend)
 
   # Add QC metrics to tags
-  DAList$tags$normQCmetrics <- list()
-  DAList$tags$normQCmetrics$grouping_column <- grouping_column
-  DAList$tags$normQCmetrics$PCV <- eval_pn_metric_for_plot(normList, groups, metric="PCV")
-  DAList$tags$normQCmetrics$PMAD <- eval_pn_metric_for_plot(normList, groups, metric="PMAD")
-  DAList$tags$normQCmetrics$PEV <- eval_pn_metric_for_plot(normList, groups, metric="PEV")
-  DAList$tags$normQCmetrics$COR <- eval_pn_metric_for_plot(normList, groups, metric="COR")
+  DAList <- save_norm_metrics(DAList, grouping_column)
 
 
   
@@ -192,7 +187,7 @@ write_norm_report <- function(DAList,
     cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
   }
 
-  return(DAList)
+  validate_DAList(DAList)
 }
 
 
@@ -230,3 +225,16 @@ apply_all_normalizations <- function(data) {
   normList
 }
 
+save_norm_metrics <- function(DAList, grouping_column){
+  normList <- apply_all_normalizations(data=DAList$data)
+  groups <- as.character(DAList$metadata[,grouping_column])
+  DAList$tags$normQCmetrics <- list()
+  DAList$tags$normQCmetrics$grouping_column <- list()
+  names(DAList$tags$normQCmetrics)[1] <- grouping_column
+  DAList$tags$normQCmetrics[[grouping_column]]$PCV <- eval_pn_metric_for_plot(normList, groups, metric="PCV")
+  DAList$tags$normQCmetrics[[grouping_column]]$PMAD <- eval_pn_metric_for_plot(normList, groups, metric="PMAD")
+  DAList$tags$normQCmetrics[[grouping_column]]$PEV <- eval_pn_metric_for_plot(normList, groups, metric="PEV")
+  DAList$tags$normQCmetrics[[grouping_column]]$COR <- eval_pn_metric_for_plot(normList, groups, metric="COR")
+#  invisible(validate_DAList(DAList))
+  return(DAList)
+}

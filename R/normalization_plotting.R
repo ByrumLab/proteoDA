@@ -37,7 +37,6 @@ eval_pn_metric_for_plot <- function(normList,
   }
 
   plotData$method <- factor(plotData$method, levels = names(normList))
-
   return(plotData)
 }
 
@@ -198,7 +197,7 @@ pn_plot_PEV <- function(normList, grouping) {
 #' @rdname pn_plots
 #' @keywords internal
 #'
-pn_plot_COR <- function(normList, grouping) {
+pn_plot_COR <- function(normList, DAlist, grouping) {
   eval_pn_metric_for_plot(normList,
                           grouping,
                           metric = "COR") |>
