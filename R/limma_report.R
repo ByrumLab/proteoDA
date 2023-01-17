@@ -118,7 +118,6 @@ write_limma_plots <- function(DAList = NULL,
   if (!dir.exists("static_plots")) {
     dir.create("static_plots")
   }
-
   file.copy(from = system.file("report_templates/glimma_xy_plot.Rmd",
                                package = "proteoDA"),
             to = "plot_template.Rmd", overwrite = T)
@@ -201,7 +200,7 @@ write_limma_plots <- function(DAList = NULL,
     rmarkdown::render("report_template.Rmd",
                       knit_root_dir = getwd(),
                       intermediates_dir = tmp_subdir,
-                      output_file = paste0(contrast, "_DE_report.html"),
+                      output_file = paste0(contrast, "_DA_report.html"),
                       quiet = T)
     contrast_count <- contrast_count + 1
   }
