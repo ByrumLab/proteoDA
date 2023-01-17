@@ -120,10 +120,10 @@ write_limma_plots <- function(DAList = NULL,
   }
 
   file.copy(from = system.file("report_templates/glimma_xy_plot.Rmd",
-                               package = "proteomicsDIA"),
+                               package = "proteoDA"),
             to = "plot_template.Rmd", overwrite = T)
   file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
-                               package = "proteomicsDIA"),
+                               package = "proteoDA"),
             to = "report_template.Rmd", overwrite = T)
 
   contrast_count <- 1
