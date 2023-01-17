@@ -28,7 +28,7 @@ uams_glimmaXY <- function (x, y, xlab = "x", ylab = "y", dge = NULL, counts = dg
 
 UAMS_glimmaXYWidget <- function (xData, width, height, html)
 {
-  widget <- htmlwidgets::createWidget(name = "glimmaXY", xData, package = "proteomicsDIA",
+  widget <- htmlwidgets::createWidget(name = "glimmaXY", xData, package = "proteoDA",
                                       width = width, height = height, elementId = NULL,
                                       sizingPolicy = htmlwidgets::sizingPolicy(defaultWidth = width,
                                                                                defaultHeight = height, browser.fill = TRUE, viewer.suppress = TRUE))
