@@ -1,5 +1,5 @@
 Package: proteoDA
-Title: A package for streamlined differential abundance analysis of proteomic data
+Title: Streamlined Differential Abundance Analysis of Proteomic Data
 Version: 0.0.0.9002
 Authors@R: 
     c(
