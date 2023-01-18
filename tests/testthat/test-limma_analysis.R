@@ -1,11 +1,95 @@
 
 # tests for limma_analysys ------------------------------------------------
-# Main functions tested here, subfunctiosn below
-
 
 # test fit_limma_model ----------------------------------------------------
 
+test_that("fit_limma_model gives error when no design is present", {
+  input_1 <- readRDS(test_path("fixtures", "fit_limma_model_input.rds"))
+  input_1$design <- NULL
+  input_2 <- readRDS(test_path("fixtures", "fit_limma_model_input_nodesign.rds"))
 
+  expect_error(fit_limma_model(input_1), "statistical design")
+  expect_error(fit_limma_model(input_2), "statistical design")
+
+})
+
+
+test_that("fit_limma_model gives message when input data are not normalized", {
+  input <- readRDS(test_path("fixtures", "fit_limma_model_input_nonorm.rds"))
+
+  expect_message(fit_limma_model(input), "not normalized")
+  input$tags$normalized <- F
+  expect_message(fit_limma_model(input), "not normalized")
+
+})
+
+
+test_that("fit_limma_model gives message on intra-block correlation with random effects models", {
+  input <- suppressMessages(readRDS(test_path("fixtures", "fit_limma_model_input.rds")) |>
+    add_design(~ 0 + treatment + (1 | group)))
+
+  expect_message(try(fit_limma_model(input), silent = T), # need a try here to ignore the error that happends because the cor is negative
+                 "correlation =")
+
+})
+
+test_that("fit_limma_model gives error when intra-block correlation is negative", {
+
+  input <- suppressMessages(readRDS(test_path("fixtures", "fit_limma_model_input.rds")) |>
+    add_design(~ 0 + treatment + (1 | group)))
+
+  suppressMessages(expect_error(fit_limma_model(input),
+                 "negative"))
+})
+
+test_that("fit_limma_model gives message when overwriting existing statistical results", {
+  # should work for both eBayes fit and results
+
+  input <- readRDS(test_path("fixtures", "fit_limma_model_input.rds")) |>
+    fit_limma_model()
+
+  expect_message(fit_limma_model(input), "Overwriting")
+  input2 <- suppressMessages(input |>
+    extract_DA_results())
+
+  expect_message(fit_limma_model(input2), "Overwriting")
+
+  input3 <- input2
+  input3["eBayes_fit"] <- list(NULL)
+
+  expect_message(fit_limma_model(input3), "Overwriting")
+
+})
+
+test_that("fit_limma_model gives consistent output", {
+  # Test a few different model types
+  # Just using snapshot testing to check for changes
+
+  input <- readRDS(test_path("fixtures", "add_design_input.rds"))
+
+  a <- input |>
+    normalize_data("log2") |>
+    add_design(~ 0 + group)
+
+  b <- input |>
+    normalize_data("log2") |>
+    add_design(~ group)
+
+  c <- input |>
+    normalize_data("log2") |>
+    add_design(~ 0 + treatment) |>
+    add_contrasts(contrasts_vector = c("Treatment_vs_Control= treatment - control"))
+
+  d <- input |>
+    normalize_data("log2") |>
+    add_design(~ 0 + sex + (1 | treatment))
+
+  expect_snapshot(fit_limma_model(a))
+  expect_snapshot(fit_limma_model(b))
+  expect_snapshot(fit_limma_model(c))
+  expect_snapshot(fit_limma_model(d))
+
+})
 
 
 # test extract_DA_results -------------------------------------------------
@@ -73,8 +157,9 @@ test_that("check_DA_perc returns correct percentage", {
 
 test_that("check_DA_perc does not check intercept columns", {
   fake_DA_outcomes_with_int <- data.frame(Intercept = c(1,-1,1,1,1,1,1,1,1,1),
-                                 termB5 = c(1,-1,1,-1,1,0,0,0,0,0),
-                                 termC8 = c(1,1,1,1,1,1,1,-1, 0,0)) |>
+                                          intercept = c(1,-1,1,1,1,1,1,1,1,1),
+                                          termB5 = c(1,-1,1,-1,1,0,0,0,0,0),
+                                          termC8 = c(1,1,1,1,1,1,1,-1, 0,0)) |>
     as.matrix()
 
   expect_silent(check_DA_perc(fake_DA_outcomes_with_int,

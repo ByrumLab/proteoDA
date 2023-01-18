@@ -6,7 +6,7 @@ test_that("filter_proteins_contaminants removes contaminants as expected", {
   input <- readRDS(test_path("fixtures", "filter_protein_contam_input.rds"))
   output <- readRDS(test_path("fixtures", "filter_protein_contam_output.rds"))
 
-  expect_equal(filter_proteins_contaminants(input), output)
+  suppressMessages(expect_equal(filter_proteins_contaminants(input), output))
 })
 
 
@@ -68,11 +68,11 @@ test_that("filter_proteins_by_groups removes proteins as expected", {
   output_43 <- readRDS(test_path("fixtures", "filter_proteins_by_group_output43.rds"))
 
 
-  expect_equal(filter_proteins_by_group(input, min_reps = 1, min_groups = 3), output_13)
-  expect_equal(filter_proteins_by_group(input, min_reps = 2, min_groups = 1), output_21)
-  expect_equal(filter_proteins_by_group(input, min_reps = 2, min_groups = 3), output_23)
-  expect_equal(filter_proteins_by_group(input, min_reps = 3, min_groups = 3), output_33)
-  expect_equal(filter_proteins_by_group(input, min_reps = 4, min_groups = 3), output_43)
+  suppressMessages(expect_equal(filter_proteins_by_group(input, min_reps = 1, min_groups = 3), output_13))
+  suppressMessages(expect_equal(filter_proteins_by_group(input, min_reps = 2, min_groups = 1), output_21))
+  suppressMessages(expect_equal(filter_proteins_by_group(input, min_reps = 2, min_groups = 3), output_23))
+  suppressMessages(expect_equal(filter_proteins_by_group(input, min_reps = 3, min_groups = 3), output_33))
+  suppressMessages(expect_equal(filter_proteins_by_group(input, min_reps = 4, min_groups = 3), output_43))
 })
 
 # filter_proteins_by_proportion -----------------------------------------------
@@ -101,11 +101,11 @@ test_that("filter_proteins_by_proportion removes proteins as expected", {
   output_1 <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_output1.rds"))
 
 
-  expect_equal(filter_proteins_by_proportion(input, min_prop = 0), output_0)
-  expect_equal(filter_proteins_by_proportion(input, min_prop = 0.25), output_25)
-  expect_equal(filter_proteins_by_proportion(input, min_prop = 0.5), output_50)
-  expect_equal(filter_proteins_by_proportion(input, min_prop = 0.75), output_75)
-  expect_equal(filter_proteins_by_proportion(input, min_prop = 1), output_1)
+  suppressMessages(expect_equal(filter_proteins_by_proportion(input, min_prop = 0), output_0))
+  suppressMessages(expect_equal(filter_proteins_by_proportion(input, min_prop = 0.25), output_25))
+  suppressMessages(expect_equal(filter_proteins_by_proportion(input, min_prop = 0.5), output_50))
+  suppressMessages(expect_equal(filter_proteins_by_proportion(input, min_prop = 0.75), output_75))
+  suppressMessages(expect_equal(filter_proteins_by_proportion(input, min_prop = 1), output_1))
 })
 
 

@@ -23,11 +23,9 @@
 
 fit_limma_model <- function(DAList) {
 
-  # Check input arguments generally
-  validate_DAList(DAList)
-
   # Make sure there's a design matrix present already,
   # tell user to set it first if not
+  # put these checks above DAList validation, to try to get better errors for endusers
   if (is.null(DAList$design)) {
     cli::cli_abort(c("Input DAList does not have a statistical design",
                      "i" = "Run {.code DAList <- add_design(DAList, ~ formula)} before fitting model"))
@@ -44,6 +42,10 @@ fit_limma_model <- function(DAList) {
     }
   }
 
+
+  # Check input arguments generally
+  validate_DAList(DAList)
+
   # With a random factor
   if (!is.null(DAList$design$random_factor)) {
 
@@ -59,11 +61,15 @@ fit_limma_model <- function(DAList) {
     corfit_display <- round(corfit$consensus.correlation, 3)
     cli::cli_inform("Estimated intra-block correlation = {.val {corfit_display}}")
 
-    if (corfit$consensus.correlation < 0.1) {
+    if (corfit$consensus.correlation < 0) {
+      cli::cli_abort(c("Estimated intra-block correlation is negative.",
+                       "Rerun model without the random effect."))
+    } else if (corfit$consensus.correlation < 0.05) {
       cli::cli_inform(cli::col_yellow(c("Estimated intra-block correlation is low.",
                                         "Consider using a model with no random effect.")))
+    } else {
+      intra_block_cor <- corfit$consensus.correlation
     }
-    intra_block_cor <- corfit$consensus.correlation
   } else { # No random factor
     intra_block_cor <- NULL
     block <- NULL
@@ -92,8 +98,8 @@ fit_limma_model <- function(DAList) {
   if (!is.null(DAList$eBayes_fit) | !is.null(DAList$results)) {
     cli::cli_inform("DAList already contains statistical results. Overwriting.")
     # Get rid of any old stuff
-    DAList$eBayes_fit <- NULL
-    DAList$results <- NULL
+    DAList[["eBayes_fit"]] <- list(NULL)
+    DAList[["results"]] <- list(NULL)
   }
 
   # Add results
