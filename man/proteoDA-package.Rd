@@ -4,7 +4,7 @@
 \name{proteoDA-package}
 \alias{proteoDA}
 \alias{proteoDA-package}
-\title{proteoDA: A package for streamlined differential abundance analysis of proteomic data}
+\title{proteoDA: Streamlined Differential Abundance Analysis of Proteomic Data}
 \description{
 A package for the differential proteomics anaalysis with DIA data.
 }
