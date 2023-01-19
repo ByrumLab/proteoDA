@@ -94,6 +94,84 @@ test_that("fit_limma_model gives consistent output", {
 
 # test extract_DA_results -------------------------------------------------
 
+test_that("extract_DA_results checks arguments", {
+  input <- readRDS(test_path("fixtures", "fit_limma_model_input.rds")) |>
+    fit_limma_model()
+
+  expect_error(extract_DA_results(input, pval_thresh = -1), "pval_thresh")
+  expect_error(extract_DA_results(input, pval_thresh = 1.1), "pval_thresh")
+  expect_error(extract_DA_results(input, lfc_thresh = -1), "lfc_thresh")
+  expect_error(extract_DA_results(input, adj_method = "xxx"), "xxx")
+
+})
+
+test_that("extract_DA_results errors when no eBayes fit is present", {
+  input <- readRDS(test_path("fixtures", "fit_limma_model_input.rds"))
+
+  suppressMessages(expect_error(extract_DA_results(input), "does not have a model fit"))
+
+})
+
+test_that("extract_DA_results informs user when overwriting old results", {
+  input <- suppressMessages(readRDS(test_path("fixtures", "fit_limma_model_input.rds")) |>
+    fit_limma_model() |>
+    extract_DA_results())
+
+  suppressMessages(expect_message(extract_DA_results(input), "Overwriting."))
+
+})
+
+
+test_that("extract_DA_results handles intercept terms as expected", {
+  input_int <- suppressMessages(
+    readRDS(test_path("fixtures", "fit_limma_model_input.rds")) |>
+      add_design(~ group) |>
+      fit_limma_model() |>
+      extract_DA_results()
+    )
+
+  no_int <- suppressMessages(extract_DA_results(input_int))
+  with_int <- suppressMessages(extract_DA_results(input_int, extract_intercept = T))
+
+  expect_false("Intercept" %in% names(no_int$results))
+  expect_true("Intercept" %in% names(with_int$results))
+
+})
+
+test_that("extract_DA_results gives consistent results", {
+
+  # Test a few different model types
+  # Just using snapshot testing to check for changes
+
+  input <- readRDS(test_path("fixtures", "add_design_input.rds"))
+
+  a <- input |>
+    normalize_data("log2") |>
+    add_design(~ 0 + group) |>
+    fit_limma_model()
+
+  b <- input |>
+    normalize_data("log2") |>
+    add_design(~ group) |>
+    fit_limma_model()
+
+  c <- input |>
+    normalize_data("log2") |>
+    add_design(~ 0 + treatment) |>
+    add_contrasts(contrasts_vector = c("Treatment_vs_Control= treatment - control")) |>
+    fit_limma_model()
+
+  d <- input |>
+    normalize_data("log2") |>
+    add_design(~ 0 + sex + (1 | treatment)) |>
+    fit_limma_model()
+
+  suppressMessages(expect_snapshot(extract_DA_results(a)))
+  suppressMessages(expect_snapshot(extract_DA_results(b)))
+  suppressMessages(expect_snapshot(extract_DA_results(c)))
+  suppressMessages(expect_snapshot(extract_DA_results(d)))
+
+})
 
 
 

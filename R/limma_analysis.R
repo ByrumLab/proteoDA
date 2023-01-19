@@ -164,7 +164,7 @@ extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_
   }
 
   if (any(!is.numeric(lfc_thresh),
-          !(pval_thresh >= 0))) {
+          lfc_thresh <= 0)) {
     cli::cli_abort(c("{.arg lfc_thresh} must be a numeric value greater >= 0."))
   }
 
@@ -183,7 +183,7 @@ extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_
   if (!is.null(DAList$results)) {
     cli::cli_inform("DAList already contains DA results. Overwriting.")
     # Get rid of any old stuff
-    DAList$results <- NULL
+    DAList[["results"]] <- list(NULL)
   }
 
   # Grab fit object and extract results from it
