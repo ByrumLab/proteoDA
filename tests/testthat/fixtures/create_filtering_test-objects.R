@@ -19,7 +19,7 @@ input <- DAList(data = test_data,
                 metadata = test_metadata)
 saveRDS(object = input, file = "tests/testthat/fixtures/filter_samples_input.rds")
 
-# And a dataframe of how it should be after filtering
+# And a data frame of how it should be after filtering
 filtered <- input
 filtered$data <- filtered$data[,1:5]
 filtered$metadata <- filtered$metadata[1:5,]
@@ -44,7 +44,7 @@ input <- DAList(data = test_data,
                 metadata = test_metadata)
 saveRDS(object = input, file = "tests/testthat/fixtures/filter_protein_contam_input.rds")
 
-# And a dataframe of how it should be after filtering
+# And a data frame of how it should be after filtering
 filtered <- input
 filtered$data <- filtered$data[1:5,]
 filtered$annotation <- filtered$annotation[1:5,]
@@ -72,7 +72,7 @@ input <- DAList(data = test_data,
                 metadata = test_metadata)
 saveRDS(object = input, file = "tests/testthat/fixtures/filter_protein_annotation_input.rds")
 
-# Some dataframes of how it should look after filtering
+# Some data frames of how it should look after filtering
 filtered <- input
 filtered$data <- filtered$data[1:9,]
 filtered$annotation <- filtered$annotation[1:9,]

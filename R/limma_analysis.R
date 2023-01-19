@@ -240,8 +240,8 @@ extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_
 #' Internal utility function, used in \code{\link{extract_DA_results}} to
 #' check if assumptions are met.
 #'
-#' @param DA_outcomes_table DA results dataframe. Should be the output of
-#' \code{\link[limma:decideTests]{limma::decideTests}}, coerced to a dataframe.
+#' @param DA_outcomes_table DA results data frame. Should be the output of
+#' \code{\link[limma:decideTests]{limma::decideTests}}, coerced to a data frame.
 #' @param DA_warn_threshold Proportion of DA genes at which we warn user.
 #' @param pval_thresh P-value threshold used.
 #' @param lfc_thresh logFC threshold used.

@@ -7,7 +7,7 @@
 apply_all_normalizations(data)
 }
 \arguments{
-\item{data}{A dataframe or matrix of raw data to be normalized. Rows are proteins and
+\item{data}{A data frame or matrix of raw data to be normalized. Rows are proteins and
 columns are raw intensity data.}
 }
 \value{

@@ -7,14 +7,14 @@
 create_combined_results(annotation, data, statlist)
 }
 \arguments{
-\item{annotation}{A dataframe of annotation data for each gene/protein.}
+\item{annotation}{A data frame of annotation data for each gene/protein.}
 
-\item{data}{A dataframe of normalized intensity data for each sample.}
+\item{data}{A data frame of normalized intensity data for each sample.}
 
 \item{statlist}{A list of per-contrast DE results.}
 }
 \value{
-A dataframe of the combined results.
+A data frame of the combined results.
 }
 \description{
 Internal function used to write the combined statistical results to a .csv

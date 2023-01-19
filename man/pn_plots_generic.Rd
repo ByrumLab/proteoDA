@@ -14,7 +14,7 @@ pn_violin_plot(plotData)
 pn_density_plot(plotData)
 }
 \arguments{
-\item{plotData}{A dataframe of data to be plotted, created with the
+\item{plotData}{A data frame of data to be plotted, created with the
 \code{\link{eval_pn_metric_for_plot}} function.}
 }
 \value{

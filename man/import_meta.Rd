@@ -10,7 +10,7 @@ import_meta(input_file)
 \item{input_file}{A metadata file, giving info on the samples.}
 }
 \value{
-A dataframe of the imported metadata.
+A data frame of the imported metadata.
 }
 \description{
 Imports a delimited metadata file, checking for some required columns.

@@ -1,7 +1,7 @@
 
 #' Add metadata to a DAList
 #'
-#' Add a dataframe of metadata to a DAList object. The metadata file defines the
+#' Add a data frame of metadata to a DAList object. The metadata file defines the
 #' sample labels, groups, and other factors (such as batch, gender, age, paired samples, etc.)
 #' required for the analysis and design matrix.
 #'
@@ -98,7 +98,7 @@ add_metadata <- function(DAList,
 #'
 #' @param input_file A metadata file, giving info on the samples.
 #'
-#' @return A dataframe of the imported metadata.
+#' @return A data frame of the imported metadata.
 #' @keywords internal
 #'
 #' @examples

@@ -29,7 +29,7 @@
 #'   giving all within-group pairwise correlations between samples. For log2ratio
 #'   with keep_protein_ID = FALSE (the default), a non-named vector giving all
 #'   possible between-group log2 ratios for each protein. For log2ratio with
-#'   keep_protein_ID = TRUE, a dataframe in which rows are proteins, columns are
+#'   keep_protein_ID = TRUE, a data frame in which rows are proteins, columns are
 #'   are the log2ratio for a pairwise comparisons, and rownames give protein ID.
 #'
 #' @name norm_metrics

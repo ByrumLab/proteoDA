@@ -10,7 +10,7 @@ filter_proteins_by_annotation(DAList, condition)
 \item{DAList}{A DAList object to be filtered.}
 
 \item{condition}{An expression that returns a logical value, defined in terms
-of variables present in the annotation dataframe of the supplied DAList.
+of variables present in the annotation data frame of the supplied DAList.
 Proteins are kept if the condition is TRUE for that protein.}
 }
 \value{
@@ -18,7 +18,7 @@ A DAList, with proteins that do not meet the condition removed.
 }
 \description{
 This function is used to remove proteins from a DAList, filtering using data
-in the annotation dataframe of the DAList. Proteins which do not produce a
+in the annotation data frame of the DAList. Proteins which do not produce a
 value of TRUE for the supplied condition are removed from both the data and
 annotation slots of the DAList. If condition evaluates to NA, the function
 will return an error.

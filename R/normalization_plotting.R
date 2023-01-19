@@ -49,7 +49,7 @@ eval_pn_metric_for_plot <- function(normList,
 #' are then passed to metric-specific plotting functions (see \code{\link{pn_plots}})
 #' to create the final plot objects.
 #'
-#' @param plotData A dataframe of data to be plotted, created with the
+#' @param plotData A data frame of data to be plotted, created with the
 #'   \code{\link{eval_pn_metric_for_plot}} function.
 #' @return A ggplot object of the plot.
 #'

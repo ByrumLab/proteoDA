@@ -161,10 +161,10 @@ test_that("extract_DA_results gives consistent results", {
     add_contrasts(contrasts_vector = c("Treatment_vs_Control= treatment - control")) |>
     fit_limma_model()
 
-  d <- input |>
+  d <- suppressMessages(input |>
     normalize_data("log2") |>
     add_design(~ 0 + sex + (1 | treatment)) |>
-    fit_limma_model()
+    fit_limma_model())
 
   suppressMessages(expect_snapshot(extract_DA_results(a)))
   suppressMessages(expect_snapshot(extract_DA_results(b)))

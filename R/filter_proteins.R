@@ -41,14 +41,14 @@ filter_proteins_contaminants <- function(DAList) {
 #' Remove proteins based on annotation data
 #'
 #' This function is used to remove proteins from a DAList, filtering using data
-#' in the annotation dataframe of the DAList. Proteins which do not produce a
+#' in the annotation data frame of the DAList. Proteins which do not produce a
 #' value of TRUE for the supplied condition are removed from both the data and
 #' annotation slots of the DAList. If condition evaluates to NA, the function
 #' will return an error.
 #'
 #' @param DAList A DAList object to be filtered.
 #' @param condition An expression that returns a logical value, defined in terms
-#'   of variables present in the annotation dataframe of the supplied DAList.
+#'   of variables present in the annotation data frame of the supplied DAList.
 #'   Proteins are kept if the condition is TRUE for that protein.
 #'
 #' @return A DAList, with proteins that do not meet the condition removed.
@@ -127,7 +127,7 @@ filter_proteins_by_annotation <- function(DAList, condition) {
 #' Filter protein data by number of quantified samples in group
 #'
 #' This function is used to remove proteins from a DAList, filtering out proteins
-#' based on levels of missing data in the data dataframe of the DAList. The
+#' based on levels of missing data in the data data frame of the DAList. The
 #' grouping_column must be a column in the metadata of the DAList which lists the
 #' group membership for each sample. The min_reps and min_groups arguments determine
 #' the number of replicates/samples per group (min_reps) and number of groups
@@ -243,7 +243,7 @@ filter_proteins_by_group <- function(DAList,
   tmpData <- DAList$data
 
   ## calc. no samples in each group with non-missing intensity
-  # Build a results dataframe in advance, empty for now
+  # Build a results data frame in advance, empty for now
   nonmissing_samples_per_group_and_gene <- as.data.frame(
     matrix(
       data = NA,
@@ -287,7 +287,7 @@ filter_proteins_by_group <- function(DAList,
 #' Filter protein data by proportion of quantified samples in group
 #'
 #' This function is used to remove proteins from a DAList, filtering out proteins
-#' based on levels of missing data in the data dataframe of the DAList. The
+#' based on levels of missing data in the data data frame of the DAList. The
 #' grouping_column must be a column in the metadata of the DAList which lists the
 #' group membership for each sample. Proteins must have a non-missing intensity
 #' value in at least min_prop of samples within each group in order to be retained.
@@ -370,7 +370,7 @@ filter_proteins_by_proportion <- function(DAList,
   group_membership <- as.character(DAList$metadata[, grouping_column])
   group_thresholds <-  ceiling(table(as.character(DAList$metadata[, grouping_column]))*min_prop)
 
-  # Build a results dataframe in advance, empty for now
+  # Build a results data frame in advance, empty for now
   protein_passes_threshold_per_group <- as.data.frame(
     matrix(
       data = NA,

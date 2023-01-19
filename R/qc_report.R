@@ -92,7 +92,7 @@ write_qc_report <- function(DAList,
     normalized <- F
   }
 
-  # If provided, check that grouping column exists in the target dataframe
+  # If provided, check that grouping column exists in the target data frame
   # And set it
   if (!is.null(color_column)) {
     if (length(color_column) != 1) {
