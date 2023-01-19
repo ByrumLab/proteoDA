@@ -23,11 +23,9 @@
 
 fit_limma_model <- function(DAList) {
 
-  # Check input arguments generally
-  validate_DAList(DAList)
-
   # Make sure there's a design matrix present already,
   # tell user to set it first if not
+  # put these checks above DAList validation, to try to get better errors for endusers
   if (is.null(DAList$design)) {
     cli::cli_abort(c("Input DAList does not have a statistical design",
                      "i" = "Run {.code DAList <- add_design(DAList, ~ formula)} before fitting model"))
@@ -44,6 +42,10 @@ fit_limma_model <- function(DAList) {
     }
   }
 
+
+  # Check input arguments generally
+  validate_DAList(DAList)
+
   # With a random factor
   if (!is.null(DAList$design$random_factor)) {
 
@@ -59,11 +61,15 @@ fit_limma_model <- function(DAList) {
     corfit_display <- round(corfit$consensus.correlation, 3)
     cli::cli_inform("Estimated intra-block correlation = {.val {corfit_display}}")
 
-    if (corfit$consensus.correlation < 0.1) {
+    if (corfit$consensus.correlation < 0) {
+      cli::cli_abort(c("Estimated intra-block correlation is negative.",
+                       "Rerun model without the random effect."))
+    } else if (corfit$consensus.correlation < 0.05) {
       cli::cli_inform(cli::col_yellow(c("Estimated intra-block correlation is low.",
                                         "Consider using a model with no random effect.")))
+    } else {
+      intra_block_cor <- corfit$consensus.correlation
     }
-    intra_block_cor <- corfit$consensus.correlation
   } else { # No random factor
     intra_block_cor <- NULL
     block <- NULL
@@ -92,8 +98,8 @@ fit_limma_model <- function(DAList) {
   if (!is.null(DAList$eBayes_fit) | !is.null(DAList$results)) {
     cli::cli_inform("DAList already contains statistical results. Overwriting.")
     # Get rid of any old stuff
-    DAList$eBayes_fit <- NULL
-    DAList$results <- NULL
+    DAList[["eBayes_fit"]] <- list(NULL)
+    DAList[["results"]] <- list(NULL)
   }
 
   # Add results
@@ -158,7 +164,7 @@ extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_
   }
 
   if (any(!is.numeric(lfc_thresh),
-          !(pval_thresh >= 0))) {
+          lfc_thresh <= 0)) {
     cli::cli_abort(c("{.arg lfc_thresh} must be a numeric value greater >= 0."))
   }
 
@@ -175,9 +181,9 @@ extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_
 
   # check if there are already results, warn about overwriting if so
   if (!is.null(DAList$results)) {
-    cli::cli_inform("DAList already contains DE results. Overwriting.")
+    cli::cli_inform("DAList already contains DA results. Overwriting.")
     # Get rid of any old stuff
-    DAList$results <- NULL
+    DAList[["results"]] <- list(NULL)
   }
 
   # Grab fit object and extract results from it
@@ -201,8 +207,8 @@ extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_
   }
 
 
-  perc_sig_rawp <- check_DE_perc(outcomes_table_rawp, pval_thresh = pval_thresh, lfc_thresh = lfc_thresh, adj_method = "none")
-  perc_sig_adjp <- check_DE_perc(outcomes_table_adjp, pval_thresh = pval_thresh, lfc_thresh = lfc_thresh, adj_method = adj_method)
+  perc_sig_rawp <- check_DA_perc(outcomes_table_rawp, pval_thresh = pval_thresh, lfc_thresh = lfc_thresh, adj_method = "none")
+  perc_sig_adjp <- check_DA_perc(outcomes_table_adjp, pval_thresh = pval_thresh, lfc_thresh = lfc_thresh, adj_method = adj_method)
 
   # make a list of statistical results for each contrast/term/comparison
   results_per_contrast <- list()
@@ -220,40 +226,40 @@ extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_
 
   # Add results
   DAList$results <- results_per_contrast
-  DAList$tags$DE_criteria$pval_thresh <- pval_thresh
-  DAList$tags$DE_criteria$lfc_thresh <- lfc_thresh
-  DAList$tags$DE_criteria$adj_method <- adj_method
+  DAList$tags$DA_criteria$pval_thresh <- pval_thresh
+  DAList$tags$DA_criteria$lfc_thresh <- lfc_thresh
+  DAList$tags$DA_criteria$adj_method <- adj_method
 
   # Validate and return
   validate_DAList(DAList)
 }
 
 
-#' Check percentage of DE genes
+#' Check percentage of DA genes
 #'
 #' Internal utility function, used in \code{\link{extract_DA_results}} to
 #' check if assumptions are met.
 #'
-#' @param DE_outcomes_table DE results dataframe. Should be the output of
+#' @param DA_outcomes_table DA results dataframe. Should be the output of
 #' \code{\link[limma:decideTests]{limma::decideTests}}, coerced to a dataframe.
-#' @param DE_warn_threshold Proportion of DE genes at which we warn user.
+#' @param DA_warn_threshold Proportion of DA genes at which we warn user.
 #' @param pval_thresh P-value threshold used.
 #' @param lfc_thresh logFC threshold used.
 #' @param adj_method P-value adjustment method used.
 #'
-#' @return A vector of numeric values giving the % of significant DE proteins within
+#' @return A vector of numeric values giving the % of significant DA proteins within
 #'   each contrast.
 #'
-check_DE_perc <- function(DE_outcomes_table, DE_warn_threshold = 0.2, pval_thresh, lfc_thresh, adj_method) {
-  perc_sig <- colSums(DE_outcomes_table != 0, na.rm = T)/colSums(!is.na(DE_outcomes_table))
+check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thresh, lfc_thresh, adj_method) {
+  perc_sig <- colSums(DA_outcomes_table != 0, na.rm = T)/colSums(!is.na(DA_outcomes_table))
 
   # Don't check the intercept column, if it exists
   perc_sig <- perc_sig[names(perc_sig) %notin% c("Intercept", "intercept")]
 
-  if (any(perc_sig > DE_warn_threshold)) {
-    above_thresh <- names(perc_sig)[perc_sig > DE_warn_threshold]
-    thresh_perc <- DE_warn_threshold*100
-    cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is DE in {cli::qty(length(above_thresh))} {?a/some} term{?s}",
+  if (any(perc_sig > DA_warn_threshold)) {
+    above_thresh <- names(perc_sig)[perc_sig > DA_warn_threshold]
+    thresh_perc <- DA_warn_threshold*100
+    cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is differntially adundant in {cli::qty(length(above_thresh))} {?a/some} term{?s}",
                       "!" = "Criteria for DA: |logFC| > {.val {lfc_thresh}}, p-value < {.val {pval_thresh}}, p.value adjustment = {.val {adj_method}}",
                       "!" = "{cli::qty(length(above_thresh))} Problematic term{?s}: {.val {above_thresh}}",
                       "!" = "Assumption that most proteins are not DA may be violated"))

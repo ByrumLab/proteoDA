@@ -160,11 +160,11 @@ write_limma_plots <- function(DAList = NULL,
     # make and save static plots
     for (type in c("raw", "adjusted")) {
       volcano <- static_volcano_plot(data,
-                                     lfc_thresh = DAList$tags$DE_criteria$lfc_thresh,
-                                     pval_thresh = DAList$tags$DE_criteria$pval_thresh,
+                                     lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
+                                     pval_thresh = DAList$tags$DA_criteria$pval_thresh,
                                      contrast = contrast, pval_type = type)
       MD <- static_MD_plot(data,
-                           lfc_thresh = DAList$tags$DE_criteria$lfc_thresh,
+                           lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
                            contrast = contrast, pval_type = type)
       ggsave(filename = file.path("static_plots", paste0(paste(contrast, "volcano", type, "pval", sep = "-"), ".pdf")),
              plot = volcano,

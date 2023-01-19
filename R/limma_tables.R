@@ -122,9 +122,9 @@ write_limma_tables <- function(DAList,
                      lapply(X = names(DAList$results),
                             FUN = summarize_contrast_DA,
                             contrast_res_list = DAList$results))
-  summary$pval_thresh <- DAList$tags$DE_criteria$pval_thresh
-  summary$lfc_thresh <- DAList$tags$DE_criteria$lfc_thresh
-  summary$p_adj_method <- DAList$tags$DE_criteria$adj_method
+  summary$pval_thresh <- DAList$tags$DA_criteria$pval_thresh
+  summary$lfc_thresh <- DAList$tags$DA_criteria$lfc_thresh
+  summary$p_adj_method <- DAList$tags$DA_criteria$adj_method
 
   utils::write.csv(x = summary,
                    file = summary_output_file,
@@ -195,8 +195,8 @@ write_limma_tables <- function(DAList,
                     annotation = DAList$annotation,
                     data = DAList$data,
                     norm.method = DAList$tags$norm_method,
-                    pval_thresh = DAList$tags$DE_criteria$pval_thresh,
-                    lfc_thresh = DAList$tags$DE_criteria$lfc_thresh,
+                    pval_thresh = DAList$tags$DA_criteria$pval_thresh,
+                    lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
                     add_filter = add_filter)
 
   if (!file.exists(excel_output_file)) {
