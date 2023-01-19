@@ -152,10 +152,8 @@ DAList <- function(data,
              tags = tags)
     )
 
-
   # Check validity
   validate_DAList(out)
-
 }
 
 
