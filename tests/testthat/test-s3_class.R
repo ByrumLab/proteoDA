@@ -30,4 +30,28 @@ test_that("DAList() gives error when uniprot_id column is not unique", {
 
 # Internal validator ------------------------------------------------------
 
+test_that("validate_DAList checks for proper number and order of slots", {
 
+  expect_error(validate_DAList(list(data = "data")),
+               "missing the following slots: annotation")
+
+  expect_error(validate_DAList(list(data = "x",
+                                    annotation = "x",
+                                    metadata = "x",
+                                    design = "x",
+                                    eBayes_fit = "x",
+                                    results = "x",
+                                    tags = "x",
+                                    xxx = "x")),
+               "xxx")
+
+  input <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+  input <- DAList(data = input$data,
+                         annotation = input$annotation,
+                         metadata = input$metadata)
+  out_of_order <- input[rev(names(input))]
+
+  expect_message(validate_DAList(out_of_order),
+                 "Reordering.")
+
+})

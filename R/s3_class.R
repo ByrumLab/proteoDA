@@ -239,7 +239,6 @@ validate_DAList <- function(x) {
   }
 
   # Metadata checks
-  # TODO add more?
   if (!is.null(x$metadata)) {
     if (nrow(x$metadata) != ncol(x$data)) {
       cli::cli_abort("The number of samples in the metadata ({nrow(x$metadata)}) do not match the number of samples in the data ({ncol(x$data)})")
