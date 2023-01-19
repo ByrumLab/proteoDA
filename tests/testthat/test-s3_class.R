@@ -35,23 +35,35 @@ test_that("validate_DAList checks for proper number and order of slots", {
   expect_error(validate_DAList(list(data = "data")),
                "missing the following slots: annotation")
 
-  expect_error(validate_DAList(list(data = "x",
-                                    annotation = "x",
-                                    metadata = "x",
-                                    design = "x",
-                                    eBayes_fit = "x",
-                                    results = "x",
-                                    tags = "x",
-                                    xxx = "x")),
-               "xxx")
-
   input <- readRDS(test_path("fixtures", "s3-class_input.rds"))
   input <- DAList(data = input$data,
-                         annotation = input$annotation,
-                         metadata = input$metadata)
-  out_of_order <- input[rev(names(input))]
+                  annotation = input$annotation,
+                  metadata = input$metadata)
+  extra <- c(input, xxx = "xxx")
+  expect_error(validate_DAList(extra),
+               "xxx")
 
+  out_of_order <- input[rev(names(input))]
   expect_message(validate_DAList(out_of_order),
                  "Reordering.")
-
 })
+
+test_that("validate_DAList checks data slot", {
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata)
+
+  input$data <- as.matrix(input$data)
+  # Works if a matrix
+  expect_s3_class(validate_DAList(input), class = "DAList")
+  # Fails if not a matrix of df
+  input$data <- "fail"
+  expect_error(validate_DAList(input), " data frame or matrix")
+
+  # Fails if df is not numeric
+  input$data <- dfs$data
+  input$data$sampleA <- as.character(input$data$sampleA)
+  expect_error(validate_DAList(input), "numeric")
+})
+
