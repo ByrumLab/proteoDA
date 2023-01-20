@@ -86,12 +86,13 @@ filtered_kaul <- filter_proteins_by_group(sub_kaul, min_reps = 4, min_groups = 2
 # Normalization report ----------------------------------------------------
 # Higgs
 write_norm_report(filtered_higgs,
-                        grouping_column = "group",
-                        file = "higgs_update_2.pdf", overwrite = T)
+                  grouping_column = "group",
+                  file = "higgs_update_2.pdf", overwrite = T)
 
 
 # Ndu
 write_norm_report(filtered_ndu,
+                  output_dir = "temp",
                         grouping_column = "group",
                         file = "ndu_update_with_points_ggrastr.pdf", overwrite = T, use_ggrastr = T)
 

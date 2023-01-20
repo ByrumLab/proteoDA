@@ -13,21 +13,22 @@
 #'
 #' @param DAList A DAList.
 #' @param grouping_column The name of the column in the metadata which
-#'   gives information on how to group samples for normalization. Must be supplied:
-#'   some metrics can't be calculated for only one group.
+#'   gives information on how to group samples for normalization. Must be
+#'   supplied: some metrics can't be calculated for only one group.
 #' @param overwrite Should report file be overwritten if it already exists?
 #'   Default is FALSE.
-#' @param output_dir The directory in which to save the report. If not provided,
-#'   will default to "protein_analysis/01_quality_control". If the directory does not
-#'   exist, it will be created.
-#' @param filename The file name of the report to be saved. Must end in .pdf. Will
-#'   default to "proteiNorm_Report.pdf" if no file name is provided.
+#' @param output_dir The directory in which to save the report. If the directory
+#'   does not exist, it will be created. If not provided, will default to
+#'   the current working directory.
+#' @param filename The file name of the report to be saved. Must end in .pdf.
+#'   Will default to "normalization_report.pdf" if no file name is provided.
 #' @param suppress_zoom_legend Should the legend be removed from the zoomed
 #'   log2ratio plot? Default is FALSE.
 #' @param use_ggrastr Should the \code{ggrastr} package be used to decrease
 #'   file size? Default is FALSE. Requires installation of \code{ggrastr}.
 #'
-#' @return If report is created successfully, invisibly returns the input DAList.
+#' @return If report is created successfully, invisibly returns the
+#'   input DAList.
 #'
 #' @importFrom ggplot2 ggsave
 #'
@@ -99,12 +100,14 @@ write_norm_report <- function(DAList,
 
   # Set default dir if not provided
   if (is.null(output_dir)) {
-    output_dir <- file.path("protein_analysis", "01_quality_control")
-    cli::cli_inform(cli::col_yellow("{.arg output_dir} argument is empty. Setting output directory to: {.path {output_dir}}"))
+    output_dir <- getwd()
+    cli::cli_inform("{.arg output_dir} argument is empty.")
+    cli::cli_inform("Setting output directory to current working directory:")
+    cli::cli_inform("{.path {output_dir}}")
   }
   # Set default report name if not provided
   if (is.null(filename)) {
-    filename <- "proteiNorm_Report.pdf"
+    filename <- "normalization_report.pdf"
     cli::cli_inform(cli::col_yellow("{.arg filename} argument is empty. Saving report to: {.path {output_dir}/{filename}}"))
   }
 
