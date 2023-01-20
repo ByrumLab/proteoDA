@@ -19,8 +19,7 @@ write_limma_tables(
 \item{DAList}{A DAList object, with statistical results in the results slot.}
 
 \item{output_dir}{The directory in which to output tables. If not specified,
-defaults to "protein_analysis/02_diff_abundance" in the current
-working directory.}
+will default to the current working directory.}
 
 \item{overwrite}{Should results files be overwritten? Default is FALSE.}
 

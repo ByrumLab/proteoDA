@@ -304,7 +304,6 @@ names(results_higgs$results)
 
 # Write results -----------------------------------------------------------
 write_limma_tables(results_lupashin,
-                   output_dir = "Lupashin_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_ndu,
