@@ -330,13 +330,20 @@ write_limma_tables(results_higgs,
                    overwrite = T)
 
 # testing report making ---------------------------------------------------
-write_limma_plots(results_reb,
-                  grouping_column = "group",
-                  output_dir = "reb_s3obj", key_column = "Protein.Name")
 
 write_limma_plots(results_reb,
                   grouping_column = "group",
-                  key_column = "Protein.Name")
+                  output_dir = "reb_s3obj",
+                  title_column = "Accession.Number")
+
+write_limma_plots(results_reb,
+                  grouping_column = "group")
+
+write_limma_plots(results_reb,
+                  output_dir = "many_cols",
+                  grouping_column = "group",
+                  title_column = "Protein.Name",
+                  table_columns = c("Molecular.Weight", "Gene_name"))
 
 write_limma_plots(results_kaul,
                   grouping_column = "group",
