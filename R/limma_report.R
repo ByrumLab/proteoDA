@@ -6,19 +6,47 @@
 #' versions of all interactive plots. Currently, overwrites any previous reports
 #' or other files with the same name.
 #'
+#'
+#' Users can modify some aspects of the report output. First, users can modify
+#' the width and height of the interactive report with the height and width
+#' arguments, specified in pixels.
+#'
+#' Users can also control what data are displayed in the interactive table of
+#' the report via the table_columns argument. Users can supply a vector of
+#' column names from the annotation data frame to include, these columns will be
+#' displayed in the order provided (column names may be changed slightly if the
+#' original names cause issues with the Javascript code used for plotting). By
+#' default, only the uniprot_id column is displayed.
+#'
+#' Finally, users can use the title_column argument to change the title of the
+#' protein intensity (the plots on the right of the report). By default, the
+#' values in the uniprot_id column of the annotation are used. To avoid plotting
+#' issues, the values in the user-provided column will be truncated to 15
+#' characters for use in the title: these values must remain unique
+#' after truncation. If a title_column is supplied, it will be added to the
+#' table_columns so that it is displayed in the table as well.
+#'
+#'
 #' @param DAList A DAList object, with statistical results.
 #' @param grouping_column The name of the column in the metadata which
 #'   gives information on how to group samples for the interactive
 #'   abundance plot.
+#' @param table_columns Optional: the name of the column(s) in the annotation
+#'   data frame that will be included in the interactive table of statistical
+#'   results in the report. These columns will also be displayed in the tooltips
+#'   of the volcano and MD plots. By default, only the uniprot_id column is
+#'   displayed. See Details for more
+#'   information.
+#' @param title_column Optional: the name of a column in the annotation data
+#'   frame from which to take values to use as the title for the protein
+#'   intensity plots in the report. If not supplied, will use the
+#'   info in the uniprot_id. If supplied, the title column will also be
+#'   displayed (without truncation) in the results table. See Details for more
+#'   information.
 #' @param output_dir The directory in which to create the reports and save the
 #'   plot files. If not specified, will default to the current working directory.
 #' @param tmp_subdir The subdirectory within the output directory in which to
 #'   store temporary files. Deleted by default. Default is "tmp".
-#' @param key_column Optional. The name of a column in the annotation data frame which gives
-#'  unique protein IDs. If provided, values form this column will appear as the title for the
-#'  protein intensity plots in the report. The column must contain unique values for each protein.
-#'  For example: key_column="Uniprot_ID" could be possible list of unique ids in
-#'  your annotations.
 #' @param height The height of the interactive report objects, in pixels.
 #'   Default is 1000.
 #' @param width The width of the interactive report objects, in pixels.
@@ -48,19 +76,25 @@
 #'
 #'  # Add titles to the intensity plot,
 #'  # using the values in the protein_id column
-#'  # in the annotation of the DAList
+#'  # in the annotation of the DAList,
+#'  # and display additional columns in the table
 #'  write_limma_plots(DAList,
 #'                    grouping_column = "treatment",
-#'                    key_column = "protein_id")
+#'                    table_columns = "description",
+#'                    title_column = "protein_id")
 #' }
 #'
 write_limma_plots <- function(DAList = NULL,
                               grouping_column = NULL,
+                              table_columns = c("uniprot_id"),
+                              title_column = NULL,
                               output_dir = NULL,
                               tmp_subdir = "tmp",
-                              key_column = NULL,
                               height = 1000,
                               width = 1000) {
+
+  # TODO:
+  # Add overwriting checks?
 
   # Check input arguments generally
   input_DAList <- validate_DAList(DAList)
@@ -90,6 +124,33 @@ write_limma_plots <- function(DAList = NULL,
     groups <- as.character(DAList$metadata[,grouping_column])
   }
 
+  # check that the table columns exist in the annotation
+  if (!all(table_columns %in% colnames(DAList$annotation))) {
+    problem_columns <- table_columns[which(table_columns %notin% colnames(DAList$annotation))]
+    cli::cli_abort(c("Column{?s} {problem_columns} not found in annotation of {.arg DAList}",
+                     "i" = "Check the column names with {.code colnames(DAList$annotation)}."))
+  }
+
+  # If title column is supplied
+  if (!is.null(title_column)) {
+    # Check that it exists in the annotation
+    if (!title_column %in% colnames(DAList$annotation)) {
+      cli::cli_abort(c("Column {.arg {title_column}} not found in annotation of {.arg DAList}",
+                       "i" = "Check the column names with {.code colnames(DAList$annotation)}."))
+    }
+    # Grab the possible titles and truncate them
+    temp_keys <- stringr::str_trunc(DAList$annotation[,title_column], width = 20, side = "right")
+
+    # check that they're not duplicated
+    if (any(duplicated(temp_keys))) {
+      cli::cli_abort(c("values in {.arg {title_column}} were not unique after truncating to 15 characters.",
+                       "i" = "Use a different column with unique values."))
+    }
+
+    # And add title column to the display table
+    table_columns <- unique(c(table_columns, title_column))
+  }
+
   # check height and width
   if (any(!is.numeric(height),
           !(height > 0))) {
@@ -109,26 +170,30 @@ write_limma_plots <- function(DAList = NULL,
     cli::cli_inform("{.path {output_dir}}")
   }
 
-
   # TODO: add output filename validation once we decide on directory format
   if (!dir.exists(output_dir)) {
     dir.create(output_dir)
   }
 
+  # Capture original wd, and setup function to return to original wd
+  # upon error or function exit if it has changed
   old_wd <- getwd()
-  on.exit(expr = setwd(old_wd), add = T)
+  on.exit(expr = {
+    if (getwd() != old_wd) {
+      cli::cli_inform("Returning working directory to {.path {old_wd}}")
+      setwd(old_wd)
+    }
+  }, add = T)
 
+  # If output directory isn't current wd, change wd so we can copy
+  # files into the right spot.
   if (output_dir != old_wd) {
     cli::cli_inform("Setting working directory to output directory:")
     cli::cli_inform("{.path {file.path(old_wd, output_dir)}}")
     setwd(output_dir)
   }
 
-
-  cli::cli_inform("Copying resources to output directory {.path {output_dir}}")
-  if (!dir.exists("static_plots")) {
-    dir.create("static_plots")
-  }
+  # Copy templates over
   file.copy(from = system.file("report_templates/glimma_xy_plot.Rmd",
                                package = "proteoDA"),
             to = "plot_template.Rmd", overwrite = T)
@@ -136,11 +201,21 @@ write_limma_plots <- function(DAList = NULL,
                                package = "proteoDA"),
             to = "report_template.Rmd", overwrite = T)
 
+  # once we create the files, ensure they're deleted if there's an error below
+  on.exit(expr = {
+    cli::cli_inform("Removing temporary files from {.path {output_dir}}")
+    unlink(c("logo_higherres.png", "plot_template.Rmd", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
+  }, add = T, after = F)
+
+  # Set up static plot folder
+  if (!dir.exists("static_plots")) {
+    dir.create("static_plots")
+  }
+
+  # Prep to loop over contrasts
+
   contrast_count <- 1
   num_contrasts <- length(names(DAList$results))
-
-  # TODO:
-  # Add overwriting checks?
 
   # Loop over contrasts, making static plots and reports for each
   for (contrast in names(DAList$results)) {
@@ -150,22 +225,25 @@ write_limma_plots <- function(DAList = NULL,
     counts <- DAList$data[rownames(data),]
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
     anno <- DAList$annotation[rownames(data), ]
-    # Change unique ids if specified
-    if (!is.null(key_column)) {
-      uk.intest <- key_column %in% colnames(DAList$annotation)
-      if (uk.intest) {
-        temp_keys <- stringr::str_trunc(DAList$annotation[,key_column], width = 20, side = "right")
-        uk.duptest <- !any(duplicated(temp_keys))
-        if (uk.duptest) {
-          rownames(counts) <- temp_keys
-          rownames(anno) <- temp_keys
-          rownames(data) <- temp_keys
-        } else {
-          cli::cli_abort("key_column was not unique after truncating to 15 characters")
-        }
-      } else {
-        cli::cli_abort("key_column was not found in annotation")
-      }
+
+    if (any(stringr::str_detect(table_columns, "\\."))) {
+      # If any of the column names in the table columns have periods
+      # the javascript will be mad. Replace with underscores.
+      tbl_cols <- which(colnames(anno) %in% table_columns)
+      colnames(anno)[tbl_cols] <- stringr::str_replace_all(colnames(anno)[tbl_cols],
+                                                          "\\.",
+                                                          "_")
+      table_columns <- stringr::str_replace_all(table_columns,
+                                                "\\.",
+                                                "_")
+    }
+
+    # Change unique ids if title column was specified
+    # checks were done above to ensure these are OK.
+    if (!is.null(title_column)) {
+        rownames(counts) <- temp_keys
+        rownames(anno) <- temp_keys
+        rownames(data) <- temp_keys
     }
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
     # make and save static plots
@@ -216,17 +294,7 @@ write_limma_plots <- function(DAList = NULL,
     contrast_count <- contrast_count + 1
   }
 
-  # Clean up and exit
-
   # TODO: add checks that files exist?
-
-  cli::cli_inform("Removing temporary files from {.path {output_dir}}")
-  unlink(c("logo_higherres.png", "plot_template.Rmd", "report_template.Rmd", tmp_subdir), recursive = T)
-  if (getwd() != old_wd) {
-    cli::cli_inform("Returning working directory to {.path {old_wd}}")
-    setwd(old_wd)
-  }
-
   invisible(input_DAList)
 }
 
