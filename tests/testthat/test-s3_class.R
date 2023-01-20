@@ -67,3 +67,24 @@ test_that("validate_DAList checks data slot", {
   expect_error(validate_DAList(input), "numeric")
 })
 
+test_that("validate_DAList checks the annotation slot", {
+
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata)
+  # Fails if uniprot_id not unique
+  input$annotation$uniprot_id[1] <- input$annotation$uniprot_id[2]
+
+  expect_error(validate_DAList(input), "not unique")
+
+  # Fails if uniprot_id not present
+  colnames(input$annotation) <- c("x", "y")
+  expect_error(validate_DAList(input), "uniprot_id")
+
+})
+
+
+
+
+

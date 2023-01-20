@@ -127,7 +127,9 @@ DAList <- function(data,
 
   # Check for a uniprot_id column in annotation
   if ("uniprot_id" %notin% colnames(annotation)) {
-    cli::cli_abort("The annotation data must contain a column named \"uniprot_id\"")
+    cli::cli_abort(
+      "The annotation data must contain a column named \"uniprot_id\""
+    )
   }
 
   # Check that the uniprot_id column contains only unique info
