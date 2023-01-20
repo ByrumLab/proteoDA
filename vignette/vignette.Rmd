@@ -1,0 +1,92 @@
+---
+title: "Tutorial on proteomics analysis using proteoDA"
+author: "Stephanie Byrum"
+date: "2023-01-20"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Installation 
+
+# How to install proteoDA from Github:
+
+1. install devtools
+2. install from github repo
+
+
+```r 
+install.packages("devtools")
+library(devtools)
+devtools::install_github(ByrumLab/proteoDA)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Data Import and Requirements
+
+ProteoDA utilizes an S3 object called DAList to hold the data and results. DA stands for differential abundance and contains 7 slots including: data, annotation, metadata, design, eBayes_fit, results, and tags. The first three slots are required. 
+
+<b> data </b> = a data frame or matrix containing protein intensity values for each sample where the rows are proteins and the columns are samples. The column sample names must match the row names of the metadata! 
+
+<b> annotation </b> = a data frame containing protein accession numbers, description, gene symbols, etc. A column titled "uniprot_id" is required and case specific. 
+
+<b> metatdata </b> = a data frame containing sample information such as sample name, group, gender, batch, etc. The rownames of the metadata must match the column names of the data! 
+
+```r
+input <- read.csv("vignette/DIA_data.csv")  # subset the data and annotation
+data <- input[,5:21]
+anno <- input[,1:4]
+meta <- read.csv("vignette/metafile.csv")
+row.names(meta) <- meta$data_column_name
+
+# create the proteoDA DAList object using the following command
+
+DA <- DAList(data,
+            anno,
+            meta,
+            design = NULL,
+            eBayes_fit = NULL,
+            results = NULL,
+            tags = NULL)
+
+
+```
+
+# Sample and Protein filtering options 
+If a sample is detected as an outlier, it can be removed using the filter_samples() function and setting the condition parameter to "sample_name = sample-to-be-removed". 
+
+Proteins that contain missing values in the majority of samples can be removed using the 
+filter_proteins_by_group() function. A general rule of thumb is to require at least 2/3
+of the replicates to have a value in at least one sample group. 
+
+Example: If two groups have triplicate samples, then set min_reps = 2 and min_groups = 1. This removes proteins that do not have at least 2 out of 3 replicates in one sample group with an intensity value > 0. 
+
+```r
+# filter samples --------------------------------------------------------------
+sub_data <- filter_samples(DA, group != "Pool")
+
+# filter proteins ---------------------------------------------------------
+# rule of thumb: require at least 2/3 of the replicates to have a value in at least
+# one sample group
+
+filtered_data <- filter_proteins_by_group(sub_data,
+                                          min_reps = 3,
+                                          min_groups = 1,
+                                          grouping_column = "group")
+
+```
+
+
