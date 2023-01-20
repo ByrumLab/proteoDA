@@ -238,8 +238,8 @@ summarize_contrast_DA <- function(contrast_name, contrast_res_list) {
 #' Internal function used to write per-contrast statistical results to a .csv
 #' file.
 #'
-#' @param annotation_df A dataframe of annotation data for each gene/protein.
-#' @param data A dataframe of average expression data for each sample.
+#' @param annotation_df A data frame of annotation data for each gene/protein.
+#' @param data A data frame of average expression data for each sample.
 #' @param results_statlist A list of per-contrast DE results.
 #' @param output_dir The directory in which to save the per-contrast csv files.
 #'
@@ -296,11 +296,11 @@ write_per_contrast_csvs <- function(annotation_df,
 #' Internal function used to write the combined statistical results to a .csv
 #' file.
 #'
-#' @param annotation A dataframe of annotation data for each gene/protein.
-#' @param data A dataframe of normalized intensity data for each sample.
+#' @param annotation A data frame of annotation data for each gene/protein.
+#' @param data A data frame of normalized intensity data for each sample.
 #' @param statlist A list of per-contrast DE results.
 #'
-#' @return A dataframe of the combined results.
+#' @return A data frame of the combined results.
 #'
 #' @keywords internal
 #'
@@ -333,8 +333,8 @@ create_combined_results <- function(annotation,
 #'
 #' @param filename The filename of the Excel spreadsheet to be saved.
 #' @param statlist A list of the per-contrast statistical results.
-#' @param annotation A dataframe of annotation date for each protein.
-#' @param data A dataframe containing the average expression data for each sample.
+#' @param annotation A data frame of annotation date for each protein.
+#' @param data A data frame containing the average expression data for each sample.
 #' @param norm.method The method that was used to normalize the data for the
 #'   statistical model being output.
 #' @param pval_thresh The p-value threshold that was used to determine significance.
@@ -619,7 +619,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
 #' @param url.col The name of the column to add hyperlinks to.
 #' @param url The url that will be prepended to the info in the column.
 #'
-#' @return The original dataframe, now with hyperlinks in the desired column.
+#' @return The original data frame, now with hyperlinks in the desired column.
 #'
 #' @keywords internal
 #'

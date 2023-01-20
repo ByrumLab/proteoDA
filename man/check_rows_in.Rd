@@ -2,20 +2,20 @@
 % Please edit documentation in R/utils.R
 \name{check_rows_in}
 \alias{check_rows_in}
-\title{Internal function that checks that the rownames of set of dataframes have matching rownames in a reference set}
+\title{Internal function that checks that the rownames of set of data frames have matching rownames in a reference set}
 \usage{
 check_rows_in(obj = list(), ref_rows = c())
 }
 \arguments{
-\item{obj}{A list of dataframes to evaluate}
+\item{obj}{A list of data frames to evaluate}
 
-\item{ref_rows}{A vector of row names to which the row names of each obj dataframe will be compared}
+\item{ref_rows}{A vector of row names to which the row names of each obj data frame will be compared}
 }
 \value{
-A logical, with TRUE indicating all dataframes have matching rows in the reference set, and
-FALSE indicates that the one or more dataframes do not have matching rownames with the reference
+A logical, with TRUE indicating all data frames have matching rows in the reference set, and
+FALSE indicates that the one or more data frames do not have matching rownames with the reference
 }
 \description{
-Internal function that checks that the rownames of set of dataframes have matching rownames in a reference set
+Internal function that checks that the rownames of set of data frames have matching rownames in a reference set
 }
 \keyword{internal}

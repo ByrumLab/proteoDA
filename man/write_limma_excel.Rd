@@ -20,9 +20,9 @@ write_limma_excel(
 
 \item{statlist}{A list of the per-contrast statistical results.}
 
-\item{annotation}{A dataframe of annotation date for each protein.}
+\item{annotation}{A data frame of annotation date for each protein.}
 
-\item{data}{A dataframe containing the average expression data for each sample.}
+\item{data}{A data frame containing the average expression data for each sample.}
 
 \item{norm.method}{The method that was used to normalize the data for the
 statistical model being output.}

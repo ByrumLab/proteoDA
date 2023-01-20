@@ -15,7 +15,7 @@ prep_plot_model_data(model_results, contrast)
 A data frame of model results for the given contrast.
 }
 \description{
-Internal function used to prepare a results dataframe for both static and interactive
+Internal function used to prepare a results data frame for both static and interactive
 plots in reports.
 }
 \keyword{internal}

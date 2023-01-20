@@ -10,7 +10,7 @@ filter_samples(DAList, condition)
 \item{DAList}{A DAList object to be filtered.}
 
 \item{condition}{An expression that returns a logical value, defined in terms
-of variables present in the metadata dataframe of the supplied DAList.
+of variables present in the metadata data frame of the supplied DAList.
 Samples are kept if the condition is TRUE for that sample.}
 }
 \value{
@@ -18,7 +18,7 @@ A DAList, with samples that do not meet the condition removed.
 }
 \description{
 This function is used to remove samples from a DAList, filtering using data
-in the metadata dataframe of the DAList. Samples which do not produce a
+in the metadata data frame of the DAList. Samples which do not produce a
 value of TRUE for the supplied condition are removed from the data, annotation,
 and metadata slots of the DAList. If condition evaluates to NA, the function
 will return an error.

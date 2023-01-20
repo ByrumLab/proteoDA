@@ -74,11 +74,11 @@ write_norm_report <- function(DAList,
     }
   }
 
-  # If provided, check that grouping column exists in the target dataframe
+  # If provided, check that grouping column exists in the target data frame
   # And set it
   if (is.null(grouping_column)) { # If no groups provided, abort
     cli::cli_abort("{.arg grouping_column} cannot be empty")
-  } else { # check that grouping column exists in the target dataframe
+  } else { # check that grouping column exists in the target data frame
     if (length(grouping_column) != 1) {
       cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
                        "i" = "Only specify one column name for {.arg grouping_column}"))
@@ -192,7 +192,7 @@ write_norm_report <- function(DAList,
 #' returning a list of the data normalized with each method. Used internally in
 #' \code{\link{write_norm_report}}.
 #'
-#' @param data A dataframe or matrix of raw data to be normalized. Rows are proteins and
+#' @param data A data frame or matrix of raw data to be normalized. Rows are proteins and
 #'   columns are raw intensity data.
 #'
 #' @return A list length 8, where each item in the list is a

@@ -13,8 +13,8 @@ check_DA_perc(
 )
 }
 \arguments{
-\item{DA_outcomes_table}{DA results dataframe. Should be the output of
-\code{\link[limma:decideTests]{limma::decideTests}}, coerced to a dataframe.}
+\item{DA_outcomes_table}{DA results data frame. Should be the output of
+\code{\link[limma:decideTests]{limma::decideTests}}, coerced to a data frame.}
 
 \item{DA_warn_threshold}{Proportion of DA genes at which we warn user.}
 

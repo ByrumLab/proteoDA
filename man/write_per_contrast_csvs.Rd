@@ -7,9 +7,9 @@
 write_per_contrast_csvs(annotation_df, data, results_statlist, output_dir)
 }
 \arguments{
-\item{annotation_df}{A dataframe of annotation data for each gene/protein.}
+\item{annotation_df}{A data frame of annotation data for each gene/protein.}
 
-\item{data}{A dataframe of average expression data for each sample.}
+\item{data}{A data frame of average expression data for each sample.}
 
 \item{results_statlist}{A list of per-contrast DE results.}
 

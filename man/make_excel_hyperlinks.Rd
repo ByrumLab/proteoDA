@@ -14,7 +14,7 @@ make_excel_hyperlinks(data, url.col, url)
 \item{url}{The url that will be prepended to the info in the column.}
 }
 \value{
-The original dataframe, now with hyperlinks in the desired column.
+The original data frame, now with hyperlinks in the desired column.
 }
 \description{
 Internal functions to add hyperlinks to a column in a data frame to

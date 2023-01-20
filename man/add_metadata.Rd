@@ -15,7 +15,7 @@ add_metadata(DAList, metadata_file)
 An S3 list type with added metadata.
 }
 \description{
-Add a dataframe of metadata to a DAList object. The metadata file defines the
+Add a data frame of metadata to a DAList object. The metadata file defines the
 sample labels, groups, and other factors (such as batch, gender, age, paired samples, etc.)
 required for the analysis and design matrix.
 }

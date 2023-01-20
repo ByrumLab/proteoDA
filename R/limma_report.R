@@ -72,11 +72,11 @@ write_limma_plots <- function(DAList = NULL,
                      "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
   }
 
-  # If provided, check that grouping column exists in the target dataframe
+  # If provided, check that grouping column exists in the target data frame
   # And set it
   if (is.null(grouping_column)) { # If no groups provided, abort
     cli::cli_abort("{.arg grouping_column} cannot be empty")
-  } else { # check that grouping column exists in the target dataframe
+  } else { # check that grouping column exists in the target data frame
     if (length(grouping_column) != 1) {
       cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
                        "i" = "Only specify one column name for {.arg grouping_column}"))
@@ -220,7 +220,7 @@ write_limma_plots <- function(DAList = NULL,
 
 #' Prepare per-contrast model data for plotting
 #'
-#' Internal function used to prepare a results dataframe for both static and interactive
+#' Internal function used to prepare a results data frame for both static and interactive
 #' plots in reports.
 #'
 #' @param model_results The results slot of a DAList object.
