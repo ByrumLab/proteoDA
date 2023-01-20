@@ -334,6 +334,10 @@ write_limma_plots(results_reb,
                   grouping_column = "group",
                   output_dir = "reb_s3obj", key_column = "Protein.Name")
 
+write_limma_plots(results_reb,
+                  grouping_column = "group",
+                  key_column = "Protein.Name")
+
 write_limma_plots(results_kaul,
                   grouping_column = "group",
                   output_dir = "kaul_s3obj/")
@@ -359,6 +363,11 @@ write_limma_plots(results_ndu_random,
 write_limma_plots(results_zhan,
                   grouping_column = "group",
                   output_dir = "zhan_s3obj")
+
+write_limma_plots(results_zhan,
+                  grouping_column = "group")
+
+
 
 write_limma_plots(results_zhan,
                   grouping_column = "group",

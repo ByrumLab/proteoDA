@@ -11,7 +11,7 @@
 #'   gives information on how to group samples for the interactive
 #'   abundance plot.
 #' @param output_dir The directory in which to create the reports and save the
-#'   plot files. No defaults, must be specified.
+#'   plot files. If not specified, will default to the current working directory.
 #' @param tmp_subdir The subdirectory within the output directory in which to
 #'   store temporary files. Deleted by default. Default is "tmp".
 #' @param key_column Optional. The name of a column in the annotation data frame which gives
@@ -101,6 +101,15 @@ write_limma_plots <- function(DAList = NULL,
     cli::cli_abort(c("{.arg width} must be a numeric value greater > 0."))
   }
 
+  # defauly output dir if not provided
+  if (is.null(output_dir)) {
+    output_dir <- getwd()
+    cli::cli_inform("{.arg output_dir} argument is empty.")
+    cli::cli_inform("Setting output directory to current working directory:")
+    cli::cli_inform("{.path {output_dir}}")
+  }
+
+
   # TODO: add output filename validation once we decide on directory format
   if (!dir.exists(output_dir)) {
     dir.create(output_dir)
@@ -109,10 +118,12 @@ write_limma_plots <- function(DAList = NULL,
   old_wd <- getwd()
   on.exit(expr = setwd(old_wd), add = T)
 
+  if (output_dir != old_wd) {
+    cli::cli_inform("Setting working directory to output directory:")
+    cli::cli_inform("{.path {file.path(old_wd, output_dir)}}")
+    setwd(output_dir)
+  }
 
-
-  cli::cli_inform("Setting working directory to {.path {file.path(old_wd, output_dir)}}")
-  setwd(output_dir)
 
   cli::cli_inform("Copying resources to output directory {.path {output_dir}}")
   if (!dir.exists("static_plots")) {
@@ -211,8 +222,10 @@ write_limma_plots <- function(DAList = NULL,
 
   cli::cli_inform("Removing temporary files from {.path {output_dir}}")
   unlink(c("logo_higherres.png", "plot_template.Rmd", "report_template.Rmd", tmp_subdir), recursive = T)
-  cli::cli_inform("Returning working directory to {.path {old_wd}}")
-  setwd(old_wd)
+  if (getwd() != old_wd) {
+    cli::cli_inform("Returning working directory to {.path {old_wd}}")
+    setwd(old_wd)
+  }
 
   invisible(input_DAList)
 }
