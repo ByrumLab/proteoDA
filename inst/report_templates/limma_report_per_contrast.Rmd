@@ -19,11 +19,6 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 }
 ```
 
-```{r logo, fig.align="left", out.width="40%"}
-knitr::include_graphics(path = system.file("report_templates/logo_higherres.png",
-                                           package = "proteoDA"), rel_path = F)
-```
-
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
 
 # {.tabset .tabset-fade .tabset-pills}
