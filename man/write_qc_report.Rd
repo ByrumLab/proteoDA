@@ -30,9 +30,9 @@ supplied, all samples will be the same color.}
 which contains labels to use for plotting figures. When not supplied,
 defaults to using the column names of the data in processed_data.}
 
-\item{output_dir}{The directory in which to save the report. If not provided,
-will default to "protein_analysis/01_quality_control". If the directory does not
-exist, it will be created.}
+\item{output_dir}{The directory in which to save the report. If the directory
+does not exist, it will be created. If not provided, will default to
+the current working directory.}
 
 \item{filename}{The file name of the report to be saved. Must end in .pdf. Will
 default to "QC_Report.pdf" if no filename is provided.}

@@ -133,8 +133,10 @@ write_qc_report <- function(DAList,
 
   # Set default dir if not provided
   if (is.null(output_dir)) {
-    output_dir <- file.path("protein_analysis", "01_quality_control")
-    cli::cli_inform(cli::col_yellow("{.arg output_dir} argument is empty. Setting output directory to: {.path {output_dir}}"))
+    output_dir <- getwd()
+    cli::cli_inform("{.arg output_dir} argument is empty.")
+    cli::cli_inform("Setting output directory to current working directory:")
+    cli::cli_inform("{.path {output_dir}}")
   }
 
   # Set default report name if not provided
