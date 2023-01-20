@@ -15,8 +15,7 @@
 #'
 #' @param DAList A DAList object, with statistical results in the results slot.
 #' @param output_dir The directory in which to output tables. If not specified,
-#'   defaults to "protein_analysis/02_diff_abundance" in the current
-#'   working directory.
+#'   will default to the current working directory.
 #' @param overwrite Should results files be overwritten? Default is FALSE.
 #' @param contrasts_subdir The subdirectory within output_dir to write the per-contrast
 #'   result .csv files. If not specified, will be "per_contrast_results".
@@ -76,8 +75,12 @@ write_limma_tables <- function(DAList,
 
   # Assign defaults if not overridden above
   if (is.null(output_dir)) {
-    output_dir <- file.path("protein_analysis","02_diff_abundance")
+    output_dir <- getwd()
+    cli::cli_inform("{.arg output_dir} argument is empty.")
+    cli::cli_inform("Setting output directory to current working directory:")
+    cli::cli_inform("{.path {output_dir}}")
   }
+
   if (is.null(contrasts_subdir)) {
     contrasts_subdir <- "per_contrast_results"
   }
@@ -104,7 +107,7 @@ write_limma_tables <- function(DAList,
 
   if (dir.exists(output_dir)) {
     if (overwrite) {
-      cli::cli_inform("Directory {.path {output_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting files in directory.")
+      cli::cli_inform("Directory {.path {output_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting results files in directory.")
     } else {
       cli::cli_abort(c("Directory {.path {output_dir}} already exists",
                        "!" = "and {.arg overwrite} == {.val {overwrite}}",

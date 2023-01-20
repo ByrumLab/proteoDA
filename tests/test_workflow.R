@@ -86,12 +86,13 @@ filtered_kaul <- filter_proteins_by_group(sub_kaul, min_reps = 4, min_groups = 2
 # Normalization report ----------------------------------------------------
 # Higgs
 write_norm_report(filtered_higgs,
-                        grouping_column = "group",
-                        file = "higgs_update_2.pdf", overwrite = T)
+                  grouping_column = "group",
+                  file = "higgs_update_2.pdf", overwrite = T)
 
 
 # Ndu
 write_norm_report(filtered_ndu,
+                  output_dir = "temp",
                         grouping_column = "group",
                         file = "ndu_update_with_points_ggrastr.pdf", overwrite = T, use_ggrastr = T)
 
@@ -142,6 +143,12 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
   normalize_data(norm_method = "cycloess")
 
 write_qc_report(full_higgs_chain,
+                color_column = "group",
+                filename = "higgs_qc_update.pdf",
+                overwrite = T)
+
+write_qc_report(full_higgs_chain,
+                output_dir = "temp",
                 color_column = "group",
                 filename = "higgs_qc_update.pdf",
                 overwrite = T)
@@ -297,7 +304,6 @@ names(results_higgs$results)
 
 # Write results -----------------------------------------------------------
 write_limma_tables(results_lupashin,
-                   output_dir = "Lupashin_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_ndu,
@@ -328,6 +334,10 @@ write_limma_plots(results_reb,
                   grouping_column = "group",
                   output_dir = "reb_s3obj", key_column = "Protein.Name")
 
+write_limma_plots(results_reb,
+                  grouping_column = "group",
+                  key_column = "Protein.Name")
+
 write_limma_plots(results_kaul,
                   grouping_column = "group",
                   output_dir = "kaul_s3obj/")
@@ -353,6 +363,11 @@ write_limma_plots(results_ndu_random,
 write_limma_plots(results_zhan,
                   grouping_column = "group",
                   output_dir = "zhan_s3obj")
+
+write_limma_plots(results_zhan,
+                  grouping_column = "group")
+
+
 
 write_limma_plots(results_zhan,
                   grouping_column = "group",

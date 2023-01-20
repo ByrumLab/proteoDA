@@ -22,7 +22,7 @@ gives information on how to group samples for the interactive
 abundance plot.}
 
 \item{output_dir}{The directory in which to create the reports and save the
-plot files. No defaults, must be specified.}
+plot files. If not specified, will default to the current working directory.}
 
 \item{tmp_subdir}{The subdirectory within the output directory in which to
 store temporary files. Deleted by default. Default is "tmp".}
