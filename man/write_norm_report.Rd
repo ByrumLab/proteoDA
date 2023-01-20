@@ -18,15 +18,15 @@ write_norm_report(
 \item{DAList}{A DAList.}
 
 \item{grouping_column}{The name of the column in the metadata which
-gives information on how to group samples for normalization. Must be supplied:
-some metrics can't be calculated for only one group.}
+gives information on how to group samples for normalization. Must be
+supplied: some metrics can't be calculated for only one group.}
 
-\item{output_dir}{The directory in which to save the report. If not provided,
-will default to "protein_analysis/01_quality_control". If the directory does not
-exist, it will be created.}
+\item{output_dir}{The directory in which to save the report. If the directory
+does not exist, it will be created. If not provided, will default to
+the current working directory.}
 
-\item{filename}{The file name of the report to be saved. Must end in .pdf. Will
-default to "proteiNorm_Report.pdf" if no file name is provided.}
+\item{filename}{The file name of the report to be saved. Must end in .pdf.
+Will default to "normalization_report.pdf" if no file name is provided.}
 
 \item{overwrite}{Should report file be overwritten if it already exists?
 Default is FALSE.}
@@ -38,7 +38,8 @@ log2ratio plot? Default is FALSE.}
 file size? Default is FALSE. Requires installation of \code{ggrastr}.}
 }
 \value{
-If report is created successfully, invisibly returns the input DAList.
+If report is created successfully, invisibly returns the
+input DAList.
 }
 \description{
 Saves a PDF report containing a variety of plots which give

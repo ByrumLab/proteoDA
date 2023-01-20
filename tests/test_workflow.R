@@ -148,6 +148,12 @@ write_qc_report(full_higgs_chain,
                 overwrite = T)
 
 write_qc_report(full_higgs_chain,
+                output_dir = "temp",
+                color_column = "group",
+                filename = "higgs_qc_update.pdf",
+                overwrite = T)
+
+write_qc_report(full_higgs_chain,
                 color_column = "group",
                 label_column = "sampleIDs",
                 filename = "higgs_qc_update_samplelabs.pdf",
