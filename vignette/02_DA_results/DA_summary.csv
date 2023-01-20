@@ -1,0 +1,4 @@
+"contrast","type","sig.PVal","sig.FDR","pval_thresh","lfc_thresh","p_adj_method"
+"cancer_vs_normal","down","176","0",0.055,1,"BH"
+"cancer_vs_normal","nonsig","8620","8886",0.055,1,"BH"
+"cancer_vs_normal","up","90","0",0.055,1,"BH"
