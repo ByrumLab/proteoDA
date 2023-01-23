@@ -95,7 +95,6 @@ test_that("validate_DAList checks the annotation slot", {
 
 })
 
-
 test_that("validate_DAList checks that annotation and data match", {
   dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
 
@@ -239,6 +238,42 @@ test_that("validate_DAList checks the design", {
                "do not match")
 })
 
+test_that("validate_DAList checks the eBayes_fit", {
+
+  # check class of eBayes fit
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ group) |>
+    normalize_data("log2") |>
+    fit_limma_model()
+  input$eBayes_fit <- unclass(input$eBayes_fit)
+  expect_error(validate_DAList(input),
+               "class MArrayLM")
+
+  # Random factor in design not in model
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ group) |>
+    normalize_data("log2") |>
+    fit_limma_model()
+  input$design$random_factor <- "sample_id"
+  expect_error(validate_DAList(input),
+               "Design includes")
+
+  # Random factor in model results no design
+
+  input <- readRDS(test_path("fixtures", "add_design_input.rds"))
+  d <- suppressMessages(input |>
+                          normalize_data("log2") |>
+                          add_design(~ 0 + sex + (1 | treatment)) |>
+                          fit_limma_model())
+  d$design$random_factor <- NULL
+  expect_error(validate_DAList(d),
+               "Model fit includes")
+})
 
 
 

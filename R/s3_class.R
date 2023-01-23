@@ -313,10 +313,28 @@ validate_DAList <- function(x) {
     }
   }
 
-  # TODO Checks for eBayes fit
-  # if not null, then the first item should be an MArrayLM. If random effect,
-  # should have a non-null correlation term. If no random effect,
-  # should have a null correlation term.
+  if (!is.null(x$eBayes_fit)) {
+    # If not null, should be an MAArrayLM
+    if (c("MArrayLM") %notin% class(x$eBayes_fit)) {
+      cli::cli_abort(c("The eBayes_slot should be an object of class MArrayLM"))
+    }
+
+    # If theres a random factor in the design, should have a correlation in the
+    # MArrayLM
+    if (!is.null(x$design$random_factor)) {
+      if (c("correlation" %notin% names(x$eBayes_fit))) {
+        cli::cli_abort(c("Discrapancy between limma fit and statistical design:",
+                         "Design includes a random factor not present in the model fit"))
+      }
+    }
+    # And if there's a correlation in the eBayes fit there should be one in the design
+    if (c("correlation" %in% names(x$eBayes_fit))) {
+      if (is.null(x$design$random_factor)) {
+        cli::cli_abort(c("Discrapancy between limma fit and statistical design:",
+                         "Model fit includes a random factor not present in the design"))
+      }
+    }
+  }
 
 
   # TODO Checks for results
