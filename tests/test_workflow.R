@@ -217,7 +217,6 @@ norm_zhan <- add_design(norm_zhan,
 full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") |>
   add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") |>
   filter_samples(group != "Pool") |>
-  filter_proteins_contaminants() |>
   filter_proteins_by_group(min_reps = 4, min_groups = 3) |>
   filter_proteins_by_group(min_reps = 5, min_groups = 3) |>
   filter_proteins_by_proportion(min_prop = 1) |>

@@ -139,6 +139,105 @@ test_that("validate_DAList checks the metadata", {
                "column names of the data")
 })
 
+test_that("validate_DAList checks the design", {
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ group)
+  input$design <- list(x = 1)
+
+  # Checks length of allowable design
+  # Too short
+  expect_error(validate_DAList(input),
+               "of at least 2")
+
+  # Checks for not-allowed names
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ group)
+  input$design <- c(input$design, extra = "extra")
+  expect_error(validate_DAList(input),
+               "extra")
+  # checks for 2 required elements
+  input$design$extra <- NULL
+  input$design$random_factor <- "temp"
+  input$design$design_formula <- NULL
+  expect_error(validate_DAList(input),
+               "must contain at least a")
+
+  # Checks that design_matrix has proper attributes
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ group)
+  attributes(input$design$design_matrix) <- NULL
+  expect_error(validate_DAList(input),
+               "attribute")
+
+  # checks that design matrix has same number of rows as metadata
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ group)
+  # Turns out delete ing rows is a little tricky,
+  # have to manage the metadata too
+  tmp <- attributes(input$design$design_matrix)
+  tmp$dim[1] <- 2
+  tmp$dimnames[[1]] <- c("sampleA", "sampleB")
+  input$design$design_matrix <- input$design$design_matrix[1:2,]
+  attributes(input$design$design_matrix) <- tmp
+  expect_error(validate_DAList(input),
+               "samples in the metadata")
+
+  # Rownames of design matrix equal colnames of data
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ group)
+  rownames(input$design$design_matrix)[1] <- "xxx"
+  expect_error(validate_DAList(input),
+               "row names")
+
+  # If there's a random effect, must be present in metadata
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ group + (1 | sample_id))
+  input$design$random_factor <- "xxx"
+  expect_error(validate_DAList(input),
+               "random factor term")
+
+  # If there are contrasts, must have both contrast slots
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ 0 + group) |>
+    add_contrasts(contrasts_vector = c("test = treatment - control"))
+  input$design$contrast_matrix <- NULL
+  expect_error(validate_DAList(input),
+               "must have both")
+
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ 0 + group) |>
+    add_contrasts(contrasts_vector = c("test = treatment - control"))
+  input$design$contrast_vector <- NULL
+  expect_error(validate_DAList(input),
+               "must have both")
+
+  # Contrast matrix rows equal design matrix cols
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata) |>
+    add_design(~ 0 + group) |>
+    add_contrasts(contrasts_vector = c("test = treatment - control"))
+  rownames(input$design$contrast_matrix)[1] <- "xxx"
+  expect_error(validate_DAList(input),
+               "do not match")
+})
 
 
 

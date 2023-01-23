@@ -15,8 +15,8 @@ test_that("add_design gives helpful error when terms are not present in metadata
 
 # warning when overwriting an existing design
 test_that("add_design gives warning when overwriting an existing statistical design", {
-  input <- readRDS(test_path("fixtures", "add_design_input.rds"))
-  input$design <- list("design")
+  input <- readRDS(test_path("fixtures", "add_design_input.rds")) |>
+    add_design(~ treatment)
 
   expect_message(add_design(input, "~ treatment"), "Overwriting.")
 

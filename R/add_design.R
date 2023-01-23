@@ -82,7 +82,7 @@ add_design <- function(DAList,
   }
 
   DAList$design <- list(design_formula = paste0(as.character(formula), collapse = ""),
-                         design_matrix = design_matrix)
+                        design_matrix = design_matrix)
 
   # If theres a random factor, add it in
   if (formula_has_random) {

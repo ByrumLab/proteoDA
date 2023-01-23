@@ -254,18 +254,64 @@ validate_DAList <- function(x) {
     }
   }
 
-  # TODO Checks for design:
-  # If design matrix exists, needs to have same # of rows as metadata
-  # also, rownames of design matrix need to equal colnames of data
+  # Checks for design and contrasts:
+  if (!is.null(x$design)) {
 
-  # If there's a random effect blocking factor, make sure its in the metadata?
-  # if you have a formula, must have a matrix and vice versa?
-  # And, if you have a random effect, must have a matrix and formula?
+    # if present, should be a list with at least two slots: design_formula and design_matrix
+    if (length(x$design) < 2) {
+      cli::cli_abort(c("The object in the design slot should be a list with length of at least 2:",
+                       "Current length: {length(x$design)}"))
+    }
 
+    # two required items when design is present
+    if (!(all(c("design_matrix", "design_formula") %in% names(x$design)))) {
+      cli::cli_abort(c("The list in the design slot must contain at least a design_formula and a design_matrix"))
+    }
 
-  # TODO Checks for contrasts
-  # If you have a contrasts, must have a design
-  # if you have a contrasts_vec, must have contrasts_matrix and vice versa?
+    # design_matrix should be an R design matrix, so it should have an "assign" attribute.
+    if ("assign" %notin% names(attributes(x$design$design_matrix))) {
+      cli::cli_abort(c("The design_matrix in the design slot should have an \"assign\" attribute"))
+    }
+
+    # there are 5 possible names for the elements of design
+    design_possible_names <- c("design_formula", "design_matrix", "random_factor", "contrast_matrix", "contrast_vector")
+    if (any(names(x$design) %notin% design_possible_names)) {
+      problem_names <- names(x$design)[names(x$design) %notin% design_possible_names]
+      cli::cli_abort(c("The list in the design slot may contain the following elements:",
+                       "{.val {design_possible_names}}",
+                       "Problem {cli::qty(problem_names)} item{?s} in design list: {.val {problem_names}}"))
+    }
+
+    # Same number of rows as metadata
+    if (nrow(x$design$design_matrix) != nrow(x$metadata)) {
+      cli::cli_abort("The number of samples in the design matrix ({nrow(x$design$design_matrix)}) does not match the number of samples in the metadata ({nrow(x$metadata)})")
+    }
+
+    # rownames equal colnames of data
+    if (any(colnames(x$data) != rownames(x$design$design_matrix))) {
+      cli::cli_abort("The row names of the design matrix do not match the column names of the data")
+    }
+
+    # If there's a random effect, must be present in the metadata
+    if (!is.null(x$design$random_factor)) {
+      if (x$design$random_factor %notin% colnames(x$metadata)) {
+        cli::cli_abort("The random factor term is not present in the metadata")
+      }
+    }
+
+    # Checks for contrasts
+    # If any contrast stuff is present,
+    if (sum(c("contrast_vector", "contrast_matrix") %in% names(x$design)) > 0) {
+      # Must have both the vector and the matrix
+      if (sum(c("contrast_vector", "contrast_matrix") %in% names(x$design)) != 2) {
+        cli::cli_abort(c("if contrast information is present in the design slot, must have both a contrast_vector and contrast_matrix"))
+      }
+      # And rows in the contrast matrix should equal cols in the design matrix
+      if (!(all(rownames(x$design$contrast_matrix) == colnames(x$design$design_matrix)))) {
+        cli::cli_abort(c("The rows in the contrast matrix do not match the column in the design matrix"))
+      }
+    }
+  }
 
   # TODO Checks for eBayes fit
   # if not null, then the first item should be an MArrayLM. If random effect,
@@ -294,8 +340,8 @@ validate_DAList <- function(x) {
 
   }
 
-  # TODO Any tags checks?
-  # Not sure...
+  # For the moment, no tag checks.
+  # Can revisit if needed.
 
   # If all checks pass, return input
   x
