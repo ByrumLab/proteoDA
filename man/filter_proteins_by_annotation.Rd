@@ -14,7 +14,7 @@ of variables present in the annotation data frame of the supplied DAList.
 Proteins are kept if the condition is TRUE for that protein.}
 }
 \value{
-A DAList, with proteins that do not meet the condition are removed.
+A DAList, with proteins that do not meet the condition removed.
 }
 \description{
 This function is used to remove proteins from a DAList, filtering using data

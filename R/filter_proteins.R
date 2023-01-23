@@ -11,7 +11,7 @@
 #'   of variables present in the annotation data frame of the supplied DAList.
 #'   Proteins are kept if the condition is TRUE for that protein.
 #'
-#' @return A DAList, with proteins that do not meet the condition are removed.
+#' @return A DAList, with proteins that do not meet the condition removed.
 #'
 #' @export
 #'
@@ -87,7 +87,7 @@ filter_proteins_by_annotation <- function(DAList, condition) {
 #' Filter protein data by number of quantified samples in a group
 #'
 #' This function is used to remove proteins from a DAList, filtering out proteins
-#' based on levels of missing values in the data data frame of the DAList. The
+#' based on levels of missing values in the "data" data frame of the DAList. The
 #' grouping_column must be a column in the metadata of the DAList, which lists the
 #' group membership for each sample. The min_reps and min_groups arguments that determine
 #' the number of replicates/samples per group (min_reps) and number of groups
@@ -247,7 +247,7 @@ filter_proteins_by_group <- function(DAList,
 #' Filter protein data by proportion of quantified samples in group
 #'
 #' This function is used to remove proteins from a DAList, filtering out proteins
-#' based on levels of missing data in the data data frame of the DAList. The
+#' based on levels of missing data in the "data" data frame of the DAList. The
 #' grouping_column must be a column in the metadata of the DAList which lists the
 #' group membership for each sample. Proteins must have a non-missing intensity
 #' value in at least min_prop of samples within each group in order to be retained.

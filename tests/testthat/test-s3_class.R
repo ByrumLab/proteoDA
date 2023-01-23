@@ -319,12 +319,7 @@ test_that("validate_DAList checks the results", {
   expect_error(validate_DAList(bad_names),
                "between statistical results and data")
 
-  mismatch_contrast_noint <-
-
-
-
-
-
+  # mismatch_contrast_noint <-
 
 })
 

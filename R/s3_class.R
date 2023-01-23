@@ -21,8 +21,9 @@ new_DAList <- function(x = list()) {
 #' proteomics project (see Details for a full description of each slot). The
 #' first three slots (data, annotation, and metadata) are required to create a
 #' DAList. The other slots can be supplied, but are generally added via their
-#' respective analysis functions. *NB*- you must ensure that the data, annotation, and metadata are in the proper order.
-#'  To help with this, \code{DAList} requires the row names of the metadata to match the column
+#' respective analysis functions. *NB*- you must ensure that the data,
+#' annotation, and metadata are in the proper order. To help with this,
+#' \code{DAList} requires the row names of the metadata to match the column
 #' names of the data. However, DAList cannot know if the rows in the data and
 #' the annotation are in the proper order: double-check that they are!
 #'

@@ -22,7 +22,7 @@ removed.
 }
 \description{
 This function is used to remove proteins from a DAList, filtering out proteins
-based on levels of missing data in the data data frame of the DAList. The
+based on levels of missing data in the "data" data frame of the DAList. The
 grouping_column must be a column in the metadata of the DAList which lists the
 group membership for each sample. Proteins must have a non-missing intensity
 value in at least min_prop of samples within each group in order to be retained.
