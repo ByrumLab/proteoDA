@@ -138,6 +138,10 @@ DAList <- function(data,
                      "i" = "Find duplicate items with {.fun base::duplicated} or {.fun base::anyDuplicated} and make them unqiue"))
   }
 
+  if (nrow(data) != nrow(annotation)) {
+    cli::cli_abort("The {.arg data} and {.arg annotation} data frames must have the same number of rows")
+  }
+
   # Assign uniprot_id column as rownames for data and annotation
   rownames(data) <- annotation$uniprot_id
   rownames(annotation) <- annotation$uniprot_id

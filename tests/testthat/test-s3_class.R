@@ -28,6 +28,17 @@ test_that("DAList() gives error when uniprot_id column is not unique", {
 
 })
 
+test_that("DAList() gives useful error when data and annotation have different number of rows", {
+
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+
+
+  expect_error(DAList(data = dfs$data[1:2,],
+                      annotation = dfs$annotation,
+                      metadata = dfs$metadata),
+               "same number of rows")
+})
+
 # Internal validator ------------------------------------------------------
 
 test_that("validate_DAList checks for proper number and order of slots", {
@@ -82,6 +93,50 @@ test_that("validate_DAList checks the annotation slot", {
   colnames(input$annotation) <- c("x", "y")
   expect_error(validate_DAList(input), "uniprot_id")
 
+})
+
+
+test_that("validate_DAList checks that annotation and data match", {
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+
+
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata)
+  input$data <- input$data[1:2,]
+
+  # Same number of rows
+  expect_error(validate_DAList(input),
+               "same number of rows")
+
+  # same row names
+  input$data <- dfs$data
+  rownames(input$data) <- c("xxx", "M9NH73", "H9AZR4")
+  expect_error(validate_DAList(input),
+               "must match")
+
+  # Rownames equal the uniprot_id col
+  rownames(input$annotation)[1] <- "xxx"
+  expect_error(validate_DAList(input),
+               "uniprot_id")
+})
+
+test_that("validate_DAList checks the metadata", {
+
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata)
+  # rows of metadata match cols of data
+  input$metadata <- input$metadata[1:2,]
+  expect_error(validate_DAList(input),
+               "number of samples in the data")
+
+  # rownames metadata match colnames data
+  input$metadata <- dfs$metadata
+  rownames(input$metadata)[1] <- "xxx"
+  expect_error(validate_DAList(input),
+               "column names of the data")
 })
 
 
