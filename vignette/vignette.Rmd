@@ -108,12 +108,7 @@ norm <- normalize_data(filtered_data,
 ```
 ## ProteiNorm_report.pdf Results
 
-
-<br><br><center>
-
-![**proteiNorm.** Select the appropriate normalization method.]("images/proteiNorm.png"){width=70%}
-
-</center><br><br>
+![**proteiNorm.** Select the appropriate normalization method.](https://github.com/sbyrum21/proteoDA/blob/tutorial/images/proteiNorm.png) 
 
 
 ## Quality Control Report
