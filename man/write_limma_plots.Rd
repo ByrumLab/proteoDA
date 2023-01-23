@@ -7,9 +7,10 @@
 write_limma_plots(
   DAList = NULL,
   grouping_column = NULL,
+  table_columns = c("uniprot_id"),
+  title_column = NULL,
   output_dir = NULL,
   tmp_subdir = "tmp",
-  key_column = NULL,
   height = 1000,
   width = 1000
 )
@@ -21,17 +22,25 @@ write_limma_plots(
 gives information on how to group samples for the interactive
 abundance plot.}
 
+\item{table_columns}{Optional: the name of the column(s) in the annotation
+data frame that will be included in the interactive table of statistical
+results in the report. These columns will also be displayed in the tooltips
+of the volcano and MD plots. By default, only the uniprot_id column is
+displayed. See Details for more
+information.}
+
+\item{title_column}{Optional: the name of a column in the annotation data
+frame from which to take values to use as the title for the protein
+intensity plots in the report. If not supplied, will use the
+info in the uniprot_id. If supplied, the title column will also be
+displayed (without truncation) in the results table. See Details for more
+information.}
+
 \item{output_dir}{The directory in which to create the reports and save the
 plot files. If not specified, will default to the current working directory.}
 
 \item{tmp_subdir}{The subdirectory within the output directory in which to
 store temporary files. Deleted by default. Default is "tmp".}
-
-\item{key_column}{Optional. The name of a column in the annotation data frame which gives
-unique protein IDs. If provided, values form this column will appear as the title for the
-protein intensity plots in the report. The column must contain unique values for each protein.
-For example: key_column="Uniprot_ID" could be possible list of unique ids in
-your annotations.}
 
 \item{height}{The height of the interactive report objects, in pixels.
 Default is 1000.}
@@ -48,6 +57,26 @@ differential abundance analyses for each contrast in the results slot of the DAL
 Creates one HTML report for each contrast. Also creates a subfolder containing static .pdf
 versions of all interactive plots. Currently, overwrites any previous reports
 or other files with the same name.
+}
+\details{
+Users can modify some aspects of the report output. First, users can modify
+the width and height of the interactive report with the height and width
+arguments, specified in pixels.
+
+Users can also control what data are displayed in the interactive table of
+the report via the table_columns argument. Users can supply a vector of
+column names from the annotation data frame to include, these columns will be
+displayed in the order provided (column names may be changed slightly if the
+original names cause issues with the Javascript code used for plotting). By
+default, only the uniprot_id column is displayed.
+
+Finally, users can use the title_column argument to change the title of the
+protein intensity (the plots on the right of the report). By default, the
+values in the uniprot_id column of the annotation are used. To avoid plotting
+issues, the values in the user-provided column will be truncated to 15
+characters for use in the title: these values must remain unique
+after truncation. If a title_column is supplied, it will be added to the
+table_columns so that it is displayed in the table as well.
 }
 \examples{
 \dontrun{
@@ -68,10 +97,12 @@ or other files with the same name.
 
  # Add titles to the intensity plot,
  # using the values in the protein_id column
- # in the annotation of the DAList
+ # in the annotation of the DAList,
+ # and display additional columns in the table
  write_limma_plots(DAList,
                    grouping_column = "treatment",
-                   key_column = "protein_id")
+                   table_columns = "description",
+                   title_column = "protein_id")
 }
 
 }
