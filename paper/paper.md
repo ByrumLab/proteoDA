@@ -7,14 +7,14 @@ tags:
   - normalization
   - linear models
 authors:
+  - name: Timothy J. Thurman
+    orcid: 0000-0002-9602-6226
+    equal-contrib: true 
+    affiliation: 1
   - name: Charity L. Washam
     orcid: 0000-0001-5761-9304
     equal-contrib: true
     affiliation: 1 
-  - name: Timothy Thurman
-    orcid: 0000-0002-9602-6226
-    equal-contrib: true 
-    affiliation: 1
   - name: Duah Alkam
     orcid: 0000-0002-5965-7694
     affiliation: 1
