@@ -275,5 +275,58 @@ test_that("validate_DAList checks the eBayes_fit", {
                "Model fit includes")
 })
 
+test_that("validate_DAList checks the results", {
+
+  # Mismatch between rownames of data and results
+  input <- readRDS(test_path("fixtures", "add_design_input.rds"))
+
+  treatment_noint_int <- suppressMessages(
+    input |>
+      normalize_data("log2") |>
+      add_design(~ 0 + treatment) |>
+      add_contrasts(contrasts_vector = c("Treatment_vs_Control= treatment - control")) |>
+      fit_limma_model() |>
+      extract_DA_results(extract_intercept = T)
+    )
+
+  group_int_noint <- suppressMessages(
+    input |>
+      normalize_data("log2") |>
+      add_design(~ 0 + group) |>
+      fit_limma_model() |>
+      extract_DA_results(extract_intercept = F)
+  )
+
+  sex_noint_int <- suppressMessages(
+    input |>
+      normalize_data("log2") |>
+      add_design(~ sex) |>
+      fit_limma_model() |>
+      extract_DA_results(extract_intercept = T)
+  )
+
+  sex_noint_noint <- suppressMessages(
+    input |>
+      normalize_data("log2") |>
+      add_design(~ sex) |>
+      fit_limma_model() |>
+      extract_DA_results(extract_intercept = F)
+  )
+
+  # incorrect rownames
+  bad_names <- sex_noint_int
+  rownames(bad_names$results$M)[1] <- "xxx"
+  expect_error(validate_DAList(bad_names),
+               "between statistical results and data")
+
+  mismatch_contrast_noint <-
+
+
+
+
+
+
+})
+
 
 

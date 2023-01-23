@@ -78,8 +78,6 @@ add_metadata <- function(DAList,
 
   ## change data column names and targets row names
   ## to sample name i.e. sample column in targets
-  #TODO NEED TO FIGURE THIS OUT
-  # NEEDED FOR OUR CURRENT DATA, SHOULD rethink for public
   if ("sample" %in% colnames(targets)) {
     rownames(targets) <- targets$sample
     colnames(DAList$data) <- rownames(targets)

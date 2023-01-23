@@ -98,8 +98,8 @@ fit_limma_model <- function(DAList) {
   if (!is.null(DAList$eBayes_fit) | !is.null(DAList$results)) {
     cli::cli_inform("DAList already contains statistical results. Overwriting.")
     # Get rid of any old stuff
-    DAList[["eBayes_fit"]] <- list(NULL)
-    DAList[["results"]] <- list(NULL)
+    DAList["eBayes_fit"] <- list(NULL)
+    DAList["results"] <- list(NULL)
   }
 
   # Add results
@@ -183,7 +183,7 @@ extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_
   if (!is.null(DAList$results)) {
     cli::cli_inform("DAList already contains DA results. Overwriting.")
     # Get rid of any old stuff
-    DAList[["results"]] <- list(NULL)
+    DAList["results"] <- list(NULL)
   }
 
   # Grab fit object and extract results from it
@@ -229,6 +229,7 @@ extract_DA_results <- function(DAList, pval_thresh = 0.055, lfc_thresh = 1, adj_
   DAList$tags$DA_criteria$pval_thresh <- pval_thresh
   DAList$tags$DA_criteria$lfc_thresh <- lfc_thresh
   DAList$tags$DA_criteria$adj_method <- adj_method
+  DAList$tags$extract_intercept <- extract_intercept
 
   # Validate and return
   validate_DAList(DAList)
@@ -259,7 +260,7 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
   if (any(perc_sig > DA_warn_threshold)) {
     above_thresh <- names(perc_sig)[perc_sig > DA_warn_threshold]
     thresh_perc <- DA_warn_threshold*100
-    cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is differntially adundant in {cli::qty(length(above_thresh))} {?a/some} term{?s}",
+    cli::cli_inform(c("!" = "Warning: more than {.perc {thresh_perc}}% of the data is differentially adundant in {cli::qty(length(above_thresh))} {?a/some} term{?s}",
                       "!" = "Criteria for DA: |logFC| > {.val {lfc_thresh}}, p-value < {.val {pval_thresh}}, p.value adjustment = {.val {adj_method}}",
                       "!" = "{cli::qty(length(above_thresh))} Problematic term{?s}: {.val {above_thresh}}",
                       "!" = "Assumption that most proteins are not DA may be violated"))

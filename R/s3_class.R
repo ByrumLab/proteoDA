@@ -323,39 +323,70 @@ validate_DAList <- function(x) {
     # MArrayLM
     if (!is.null(x$design$random_factor)) {
       if (c("correlation" %notin% names(x$eBayes_fit))) {
-        cli::cli_abort(c("Discrapancy between limma fit and statistical design:",
+        cli::cli_abort(c("Discrepancy between limma fit and statistical design:",
                          "Design includes a random factor not present in the model fit"))
       }
     }
     # And if there's a correlation in the eBayes fit there should be one in the design
     if (c("correlation" %in% names(x$eBayes_fit))) {
       if (is.null(x$design$random_factor)) {
-        cli::cli_abort(c("Discrapancy between limma fit and statistical design:",
+        cli::cli_abort(c("Discrepancy between limma fit and statistical design:",
                          "Model fit includes a random factor not present in the design"))
       }
     }
   }
 
 
-  # TODO Checks for results
+  # Checks for results
   if (!is.null(x$results)) {
 
-    # if not null, pval_thresh, lfc_thresh, and adj_method should be set in tags??
-    # if not null, length should match either ncol(design_matrix) or ncol(contrasts_matrix)
-    # if not null, nrow and rownames for each element of the results should
-    # match the data (which matches the annotation, as we check above. )
+    # IMPROVE THESE TO USE NAMES, NOT LENGTHS
+
+    # If there are contrasts,
+    # results length should match number of contrasts
+    if (!is.null(x$design$contrast_matrix)) {
+      if (x$tags$extract_intercept) { # If keeping intercept with contrasts
+        # means there's a contrast named intercept
+        if (length(x$results) != ncol(x$design$contrast_matrix)) {
+          cli::cli_abort(c("Discrepancy between statistical results and design:",
+                           "contrast matrix has {ncol(x$design$contrast_matrix)} term{?s} and result slot has {length(x$results)} term{?s}"))
+        }
+      } else { # if we did not extract intercept
+        # Should be equal to number of non intercept terms in the contrasts
+        non_intercept_contrast_terms <- sum(stringr::str_detect(colnames(x$design$contrast_matrix), "ntercept", negate = T))
+        if (length(x$results) != non_intercept_contrast_terms) {
+          cli::cli_abort(c("Discrepancy between statistical results and design:",
+                           "contrast matrix matrix has {non_intercept_contrast_terms} non-intercept term{?s} and result slot has {length(x$results)} term{?s}"))
+        }
+
+      }
 
 
-    # # data and annotation slots should have same number of rows
-    # if (nrow(x$data) != nrow(x$annotation)) {
-    #   cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DAList must have the same number of rows")
-    # }
-    #
-    # # Data and annotation should have matching rownames
-    # if (!(all(rownames(x$data) == rownames(x$annotation)))) {
-    #   cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DAList must match")
-    # }
+    } else {
+      # If no contrasts,
+      # results length should match design matrix if intercept terms were extracted
+      if (x$tags$extract_intercept) {
+        if (length(x$results) != ncol(x$design$design_matrix)) {
+          cli::cli_abort(c("Discrepancy between statistical results and design:",
+                           "design matrix has {ncol(x$design$design_matrix)} term{?s} and result slot has {length(x$results)} term{?s}"))
+        }
+      } else { # and should match # of non-intercept terms if they weren't
+        non_intercept_design_cols <- sum(stringr::str_detect(colnames(x$design$design_matrix), "ntercept$", negate = T))
+        if (length(x$results) != non_intercept_design_cols) {
+          cli::cli_abort(c("Discrepancy between statistical results and design:",
+                           "design matrix has {non_intercept_design_cols} non-intercept term{?s} and result slot has {length(x$results)} term{?s}"))
+        }
+      }
+    }
 
+
+    # Elements of results objects should match rownames of data
+    for (term in seq_along(names(x$results))) {
+      if (!all(rownames(x$results[[term]]) == rownames(x$data))) {
+        cli::cli_abort(c("Discrepancy between statistical results and data:",
+                         "Rownames for the {.arg {term}} results data frame do not match the rownames in the {.arg data} "))
+      }
+    }
   }
 
   # For the moment, no tag checks.
