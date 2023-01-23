@@ -463,6 +463,18 @@ norm &lt;- normalize_data(filtered_data,
                        norm_method = &quot;cycloess&quot;)
 </code></pre>
 </div>
+<div id="proteinorm_report.pdf-results" class="section level2">
+<h2>ProteiNorm_report.pdf Results</h2>
+<br><br>
+<center>
+<div class="figure">
+<img src="%22images/proteiNorm.png%22" style="width:70.0%" alt />
+<p class="caption"><strong>proteiNorm.</strong> Select the appropriate
+normalization method.</p>
+</div>
+</center>
+<p><br><br></p>
+</div>
 <div id="quality-control-report" class="section level2">
 <h2>Quality Control Report</h2>
 <p>Once the normalization method has been chosen, QC plots are generated
@@ -545,9 +557,10 @@ write_limma_tables(results,
 
 write_limma_plots(results,
                   grouping_column = &quot;group&quot;,
+                  table_columns = c(&quot;uniprot_id&quot;,&quot;Protein.0me&quot;),
+                  title_column = &quot;uniprot_id&quot;,
                   output_dir = &quot;02_DA_results&quot;,
-                  tmp_subdir = NULL,
-                  key_column = NULL,
+                  tmp_subdir = &quot;tmp&quot;,
                   height = 1000,
                   width = 1000)
 

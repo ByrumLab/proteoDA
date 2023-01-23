@@ -106,6 +106,15 @@ norm <- normalize_data(filtered_data,
                        norm_method = "cycloess")
 
 ```
+## ProteiNorm_report.pdf Results
+
+
+<br><br><center>
+
+![**proteiNorm.** Select the appropriate normalization method.]("images/proteiNorm.png"){width=70%}
+
+</center><br><br>
+
 
 ## Quality Control Report
 
@@ -185,9 +194,10 @@ write_limma_tables(results,
 
 write_limma_plots(results,
                   grouping_column = "group",
+                  table_columns = c("uniprot_id","Protein.0me"),
+                  title_column = "uniprot_id",
                   output_dir = "02_DA_results",
-                  tmp_subdir = NULL,
-                  key_column = NULL,
+                  tmp_subdir = "tmp",
                   height = 1000,
                   width = 1000)
 

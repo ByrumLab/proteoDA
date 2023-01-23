@@ -20,7 +20,6 @@ DA <- DAList(data,
                tags = NULL)
 
 
-# Add metadata ------------------------------------------------------------
 
 #data <- add_metadata(data, "for_testing/AvarittNL_120522_metafile_DIA.csv")
 
@@ -94,8 +93,9 @@ write_limma_tables(results,
 
 write_limma_plots(results,
                   grouping_column = "group",
+                  table_columns = c("uniprot_id","Protein.0me"),
+                  title_column = "uniprot_id",
                   output_dir = "02_DA_results",
-                  tmp_subdir = NULL,
-                  key_column = NULL,
+                  tmp_subdir = "tmp",
                   height = 1000,
                   width = 1000)
