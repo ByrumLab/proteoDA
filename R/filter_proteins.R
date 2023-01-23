@@ -11,7 +11,7 @@
 #'   of variables present in the annotation data frame of the supplied DAList.
 #'   Proteins are kept if the condition is TRUE for that protein.
 #'
-#' @return A DAList, with proteins that do not meet the condition removed.
+#' @return A DAList, with proteins that do not meet the condition are removed.
 #'
 #' @export
 #'
@@ -84,12 +84,12 @@ filter_proteins_by_annotation <- function(DAList, condition) {
 }
 
 
-#' Filter protein data by number of quantified samples in group
+#' Filter protein data by number of quantified samples in a group
 #'
 #' This function is used to remove proteins from a DAList, filtering out proteins
-#' based on levels of missing data in the data data frame of the DAList. The
-#' grouping_column must be a column in the metadata of the DAList which lists the
-#' group membership for each sample. The min_reps and min_groups arguments determine
+#' based on levels of missing values in the data data frame of the DAList. The
+#' grouping_column must be a column in the metadata of the DAList, which lists the
+#' group membership for each sample. The min_reps and min_groups arguments that determine
 #' the number of replicates/samples per group (min_reps) and number of groups
 #' (min_groups) in which a protein must have non-missing intensity values
 #' in order to be retained. This function assumes that all missing values are encoded
@@ -98,10 +98,10 @@ filter_proteins_by_annotation <- function(DAList, condition) {
 #'
 #' @param DAList A DAList object to be filtered.
 #' @param min_reps The minimum number of replicates/samples within a group
-#'   that need to have non-missing intensity for a given protein/peptide for that
-#'   peptide to be considered as quantified within a group.
+#'   that need to have a non-missing intensity value for a given protein in order for that
+#'   protein to be considered as quantified within a group.
 #' @param min_groups The minimum number of groups that must have at
-#'   least min_reps non-zero samples for a given protein/peptide to be retained.
+#'   least min_reps non-zero samples for a given protein to be retained.
 #' @param grouping_column The name of the column in the metadata which provides
 #'   the group membership for each sample. Default is "group".
 #'
@@ -114,7 +114,7 @@ filter_proteins_by_annotation <- function(DAList, condition) {
 #' \dontrun{
 #'   # Suppose the DAList contains data from 20 samples across 4
 #'   # experimental groups (5 samples per group), with the group membership
-#'   # listed in a column names "group"
+#'   # listed in a column named "group"
 #'
 #'   # Strict filtering:
 #'   # no missing data

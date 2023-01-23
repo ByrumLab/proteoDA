@@ -12,7 +12,7 @@
 #'   Samples are kept if the condition is TRUE for that sample.
 #'
 #'
-#' @return A DAList, with samples that do not meet the condition removed.
+#' @return A DAList, with samples that do not meet the condition are removed.
 #'
 #' @export
 #'
