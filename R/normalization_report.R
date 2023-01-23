@@ -6,8 +6,8 @@
 
 #' Create a normalization report
 #'
-#' Saves a PDF report containing a variety of plots which give
-#' information about the performance of different normalization metrics.
+#' Saves a PDF report containing a variety of qualitative plots which give
+#' information about the performance of different normalization methods.
 #' The report is useful for choosing a normalization method to
 #' use for downstream analysis.
 #'
