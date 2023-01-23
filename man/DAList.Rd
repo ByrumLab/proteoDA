@@ -19,7 +19,7 @@ DAList(
 each sample. Rows are proteins, columns are samples.}
 
 \item{annotation}{A data frame containing protein annotation data.
-Must contain a column named uniprot_id containing unique entries for each
+Must contain a column named "uniprot_id" containing unique entries for each
 row.}
 
 \item{metadata}{A data frame containing metadata on each sample.}
@@ -43,9 +43,8 @@ DAList and contain 7 slots which hold data and results for a quantitative
 proteomics project (see Details for a full description of each slot). The
 first three slots (data, annotation, and metadata) are required to create a
 DAList. The other slots can be supplied, but are generally added via their
-respective analysis functions. \emph{NB}- you must ensure that the data,
-annotation, and metadata are in the proper order. To help with this,
-\code{DAList} requires the row names of the metadata to match the column
+respective analysis functions. \emph{NB}- you must ensure that the data, annotation, and metadata are in the proper order.
+To help with this, \code{DAList} requires the row names of the metadata to match the column
 names of the data. However, DAList cannot know if the rows in the data and
 the annotation are in the proper order: double-check that they are!
 }
@@ -59,15 +58,15 @@ number of rows in the annotation data frame. The columns (samples) in the
 data should be in the same order as the rows of samples in the metadata
 data frame, with column names that match the row names of the metadata.
 \item annotation- A data frame of protein information, containing the same
-number of rows as the data slot and in the same order. This dataframe
-must contain a column named "uniprot_id" which contains a unique value
-for each row/protein (ideally, the UniProt ID). The values in this column
+number of rows as the data slot and in the same order. This data frame
+must contain a column named "uniprot_id", which contains a unique value
+for each row/protein (ideally, the UniProtID). The values in this column
 will be used to uniquely identify proteins in the DAList object.
 Additional columns containing other information (gene names,
 descriptions, molecular weights, etc) can be supplied.
 \item metadata- A data frame containing information on sample metadata,
-one row per sample. Should contain the same number of rows (samples) as
-there are columns in the data dataframe, in the same order, with rownames
+one row per sample. It should contain the same number of rows (samples) as
+there are columns in the data data frame, in the same order, with row names
 that match the column names of the data.
 \item design- A list containing information on the statistical design used
 for analyzing differential abundance. Set using \code{\link{add_design}}
