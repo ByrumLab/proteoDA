@@ -275,53 +275,129 @@ test_that("validate_DAList checks the eBayes_fit", {
                "Model fit includes")
 })
 
-test_that("validate_DAList checks the results", {
+test_that("validate_DAList checks the results rownames match data", {
 
   # Mismatch between rownames of data and results
   input <- readRDS(test_path("fixtures", "add_design_input.rds"))
 
-  treatment_noint_int <- suppressMessages(
+  # Create some final objects that have different designs
+  # and thus should have different term names,
+  # both with intercept terms extracted
+  treatment_int_int <- suppressMessages(
     input |>
       normalize_data("log2") |>
-      add_design(~ 0 + treatment) |>
-      add_contrasts(contrasts_vector = c("Treatment_vs_Control= treatment - control")) |>
+      add_design(~ treatment) |>
       fit_limma_model() |>
       extract_DA_results(extract_intercept = T)
     )
 
-  group_int_noint <- suppressMessages(
-    input |>
-      normalize_data("log2") |>
-      add_design(~ 0 + group) |>
-      fit_limma_model() |>
-      extract_DA_results(extract_intercept = F)
-  )
-
-  sex_noint_int <- suppressMessages(
-    input |>
-      normalize_data("log2") |>
-      add_design(~ sex) |>
-      fit_limma_model() |>
-      extract_DA_results(extract_intercept = T)
-  )
-
-  sex_noint_noint <- suppressMessages(
-    input |>
-      normalize_data("log2") |>
-      add_design(~ sex) |>
-      fit_limma_model() |>
-      extract_DA_results(extract_intercept = F)
-  )
-
-  # incorrect rownames
-  bad_names <- sex_noint_int
-  rownames(bad_names$results$M)[1] <- "xxx"
+  # Rownames of results should match rownames of data
+  bad_names <- treatment_int_int
+  rownames(bad_names$results$treatment)[1] <- "xxx"
   expect_error(validate_DAList(bad_names),
                "between statistical results and data")
-
-  # mismatch_contrast_noint <-
 
 })
 
 
+test_that("validate_DAList checks the results terms match the design", {
 
+  # Mismatch between rownames of data and results
+  input <- readRDS(test_path("fixtures", "add_design_input.rds"))
+
+  # Create some final objects that have different designs
+  # and thus should have different term names,
+  # both with intercept terms extracted
+  treatment_int_int <- suppressMessages(
+    input |>
+      normalize_data("log2") |>
+      add_design(~ treatment) |>
+      fit_limma_model() |>
+      extract_DA_results(extract_intercept = T)
+  )
+
+  group_int_int <- suppressMessages(
+    input |>
+      normalize_data("log2") |>
+      add_design(~ group) |>
+      fit_limma_model() |>
+      extract_DA_results(extract_intercept = T)
+  )
+
+  # When intercepts are not extracted
+  treatment_int_noint <- suppressMessages(
+    treatment_int_int |>
+      extract_DA_results(extract_intercept = F)
+  )
+
+  group_int_noint <- suppressMessages(
+    group_int_int |>
+      extract_DA_results(extract_intercept = F)
+  )
+
+
+  # Discrepancy between term names and
+  # design matrix
+  bad_terms_intercepts <- treatment_int_int
+  bad_terms_intercepts$results <- group_int_int$results
+  expect_error(validate_DAList(bad_terms_intercepts),
+               "in design matrix do not match")
+
+  bad_terms_noint <- treatment_int_noint
+  bad_terms_noint$results <- group_int_int$results
+  expect_error(validate_DAList(bad_terms_noint),
+               "in design matrix do not match")
+})
+
+
+
+test_that("validate_DAList checks the results terms match the contrasts", {
+
+  # Mismatch between rownames of data and results
+  input <- readRDS(test_path("fixtures", "add_design_input.rds"))
+
+  # Create some final objects that have different designs
+  # and thus should have different term names,
+  # both with intercept terms extracted
+  treatment_noint_int <- suppressMessages(
+    input |>
+      normalize_data("log2") |>
+      add_design(~ 0 + treatment) |>
+      add_contrasts(contrasts_vector = "test = treatment-control") |>
+      fit_limma_model() |>
+      extract_DA_results(extract_intercept = T)
+  )
+
+  group_noint_int <- suppressMessages(
+    input |>
+      normalize_data("log2") |>
+      add_design(~ 0 + group) |>
+      add_contrasts(contrasts_vector = "test2 = B - A") |>
+      fit_limma_model() |>
+      extract_DA_results(extract_intercept = T)
+  )
+
+  # When intercepts are not extracted
+  treatment_noint_noint <- suppressMessages(
+    treatment_noint_int |>
+      extract_DA_results(extract_intercept = F)
+  )
+
+  group_noint_noint <- suppressMessages(
+    group_noint_int |>
+      extract_DA_results(extract_intercept = F)
+  )
+
+
+  # Discrepancy between term names and
+  # contrast matrix
+  bad_terms_intercepts <- treatment_noint_int
+  bad_terms_intercepts$results <- group_noint_int$results
+  expect_error(validate_DAList(bad_terms_intercepts),
+               "in contrast matrix do not match")
+
+  bad_terms_noint <- treatment_noint_noint
+  bad_terms_noint$results <- group_noint_int$results
+  expect_error(validate_DAList(bad_terms_noint),
+               "in contrast matrix do not match")
+})

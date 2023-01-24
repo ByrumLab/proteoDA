@@ -342,40 +342,32 @@ validate_DAList <- function(x) {
 
     # IMPROVE THESE TO USE NAMES, NOT LENGTHS
 
-    # If there are contrasts,
-    # results length should match number of contrasts
-    if (!is.null(x$design$contrast_matrix)) {
-      if (x$tags$extract_intercept) { # If keeping intercept with contrasts
-        # means there's a contrast named intercept
-        if (length(x$results) != ncol(x$design$contrast_matrix)) {
-          cli::cli_abort(c("Discrepancy between statistical results and design:",
-                           "contrast matrix has {ncol(x$design$contrast_matrix)} term{?s} and result slot has {length(x$results)} term{?s}"))
-        }
-      } else { # if we did not extract intercept
-        # Should be equal to number of non intercept terms in the contrasts
-        non_intercept_contrast_terms <- sum(stringr::str_detect(colnames(x$design$contrast_matrix), "ntercept", negate = T))
-        if (length(x$results) != non_intercept_contrast_terms) {
-          cli::cli_abort(c("Discrepancy between statistical results and design:",
-                           "contrast matrix matrix has {non_intercept_contrast_terms} non-intercept term{?s} and result slot has {length(x$results)} term{?s}"))
-        }
+    # Names of the results items should match
+    # the names of the terms in design
+    # if design only, or in contrast if
+    # there are contrasts
+    if (!is.null(x$design$contrast_matrix)) { # when contrasts are present
+      expected_terms <- colnames(x$design$contrast_matrix)
+      terms_from <- "contrast matrix"
+    } else { # when no contrasts are present
+      expected_terms <- colnames(x$design$design_matrix)
+      terms_from <- "design matrix"
+    }
+
+    # Whether names match depends on whether extract_DA_results
+    # extracted the intercept or not
+    if (x$tags$extract_intercept) { # if extracted intercept
+      if (!all(names(x$results) == expected_terms)) { # all should match
+        cli::cli_abort(c("Discrepancy between statistical results and design:",
+                         "{cli::qty(length(expected_terms))} Term name{?s} in {terms_from} do not match {cli::qty(length(names(x$results)))} term{?s} names in the results"))
 
       }
-
-
-    } else {
-      # If no contrasts,
-      # results length should match design matrix if intercept terms were extracted
-      if (x$tags$extract_intercept) {
-        if (length(x$results) != ncol(x$design$design_matrix)) {
-          cli::cli_abort(c("Discrepancy between statistical results and design:",
-                           "design matrix has {ncol(x$design$design_matrix)} term{?s} and result slot has {length(x$results)} term{?s}"))
-        }
-      } else { # and should match # of non-intercept terms if they weren't
-        non_intercept_design_cols <- sum(stringr::str_detect(colnames(x$design$design_matrix), "ntercept$", negate = T))
-        if (length(x$results) != non_intercept_design_cols) {
-          cli::cli_abort(c("Discrepancy between statistical results and design:",
-                           "design matrix has {non_intercept_design_cols} non-intercept term{?s} and result slot has {length(x$results)} term{?s}"))
-        }
+    } else { # if intercept not extracted
+      # only non-intercept terms should match
+      non_intercept_terms <- expected_terms[stringr::str_detect(expected_terms, "ntercept", negate = T)]
+      if (!all(names(x$results) == non_intercept_terms)) {
+        cli::cli_abort(c("Discrepancy between statistical results and design:",
+                         "{cli::qty(length(expected_terms))} Non-intercept term name{?s} in {terms_from} do not match {cli::qty(length(names(x$results)))} term{?s} names in the results"))
       }
     }
 
