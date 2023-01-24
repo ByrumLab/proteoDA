@@ -1,0 +1,200 @@
+---
+title: "Tutorial on proteomics analysis using proteoDA"
+author: "Stephanie Byrum"
+date: "2023-01-20"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Installation 
+
+### How to install proteoDA from Github:
+
+1. install devtools
+2. install from github repo
+
+
+```r 
+install.packages("devtools")
+library(devtools)
+devtools::install_github(ByrumLab/proteoDA)
+```
+
+## Data Import and Requirements
+
+ProteoDA utilizes an S3 object called DAList to hold the data and results. DA stands for differential abundance and contains 7 slots including: data, annotation, metadata, design, eBayes_fit, results, and tags. The first three slots are required. 
+
+<b> data </b> = a data frame or matrix containing protein intensity values for each sample where the rows are proteins and the columns are samples. The column sample names must match the row names of the metadata! 
+
+<b> annotation </b> = a data frame containing protein accession numbers, description, gene symbols, etc. A column titled "uniprot_id" is required and case specific. 
+
+<b> metatdata </b> = a data frame containing sample information such as sample name, group, gender, batch, etc. The rownames of the metadata must match the column names of the data! 
+
+```r
+input <- read.csv("vignette/DIA_data.csv")  # subset the data and annotation
+data <- input[,5:21]
+anno <- input[,1:4]
+meta <- read.csv("vignette/metafile.csv")
+row.names(meta) <- meta$data_column_name
+
+# create the proteoDA DAList object using the following command
+
+DA <- DAList(data,
+            anno,
+            meta,
+            design = NULL,
+            eBayes_fit = NULL,
+            results = NULL,
+            tags = NULL)
+
+
+```
+
+# Sample and Protein filtering options 
+If a sample is detected as an outlier, it can be removed using the filter_samples() function and setting the condition parameter to "sample_name != sample-to-be-removed". Samples are kept if the condition is TRUE for that sample. 
+
+Proteins that contain missing values in the majority of samples can be removed using the 
+filter_proteins_by_group() function. A general rule of thumb is to require at least 2/3
+of the replicates to have a value in at least one sample group. 
+
+Example: If two groups have triplicate samples, then set min_reps = 2 and min_groups = 1. This removes proteins that do not have at least 2 out of 3 replicates in one sample group with an intensity value > 0. 
+
+```r
+# filter samples --------------------------------------------------------------
+sub_data <- filter_samples(DA, group != "Pool")
+
+# filter proteins ---------------------------------------------------------
+
+filtered_data <- filter_proteins_by_group(sub_data,
+                                          min_reps = 2,
+                                          min_groups = 1,
+                                          grouping_column = "group")
+
+```
+
+## ProteiNorm Normalization 
+
+proteiNorm is a tool developed to evaluate 8 popular normalization methods: log2, mean, median, vsn, quantile, cyclic loess, robust linear regression (rlr), and global intensity normalization (gi). Each method is evaluated using pooled coefficient of variance, pooled estimate variance, pooled median absolute deviation, intragroup correlation, and log2 ratios. More information can be found at https://github.com/ByrumLab/proteiNorm.  
+
+proteiNorm is now available as a part of proteoDA workflow. After evaluating the proteiNorm.pdf report, the best normalization method can be selected using the normalize_data() function. 
+
+<b>References:</b> Graw S, Tang J, Zafar MK, Byrd AK, Bolden C, Peterson EC, Byrum SD. proteiNorm - A User-Friendly Tool for Normalization and Analysis of TMT and Label-Free Protein Quantification. ACS Omega. 2020 Sep 30;5(40):25625-25633. doi: 10.1021/acsomega.0c02564. PMID: 33073088; PMCID: PMC7557219. 
+
+Normalyzer: A Tool for Rapid Evaluation of Normalization Methods for Omics Data Sets
+Aakash Chawade, Erik Alexandersson, and Fredrik Levander
+Journal of Proteome Research 2014 13 (6), 3114-3120
+DOI: 10.1021/pr401264n
+
+
+```r
+# Normalization report ----------------------------------------------------
+
+write_norm_report(filtered_data,
+                  grouping_column = "group",
+                  output_dir = "01_QC_report",
+                  filename = "proteiNorm.pdf",
+                  overwrite = T,
+                  suppress_zoom_legend = FALSE,
+                  use_ggrastr = FALSE)
+
+norm <- normalize_data(filtered_data,
+                       norm_method = "cycloess")
+
+```
+## ProteiNorm_report.pdf Results
+
+#![**proteiNorm.** Select the appropriate normalization method.](https://github.com/sbyrum21/proteoDA/blob/tutorial/images/proteiNorm.png) 
+
+
+## Quality Control Report
+
+Once the normalization method has been chosen, QC plots are generated using the selected normalized data. The QC report generates violin plots, PCA, clustered dendrograms, correlation heatmap of each sample, and a plot of proteins with missing values. 
+
+Missing values in mass spectrometry do not mean the protein is not present in the sample but rather the protein was not detected. This might be due to the dynamic range limitations. 
+
+```r
+write_qc_report(norm,
+                color_column = "group",
+                label_column = NULL,        # defaults to the metafile rownames
+                output_dir = "01_QC_report",
+                filename = "QC_report.pdf",
+                overwrite = T,
+                top_proteins = 500,         # number of most variable proteins for clustering
+                standardize = TRUE,
+                pca_axes = c(1,2),          # first 2 PCs
+                dist_metric = "euclidean",  # stats::dist for options
+                clust_method = "complete",  # stats::hclust for options
+                show_all_proteins = F)  # only those with missing data
+
+```
+
+## Prepare limma model design and sample group comparisons
+
+The limma design formula must be added to the DAList() in order to run the statistical analysis. A design matrix is a model matrix of explanatory variables of a set of objects. Each row represents individual samples and the columns represent the sample groups and factors (such as batch). 
+
+The design formula is a string for the design matrix which can include intercept ("~group"), no intercept ("~0 + group"), additive ("~group + batch"), or interaction ("~group*treatment) models. 
+
+If the no intercept model is selected, then the add_contrasts() function allows the user to provide the sample comparisons as a file or a vector. This option allows for all pair-wise comparisons. 
+
+If the intercept model is selected, then the sample groups are compared against the reference. 
+
+An excellent guide for design matrices is in the following reference.  
+<b>Reference:</b> Law CW, Zeglinski K, Dong X et al. A guide to creating design matrices for gene expression experiments [version 1; peer review: 2 approved]. F1000Research 2020, 9:1444 (https://doi.org/10.12688/f1000research.27893.1)
+
+```r
+norm <- add_design(norm,
+                   design_formula = "~ 0 + group")
+
+
+norm <- add_contrasts(norm,
+                      contrasts_file = "vignette/contrasts.csv")
+
+```
+
+## Fit the limma differential abundance model 
+
+Fits the limma differential abundance model to the intensity data, following the specified
+design and (optional) contrast matrices. 
+When a random factor is included, uses limma::duplicateCorrelation to estimate the
+intra-block correlation within groups. 
+
+Uses limma::lmFit to fit the initial model, optionally re-parameterizes the results in
+terms of contrasts with limma::contrasts.fit, and then recomputes moderated statistics
+following limma's empirical Bayes model with limma::eBayes.
+
+```r
+fit <- fit_limma_model(norm)
+
+# Extract results ---------------------------------------------------------
+results <- extract_DA_results(fit,
+                              pval_thresh = 0.055,
+                              lfc_thresh = 1,
+                              adj_method = "BH",
+                              extract_intercept = F)
+
+# Write results -----------------------------------------------------------
+write_limma_tables(results,
+                   output_dir = "02_DA_results",
+                   overwrite = T,
+                   contrasts_subdir = NULL,
+                   summary_csv=NULL,
+                   combined_file_csv = NULL,
+                   spreadsheet_xlsx = NULL,
+                   add_filter = T)
+
+write_limma_plots(results,
+                  grouping_column = "group",
+                  table_columns = c("uniprot_id","Description"),
+                  title_column = "uniprot_id",
+                  output_dir = "02_DA_results",
+                  tmp_subdir = "tmp",
+                  height = 1000,
+                  width = 1000)
+
+
+```
