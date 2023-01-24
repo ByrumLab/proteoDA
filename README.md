@@ -39,24 +39,28 @@ slots:
     group, batch, gender, paired, etc.  
     The rownames must match the column names in data where 
     there is one row per sample.
-4)  design- A list which holds information on the statistical design:
-    the design formula and matrix, contrasts, etc.
-5)  eBayes_fit- The model fit object from running `limma`’s models on
+4)  <b>design-</b> A list which holds information on the statistical design:
+    the design formula and matrix, and contrasts.
+5)  <b>eBayes_fit</b>- The model fit object from running `limma` models on
     the data.
-6)  results- Statistical tables of DE results for each of the
-    statistical terms/contrasts analyzed.
-7)  tags- Basically a “miscellaneous” slot, used to keep track of info
-    on filtering, normalization, etc.
+6)  <b>results-</b> Statistical tables of differential abundance (DA) results 
+    for each of the statistical terms/contrasts analyzed.
+7)  <b>tags-</b> A “miscellaneous” slot used to keep track of information
+    on filtering, normalization, function parameters, etc.
 
-For the public R package, users will have to make the first three slots
-all at once, and then our functions are used to process the data and add
-the rest of the slots. For our internal usage, we have some functions to
-import data and metadata and assemble a DAList object.
+The first three slots are required by the user to create the `DAList` object.
+After which, `proteoDA` functions are used to process the data and add
+the rest of the slots. 
+
+```r
+
+input <- read.csv
+
+```
 
 All of the functions in the pipeline check for a proper structure of the
 DAList object, both when it is input into the function and before it
-returns the result. We still need to improve these checks and think of
-all the edge cases to test for.
+returns the result. 
 
 ## Example pipeline
 
