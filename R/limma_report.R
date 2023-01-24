@@ -221,6 +221,8 @@ write_limma_plots <- function(DAList = NULL,
 
     } else {
       cli::cli_inform("Results files already exist, and {.arg overwrite} == {.val {overwrite}}. Overwriting results files.")
+      # Delete old results files so results don't become unsynced if there are any issues
+      unlink(expected_results)
     }
   }
 

@@ -299,10 +299,10 @@ results_higgs <- extract_DA_results(fit_higgs, extract_intercept = F)
 
 
 # Write results -----------------------------------------------------------
-write_limma_tables(results_lupashin)
+write_limma_tables(results_lupashin, overwrite = T)
 
 write_limma_tables(results_ndu,
-                   overwrite = T)
+                   overwrite = F)
 
 write_limma_tables(results_ndu_random,
                    output_dir = "Ndu_random_s3obj",
