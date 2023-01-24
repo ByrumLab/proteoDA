@@ -105,20 +105,46 @@ write_limma_tables <- function(DAList,
 
   # Setup -------------------------------------------------------------------
 
-  if (dir.exists(output_dir)) {
-    if (overwrite) {
-      cli::cli_inform("Directory {.path {output_dir}} already exists. {.arg overwrite} == {.val {overwrite}}. Overwriting results files in directory.")
-    } else {
-      cli::cli_abort(c("Directory {.path {output_dir}} already exists",
+  # Check for existence of output files
+  expected_per_contrast_tables <-  file.path(
+    output_dir,
+    contrasts_subdir,
+    apply(
+      X = expand.grid(names(DAList$results),
+                      ".csv"),
+      MARGIN = 1,
+      FUN = paste0,
+      collapse = ""
+    )
+  )
+  summary_output_file <- file.path(output_dir, summary_csv)
+  combined_output_file <- file.path(output_dir, combined_file_csv)
+  excel_output_file <- file.path(output_dir, spreadsheet_xlsx)
+
+  expected_files <- c(expected_per_contrast_tables,
+                      summary_output_file,
+                      combined_output_file,
+                      excel_output_file)
+
+  # If any files already exist
+  if (any(file.exists(expected_files))) {
+    if (!overwrite) {
+      cli::cli_abort(c("Results files already exist",
                        "!" = "and {.arg overwrite} == {.val {overwrite}}",
-                       "i" = "Rename {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"))
+                       "i" = "Change {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"))
+
+    } else {
+      cli::cli_inform("Results files already exist, and {.arg overwrite} == {.val {overwrite}}. Overwriting results files.")
+      # Delete old results files so results don't become unsynced if there are any issues
+      unlink(expected_files)
     }
-  } else {
+  }
+
+  if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = T)
   }
 
   # Write summary CSV -------------------------------------------------------
-  summary_output_file <- file.path(output_dir, summary_csv)
   cli::cli_inform("Writing DE summary table to {.path {summary_output_file}}")
 
   summary <- do.call("rbind",
@@ -157,7 +183,6 @@ write_limma_tables <- function(DAList,
 
 
   # Write combined results csv ----------------------------------------------
-  combined_output_file <- file.path(output_dir, combined_file_csv)
   cli::cli_inform("Writing combined results table to {.path {combined_output_file}}")
 
 
@@ -188,7 +213,6 @@ write_limma_tables <- function(DAList,
 
 
   # Write excel spreadsheet -------------------------------------------------
-  excel_output_file <- file.path(output_dir, spreadsheet_xlsx)
   cli::cli_inform("Writing combined results Excel spreadsheet to {.path {excel_output_file}}")
 
 

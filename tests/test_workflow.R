@@ -278,7 +278,6 @@ fit_ndu_random <- norm_ndu |>
 full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") |>
   add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") |>
   filter_samples(group != "Pool") |>
-  filter_proteins_contaminants() |>
   filter_proteins_by_group(min_reps = 4, min_groups = 3) |>
   filter_proteins_by_group(min_reps = 5, min_groups = 3) |>
   filter_proteins_by_proportion(min_prop = 1) |>
@@ -297,16 +296,13 @@ results_zhan <- extract_DA_results(fit_zhan)
 results_reb <- extract_DA_results(fit_reb)
 results_kaul <- extract_DA_results(fit_kaul)
 results_higgs <- extract_DA_results(fit_higgs, extract_intercept = F)
-names(results_higgs$results)
-
 
 
 # Write results -----------------------------------------------------------
-write_limma_tables(results_lupashin,
-                   overwrite = T)
+write_limma_tables(results_lupashin, overwrite = T)
 
 write_limma_tables(results_ndu,
-                   overwrite = T)
+                   overwrite = F)
 
 write_limma_tables(results_ndu_random,
                    output_dir = "Ndu_random_s3obj",
@@ -333,10 +329,12 @@ write_limma_tables(results_higgs,
 write_limma_plots(results_reb,
                   grouping_column = "group",
                   output_dir = "reb_s3obj",
-                  title_column = "Accession.Number")
+                  title_column = "Accession.Number", overwrite = T)
 
 write_limma_plots(results_reb,
                   grouping_column = "group")
+write_limma_plots(results_reb,
+                  grouping_column = "group", overwrite = T)
 
 write_limma_plots(results_reb,
                   output_dir = "many_cols",

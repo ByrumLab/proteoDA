@@ -11,6 +11,7 @@ write_limma_plots(
   title_column = NULL,
   output_dir = NULL,
   tmp_subdir = "tmp",
+  overwrite = FALSE,
   height = 1000,
   width = 1000
 )
@@ -41,6 +42,8 @@ plot files. If not specified, will default to the current working directory.}
 
 \item{tmp_subdir}{The subdirectory within the output directory in which to
 store temporary files. Deleted by default. Default is "tmp".}
+
+\item{overwrite}{Should results files be overwritten? Default is FALSE.}
 
 \item{height}{The height of the interactive report objects, in pixels.
 Default is 1000.}

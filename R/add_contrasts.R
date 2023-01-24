@@ -97,7 +97,7 @@ add_contrasts <- function(DAList,
                      "i" = "Check for typos in the contrasts",
                      "i" = "Make sure all groups for which you define contrasts are included in the design matrix.",
                      "i" = "Use {.code colnames(DAList$design$design_matrix)} to see the names of the design matrix.",
-                     "i" = "If using an intercpet model, you may need to reorder/relevel your factors."))
+                     "i" = "If using an intercept model, you may need to reorder/relevel your factors."))
   }
 
   # Get contrasts with limma
