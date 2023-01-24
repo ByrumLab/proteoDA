@@ -1,18 +1,8 @@
-######################################
-## Lists of column names and colors ##
-## that are internally used by      ##
-## other functions                  ##
-######################################
-
-
-## DIA: protein annotation/contaminantion columns from Scaffold DIA Sample Report csv file
-diaAnnotationColums <- c("id", "Protein.Name","Accession.Number","Molecular.Weight",
-                         "Protein.Group.Score", "Identified.Peptide.Count",
-                         "Exclusivity","Quantitative.Value")
-diaContamColums     <- c("Protein.Name") ## Group by / DECOY_
-
-## METADATA COLUMNS
-diaMetaColums <- c("sample", "number","group")
+#################################
+## Lists of names and colors   ##
+## that are internally used by ##
+## other functions             ##
+#################################
 
 ## named lists of normalization and imputation methods
 norm.methods        <- c("log2", "median", "mean", "vsn","quantile", "cycloess", "rlr", "gi")
@@ -36,6 +26,5 @@ names(lightbinfcolors) <- c("lightblueberry","lightcherry","lightapple","lightba
 
 
 usethis::use_data(x = binfcolors, lightbinfcolors,
-                  diaAnnotationColums, diaContamColums, diaMetaColums,
                   norm.methods,
                   internal = T, overwrite = T)
