@@ -30,7 +30,7 @@ and groups removed.
 }
 \description{
 This function is used to remove proteins from a DAList, filtering out proteins
-based on levels of missing values in the data data frame of the DAList. The
+based on levels of missing values in the "data" data frame of the DAList. The
 grouping_column must be a column in the metadata of the DAList, which lists the
 group membership for each sample. The min_reps and min_groups arguments that determine
 the number of replicates/samples per group (min_reps) and number of groups

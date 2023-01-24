@@ -21,8 +21,9 @@ new_DAList <- function(x = list()) {
 #' proteomics project (see Details for a full description of each slot). The
 #' first three slots (data, annotation, and metadata) are required to create a
 #' DAList. The other slots can be supplied, but are generally added via their
-#' respective analysis functions. *NB*- you must ensure that the data, annotation, and metadata are in the proper order.
-#'  To help with this, \code{DAList} requires the row names of the metadata to match the column
+#' respective analysis functions. *NB*- you must ensure that the data,
+#' annotation, and metadata are in the proper order. To help with this,
+#' \code{DAList} requires the row names of the metadata to match the column
 #' names of the data. However, DAList cannot know if the rows in the data and
 #' the annotation are in the proper order: double-check that they are!
 #'
@@ -126,13 +127,19 @@ DAList <- function(data,
 
   # Check for a uniprot_id column in annotation
   if ("uniprot_id" %notin% colnames(annotation)) {
-    cli::cli_abort("The annotation data must contain a column named \"uniprot_id\"")
+    cli::cli_abort(
+      "The annotation data must contain a column named \"uniprot_id\""
+    )
   }
 
   # Check that the uniprot_id column contains only unique info
   if (any(duplicated(annotation$uniprot_id))) {
     cli::cli_abort(c("Entries in the {.val uniprot_id} column of the annotation are not unique.",
                      "i" = "Find duplicate items with {.fun base::duplicated} or {.fun base::anyDuplicated} and make them unqiue"))
+  }
+
+  if (nrow(data) != nrow(annotation)) {
+    cli::cli_abort("The {.arg data} and {.arg annotation} data frames must have the same number of rows")
   }
 
   # Assign uniprot_id column as rownames for data and annotation
@@ -247,48 +254,135 @@ validate_DAList <- function(x) {
     }
   }
 
-  # TODO Checks for design:
-  # If design matrix exists, needs to have same # of rows as metadata
-  # also, rownames of design matrix need to equal colnames of data
+  # Checks for design and contrasts:
+  if (!is.null(x$design)) {
 
-  # If there's a random effect blocking factor, make sure its in the metadata?
-  # if you have a formula, must have a matrix and vice versa?
-  # And, if you have a random effect, must have a matrix and formula?
+    # if present, should be a list with at least two slots: design_formula and design_matrix
+    if (length(x$design) < 2) {
+      cli::cli_abort(c("The object in the design slot should be a list with length of at least 2:",
+                       "Current length: {length(x$design)}"))
+    }
 
+    # two required items when design is present
+    if (!(all(c("design_matrix", "design_formula") %in% names(x$design)))) {
+      cli::cli_abort(c("The list in the design slot must contain at least a design_formula and a design_matrix"))
+    }
 
-  # TODO Checks for contrasts
-  # If you have a contrasts, must have a design
-  # if you have a contrasts_vec, must have contrasts_matrix and vice versa?
+    # design_matrix should be an R design matrix, so it should have an "assign" attribute.
+    if ("assign" %notin% names(attributes(x$design$design_matrix))) {
+      cli::cli_abort(c("The design_matrix in the design slot should have an \"assign\" attribute"))
+    }
 
-  # TODO Checks for eBayes fit
-  # if not null, then the first item should be an MArrayLM. If random effect,
-  # should have a non-null correlation term. If no random effect,
-  # should have a null correlation term.
+    # there are 5 possible names for the elements of design
+    design_possible_names <- c("design_formula", "design_matrix", "random_factor", "contrast_matrix", "contrast_vector")
+    if (any(names(x$design) %notin% design_possible_names)) {
+      problem_names <- names(x$design)[names(x$design) %notin% design_possible_names]
+      cli::cli_abort(c("The list in the design slot may contain the following elements:",
+                       "{.val {design_possible_names}}",
+                       "Problem {cli::qty(problem_names)} item{?s} in design list: {.val {problem_names}}"))
+    }
 
+    # Same number of rows as metadata
+    if (nrow(x$design$design_matrix) != nrow(x$metadata)) {
+      cli::cli_abort("The number of samples in the design matrix ({nrow(x$design$design_matrix)}) does not match the number of samples in the metadata ({nrow(x$metadata)})")
+    }
 
-  # TODO Checks for results
-  if (!is.null(x$results)) {
+    # rownames equal colnames of data
+    if (any(colnames(x$data) != rownames(x$design$design_matrix))) {
+      cli::cli_abort("The row names of the design matrix do not match the column names of the data")
+    }
 
-    # if not null, pval_thresh, lfc_thresh, and adj_method should be set in tags??
-    # if not null, length should match either ncol(design_matrix) or ncol(contrasts_matrix)
-    # if not null, nrow and rownames for each element of the results should
-    # match the data (which matches the annotation, as we check above. )
+    # If there's a random effect, must be present in the metadata
+    if (!is.null(x$design$random_factor)) {
+      if (x$design$random_factor %notin% colnames(x$metadata)) {
+        cli::cli_abort("The random factor term is not present in the metadata")
+      }
+    }
 
-
-    # # data and annotation slots should have same number of rows
-    # if (nrow(x$data) != nrow(x$annotation)) {
-    #   cli::cli_abort("The {.arg data} slot and {.arg annotation} slots of a DAList must have the same number of rows")
-    # }
-    #
-    # # Data and annotation should have matching rownames
-    # if (!(all(rownames(x$data) == rownames(x$annotation)))) {
-    #   cli::cli_abort("Rownames for the {.arg data} and {.arg annotation} slots of the DAList must match")
-    # }
-
+    # Checks for contrasts
+    # If any contrast stuff is present,
+    if (sum(c("contrast_vector", "contrast_matrix") %in% names(x$design)) > 0) {
+      # Must have both the vector and the matrix
+      if (sum(c("contrast_vector", "contrast_matrix") %in% names(x$design)) != 2) {
+        cli::cli_abort(c("if contrast information is present in the design slot, must have both a contrast_vector and contrast_matrix"))
+      }
+      # And rows in the contrast matrix should equal cols in the design matrix
+      if (!(all(rownames(x$design$contrast_matrix) == colnames(x$design$design_matrix)))) {
+        cli::cli_abort(c("The rows in the contrast matrix do not match the column in the design matrix"))
+      }
+    }
   }
 
-  # TODO Any tags checks?
-  # Not sure...
+  if (!is.null(x$eBayes_fit)) {
+    # If not null, should be an MAArrayLM
+    if (c("MArrayLM") %notin% class(x$eBayes_fit)) {
+      cli::cli_abort(c("The eBayes_slot should be an object of class MArrayLM"))
+    }
+
+    # If theres a random factor in the design, should have a correlation in the
+    # MArrayLM
+    if (!is.null(x$design$random_factor)) {
+      if (c("correlation" %notin% names(x$eBayes_fit))) {
+        cli::cli_abort(c("Discrepancy between limma fit and statistical design:",
+                         "Design includes a random factor not present in the model fit"))
+      }
+    }
+    # And if there's a correlation in the eBayes fit there should be one in the design
+    if (c("correlation" %in% names(x$eBayes_fit))) {
+      if (is.null(x$design$random_factor)) {
+        cli::cli_abort(c("Discrepancy between limma fit and statistical design:",
+                         "Model fit includes a random factor not present in the design"))
+      }
+    }
+  }
+
+
+  # Checks for results
+  if (!is.null(x$results)) {
+
+    # IMPROVE THESE TO USE NAMES, NOT LENGTHS
+
+    # Names of the results items should match
+    # the names of the terms in design
+    # if design only, or in contrast if
+    # there are contrasts
+    if (!is.null(x$design$contrast_matrix)) { # when contrasts are present
+      expected_terms <- colnames(x$design$contrast_matrix)
+      terms_from <- "contrast matrix"
+    } else { # when no contrasts are present
+      expected_terms <- colnames(x$design$design_matrix)
+      terms_from <- "design matrix"
+    }
+
+    # Whether names match depends on whether extract_DA_results
+    # extracted the intercept or not
+    if (x$tags$extract_intercept) { # if extracted intercept
+      if (!all(names(x$results) == expected_terms)) { # all should match
+        cli::cli_abort(c("Discrepancy between statistical results and design:",
+                         "{cli::qty(length(expected_terms))} Term name{?s} in {terms_from} do not match {cli::qty(length(names(x$results)))} term{?s} names in the results"))
+
+      }
+    } else { # if intercept not extracted
+      # only non-intercept terms should match
+      non_intercept_terms <- expected_terms[stringr::str_detect(expected_terms, "ntercept", negate = T)]
+      if (!all(names(x$results) == non_intercept_terms)) {
+        cli::cli_abort(c("Discrepancy between statistical results and design:",
+                         "{cli::qty(length(expected_terms))} Non-intercept term name{?s} in {terms_from} do not match {cli::qty(length(names(x$results)))} term{?s} names in the results"))
+      }
+    }
+
+
+    # Elements of results objects should match rownames of data
+    for (term in seq_along(names(x$results))) {
+      if (!all(rownames(x$results[[term]]) == rownames(x$data))) {
+        cli::cli_abort(c("Discrepancy between statistical results and data:",
+                         "Rownames for the {.arg {term}} results data frame do not match the rownames in the {.arg data} "))
+      }
+    }
+  }
+
+  # For the moment, no tag checks.
+  # Can revisit if needed.
 
   # If all checks pass, return input
   x

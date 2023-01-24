@@ -1017,11 +1017,11 @@
     Code
       extract_DA_results(a)
     Message <rlang_message>
-      ! Warning: more than 20% of the data is differntially adundant in some terms
+      ! Warning: more than 20% of the data is differentially adundant in some terms
       ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "none"
       !  Problematic terms: "A" and "B"
       ! Assumption that most proteins are not DA may be violated
-      ! Warning: more than 20% of the data is differntially adundant in some terms
+      ! Warning: more than 20% of the data is differentially adundant in some terms
       ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "BH"
       !  Problematic terms: "A" and "B"
       ! Assumption that most proteins are not DA may be violated
@@ -1320,6 +1320,9 @@
       [1] "BH"
       
       
+      $tags$extract_intercept
+      [1] FALSE
+      
       
       attr(,"class")
       [1] "DAList"
@@ -1599,6 +1602,9 @@
       [1] "BH"
       
       
+      $tags$extract_intercept
+      [1] FALSE
+      
       
       attr(,"class")
       [1] "DAList"
@@ -1608,11 +1614,11 @@
     Code
       extract_DA_results(c)
     Message <rlang_message>
-      ! Warning: more than 20% of the data is differntially adundant in a term
+      ! Warning: more than 20% of the data is differentially adundant in a term
       ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "none"
       !  Problematic term: "Treatment_vs_Control"
       ! Assumption that most proteins are not DA may be violated
-      ! Warning: more than 20% of the data is differntially adundant in a term
+      ! Warning: more than 20% of the data is differentially adundant in a term
       ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "BH"
       !  Problematic term: "Treatment_vs_Control"
       ! Assumption that most proteins are not DA may be violated
@@ -1909,6 +1915,9 @@
       [1] "BH"
       
       
+      $tags$extract_intercept
+      [1] FALSE
+      
       
       attr(,"class")
       [1] "DAList"
@@ -1918,11 +1927,11 @@
     Code
       extract_DA_results(d)
     Message <rlang_message>
-      ! Warning: more than 20% of the data is differntially adundant in some terms
+      ! Warning: more than 20% of the data is differentially adundant in some terms
       ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "none"
       !  Problematic terms: "F" and "M"
       ! Assumption that most proteins are not DA may be violated
-      ! Warning: more than 20% of the data is differntially adundant in some terms
+      ! Warning: more than 20% of the data is differentially adundant in some terms
       ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "BH"
       !  Problematic terms: "F" and "M"
       ! Assumption that most proteins are not DA may be violated
@@ -2230,6 +2239,9 @@
       $tags$DA_criteria$adj_method
       [1] "BH"
       
+      
+      $tags$extract_intercept
+      [1] FALSE
       
       
       attr(,"class")

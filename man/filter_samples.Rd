@@ -14,7 +14,7 @@ of variables present in the metadata data frame of the supplied DAList.
 Samples are kept if the condition is TRUE for that sample.}
 }
 \value{
-A DAList, with samples that do not meet the condition are removed.
+A DAList, with samples that do not meet the condition removed.
 }
 \description{
 This function is used to remove samples from a DAList, filtering using data
