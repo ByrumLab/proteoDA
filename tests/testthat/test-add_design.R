@@ -22,6 +22,31 @@ test_that("add_design gives warning when overwriting an existing statistical des
 
 })
 
+
+# warning when deleting existing model fit
+test_that("add_design gives warning when deleting existing model fit", {
+  input <- suppressMessages(
+    readRDS(test_path("fixtures", "add_design_input.rds")) |>
+      add_design(~ treatment) |>
+      fit_limma_model()
+  )
+  suppressMessages(expect_message(add_design(input, "~ treatment"), "model fit"))
+  suppressMessages(expect_null(add_design(input, "~ treatment")$eBayes_fit))
+})
+
+# warning when deleting existing results
+test_that("add_design gives warning when deleting existing results", {
+  input <- suppressMessages(
+    readRDS(test_path("fixtures", "add_design_input.rds")) |>
+      add_design(~ treatment) |>
+      fit_limma_model() |>
+      extract_DA_results()
+  )
+  suppressMessages(expect_message(add_design(input, "~ treatment"), "results"))
+  suppressMessages(expect_null(add_design(input, "~ treatment")$results))
+})
+
+
 # Error when calling an invalid formula
 # Mostly tested below
 test_that("add_design errors via validate_formula with improper formula", {

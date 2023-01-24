@@ -78,8 +78,21 @@ add_design <- function(DAList,
   if (!is.null(DAList$design)) {
     cli::cli_inform("DAList already contains a statistical design. Overwriting.")
     # Get rid of any old stuff
-    DAList$design <- NA
+    DAList["design"] <- list(NULL)
   }
+
+  # Delete any old model fits or results, which may no longer match the design.
+  if (!is.null(DAList$eBayes_fit)) {
+    cli::cli_inform("DAList contains a model fit, deleting.")
+    # Get rid of any old stuff
+    DAList["eBayes_fit"] <- list(NULL)
+  }
+  if (!is.null(DAList$results)) {
+    cli::cli_inform("DAList contains a statistical results, deleting.")
+    # Get rid of any old stuff
+    DAList["results"] <- list(NULL)
+  }
+
 
   DAList$design <- list(design_formula = paste0(as.character(formula), collapse = ""),
                         design_matrix = design_matrix)
