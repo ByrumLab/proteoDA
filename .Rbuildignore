@@ -16,3 +16,4 @@
 ^phospho_analysis
 ^output_\\*
 ^tests/test_workflow.R$
+^paper\\*
