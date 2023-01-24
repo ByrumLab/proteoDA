@@ -47,6 +47,7 @@
 #'   plot files. If not specified, will default to the current working directory.
 #' @param tmp_subdir The subdirectory within the output directory in which to
 #'   store temporary files. Deleted by default. Default is "tmp".
+#' @param overwrite Should results files be overwritten? Default is FALSE.
 #' @param height The height of the interactive report objects, in pixels.
 #'   Default is 1000.
 #' @param width The width of the interactive report objects, in pixels.
@@ -90,11 +91,9 @@ write_limma_plots <- function(DAList = NULL,
                               title_column = NULL,
                               output_dir = NULL,
                               tmp_subdir = "tmp",
+                              overwrite = FALSE,
                               height = 1000,
                               width = 1000) {
-
-  # TODO:
-  # Add overwriting checks?
 
   # Check input arguments generally
   input_DAList <- validate_DAList(DAList)
@@ -162,7 +161,7 @@ write_limma_plots <- function(DAList = NULL,
     cli::cli_abort(c("{.arg width} must be a numeric value greater > 0."))
   }
 
-  # defauly output dir if not provided
+  # default output dir if not provided
   if (is.null(output_dir)) {
     output_dir <- getwd()
     cli::cli_inform("{.arg output_dir} argument is empty.")
@@ -170,9 +169,59 @@ write_limma_plots <- function(DAList = NULL,
     cli::cli_inform("{.path {output_dir}}")
   }
 
-  # TODO: add output filename validation once we decide on directory format
-  if (!dir.exists(output_dir)) {
-    dir.create(output_dir)
+
+
+  # Set up list of expected files, warn about overwriting if they exist
+  # Will also make checking for their existence later easier
+  expected_xy_plots <- file.path(
+    output_dir,
+    "static_plots",
+    apply(
+      X = expand.grid(names(DAList$results),
+                      c("volcano", "MD"),
+                      c("raw", "adjusted"),
+                      "pval.pdf"),
+      MARGIN = 1,
+      FUN = paste,
+      collapse = "-"
+    )
+  )
+  expected_histograms_plots <- file.path(
+    output_dir,
+    "static_plots",
+    apply(
+      X = expand.grid(names(DAList$results),
+                      "pval-hist.pdf"),
+      MARGIN = 1,
+      FUN = paste,
+      collapse = "-"
+    )
+  )
+
+  expected_reports <-  file.path(
+    output_dir,
+    apply(
+      X = expand.grid(names(DAList$results),
+                      "DA_report.html"),
+      MARGIN = 1,
+      FUN = paste,
+      collapse = "_"
+    )
+  )
+  expected_results <- c(expected_histograms_plots,
+                        expected_xy_plots,
+                        expected_reports)
+
+  # If any files already exist
+  if (any(file.exists(expected_results))) {
+    if (!overwrite) {
+      cli::cli_abort(c("Results files already exist",
+                       "!" = "and {.arg overwrite} == {.val {overwrite}}",
+                       "i" = "Change {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"))
+
+    } else {
+      cli::cli_inform("Results files already exist, and {.arg overwrite} == {.val {overwrite}}. Overwriting results files.")
+    }
   }
 
   # Capture original wd, and setup function to return to original wd
@@ -184,6 +233,11 @@ write_limma_plots <- function(DAList = NULL,
       setwd(old_wd)
     }
   }, add = T)
+
+  # create output directories if they don't exist already
+  if (!dir.exists(file.path(output_dir, "static_plots"))) {
+    dir.create(file.path(output_dir, "static_plots"), recursive = T)
+  }
 
   # If output directory isn't current wd, change wd so we can copy
   # files into the right spot.
@@ -206,11 +260,6 @@ write_limma_plots <- function(DAList = NULL,
     cli::cli_inform("Removing temporary files from {.path {output_dir}}")
     unlink(c("logo_higherres.png", "plot_template.Rmd", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
   }, add = T, after = F)
-
-  # Set up static plot folder
-  if (!dir.exists("static_plots")) {
-    dir.create("static_plots")
-  }
 
   # Prep to loop over contrasts
 
@@ -270,7 +319,7 @@ write_limma_plots <- function(DAList = NULL,
 
 
     pval_hist <- static_pval_histogram(data = data, contrast = contrast)
-    ggsave(filename = file.path("static_plots", paste0(contrast, "_pval-hist.pdf")),
+    ggsave(filename = file.path("static_plots", paste0(contrast, "-pval-hist.pdf")),
            plot = pval_hist,
            height = 6,
            width = 11,
@@ -294,7 +343,15 @@ write_limma_plots <- function(DAList = NULL,
     contrast_count <- contrast_count + 1
   }
 
-  # TODO: add checks that files exist?
+  if (any(!file.exists(stringr::str_remove(expected_results,
+                                           pattern = paste0("^", output_dir, "/"))))) {
+    failed <- expected_results[!file.exists(stringr::str_remove(expected_results,
+                                                                pattern = paste0("^", output_dir, "/")))]
+    cli::cli_abort(c("Failed to write the following {cli::qty(length(failed))} results file{?s}:",
+                     "!" = "{.path {failed}}"))
+
+  }
+
   invisible(input_DAList)
 }
 
