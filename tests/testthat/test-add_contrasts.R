@@ -81,6 +81,60 @@ test_that("add_contrasts notifies user when overwriting an existing contrast", {
   )
 })
 
+
+# warning when deleting existing model fit
+test_that("add_contrasts gives warning when deleting existing model fit", {
+  input <- suppressMessages(
+    readRDS(test_path("fixtures", "add_design_input.rds")) |>
+      add_design(~ 0 + treatment) |>
+      fit_limma_model()
+  )
+  suppressMessages(
+    expect_message(
+      add_contrasts(input,
+                    contrasts_vector = c("Treatment_vs_Control= treatment - control")
+                    ),
+      "model fit"
+    )
+  )
+
+  suppressMessages(
+    expect_null(
+      add_contrasts(input,
+                    contrasts_vector = c("Treatment_vs_Control= treatment - control")
+      )$eBayes_fit
+    )
+  )
+})
+
+# warning when deleting existing results
+test_that("add_contrasts gives warning when deleting existing results", {
+  input <- suppressMessages(
+    readRDS(test_path("fixtures", "add_design_input.rds")) |>
+      add_design(~ 0 + treatment) |>
+      fit_limma_model() |>
+      extract_DA_results()
+  )
+  suppressMessages(
+    expect_message(
+      add_contrasts(input,
+                    contrasts_vector = c("Treatment_vs_Control= treatment - control")
+      ),
+      "results"
+    )
+  )
+
+  suppressMessages(
+    expect_null(
+      add_contrasts(input,
+                    contrasts_vector = c("Treatment_vs_Control= treatment - control")
+      )$results
+    )
+  )
+})
+
+
+
 test_that("add_contrasts outputs proper contrast when contrasts_vector is supplied", {
   input <- readRDS(test_path("fixtures", "add_contrasts_input.rds"))
 

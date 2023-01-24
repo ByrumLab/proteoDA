@@ -111,6 +111,19 @@ add_contrasts <- function(DAList,
     DAList$design$contrast_vector <- NULL
   }
 
+  # Delete any existing model fits and results, which may no longer match the
+  # contrasts
+  if (!is.null(DAList$eBayes_fit)) {
+    cli::cli_inform("DAList contains a model fit, deleting.")
+    # Get rid of any old stuff
+    DAList["eBayes_fit"] <- list(NULL)
+  }
+  if (!is.null(DAList$results)) {
+    cli::cli_inform("DAList contains a statistical results, deleting.")
+    # Get rid of any old stuff
+    DAList["results"] <- list(NULL)
+  }
+
   # Set everything here
   DAList$design$contrast_matrix <- contrasts
   DAList$design$contrast_vector <- contrasts_vector
