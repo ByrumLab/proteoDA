@@ -215,9 +215,6 @@ fit_zhan <- fit_limma_model(norm_zhan)
 
 fit_reb <- fit_limma_model(norm_reb)
 
-fit_kaul <- fit_limma_model(norm_kaul)
-
-
 fit_ndu_random <- norm_ndu |>
   add_design(design_formula = "~ 0 + treatment + (1 | tissue)") |>
   fit_limma_model()
