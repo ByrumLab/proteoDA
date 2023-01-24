@@ -6,73 +6,39 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-Our package is getting closer to being ready for publication. The
-package is now re-written to use a more public-friendly custom S3 class
+proteoDA is a public-friendly R package for the analysis of high resolution
+mass spectrometry protein data. The package utilizes a custom S3 class
 that keeps the R objects consistent across the pipeline and is easily
 chain/pipe-able.
 
-We sill have a number of things to do to finish up the package:
-
--\[\] Renaming the package and separating it out into the public and
-private packages. The internal UAMS package should be minimal: it will
-call the public package as a dependency (possibly its only dependency),
-and will add a few functions for internal use and set the default
-arguments for some functions to things that are UAMS-appropriate. -\[\]
-Finishing the test writing for our functions. -\[\] Double-checking the
-documentation, README, and other text to make sure the use of our
-package is clear. -\[\] A few other open issues: check the GitHub page
-and maybe make a pull request with a fix!
-
-## Contributing to package development
-
-I would highly recommend checking out the [R
-Packages](https://r-pkgs.org/) book from Hadley Wickham and Jenny Bryan.
-It is a pretty comprehensive book on creating R packages, and provides a
-nice framework that we can all follow (and the framework which the
-package is currently following).
-
-You’ll want to install a few packages for development:
-
-``` r
-install.packages(c("devtools", "roxygen2", "testthat", "knitr", "rmarkdown", "usethis"))
-```
-
-You may want to set up your `.Rprofile` to automatically load some of
-all of the packages when you start R (see
-[here](https://r-pkgs.org/setup.html#personal-startup-configuration) for
-more info), though I don’t usually bother and just load them as I need
-them.
-
 ## Installation
 
-The Github repository where the package is stored is private, so
-installation is a little more complicated that usual. You’ll need the
-`devtools` package installed (which you’ll want to have installed anyway
-for developing the package, see below). You’ll also need the personal
-access token (PAT) that gives you access to the repository. Email Tim or
-Stephanie to get it. Once you have it, you can install the development
-version of `proteoDA` from [GitHub](https://github.com/) with the
-`devtools::install_github()` function:
+The Github repository where the package is stored is public. You will need the
+`devtools` package installed and the name of the repository. 
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("ByrumLab/proteoDA",
-                         auth_token = "COPY_PAT_HERE")
+install.packages("devtools")
+library(devtools)
+devtools::install_github(ByrumLab/proteoDA)
+                         
 ```
 
-## New s3 object structure
+## DAList() S3 object structure
 
-The new version of the pipeline is based around a new S3 class,
-`DAList`. It holds all the info for a single quantitative proteomics
-experiment, and all our functions take it as input. Its a list, with 7
+`DAList` holds all the information for a single quantitative proteomics
+experiment and all our functions take it as input. It is a list with 7
 slots:
 
-1)  data- MS intensity data, where each row is a protein and each column
-    is a sample.
-2)  annotation- Protein/gene annotation information. Same number of rows
-    as data, Each column is a separate piece of annotation info.
-3)  metadata- A data frame of sample metadata, 1 row per sample (should
-    match the number of columns in data).
+1)  <b>data-</b> MS intensity data where each row is a protein and each column
+    is a sample. It must be numeric. 
+2)  <b>annotation-</b> Protein annotation information such as the accession id, 
+    description, gene symbol, etc. "uniprot_id" is a required column. 
+    It must have the same number of rows as data. 
+    Each column is a separate piece of annotation info.
+3)  <b>metadata-</b> A data frame of sample information such as sample_name,
+    group, batch, gender, paired, etc.  
+    The rownames must match the column names in data where 
+    there is one row per sample.
 4)  design- A list which holds information on the statistical design:
     the design formula and matrix, contrasts, etc.
 5)  eBayes_fit- The model fit object from running `limma`’s models on
