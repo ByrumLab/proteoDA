@@ -7,50 +7,15 @@ library(tidyverse)
 
 # Pipeline ----------------------------------------------------------------
 
-
 # Load in data on a bunch of files --------------------------------
-
-#ext_bart <- read_DIA_data("for_testing/Example Data/04_Bartholomew_101520_DIA/Samples Report of Bartholomew_101520.CSV") # Missing exclusivity col
-
-higgs <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") # worked
-
-ndu <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") # Worked
-
-kinter <- read_DIA_data("for_testing/Example Data/19_Kinter_120720_TMT_DIA_AG/Kinter_120720_DIA/Samples Report of Kinter_DIA_022521.csv") # Worked
-
-lupashin <- read_DIA_data("for_testing/Example Data/lupashin_030222/Samples Report of Lupashin_030222.csv") # Worked
-
-zhan <- read_DIA_data("for_testing/Example Data/Zhan_DIA_217_samples/input_files/Samples Report of Zhan_111821_Experiment.csv") # Worked
-
-reb <- read_DIA_data("for_testing/Example Data/rebello/Samples Report of Rebello_040522.csv") # Worked
-
-kaul <- read_DIA_data("for_testing/Example Data/kaul/Samples Report of Kaul_030922.csv") # Worked
-
-ext_porter <- read_DIA_data("for_testing/Example Data/porter/Samples Report of PorterC_100422.csv")
-
-# Add metadata ------------------------------------------------------------
-
-higgs <- add_metadata(higgs, "for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") # worked
-
-ndu <- add_metadata(ndu, "for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv") # worked
-
-ndu_chain <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") |>
-  add_metadata("for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv")
-
-ndu_chain2 <- read_DIA_data("for_testing/Example Data/NDu_030822_DIA/input_files/Samples Report of Du_030822.csv") |>
-  add_metadata("for_testing/Example Data/NDu_030822_DIA/input_files/Du_030822_metafile_DIA.csv")
-
-lupashin <- add_metadata(lupashin, "for_testing/Example Data/lupashin_030222/Lupashin_030222_metafile_DIA.csv") # Worked
-
-#zhan <- add_metadata(zhan, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # error as expected
-
-zhan <- add_metadata(zhan, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # worked
-
-#reb <- add_metadata(reb, "for_testing/Example Data/Zhan_DIA_217_samples/input_files/Zhan_111821_DIA_metadata.csv") # error as expected
-
-reb <- add_metadata(reb, "for_testing/Example Data/rebello/Rebello_040522_metafile_DIA.csv") # worked
-
-kaul <- add_metadata(kaul, "for_testing/Example Data/kaul/Kaul_030922_metafile_DIA.csv")
+# Originally these were loaded with our internal
+# functions, (read_DIA_data and add_metadata)
+# Saved those as RDS files for use in the test pipeline
+# upon removal of the internal functions.
+for (dataset in c("higgs", "kaul", "lupashin", "ndu", "reb", "zhan")) {
+  assign(x = dataset,
+         value = readRDS(paste0("for_testing/Example Data/rds_files/", dataset, ".rds")))
+}
 
 # filter samples --------------------------------------------------------------
 sub_higgs <- filter_samples(higgs, group != "Pool")
@@ -111,16 +76,7 @@ write_norm_report(filtered_reb,
                         file = "rebello_update_2.pdf",
                         overwrite = T)
 
-# Kaul
-write_norm_report(filtered_kaul,
-                        grouping_column = "group",
-                        file = "kaul_update_2.pdf",
-                        overwrite = T, suppress_zoom_legend = T)
-
 # Normalize data ----------------------------------------------------------
-norm_kaul <- filtered_kaul |>
-  normalize_data("quantile")
-
 norm_lupashin <- filtered_lupashin |>
   normalize_data("rlr")
 
@@ -134,8 +90,7 @@ norm_zhan <- filtered_zhan |>
   normalize_data("cycloess")
 
 # Make QC report ----------------------------------------------------------
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") |>
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") |>
+full_higgs_chain <- higgs |>
   filter_samples(group != "Pool") |>
   filter_proteins_by_group(min_reps = 4, min_groups = 3) |>
   filter_proteins_by_group(min_reps = 5, min_groups = 3) |>
@@ -193,10 +148,7 @@ write_qc_report(norm_kaul,
 
 # Make design -------------------------------------------------------------
 norm_ndu$metadata <- norm_ndu$metadata |>
-  separate(group, into = c("treatment", "tissue"), remove = F)
-
-norm_kaul <- add_design(norm_kaul,
-                        ~ 0 + group + gender)
+  tidyr::separate(group, into = c("treatment", "tissue"), remove = F)
 
 norm_lupashin <- add_design(norm_lupashin,
                             design_formula = "~ 0 + group")
@@ -214,8 +166,7 @@ norm_reb <- add_design(norm_reb,
 norm_zhan <- add_design(norm_zhan,
                         ~group*sex)
 
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") |>
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") |>
+full_higgs_chain <- higgs |>
   filter_samples(group != "Pool") |>
   filter_proteins_by_group(min_reps = 4, min_groups = 3) |>
   filter_proteins_by_group(min_reps = 5, min_groups = 3) |>
@@ -231,10 +182,6 @@ full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_
 norm_ndu <- norm_ndu |>
   add_design(~ 0 + group) |>
   add_contrasts(contrasts_file = "for_testing/Example Data/NDu_030822_DIA/input_files/kidney_contrasts.txt")
-
-#kaul
-norm_kaul$metadata$gender <- factor(norm_kaul$metadata$gender, levels = c("female", "male"))
-
 
 # Lupashin
 norm_lupashin <- norm_lupashin |>
@@ -275,8 +222,7 @@ fit_ndu_random <- norm_ndu |>
   add_design(design_formula = "~ 0 + treatment + (1 | tissue)") |>
   fit_limma_model()
 
-full_higgs_chain <- read_DIA_data("for_testing/Example Data/09_Higgs_072721_DIA_AG/Samples Report of Higgs_072721.csv") |>
-  add_metadata("for_testing/Example Data/09_Higgs_072721_DIA_AG/metadata.csv") |>
+full_higgs_chain <- higgs |>
   filter_samples(group != "Pool") |>
   filter_proteins_by_group(min_reps = 4, min_groups = 3) |>
   filter_proteins_by_group(min_reps = 5, min_groups = 3) |>
@@ -294,7 +240,6 @@ results_ndu <- extract_DA_results(fit_ndu)
 results_ndu_random <- extract_DA_results(fit_ndu_random)
 results_zhan <- extract_DA_results(fit_zhan)
 results_reb <- extract_DA_results(fit_reb)
-results_kaul <- extract_DA_results(fit_kaul)
 results_higgs <- extract_DA_results(fit_higgs, extract_intercept = F)
 
 
@@ -314,10 +259,6 @@ write_limma_tables(results_reb,
 
 write_limma_tables(results_zhan,
                    output_dir = "zhan_s3obj",
-                   overwrite = T)
-
-write_limma_tables(results_kaul,
-                   output_dir = "kaul_s3obj",
                    overwrite = T)
 
 write_limma_tables(results_higgs,
@@ -341,11 +282,6 @@ write_limma_plots(results_reb,
                   grouping_column = "group",
                   title_column = "Protein.Name",
                   table_columns = c("Molecular.Weight", "Gene_name"))
-
-write_limma_plots(results_kaul,
-                  grouping_column = "group",
-                  output_dir = "kaul_s3obj/")
-
 
 write_limma_plots(results_reb,
                   grouping_column = "group",
