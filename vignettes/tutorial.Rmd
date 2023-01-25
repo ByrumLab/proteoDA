@@ -1,10 +1,12 @@
 ---
-title: "Tutorial on proteomics analysis using proteoDA"
-author: "Stephanie Byrum"
-date: "2023-01-20"
+title: "Tutorial: proteomics analysis using proteoDA"
 output:
-  html_document: default
-  pdf_document: default
+  html_document:
+    rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Tutorial: proteomics analysis using proteoDA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -13,34 +15,49 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Installation 
 
-### How to install proteoDA from Github:
+If you have this vignette, you should already have `proteoDA` installed. If not, installation is simple. `proteoDA` is not yet on CRAN, but it can be installed from GitHub using the `devtools` package:
 
-1. install devtools
-2. install from github repo
+```{r, eval = F} 
 
-
-```r 
 install.packages("devtools")
-library(devtools)
-devtools::install_github(ByrumLab/proteoDA)
+devtools::install_github("ByrumLab/proteoDA", 
+                         dependencies = TRUE, 
+                         build_vignettes = TRUE)
+```
+
+Once `proteoDA` is installed, load it:
+
+```{r}
+library(proteoDA)
 ```
 
 ## Data Import and Requirements
 
-ProteoDA utilizes an S3 object called DAList to hold the data and results. DA stands for differential abundance and contains 7 slots including: data, annotation, metadata, design, eBayes_fit, results, and tags. The first three slots are required. 
+`proteoDA` stores data and results in a `DAList`, a list object with a special structure and class (its an S3 class, for the R nerds). DA stands for "differential abundance", the type of analaysis a `DAList` is meant for.  A `DAList` contains 7 items (which we also call slots): data, annotation, metadata, design, eBayes_fit, results, and tags. Generally, you only need to worry about the first three slots, and `proteoDA` will take care of the rest. They are:
 
-<b> data </b> = a data frame or matrix containing protein intensity values for each sample where the rows are proteins and the columns are samples. The column sample names must match the row names of the metadata! 
+1. **data**- A data frame or matrix containing protein intensity values for each sample.  The rows contain data from a specific protein, and columns represent individual samples. The names of the columns must match the row names of the metadata (see below).
 
-<b> annotation </b> = a data frame containing protein accession numbers, description, gene symbols, etc. A column titled "uniprot_id" is required and case specific. 
+2. **annotation**- A data frame containing annotation information for the proetins. These could be protein accession numbers, description, gene symbols, etc. There is only one required item: the annotation data must contain a column titled "uniprot_id" (no capital letters!), and the values in that column must be unique to each row (this is how `proteoDA` keeps track of the unique proteins in your experiment).
 
-<b> metatdata </b> = a data frame containing sample information such as sample name, group, gender, batch, etc. The rownames of the metadata must match the column names of the data! 
+3. **metadata**- A data frame containing sample information such as sample name, group, gender, batch, etc. The row names of the metadata must match the column names of the data. 
+
+### Data import example
+
+Using some example data, we'll walk through how to import existing data into `proteoDA`. 
+
+EDITED UP TO HERE. 
 
 ```r
-input <- read.csv("vignette/DIA_data.csv")  # subset the data and annotation
+
+# Change these to system files (see 18.4.3 of R packages book)
+# so that user can work along with the tutorial
+
+
+input <- read.csv("DIA_data.csv")  # subset the data and annotation
 data <- input[,5:21]
 anno <- input[,1:4]
-meta <- read.csv("vignette/metafile.csv")
-row.names(meta) <- meta$data_column_name
+meta <- read.csv("metafile.csv")
+rownames(meta) <- meta$data_column_name
 
 # create the proteoDA DAList object using the following command
 
@@ -52,10 +69,9 @@ DA <- DAList(data,
             results = NULL,
             tags = NULL)
 
-
 ```
 
-# Sample and Protein filtering options 
+## Sample and Protein filtering options 
 If a sample is detected as an outlier, it can be removed using the filter_samples() function and setting the condition parameter to "sample_name != sample-to-be-removed". Samples are kept if the condition is TRUE for that sample. 
 
 Proteins that contain missing values in the majority of samples can be removed using the 
@@ -195,6 +211,4 @@ write_limma_plots(results,
                   tmp_subdir = "tmp",
                   height = 1000,
                   width = 1000)
-
-
 ```

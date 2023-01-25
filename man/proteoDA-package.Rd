@@ -6,7 +6,8 @@
 \alias{proteoDA-package}
 \title{proteoDA: Streamlined Differential Abundance Analysis of Proteomic Data}
 \description{
-A package for the differential proteomics anaalysis with DIA data.
+A package for the differential proteomics analysis with DIA data. To learn more,
+start with the tutorial vignette: \code{browseVignettes(package = "proteoDA")}
 }
 \author{
 \strong{Maintainer}: Timothy Thurman \email{tthurman@uams.edu}

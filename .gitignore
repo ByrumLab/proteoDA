@@ -26,3 +26,10 @@ for_testing/bs_tab_listen.Rmd
 *_s3obj/*
 .Rdata
 .httr-oauth
+inst/doc
+
+# Some generated stuff in the vignette folder
+vignettes/*.html
+vignettes/*.R
+/doc/
+/Meta/
