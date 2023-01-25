@@ -278,6 +278,26 @@ write_limma_plots <- function(DAList = NULL,
   contrast_count <- 1
   num_contrasts <- length(names(DAList$results))
 
+  # Prep annotation data, which is the same across contrasts
+  shared_anno <- DAList$annotation
+  # deal with issue of colnames that may be incompatible with
+  # our Javascript
+  if (any(stringr::str_detect(table_columns, "\\."))) {
+    # If any of the column names in the table columns have periods
+    # the javascript will be mad. Replace with underscores.
+    tbl_cols <- which(colnames(shared_anno) %in% table_columns)
+    colnames(shared_anno)[tbl_cols] <- stringr::str_replace_all(colnames(shared_anno)[tbl_cols],
+                                                         "\\.",
+                                                         "_")
+    internal_table_columns <- stringr::str_replace_all(table_columns,
+                                              "\\.",
+                                              "_")
+  } else { # If no periods, can just use the provided table columns internally
+    internal_table_columns <- table_columns
+  }
+
+
+
   # Loop over contrasts, making static plots and reports for each
   for (contrast in names(DAList$results)) {
 
@@ -285,19 +305,12 @@ write_limma_plots <- function(DAList = NULL,
     data <- prep_plot_model_data(DAList$results, contrast)
     counts <- DAList$data[rownames(data),]
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
-    anno <- DAList$annotation[rownames(data), ]
+    anno <- shared_anno[rownames(data), ] # double-check/ensure that annotation data are in the right order
 
-    if (any(stringr::str_detect(table_columns, "\\."))) {
-      # If any of the column names in the table columns have periods
-      # the javascript will be mad. Replace with underscores.
-      tbl_cols <- which(colnames(anno) %in% table_columns)
-      colnames(anno)[tbl_cols] <- stringr::str_replace_all(colnames(anno)[tbl_cols],
-                                                          "\\.",
-                                                          "_")
-      table_columns <- stringr::str_replace_all(table_columns,
-                                                "\\.",
-                                                "_")
-    }
+    # Add the non log-10 p values to the annotation data, for use
+    # in  the table
+    anno$p <- round(data$P.Value, digits = 4)
+    anno$`adjusted_p` <- round(data$adj.P.Val, digits = 4)
 
     # Change unique ids if title column was specified
     # checks were done above to ensure these are OK.

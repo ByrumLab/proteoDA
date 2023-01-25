@@ -270,7 +270,8 @@ write_limma_plots(results_reb,
                   title_column = "Accession.Number", overwrite = T)
 
 write_limma_plots(results_reb,
-                  grouping_column = "group")
+                  grouping_column = "group",
+                  output_dir = "reb_s3obj_nocustom", overwrite = T)
 write_limma_plots(results_reb,
                   grouping_column = "group", overwrite = T)
 
