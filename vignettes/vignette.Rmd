@@ -1,14 +1,18 @@
 ---
-title: "Tutorial on proteomics analysis using proteoDA"
-author: "Stephanie Byrum"
-date: "2023-01-20"
+title: "Proteomics analysis using proteoDA"
 output:
-  html_document: default
-  pdf_document: default
+  html_document:
+    rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Proteomics analysis using proteoDA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+
 ```
 
 ## Installation 
@@ -22,25 +26,25 @@ knitr::opts_chunk$set(echo = TRUE)
 ```r 
 install.packages("devtools")
 library(devtools)
-devtools::install_github(ByrumLab/proteoDA)
+devtools::install_github("ByrumLab/proteoDA", dependencies = TRUE, build_vignettes = TRUE)
 ```
 
 ## Data Import and Requirements
 
 ProteoDA utilizes an S3 object called DAList to hold the data and results. DA stands for differential abundance and contains 7 slots including: data, annotation, metadata, design, eBayes_fit, results, and tags. The first three slots are required. 
 
-<b> data </b> = a data frame or matrix containing protein intensity values for each sample where the rows are proteins and the columns are samples. The column sample names must match the row names of the metadata! 
+1. **data**- A data frame or matrix containing protein intensity values for each sample where the rows are proteins and the columns are samples. The column sample names must match the row names of the metadata! 
 
-<b> annotation </b> = a data frame containing protein accession numbers, description, gene symbols, etc. A column titled "uniprot_id" is required and case specific. 
+2. **annotation**- A data frame containing protein accession numbers, description, gene symbols, etc. A column titled "uniprot_id" is required and case specific. 
 
-<b> metatdata </b> = a data frame containing sample information such as sample name, group, gender, batch, etc. The rownames of the metadata must match the column names of the data! 
+3. **metadata**- A data frame containing sample information such as sample name, group, gender, batch, etc. The row names of the metadata must match the column names of the data! 
 
 ```r
 input <- read.csv("vignette/DIA_data.csv")  # subset the data and annotation
 data <- input[,5:21]
 anno <- input[,1:4]
 meta <- read.csv("vignette/metafile.csv")
-row.names(meta) <- meta$data_column_name
+rownames(meta) <- meta$data_column_name
 
 # create the proteoDA DAList object using the following command
 
@@ -51,7 +55,6 @@ DA <- DAList(data,
             eBayes_fit = NULL,
             results = NULL,
             tags = NULL)
-
 
 ```
 
@@ -195,6 +198,4 @@ write_limma_plots(results,
                   tmp_subdir = "tmp",
                   height = 1000,
                   width = 1000)
-
-
 ```
