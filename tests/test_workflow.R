@@ -184,8 +184,8 @@ norm_ndu <- norm_ndu |>
   add_contrasts(contrasts_file = "for_testing/Example Data/NDu_030822_DIA/input_files/kidney_contrasts.txt")
 
 # Lupashin
-norm_lupashin <- norm_lupashin |>
-  add_contrasts(contrasts_file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv")
+# norm_lupashin <- norm_lupashin |>
+#   add_contrasts(contrasts_file = "for_testing/Example Data/lupashin_030222/contrasts_bad.csv")
 norm_lupashin <- norm_lupashin |>
   add_contrasts(contrasts_file = "for_testing/Example Data/lupashin_030222/contrasts.csv")
 

@@ -250,11 +250,21 @@ write_limma_plots <- function(DAList = NULL,
   }
 
   # Copy templates over
+  # Sneak a little flag in here to use the proteoDAuams package
+  # when this function is being called for internal UAMS use
+  # Internal UAMS use includes a flag
+  if (!is.null(DAList$tags$uams_internal)) {
+    template_package <- "proteoDAuams"
+  } else {
+    template_package <- "proteoDA"
+  }
+
+
   file.copy(from = system.file("report_templates/glimma_xy_plot.Rmd",
-                               package = "proteoDA"),
+                               package = template_package),
             to = "plot_template.Rmd", overwrite = T)
   file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
-                               package = "proteoDA"),
+                               package = template_package),
             to = "report_template.Rmd", overwrite = T)
 
   # once we create the files, ensure they're deleted if there's an error below
