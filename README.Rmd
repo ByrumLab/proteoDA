@@ -20,18 +20,24 @@ proteoDA is a streamlined, user-friendly R package for the analysis of high reso
 
 ## Installation
 
-`proteoDA` is not yet on CRAN, but it is available for install from GitHub via the `devtools` package. 
+`proteoDA` is not yet on CRAN, but it is available for install from GitHub via the `devtools` package. Install `devtools` if you haven't already:
 
-Install `devtools` if you haven't already:
-
-``` r
+``` {r, eval = F}
 install.packages("devtools")
 ```
 
-Then install and load `proteoDA`:
+Then install `proteoDA`:
 
-```r
-devtools::install_github(ByrumLab/proteoDA)
+```{r, eval = F}
+devtools::install_github("ByrumLab/proteoDA", 
+                         dependencies = TRUE, 
+                         build_vignettes = TRUE)
+```
+
+and load it into R:
+
+```{r, eval = F}
+library(proteoDA)
 ```
 
 ## Example pipeline
@@ -63,4 +69,8 @@ row.names(meta) <- meta$data_column_name     # "data_column_name" is first colum
 
 All of the functions in the pipeline check for a proper structure of the DAList object, both when it is input into the function and before it returns the result. 
 
-## For more details, please check out the vignette.
+For more details, check out the tutorial vignette:
+
+```{r, eval = F}
+browseVignettes(package = "proteoDA")
+```

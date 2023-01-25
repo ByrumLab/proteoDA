@@ -17,3 +17,5 @@
 ^output_\\*
 ^tests/test_workflow.R$
 ^paper\\*
+^doc$
+^Meta$

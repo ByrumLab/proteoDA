@@ -11,18 +11,25 @@ and is easily pipe-able, so minimal R knowledge is required.
 ## Installation
 
 `proteoDA` is not yet on CRAN, but it is available for install from
-GitHub via the `devtools` package.
-
-Install `devtools` if you haven’t already:
+GitHub via the `devtools` package. Install `devtools` if you haven’t
+already:
 
 ``` r
 install.packages("devtools")
 ```
 
-Then install and load `proteoDA`:
+Then install `proteoDA`:
 
 ``` r
-devtools::install_github(ByrumLab/proteoDA)
+devtools::install_github("ByrumLab/proteoDA", 
+                         dependencies = TRUE, 
+                         build_vignettes = TRUE)
+```
+
+and load it into R:
+
+``` r
+library(proteoDA)
 ```
 
 ## Example pipeline
@@ -72,4 +79,8 @@ All of the functions in the pipeline check for a proper structure of the
 DAList object, both when it is input into the function and before it
 returns the result.
 
-## For more details, please check out the vignette.
+For more details, check out the tutorial vignette:
+
+``` r
+browseVignettes(package = "proteoDA")
+```

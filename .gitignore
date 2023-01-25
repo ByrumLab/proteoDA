@@ -31,3 +31,5 @@ inst/doc
 # Some generated stuff in the vignette folder
 vignettes/*.html
 vignettes/*.R
+/doc/
+/Meta/
