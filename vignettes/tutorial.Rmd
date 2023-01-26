@@ -147,6 +147,8 @@ filtered_proteins <- filter_proteins_by_group(filtered_samples,
 
 The printed message from `proteoDA` tells us that 203 proteins were removed. 
 
+If there are any specific proteins you'd like to remove (e.g., known contaminants, proteins you are uninterested in, etc), you can use the `filter_proteins_by_annotation()` function to remove proteins based on their annotation data. 
+
 Here it is useful to note that most `proteoDA` functions take a `DAList` as input and return a `DAList` as output. This makes it easy to pipe multiple commands together into data processing pipelines. Below, we can take our raw data, remove the pool samples, convert missing values, and filter out missing proteins all in one pipeline (filtering by proportion this time, just as an example):
 
 ```{r, message = F}
@@ -193,32 +195,28 @@ normalized <- normalize_data(filtered,
 
 For more information on normalization, check out [this paper](https://pubs.acs.org/doi/10.1021/pr401264n) on normalization, or [proteiNorm](https://github.com/ByrumLab/proteiNorm), an interactive normalization evaluation tool on which `proteoDA` is based. 
 
+## Quality control Report
+
+Once the data have been normalized, you can explore the quality and structure of the data using the `write_qc_report()` function. This function creates and saves a variety of diagnostic plots: violin plots of per-sample intensities; PCAs, dendrograms, and correlation heatmaps to show similarity between samples and how they cluster together, and heatmaps which show the amount of missing data across samples. 
+
+
+```{r}
+write_qc_report(normalized,
+                color_column = "group")
+```
+
+See the reference page of the `write_qc_report()` for more options on how to customize these reports.
+
+In the case of this report, the PCA plot and dendrogram indicate that two samples, Sample_07 and Sample_08, are slight outliers that do not cluster with the rest of the samples. Depending on what information you have on samples, and your overall sample sizes, you may choose to remove such samples, by going back to the `filter_samples()` function (you would want to re-run the downstream protein filtering and normalization functions as well). For this tutorial, we will more forward without further filtering. 
 
 EDITED TO HERE
 
-## Quality Control Report
+## Specifying a statistical design
 
-Once the normalization method has been chosen, QC plots are generated using the selected normalized data. The QC report generates violin plots, PCA, clustered dendrograms, correlation heatmap of each sample, and a plot of proteins with missing values. 
 
-Missing values in mass spectrometry do not mean the protein is not present in the sample but rather the protein was not detected. This might be due to the dynamic range limitations. 
+## Fitting the model and getting results
 
-```r
-write_qc_report(norm,
-                color_column = "group",
-                label_column = NULL,        # defaults to the metafile rownames
-                output_dir = "01_QC_report",
-                filename = "QC_report.pdf",
-                overwrite = T,
-                top_proteins = 500,         # number of most variable proteins for clustering
-                standardize = TRUE,
-                pca_axes = c(1,2),          # first 2 PCs
-                dist_metric = "euclidean",  # stats::dist for options
-                clust_method = "complete",  # stats::hclust for options
-                show_all_proteins = F)  # only those with missing data
-
-```
-
-Note that you might choose to remove outlier samples here, in which case you could go back, filter it out, and then rerun the rest of the pipeline up to here. 
+## Saving results
 
 
 
