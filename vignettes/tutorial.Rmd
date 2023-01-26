@@ -134,7 +134,7 @@ Next, we may want to filter out proteins with a large amount of missing data. `p
 
 Here, it is important to note that these filtering functions only filter on missing values (`r NA`), not zero values. The distinction between missing values and zeroes is important: a missing value says we do not know whether a protein was present or not, while a zero says that we know a protein definitely was not present. `proteoDA` has two functions to help you manage missing values in the way that is appropriate for your data: `zero_to_missing()` will convert 0 values to missing data, while `missing_to_zero()` will convert missing values (usually `r NA`, but you can specify other values depending on how your data are encoded) to zero. 
 
-In our example data, many proteins have zero intensity, but that is simply because the protein was below the detection limit of the instrument: the protein may have been present at low quantities. So, we'll convert these to missing values, and then filter out proteins with too much missing data. A good rule of thumb is to require non-missing data in ~2/3 of the replicates. For our example data, with 7 replicates per group, we'll require non-missing data for at least 4 samples:
+In our example data, many proteins have zero intensity. Generally in mass spectrometry, this is because the protein was below the detection limit of the instrument: the protein may have been present at low quantities, and we can't say for sure that the protein was not present. So, we'll convert these to missing values, and then filter out proteins with too much missing data. A good rule of thumb is to require non-missing data in ~2/3 of the replicates. For our example data, with 7 replicates per group, we'll require non-missing data for at least 4 samples:
 
 ```{r, message=FALSE}
 # Convert missing values
@@ -147,57 +147,54 @@ filtered_proteins <- filter_proteins_by_group(filtered_samples,
 
 The printed message from `proteoDA` tells us that 203 proteins were removed. 
 
-Here it is useful to note that most `proteoDA` functions take a `DAList` as input and return a `DAList` as output. This makes it easy to pipe multiple commands together into data processing pipelines. Below, we can take our raw data, remove the pool samples, convert missing values, and filter out missing proteins all in one pipeline:
+Here it is useful to note that most `proteoDA` functions take a `DAList` as input and return a `DAList` as output. This makes it easy to pipe multiple commands together into data processing pipelines. Below, we can take our raw data, remove the pool samples, convert missing values, and filter out missing proteins all in one pipeline (filtering by proportion this time, just as an example):
 
 ```{r, message = F}
 filtered <- raw |>
   filter_samples(group != "Pool") |>
   zero_to_missing() |>
-  filter_proteins_by_group(min_reps = 4,
-                           min_groups = 2,
-                           grouping_column = "group")
+  filter_proteins_by_proportion(min_prop = 0.66,
+                                grouping_column = "group")
 ```
 
 By default, the output of the function on the left-hand side of the pipe operator, `|>`, is passed as input to the first argument of the function on the right hand side of the pipe (see the pipe operator documentation at ```?|>``` for more information). For functions in `proteoDA`, the first argument is always the input `DAList`, which makes piping commands together easy. 
 
-
 ## Normalization
 
-EDITED TO HERE. 
+After filtering, the raw intensity data should be normalized, so that technical variability between samples doesn't affect the inference of differential abundance. Normalization is a complex topic, and there are a wide variety of possible normalization methods. `proteoDA` includes 8 popular normalization methods and a tool to help you choose the best normalization method: `write_norm_report()`.
 
-## ProteiNorm Normalization 
-
-proteiNorm is a tool developed to evaluate 8 popular normalization methods: log2, mean, median, vsn, quantile, cyclic loess, robust linear regression (rlr), and global intensity normalization (gi). Each method is evaluated using pooled coefficient of variance, pooled estimate variance, pooled median absolute deviation, intragroup correlation, and log2 ratios. More information can be found at https://github.com/ByrumLab/proteiNorm.  
-
-proteiNorm is now available as a part of proteoDA workflow. After evaluating the proteiNorm.pdf report, the best normalization method can be selected using the normalize_data() function. 
-
-<b>References:</b> Graw S, Tang J, Zafar MK, Byrd AK, Bolden C, Peterson EC, Byrum SD. proteiNorm - A User-Friendly Tool for Normalization and Analysis of TMT and Label-Free Protein Quantification. ACS Omega. 2020 Sep 30;5(40):25625-25633. doi: 10.1021/acsomega.0c02564. PMID: 33073088; PMCID: PMC7557219. 
-
-Normalyzer: A Tool for Rapid Evaluation of Normalization Methods for Omics Data Sets
-Aakash Chawade, Erik Alexandersson, and Fredrik Levander
-Journal of Proteome Research 2014 13 (6), 3114-3120
-DOI: 10.1021/pr401264n
+The `write_norm_report()` functions applies all 8 normalization methods to a dataset and outputs a PDF report containing plots of different normalization metrics. Specifically, it evaluates the pooled coefficient of variance (PCV) within sample groups, the pooled median absolute deviation (PMAD) within sample groups, the pooled estimate of variance (PEV) within sample groups, the pairwise correlation of sample intensities (COR) within sample groups, and the pairwise ratios of average log2-transformed intensities between groups. 
 
 
-```r
-# Normalization report ----------------------------------------------------
-
-write_norm_report(filtered_data,
-                  grouping_column = "group",
-                  output_dir = "01_QC_report",
-                  filename = "proteiNorm.pdf",
-                  overwrite = T,
-                  suppress_zoom_legend = FALSE,
-                  use_ggrastr = FALSE)
-
-norm <- normalize_data(filtered_data,
-                       norm_method = "cycloess")
-
+```{r, eval = F,message = F}
+# This will save in your current workign directory by default, but
+# you can use the output_dir argument to specify a different output. 
+write_norm_report(filtered,
+                  grouping_column = "group")
 ```
-## ProteiNorm_report.pdf Results
 
-#![**proteiNorm.** Select the appropriate normalization method.](https://github.com/sbyrum21/proteoDA/blob/tutorial/images/proteiNorm.png) 
+The first page of the PDF output should look like this:
 
+```{r out.width = '70%', echo = FALSE, fig.align='center'}
+knitr::include_graphics("images/proteiNorm.png")
+```
+
+In general, you want to pick a normalization method that has low levels of within-group variability (PCV, PMAD, and PEV) and high levels of within-group correlation (COR), with a log2 density ratio that is roughly symmetric around 0 (though, when there are only two groups being compared, as in this case, the log2 ratio plots are OK if they aren't symmetric). The second page of the normalization report (not shown) gives MA plots of average expression against the average log2 ratio between groups: a good normalization method should have a relatively flat trend (orange line). 
+
+It is important to note that, although we need to include a grouping variable to calculate within-group statistics for *evaluating* normalization methods, the actual *calculation* of these normalizations is performed done across all samples without regard to grouping (i.e., `proteoDA` performs global, not local, normalization). Thus, providing different grouping columns when creating the normalization report might affect your evaluation of normalization methods, the underlying normalized values will be the same. 
+
+
+For these example data, cyclic loess normalization ("cycloess" in the report) looks like a good choice, though all the normalization methods besides simple log2 transformation perform similarly (which is generally a good sign). Now that we've chosen that method, we can normalize our data (this will overwrite the raw data with normalized data, so it's a good idea to save this as a new `DAList` object):
+
+```{r}
+normalized <- normalize_data(filtered, 
+                             norm_method = "cycloess")
+```
+
+For more information on normalization, check out [this paper](https://pubs.acs.org/doi/10.1021/pr401264n) on normalization, or [proteiNorm](https://github.com/ByrumLab/proteiNorm), an interactive normalization evaluation tool on which `proteoDA` is based. 
+
+
+EDITED TO HERE
 
 ## Quality Control Report
 
