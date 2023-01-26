@@ -93,7 +93,6 @@ rownames(sample_metadata)
 At the moment, the row names are just numbered: `DAList()` won't be able to match up the rows in `sample_metadata` to the columns in `intensity_data`. Fortunately, the column name information is already available in the metadata, we can just assign it to the rownames of `sample_metadata`:
 
 ```{r}
-
 rownames(sample_metadata) <- sample_metadata$data_column_name
 ```
 
@@ -105,30 +104,66 @@ raw <- DAList(data = intensity_data,
               metadata = sample_metadata)
 ```
 
-EDITED THROUGH HERE. 
+You can examine the individual elements of the `DAList` using the `$` operator in R:
+
+```{r, eval = F}
+# Look at the intensity data
+raw$data
+
+# Look at the metadata
+raw$metadata
+```
  
 ## Sample and protein filtering 
 
-If a sample is detected as an outlier, it can be removed using the filter_samples() function and setting the condition parameter to "sample_name != sample-to-be-removed". Samples are kept if the condition is TRUE for that sample. 
+Before analysis, we need to do some filtering of the raw data. First, we can filter out some unneeded samples. Our raw data contains three pooled samples, made from pooling all the samples together. STEPHANIE ADD SOME INFO ON THE RATIONALE BEHIND THIS. We do not want to analyze these pooled samples for differential abundance. 
 
-Proteins that contain missing values in the majority of samples can be removed using the 
-filter_proteins_by_group() function. A general rule of thumb is to require at least 2/3
-of the replicates to have a value in at least one sample group. 
+`proteoDA` has a function, `filter_samples()` that can be used to remove samples from a `DAList` object. All functions in `proteoDA` have reference pages, lets take a look at the reference for `filter_samples()`:
 
-Example: If two groups have triplicate samples, then set min_reps = 2 and min_groups = 1. This removes proteins that do not have at least 2 out of 3 replicates in one sample group with an intensity value > 0. 
-
-```r
-# filter samples --------------------------------------------------------------
-sub_data <- filter_samples(DA, group != "Pool")
-
-# filter proteins ---------------------------------------------------------
-
-filtered_data <- filter_proteins_by_group(sub_data,
-                                          min_reps = 2,
-                                          min_groups = 1,
-                                          grouping_column = "group")
-
+```{r, eval = F}
+?filter_samples
 ```
+
+This function takes two arguments: an input `DAList` and a condition: a logical expression which describes which samples should be kept. In our case, we want to remove the pool samples, and keep all non-pool samples. So, let's keep all samples where the "group" column in the sample metadata does not equal "Pool":
+
+```{r, message = F}
+filtered_samples <- filter_samples(raw, group != "Pool")
+```
+
+Next, we may want to filter out proteins with a large amount of missing data. `proteoDA` provides two functions to do this: `filter_proteins_by_group()` and `filter_proteins_by_proportion()`. With `filter_proteins_by_group()`, the user specifies the minimum number of samples and groups for which a protein must have non-missing data: e.g., a protein must be present in at least 4 samples in at least 3 groups to be kept. `filter_proteins_by_proportion()` is similar, but the user specifies a minimum proportion, instead of a minimum number: this is useful for cases when sample sizes are unequal across groups. 
+
+Here, it is important to note that these filtering functions only filter on missing values (`r NA`), not zero values. The distinction between missing values and zeroes is important: a missing value says we do not know whether a protein was present or not, while a zero says that we know a protein definitely was not present. `proteoDA` has two functions to help you manage missing values in the way that is appropriate for your data: `zero_to_missing()` will convert 0 values to missing data, while `missing_to_zero()` will convert missing values (usually `r NA`, but you can specify other values depending on how your data are encoded) to zero. 
+
+In our example data, many proteins have zero intensity, but that is simply because the protein was below the detection limit of the instrument: the protein may have been present at low quantities. So, we'll convert these to missing values, and then filter out proteins with too much missing data. A good rule of thumb is to require non-missing data in ~2/3 of the replicates. For our example data, with 7 replicates per group, we'll require non-missing data for at least 4 samples:
+
+```{r, message=FALSE}
+# Convert missing values
+filtered_samples <- zero_to_missing(filtered_samples)
+filtered_proteins <- filter_proteins_by_group(filtered_samples,
+                                              min_reps = 4,
+                                              min_groups = 2,
+                                              grouping_column = "group")
+```
+
+The printed message from `proteoDA` tells us that 203 proteins were removed. 
+
+Here it is useful to note that most `proteoDA` functions take a `DAList` as input and return a `DAList` as output. This makes it easy to pipe multiple commands together into data processing pipelines. Below, we can take our raw data, remove the pool samples, convert missing values, and filter out missing proteins all in one pipeline:
+
+```{r, message = F}
+filtered <- raw |>
+  filter_samples(group != "Pool") |>
+  zero_to_missing() |>
+  filter_proteins_by_group(min_reps = 4,
+                           min_groups = 2,
+                           grouping_column = "group")
+```
+
+By default, the output of the function on the left-hand side of the pipe operator, `|>`, is passed as input to the first argument of the function on the right hand side of the pipe (see the pipe operator documentation at ```?|>``` for more information). For functions in `proteoDA`, the first argument is always the input `DAList`, which makes piping commands together easy. 
+
+
+## Normalization
+
+EDITED TO HERE. 
 
 ## ProteiNorm Normalization 
 
@@ -185,6 +220,10 @@ write_qc_report(norm,
                 show_all_proteins = F)  # only those with missing data
 
 ```
+
+Note that you might choose to remove outlier samples here, in which case you could go back, filter it out, and then rerun the rest of the pipeline up to here. 
+
+
 
 ## Prepare limma model design and sample group comparisons
 
