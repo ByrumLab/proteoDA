@@ -169,7 +169,7 @@ The `write_norm_report()` functions applies all 8 normalization methods to a dat
 
 
 ```{r, eval = F,message = F}
-# This will save in your current workign directory by default, but
+# This will save in your current working directory by default, but
 # you can use the output_dir argument to specify a different output. 
 write_norm_report(filtered,
                   grouping_column = "group")
@@ -183,7 +183,7 @@ knitr::include_graphics("images/proteiNorm.png")
 
 In general, you want to pick a normalization method that has low levels of within-group variability (PCV, PMAD, and PEV) and high levels of within-group correlation (COR), with a log2 density ratio that is roughly symmetric around 0 (though, when there are only two groups being compared, as in this case, the log2 ratio plots are OK if they aren't symmetric). The second page of the normalization report (not shown) gives MA plots of average expression against the average log2 ratio between groups: a good normalization method should have a relatively flat trend (orange line). 
 
-It is important to note that, although we need to include a grouping variable to calculate within-group statistics for *evaluating* normalization methods, the actual *calculation* of these normalizations is performed done across all samples without regard to grouping (i.e., `proteoDA` performs global, not local, normalization). Thus, providing different grouping columns when creating the normalization report might affect your evaluation of normalization methods, the underlying normalized values will be the same. 
+It is important to note that, although we need to include a grouping variable to calculate within-group statistics for *evaluating* normalization methods, the actual *calculation* of these normalizations is done across all samples without regard to grouping (i.e., `proteoDA` performs global, not local, normalization). Thus, though providing different grouping columns when creating the normalization report might affect your evaluation of normalization methods, the underlying normalized values will be the same. 
 
 
 For these example data, cyclic loess normalization ("cycloess" in the report) looks like a good choice, though all the normalization methods besides simple log2 transformation perform similarly (which is generally a good sign). Now that we've chosen that method, we can normalize our data (this will overwrite the raw data with normalized data, so it's a good idea to save this as a new `DAList` object):
@@ -195,12 +195,12 @@ normalized <- normalize_data(filtered,
 
 For more information on normalization, check out [this paper](https://pubs.acs.org/doi/10.1021/pr401264n) on normalization, or [proteiNorm](https://github.com/ByrumLab/proteiNorm), an interactive normalization evaluation tool on which `proteoDA` is based. 
 
-## Quality control Report
+## Quality control report
 
 Once the data have been normalized, you can explore the quality and structure of the data using the `write_qc_report()` function. This function creates and saves a variety of diagnostic plots: violin plots of per-sample intensities; PCAs, dendrograms, and correlation heatmaps to show similarity between samples and how they cluster together, and heatmaps which show the amount of missing data across samples. 
 
 
-```{r}
+```{r, eval = F, message = F}
 write_qc_report(normalized,
                 color_column = "group")
 ```
@@ -209,77 +209,134 @@ See the reference page of the `write_qc_report()` for more options on how to cus
 
 In the case of this report, the PCA plot and dendrogram indicate that two samples, Sample_07 and Sample_08, are slight outliers that do not cluster with the rest of the samples. Depending on what information you have on samples, and your overall sample sizes, you may choose to remove such samples, by going back to the `filter_samples()` function (you would want to re-run the downstream protein filtering and normalization functions as well). For this tutorial, we will more forward without further filtering. 
 
-EDITED TO HERE
-
 ## Specifying a statistical design
 
+Now, we're ready to specify the statistical analysis to perform. `proteoDA` uses a model formula syntax that should be familiar to users of other R modelling functions and packages (e.g, `lm()` or the `lme4` package). Models take the form `~ terms` (unlike other models, no left-hand side is needed: the response variable to be modeled is the protein intensity). `proteoDA` can fit models with and without intercepts (e.g., `~ group` or `~ 0 + group`, respectively). Models may contain multiple terms (e.g., `~ group + sex`), and those terms could be interactive (e.g., `~ group * sex`). `proteoDA` also has limited support for mixed models with random effects: users can include a single random-effect term that influences the intercept (e.g., `~ group + (1 | batch)`).
+
+The model fitting in `proteoDA` is performed using functions from the `limma` [R package](https://bioconductor.org/packages/release/bioc/html/limma.html). We highly recommend [this guide](https://doi.org/10.12688/f1000research.27893.1) from the `limma` team on specifying experimental designs and contrasts: though the syntax is slightly different, much of the material applies to `proteoDA` as well. 
+
+For this tutorial, we will demonstrate fitting the same statistical model both with and without an intercept term. 
+
+### Intercept model
+
+In our example data, we're interested in differential abundance between normal tissue and cancer tissue, as specified in the "group" column of the metadata. We can add a statistical design to examine differential abundance across groups using an intercept model:
+
+```{r}
+intercept <- add_design(normalized,
+                        design_formula = ~ group)
+```
+
+This intercept model will estimate two quantities for each protein: 
+
+1. The intercept, which will be the average expression in one of the two groups, which we will call the reference group.
+1. The difference in average expression between the reference group and the second group. This second quantity is the differential abundance that we're interested in. 
+
+There is an important issue to consider: which group will be the reference group? `proteoDA` follows the `R` default, in which the category that is first in alphabetical order is the reference group. In this example data, that means the reference group is the cancer group, which we can see by examining the design matrix:
+
+```{r}
+head(intercept$design$design_matrix)
+```
+
+Thus, the differential abundance would be the change in normal tissue relative to cancer tissue. In this case, we probably want the opposite: we want to know how proteins in cancer tissue are changed relative to normal tissue. To address this, we can convert the "group" column of the metadata into a factor and set the levels ourselves, with "normal" as the first level and "cancer" as the second:
+
+
+```{r}
+normalized$metadata$group <- factor(normalized$metadata$group, 
+                                    levels = c("normal", "cancer"))
+```
+
+We can remake our design matrix:
+
+```{r}
+intercept <- add_design(normalized,
+                        design_formula = ~ group)
+```
+
+
+```{r}
+head(intercept$design$design_matrix)
+```
+
+Now, the reference group is the normal group and the model will estimate the differential abundance in cancer tissue.
+
+### No intercept model
+
+Alternatively, we could specify our model slightly differently, using a no-intercept model:
+
+```{r}
+no_intercept <- add_design(normalized,
+                           design_formula = ~0 + group)
+```
+
+With no intercept, the model will estimate the average expression level in each group:
+
+```{r}
+head(no_intercept$design$design_matrix)
+```
+
+However, we aren't interested in the average level of expression in each group: we want the difference in expression between normal and cancer tissue. By default, `proteoDA` will estimate each model term in the design matrix. However, as in `limma`, we can use contrasts to override this behavior and estimate different terms that are derived by performing mathematical operations on the terms in the design matrix. For our example differential abundance analysis, this is simple: we want to calculate the difference between the average expression in cancer and normal tissue, `cancer - normal`. We can use the `add_contrasts()` function to do this:
+
+```{r}
+no_intercept <- add_contrasts(no_intercept,
+                              contrasts_vector = "cancer_vs_normal = cancer - normal")
+```
+
+Contrasts should follow this form: `contrast_name = contrast - operation`, where "contrast name" will be the new name for the term being estimated and the "contrast operation" section gives the mathematical operation used to create a new contrast (here, subtracting the normal term from the cancer term). In some cases, a user may have many contrasts they want to calculate, and typing them all by hand could be a pain. In that case, users can specify contrasts in a `.csv` file:
+
+```{r, message = F}
+no_intercept <- add_contrasts(no_intercept,
+                              contrasts_file = system.file("extdata/contrasts.csv", package = "proteoDA"))
+```
+
+Contrasts can be quite elaborate, and can include more than two terms. Again, [this guide](https://doi.org/10.12688/f1000research.27893.1) is a great resource. It also provides guidance on when to use which type of model: with categorical data the different models are mathematically equivalent, but one form may be more intuitive for certain analyses. In general, intercept models are better when there are multiple statistical categories that each only has two levels (e.g., a design like `~ treatment + sex`, where treatment is a case/control factor and sex is male or female). No-intercept models are more intuitive when there is one factor with many categories that you want to compare between (e.g., a design like `~ tissue`, where tissue contains tissues A, B, and C and you want to compare A to B, B to C, and A to C). 
+
+For this tutorial, we'll continue using the intercept model. 
 
 ## Fitting the model and getting results
 
-## Saving results
+The next two functions in the `proteoDA` pipeline are quite simple: `fit_limma_model()` performs model fitting, and takes no arguments besides a `DAList`. `extract_DA_data()` extracts statistical results tables from the model fit and adds them to the results slot of the `DAList`. 
 
-
-
-## Prepare limma model design and sample group comparisons
-
-The limma design formula must be added to the DAList() in order to run the statistical analysis. A design matrix is a model matrix of explanatory variables of a set of objects. Each row represents individual samples and the columns represent the sample groups and factors (such as batch). 
-
-The design formula is a string for the design matrix which can include intercept ("~group"), no intercept ("~0 + group"), additive ("~group + batch"), or interaction ("~group*treatment) models. 
-
-If the no intercept model is selected, then the add_contrasts() function allows the user to provide the sample comparisons as a file or a vector. This option allows for all pair-wise comparisons. 
-
-If the intercept model is selected, then the sample groups are compared against the reference. 
-
-An excellent guide for design matrices is in the following reference.  
-<b>Reference:</b> Law CW, Zeglinski K, Dong X et al. A guide to creating design matrices for gene expression experiments [version 1; peer review: 2 approved]. F1000Research 2020, 9:1444 (https://doi.org/10.12688/f1000research.27893.1)
-
-```r
-norm <- add_design(norm,
-                   design_formula = "~ 0 + group")
-
-
-norm <- add_contrasts(norm,
-                      contrasts_file = "vignette/contrasts.csv")
-
+```{r, message=FALSE}
+final <- intercept |>
+  fit_limma_model() |>
+  extract_DA_results(pval_thresh = 0.05, 
+                     lfc_thresh = 1)
 ```
 
-## Fit the limma differential abundance model 
+The `results` slot of a `DAList` holds a list, where each element in the list is a named data frame providing the results for that statistical term. Intercept terms are ignored by default, but this can be overridden. Users can also change the *p*-value and log fold-change thresholds necessary for differential abundance to be declared statistically significant: check out the reference pages for both functions for more information.
 
-Fits the limma differential abundance model to the intensity data, following the specified
-design and (optional) contrast matrices. 
-When a random factor is included, uses limma::duplicateCorrelation to estimate the
-intra-block correlation within groups. 
+In theory, one could explore the statistical results within R:
 
-Uses limma::lmFit to fit the initial model, optionally re-parameterizes the results in
-terms of contrasts with limma::contrasts.fit, and then recomputes moderated statistics
-following limma's empirical Bayes model with limma::eBayes.
+```{r}
+head(final$results$cancer)
+```
 
-```r
-fit <- fit_limma_model(norm)
+The results tables provide information on the estimated log fold-change (logFC) of protein abundance, statistical results (confidence intervals, t and B statistics), and significance levels (raw and adjusted *p*-values). However, `proteoDA` also provides functions for exporting these results to `.csv` files, Excel spreadsheets, and interactive reports that make exploring your results simple. 
 
-# Extract results ---------------------------------------------------------
-results <- extract_DA_results(fit,
-                              pval_thresh = 0.055,
-                              lfc_thresh = 1,
-                              adj_method = "BH",
-                              extract_intercept = F)
 
-# Write results -----------------------------------------------------------
-write_limma_tables(results,
-                   output_dir = "02_DA_results",
-                   overwrite = T,
-                   contrasts_subdir = NULL,
-                   summary_csv=NULL,
-                   combined_file_csv = NULL,
-                   spreadsheet_xlsx = NULL,
-                   add_filter = T)
+## Outputing results
 
+You can output statistical results into tabular data files with `write_limma_tables()`. This function saves `.csv` and `.xlsx` files of the statistical results. 
+
+
+```{eval = F}
+write_limma_tables(results)
+```
+
+Users can also generate both static PDF plots and interactive HTML reports of their results with `write_limma_plots()`:
+
+```{r, eval = FALSE}
 write_limma_plots(results,
-                  grouping_column = "group",
-                  table_columns = c("uniprot_id","Description"),
-                  title_column = "uniprot_id",
-                  output_dir = "02_DA_results",
-                  tmp_subdir = "tmp",
-                  height = 1000,
-                  width = 1000)
+                  grouping_column = "group")
 ```
+
+Both functions will save their output to the current working directory by default, but the output directory, file names, and a variety of other options can be set by the user (see their reference pages). 
+
+The report contains interactive volcano and MD plots using both raw and adjusted *p*-values, and also contains an interactive table with protein annotation and statistical results:
+
+```{r out.width = '70%', echo = FALSE, fig.align='center'}
+knitr::include_graphics("images/Interactive_results.png")
+```
+
+These interactive reports make use of the excellent `Glimma` [R package](https://github.com/hasaru-k/GlimmaV2) for interactive visualizations. 
+
