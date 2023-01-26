@@ -4,9 +4,11 @@ output:
   html_document:
     rmarkdown::html_vignette
 vignette: >
+  %\VignetteEncoding{UTF-8}
   %\VignetteIndexEntry{Tutorial: proteomics analysis using proteoDA}
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -33,7 +35,7 @@ library(proteoDA)
 
 ## Data Import and Requirements
 
-`proteoDA` stores data and results in a `DAList`, a list object with a special structure and class (its an S3 class, for the R nerds). DA stands for "differential abundance", the type of analaysis a `DAList` is meant for.  A `DAList` contains 7 items (which we also call slots): data, annotation, metadata, design, eBayes_fit, results, and tags. Generally, you only need to worry about the first three slots, and `proteoDA` will take care of the rest. They are:
+`proteoDA` stores data and results in a `DAList`, a list object with a special structure and class (its an S3 class, for the R nerds). DA stands for "differential abundance", the type of analysis a `DAList` is meant for.  A `DAList` contains 7 items (which we also call slots): data, annotation, metadata, design, eBayes_fit, results, and tags. Generally, you only need to worry about the first three slots, and `proteoDA` will take care of the rest. They are:
 
 1. **data**- A data frame or matrix containing protein intensity values for each sample.  The rows contain data from a specific protein, and columns represent individual samples. The names of the columns must match the row names of the metadata (see below).
 
@@ -43,35 +45,70 @@ library(proteoDA)
 
 ### Data import example
 
-Using some example data, we'll walk through how to import existing data into `proteoDA`. 
+Using some example data, we'll walk through how to prepare existing data for use with `proteoDA`. Our example data consists of two files: 
 
-EDITED UP TO HERE. 
+1. `DIA_data.csv`, a comma-separated value file containing a mix of protein intensity and annotation data, similar to data you might receive from, for example, a Scaffold DIA file.
 
-```r
+2. `metafile.csv`, a comma-separated value file containing sample information and metadata.
 
-# Change these to system files (see 18.4.3 of R packages book)
-# so that user can work along with the tutorial
+These examples come bundled with the `proteoDA` package, and we can import the files and take a look at them using standard R functions:
 
-
-input <- read.csv("DIA_data.csv")  # subset the data and annotation
-data <- input[,5:21]
-anno <- input[,1:4]
-meta <- read.csv("metafile.csv")
-rownames(meta) <- meta$data_column_name
-
-# create the proteoDA DAList object using the following command
-
-DA <- DAList(data,
-            anno,
-            meta,
-            design = NULL,
-            eBayes_fit = NULL,
-            results = NULL,
-            tags = NULL)
-
+```{r}
+input_data <- read.csv(system.file("extdata/DIA_data.csv", package = "proteoDA"))
+sample_metadata <- read.csv(system.file("extdata/metafile.csv", package = "proteoDA"))
 ```
 
-## Sample and Protein filtering options 
+```{r, eval = F}
+head(input_data)
+```
+
+The `input_data` is a data frame with 9089 rows (each corresponding to one protein) and 21 columns. The first 4 columns give protein annotation information: a UniProt ID, some protein info from the database search, etc. The remaining 17 columns give the per-sample protein intensities.  
+
+```{r, eval = F}
+head(sample_metadata)
+```
+
+The `sample_metadata` is a dataframe with 17 rows giving information on each sample: the column name in the `input_data` which corresponds to that sample, the sample ID, the sample batch (all the same, in this case), and a "group" column describing the sample type: 3 pooled samples used for characterizing all proteins during the database search, 7 samples from normal, non-cancercous tissue, and 7 samples from cancer tissue. The goal of our experiment is to find proteins that are differentially abundance in cancer and non-cancer cells. 
+
+For making our `DAList` object, we need to separate out the protein annotation data and protein intensity data in the `input_data` data frame. There are a number of ways to do this in `R`, but an easy way is to subset each data frame based on the indicies of the desired columns:
+
+```{r}
+intensity_data <- input_data[,5:21] # select columns 5 to 21
+annotation_data <- input_data[,1:4] # select columns 1 to 4
+```
+
+When creating data frames of intensity data and annotation information for a `DAList` object, it is important to ensure that the rows are in the right order: the `DAList()` function used to create a `DAList` keeps the rows in the order provided. If you provide the intensity and annotation data in different orders, they will not match up properly. The method above does not change the row orders. 
+
+Finally, before creating our `DAList` object, we can return to the two requirements we mention above: 
+
+1. The annotation data should contain a column name "uniprot_id" which contains a unique entry for each row/protein. Our example data already fulfills this criteria.
+
+2. The row names of the metadata should equal the column names of the protein intensity data. We can check this:
+
+
+```{r}
+rownames(sample_metadata)
+```
+
+At the moment, the row names are just numbered: `DAList()` won't be able to match up the rows in `sample_metadata` to the columns in `intensity_data`. Fortunately, the column name information is already available in the metadata, we can just assign it to the rownames of `sample_metadata`:
+
+```{r}
+
+rownames(sample_metadata) <- sample_metadata$data_column_name
+```
+
+Now, we're ready to make our `DAList` of the raw data. 
+
+```{r}
+raw <- DAList(data = intensity_data,
+              annotation = annotation_data,
+              metadata = sample_metadata)
+```
+
+EDITED THROUGH HERE. 
+ 
+## Sample and protein filtering 
+
 If a sample is detected as an outlier, it can be removed using the filter_samples() function and setting the condition parameter to "sample_name != sample-to-be-removed". Samples are kept if the condition is TRUE for that sample. 
 
 Proteins that contain missing values in the majority of samples can be removed using the 
