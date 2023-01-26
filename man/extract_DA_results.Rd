@@ -6,7 +6,7 @@
 \usage{
 extract_DA_results(
   DAList,
-  pval_thresh = 0.055,
+  pval_thresh = 0.05,
   lfc_thresh = 1,
   adj_method = "BH",
   extract_intercept = F
@@ -16,7 +16,7 @@ extract_DA_results(
 \item{DAList}{A DAList, which must contain a model fit.}
 
 \item{pval_thresh}{The p-value threshold used to determine significance
-(significant when p < pval_thresh). Default is 0.055.}
+(significant when p < pval_thresh). Default is 0.05.}
 
 \item{lfc_thresh}{The logFC threshold used to determine significance
 (significant when |logFC| > lfc.tresh). Default is 1. LogFC are base 2.}
