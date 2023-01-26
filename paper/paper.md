@@ -46,7 +46,7 @@ bibliography: references.bib
 ---
 
 # Summary
-`proteoDA` is an R package designed to analyze intensity based high resolution mass spectrometry data. The workflow assesses raw protein intensities using proteiNorm [@Graw2021] to evaluate eight normalization methods, provides a quality control report, and provides differential abundance analysis using limma models [@Ritchie2015; @Law2020]. The final results are included in an interactive html file, which can be opened in a web browser to explore the data [@Su2017].
+`proteoDA` is an R package designed to analyze intensity based high resolution mass spectrometry data. The workflow assesses raw protein intensities using proteiNorm [@Graw2021] to evaluate eight normalization methods, provides a quality control report, and provides differential abundance analysis using limma models [@Ritchie2015; @Law2020]. The results are summarized in a comprehensive file that includes normalized protein intensities, log2 fold change, unadjusted p-values, adjusted p-values, and other limma statistics. An interactive report is also provided as an html output, which can be opened in a web browser to explore the data [@Su2017].
 
 The R package requires a data frame or matrix containing protein intensities for each sample, an annotation data frame describing the proteins such as uniprotID, description, gene symbol, and a metadata data frame containing information about the samples such as the sample name and group. 
 
@@ -54,7 +54,7 @@ The data is imported as a DAList, which is an S3 object containing seven slots i
 
 Once the data is imported into the DAList object, several functions are included to process the data including functions to remove low quality samples, remove proteins with missing values in the majority of samples, normalize the data, and perform differential abundance analysis. An example workflow is provided in the vignette. The functions for proteiNorm are included to evaluate eight normalization methods and provide the final log2 normalized intensities for each sample [@Graw2021; @Chawade2014]. 
 
-After the data is appropriately normalized, the quality control report is generated. The report includes a violin plot of the samples, PCA plot, clustered dendrogram, and a heatmap of proteins with missing values in the samples. 
+After the data is appropriately normalized, the quality control report is generated. The report includes a violin plot of the protein intensities of samples, PCA plot, clustered dendrogram, and a heatmap of proteins with missing values in the samples. 
 
 The next step in the workflow includes defining the limma model and sample group comparisons for the differential abundance analysis [@Ritchie2015; @Law2020]. Several model options are included and are described in the ?add_design function. The [@Law2020] publication is an excellent guide to limma models. 
 
