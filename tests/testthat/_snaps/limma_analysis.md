@@ -1018,11 +1018,11 @@
       extract_DA_results(a)
     Message <rlang_message>
       ! Warning: more than 20% of the data is differentially adundant in some terms
-      ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "none"
+      ! Criteria for DA: |logFC| > 1, p-value < 0.05, p.value adjustment = "none"
       !  Problematic terms: "A" and "B"
       ! Assumption that most proteins are not DA may be violated
       ! Warning: more than 20% of the data is differentially adundant in some terms
-      ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "BH"
+      ! Criteria for DA: |logFC| > 1, p-value < 0.05, p.value adjustment = "BH"
       !  Problematic terms: "A" and "B"
       ! Assumption that most proteins are not DA may be violated
     Output
@@ -1311,7 +1311,7 @@
       
       $tags$DA_criteria
       $tags$DA_criteria$pval_thresh
-      [1] 0.055
+      [1] 0.05
       
       $tags$DA_criteria$lfc_thresh
       [1] 1
@@ -1593,7 +1593,7 @@
       
       $tags$DA_criteria
       $tags$DA_criteria$pval_thresh
-      [1] 0.055
+      [1] 0.05
       
       $tags$DA_criteria$lfc_thresh
       [1] 1
@@ -1615,11 +1615,11 @@
       extract_DA_results(c)
     Message <rlang_message>
       ! Warning: more than 20% of the data is differentially adundant in a term
-      ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "none"
+      ! Criteria for DA: |logFC| > 1, p-value < 0.05, p.value adjustment = "none"
       !  Problematic term: "Treatment_vs_Control"
       ! Assumption that most proteins are not DA may be violated
       ! Warning: more than 20% of the data is differentially adundant in a term
-      ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "BH"
+      ! Criteria for DA: |logFC| > 1, p-value < 0.05, p.value adjustment = "BH"
       !  Problematic term: "Treatment_vs_Control"
       ! Assumption that most proteins are not DA may be violated
     Output
@@ -1888,7 +1888,7 @@
       protein1  0.007007173 0.03904634        1       1
       protein2  0.007809268 0.03904634        1       1
       protein3  0.012406936 0.04135645        1       1
-      protein4  0.020064186 0.05016047        1       1
+      protein4  0.020064186 0.05016047        1       0
       protein5  0.028912479 0.05782496        1       0
       protein6  0.038723564 0.06453927        1       0
       protein7  0.049304122 0.07043446        1       0
@@ -1906,7 +1906,7 @@
       
       $tags$DA_criteria
       $tags$DA_criteria$pval_thresh
-      [1] 0.055
+      [1] 0.05
       
       $tags$DA_criteria$lfc_thresh
       [1] 1
@@ -1928,11 +1928,11 @@
       extract_DA_results(d)
     Message <rlang_message>
       ! Warning: more than 20% of the data is differentially adundant in some terms
-      ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "none"
+      ! Criteria for DA: |logFC| > 1, p-value < 0.05, p.value adjustment = "none"
       !  Problematic terms: "F" and "M"
       ! Assumption that most proteins are not DA may be violated
       ! Warning: more than 20% of the data is differentially adundant in some terms
-      ! Criteria for DA: |logFC| > 1, p-value < 0.055, p.value adjustment = "BH"
+      ! Criteria for DA: |logFC| > 1, p-value < 0.05, p.value adjustment = "BH"
       !  Problematic terms: "F" and "M"
       ! Assumption that most proteins are not DA may be violated
     Output
@@ -2231,7 +2231,7 @@
       
       $tags$DA_criteria
       $tags$DA_criteria$pval_thresh
-      [1] 0.055
+      [1] 0.05
       
       $tags$DA_criteria$lfc_thresh
       [1] 1
