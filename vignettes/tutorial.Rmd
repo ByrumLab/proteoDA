@@ -47,14 +47,14 @@ library(proteoDA)
 
 Using some example data, we'll walk through how to prepare existing data for use with `proteoDA`. Our example data consists of two files: 
 
-1. `DIA_data.csv`, a comma-separated value file containing a mix of protein intensity and annotation data, similar to data you might receive from, for example, a Scaffold DIA file.
+1. `DIA_data.csv.gz`, a compressed, comma-separated value file containing a mix of protein intensity and annotation data, similar to data you might receive from, for example, a Scaffold DIA file.
 
 2. `metafile.csv`, a comma-separated value file containing sample information and metadata.
 
 These examples come bundled with the `proteoDA` package, and we can import the files and take a look at them using standard R functions:
 
 ```{r}
-input_data <- read.csv(system.file("extdata/DIA_data.csv", package = "proteoDA"))
+input_data <- read.csv(system.file("extdata/DIA_data.csv.gz", package = "proteoDA"))
 sample_metadata <- read.csv(system.file("extdata/metafile.csv", package = "proteoDA"))
 ```
 
