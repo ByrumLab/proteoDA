@@ -321,7 +321,7 @@ The results tables provide information on the estimated log fold-change (logFC) 
 You can output statistical results into tabular data files with `write_limma_tables()`. This function saves `.csv` and `.xlsx` files of the statistical results. 
 
 
-```{eval = F}
+```{r, eval = F}
 write_limma_tables(results)
 ```
 
@@ -336,7 +336,7 @@ Both functions will save their output to the current working directory by defaul
 
 The report contains interactive volcano and MD plots using both raw and adjusted *p*-values, and also contains an interactive table with protein annotation and statistical results:
 
-```{r out.width = '70%', echo = FALSE, fig.align='center'}
+```{r, out.width = '70%', echo = FALSE, fig.align='center'}
 knitr::include_graphics("images/Interactive_results.png")
 ```
 
