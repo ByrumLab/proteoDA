@@ -27,7 +27,7 @@ Imports:
     openxlsx,
     patchwork,
     preprocessCore,
-    rlang,
+    rlang (>= 1.0.0),
     rmarkdown,
     stringr,
     vsn

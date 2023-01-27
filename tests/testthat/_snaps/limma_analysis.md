@@ -759,7 +759,7 @@
 
     Code
       fit_limma_model(d)
-    Message <rlang_message>
+    Message
       Estimated intra-block correlation = 0.549
     Output
       $data
@@ -1016,7 +1016,7 @@
 
     Code
       extract_DA_results(a)
-    Message <rlang_message>
+    Message
       ! Warning: more than 20% of the data is differentially adundant in some terms
       ! Criteria for DA: |logFC| > 1, p-value < 0.05, p.value adjustment = "none"
       !  Problematic terms: "A" and "B"
@@ -1613,7 +1613,7 @@
 
     Code
       extract_DA_results(c)
-    Message <rlang_message>
+    Message
       ! Warning: more than 20% of the data is differentially adundant in a term
       ! Criteria for DA: |logFC| > 1, p-value < 0.05, p.value adjustment = "none"
       !  Problematic term: "Treatment_vs_Control"
@@ -1926,7 +1926,7 @@
 
     Code
       extract_DA_results(d)
-    Message <rlang_message>
+    Message
       ! Warning: more than 20% of the data is differentially adundant in some terms
       ! Criteria for DA: |logFC| > 1, p-value < 0.05, p.value adjustment = "none"
       !  Problematic terms: "F" and "M"
