@@ -50,7 +50,7 @@ affiliations:
 `proteoDA` is built around a `DAList`, a custom R class which is used to hold the data, statistical design, and results for a differential abundance analysis. Users import protein abundance data, protein annotation data, and sample metadata into a `DAList`, and all further functions operate on that list. 
 
 
-![A flowchart of the proteoDA workflow.\label{fig:workflow}](placeholder.png)
+![A flowchart of the proteoDA workflow.\label{fig:workflow}](proteoDA_flowchart.png)
 
 Once the data are in `DAList`, `proteoDA` provides functions for further steps of the analysis \autoref{fig:workflow}. `proteoDA` includes functions for:
 
