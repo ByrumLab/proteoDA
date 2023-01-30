@@ -46,24 +46,19 @@ bibliography: references.bib
 ---
 
 # Summary
-`proteoDA` is an R package designed to analyze intensity based high resolution mass spectrometry data. The workflow assesses raw protein intensities using proteiNorm [@Graw2021] to evaluate eight normalization methods, provides a quality control report, and provides differential abundance analysis using limma models [@Ritchie2015; @Law2020]. The results are summarized in a comprehensive file that includes normalized protein intensities, log2 fold change, unadjusted p-values, adjusted p-values, and other limma statistics. An interactive report is also provided as an html output, which can be opened in a web browser to explore the data [@Su2017].
+`proteoDA` is an R package designed to analyze high resolution intensity-based mass spectrometry data. `proteoDA` was designed to be streamlined and user-friendly. `proteoDA` is built around a `DAList`, a custom R class, which is used to hold the data, statistical design, and results for a differential abundance analysis. Users import protein abundance data, protein annotation data, and sample metadata into a `DAList`, and all further functions operate on that list. Once the data are in `DAList`, `proteoDA` provides functions for further steps of the analysis \autoref{fig:workflow}. 
 
-The R package requires a data frame or matrix containing protein intensities for each sample, an annotation data frame describing the proteins such as uniprotID, description, gene symbol, and a metadata data frame containing information about the samples such as the sample name and group. 
+`proteoDA` includes functions for 1) evaluation of multiple normalization methods using a graphical report based on the `proteiNorm` normalization tool [@Graw2021; @Chawade2014], 2) generation of graphical quality control reports to assess data quality and sample clustering, 3) flexible specification and fitting of differential abundance models (including mixed models), using the R package `limma` to perform model fitting [@Ritchie2015; @Law2020], and 4) generation of tabular results files, as well as interactive and portable HTML result files, using the R package `Glimma` [@Su2017]. Please see the ByrumLab/proteoDA/vignettes/tutorial.html for more details. 
 
-The data is imported as a DAList, which is an S3 object containing seven slots in order to hold the data and results. The slots include data, annotation, metadata, design, eBayes_fit, results, and tags. The first three slots are required. The protein annotation data frame must include a column called "uniprot_id". This should be the unique protein accession number from the database search results for each protein. The column names in the data slot must match the row names of the metadata. This allows the data and sample information to match so that the samples are defined in the appropriate groups for analysis. Additionally, sample information can be included in the metadata to define gender effects, any batch effects, and/or if the samples are paired and added to the design formula.   
+![A flowchart of the proteoDA workflow.\label{fig:workflow}](proteoDA_flowchart.png) 
 
-Once the data is imported into the DAList object, several functions are included to process the data including functions to remove low quality samples, remove proteins with missing values in the majority of samples, normalize the data, and perform differential abundance analysis. An example workflow is provided in the vignette. The functions for proteiNorm are included to evaluate eight normalization methods and provide the final log2 normalized intensities for each sample [@Graw2021; @Chawade2014]. 
 
-After the data is appropriately normalized, the quality control report is generated. The report includes a violin plot of the protein intensities of samples, PCA plot, clustered dendrogram, and a heatmap of proteins with missing values in the samples. 
-
-The next step in the workflow includes defining the limma model and sample group comparisons for the differential abundance analysis [@Ritchie2015; @Law2020]. Several model options are included and are described in the ?add_design function. The [@Law2020] publication is an excellent guide to limma models. 
-
-`proteoDA` provides all the functions necessary to evaluate the quality, remove unwanted samples, filter proteins with missing values, normalize the data, perform statistical analysis, and export the results into an interactive html report. 
+`proteoDA` provides all the functions necessary to evaluate the quality, remove unwanted samples, filter proteins with missing values, normalize the data, perform statistical analysis, and export the results into an interactive HTML report. 
 
 
 # Statement of need
 
-`proteoDA` was designed to be used by researchers and students who would like to analyze quantitative proteomics data but have limited experience with mass spectrometry data and R programming. The package is used in the classroom as well as the IDeA National Resource for Quantitative Proteomics workshops for core directors, faculty, and students. 
+`proteoDA` was designed to help researchers with minimal knowledge of R extract insights from proteomic data. `proteoDA` allows users to quickly assess the quality of a mass spectrometry experiment, normalize the data, control for batch effects, and define flexible linear model designs for a wide variety of proteomic experiments. In addition to providing quantitative analysis for experiments, `proteoDA` is widely used in the classroom as well as the IDeA National Resource for Quantitative Proteomics workshops for faculty and students. The package is robust but flexible to account for a wide variety of proteomics experiments and provides a training tutorial explaining normalization and linear model designs. 
 
 # Acknowledgements
 
