@@ -52,18 +52,7 @@ affiliations:
 
 ![A flowchart of the proteoDA workflow.\label{fig:workflow}](proteoDA_flowchart.png)
 
-Once the data are in `DAList`, `proteoDA` provides functions for further steps of the analysis \autoref{fig:workflow}. `proteoDA` includes functions for:
-
-* Filtering of samples and proteins based on sample data, annotation data, or missing data thresholds.
-
-* Evaluation of multiple normalization methods using a graphical report based on the `proteiNorm` normalization tool [@Graw2021; @Chawade2014].
-
-* Generation of graphical quality control reports to assess data quality and sample clustering.
-
-* Flexible specification and fitting of differential abundance models (including mixed models), using the R package `limma` to perform model fitting [@Ritchie2015; @Law2020].
-
-* Generation of tabular results files, as well as interactive and portable HTML results files, using the R package `Glimma` [@Su2017].
-
+Once the data are in a `DAList`, `proteoDA` provides functions for the further steps of a proteomics analysis pipeline \autoref{fig:workflow}, including filtering, normalization, quality control, and statistical modeling. `proteoDA` includes functions for filtering samples and proteins based on sample metadata, annotation information, or missing data thresholds, as well as functions for managing missing data. `proteoDA` helps users evaluate and choose from among multiple normalization methods by creating a graphical report based on the `proteiNorm` normalization tool [@Graw2021; @Chawade2014]. Users can also generate a graphical quality control reports to assess data quality and sample clustering. `proteoDA` allows for flexible specification and fitting of differential abundance models, including mixed models, using the R package `limma` to perform model fitting [@Ritchie2015; @Law2020]. Finally, `proteoDA` can export results into familiar and portable file formats: it exports tabular statistical results as `.csv` and `.xlsx` files, and it uses the R package `Glimma` [@Su2017] to generate interactive HTML results files which include volcano plots, MD plots, and results tables. 
 
 # Statement of need
 
