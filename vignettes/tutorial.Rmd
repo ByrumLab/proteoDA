@@ -101,7 +101,11 @@ Now, we're ready to make our `DAList` of the raw data.
 ```{r}
 raw <- DAList(data = intensity_data,
               annotation = annotation_data,
-              metadata = sample_metadata)
+              metadata = sample_metadata,
+              design = NULL,
+              eBayes_fit = NULL,
+              results = NULL,
+              tags = NULL)
 ```
 
 You can examine the individual elements of the `DAList` using the `$` operator in R:
@@ -130,20 +134,21 @@ This function takes two arguments: an input `DAList` and a condition: a logical 
 filtered_samples <- filter_samples(raw, group != "Pool")
 ```
 
-Next, we may want to filter out proteins with a large amount of missing data. `proteoDA` provides two functions to do this: `filter_proteins_by_group()` and `filter_proteins_by_proportion()`. With `filter_proteins_by_group()`, the user specifies the minimum number of samples and groups for which a protein must have non-missing data: e.g., a protein must be present in at least 4 samples in at least 3 groups to be kept. `filter_proteins_by_proportion()` is similar, but the user specifies a minimum proportion, instead of a minimum number: this is useful for cases when sample sizes are unequal across groups. 
+Next, we may want to filter out proteins with a large amount of missing data. `proteoDA` provides two functions to do this: `filter_proteins_by_group()` and `filter_proteins_by_proportion()`. With `filter_proteins_by_group()`, the user specifies the minimum number of samples and groups for which a protein must have non-missing data: e.g., a protein must be present in at least 4 samples in at least 1 group to be kept. `filter_proteins_by_proportion()` is similar, but the user specifies a minimum proportion, instead of a minimum number: this is useful for cases when sample sizes are unequal across groups. 
 
-Here, it is important to note that these filtering functions only filter on missing values (`r NA`), not zero values. The distinction between missing values and zeroes is important, as the `limma` models we use to estimate differential abundance will treat `r NA` and zero differently. A missing value is ignored, while zero values are included in the statistical model and estimations of log fold-change. Functionally, a zero in the data tells the `limma` model that we know that a protein was not present. This is generally not the case with mass spectrometry data (there are many reasons a protein may not have been detected, even when it is present), so generally zero values should be converted to missing data. However, there are cases where it may be appropriate. In a comparison between tissues from a wild-type and a knockout strain, for example, you may know that the protein associated with the knockout gene is absent and a 0 would be correct.
+It is important to note that these filtering functions only filter on missing values (`r NA`), not zero values. The distinction between missing values and zeroes is important, as the `limma` models we use to estimate differential abundance will treat `r NA` and zero differently. A missing value is ignored, while zero values are included in the statistical model and estimations of log fold-change. Functionally, a zero in the data tells the `limma` model that we know that a protein was not present. This is generally not the case with mass spectrometry data (there are many reasons a protein may not have been detected, even when it is present), so generally zero values should be converted to missing data. However, there are cases where it may be appropriate. In a comparison between tissues from a wild-type and a knockout strain, for example, you may know that the protein associated with the knockout gene is absent and a 0 would be correct.
 
 `proteoDA` has two functions to help you manage missing values in the way that is appropriate for your data: `zero_to_missing()` will convert 0 values to missing data, while `missing_to_zero()` will convert missing values (usually `r NA`, but you can specify other values depending on how your data are encoded) to zero. 
 
-In our example data, many proteins have zero intensity, but we know (from the experiment type, instrument it was run on, etc.) that these do not necessarily represent proteins that are definitely not present. So, we'll convert these to missing values, and then filter out proteins with too much missing data. A good rule of thumb is to require non-missing data in ~2/3 of the replicates. For our example data, with 7 replicates per group, we'll require non-missing data for at least 4 samples:
+In our example data, many proteins have zero intensity, but we know (from the experiment type, instrument it was run on, etc.) that these do not necessarily represent proteins that are definitely not present. So, we'll convert these to missing values, and then filter out proteins with too much missing data. A good rule of thumb is to require non-missing data in ~2/3 of the replicates in one group. For our example data, with 7 replicates per group, will require non-missing data for at least 4 samples:
 
 ```{r, message=FALSE}
 # Convert missing values
 filtered_samples <- zero_to_missing(filtered_samples)
+
 filtered_proteins <- filter_proteins_by_group(filtered_samples,
                                               min_reps = 4,
-                                              min_groups = 2,
+                                              min_groups = 1,
                                               grouping_column = "group")
 ```
 
@@ -151,7 +156,7 @@ The printed message from `proteoDA` tells us that 203 proteins were removed.
 
 If there are any specific proteins you'd like to remove (e.g., known contaminants, proteins you are uninterested in, etc), you can use the `filter_proteins_by_annotation()` function to remove proteins based on their annotation data. 
 
-Here it is useful to note that most `proteoDA` functions take a `DAList` as input and return a `DAList` as output. This makes it easy to pipe multiple commands together into data processing pipelines. Below, we can take our raw data, remove the pool samples, convert missing values, and filter out missing proteins all in one pipeline (filtering by proportion this time, just as an example):
+It is useful to note that most `proteoDA` functions take a `DAList` as input and return a `DAList` as output. This makes it easy to pipe multiple commands together into data processing pipelines. Below, we can take our raw data, remove the pool samples, convert missing values, and filter out missing proteins all in one pipeline (filtering by proportion this time, just as an example):
 
 ```{r, message = F}
 filtered <- raw |>
@@ -174,7 +179,12 @@ The `write_norm_report()` functions applies all 8 normalization methods to a dat
 # This will save in your current working directory by default, but
 # you can use the output_dir argument to specify a different output. 
 write_norm_report(filtered,
-                  grouping_column = "group")
+                  grouping_column = "group",
+                  output_dir = "01_QC_report",
+                  filename = "normalization.pdf",
+                  overwrite = T,
+                  suppress_zoom_legend = FALSE,
+                  use_ggrastr = FALSE)
 ```
 
 The first page of the PDF output should look like this:
@@ -183,14 +193,15 @@ The first page of the PDF output should look like this:
 knitr::include_graphics("images/proteiNorm.png")
 ```
 
-In general, you want to pick a normalization method that has low levels of within-group variability (PCV, PMAD, and PEV) and high levels of within-group correlation (COR), with a log2 density ratio that is roughly symmetric around 0 (though, when there are only two groups being compared, as in this case, the log2 ratio plots are OK if they aren't symmetric). The second page of the normalization report (not shown) gives MA plots of average expression against the average log2 ratio between groups: a good normalization method should have a relatively flat trend (orange line). 
+In general, you want to pick a normalization method that has low levels of intra-group variability (PCV, PMAD, and PEV) and high levels of intra-group correlation (COR), with a log2 density ratio that is roughly symmetric around 0. The second page of the normalization report (not shown) gives MA plots of average expression against the average log2 ratio between groups: a good normalization method should have a relatively flat trend (orange line). 
 
-It is important to note that, although we need to include a grouping variable to calculate within-group statistics for *evaluating* normalization methods, the actual *calculation* of these normalizations is done across all samples without regard to grouping (i.e., `proteoDA` performs global, not local, normalization). Thus, though providing different grouping columns when creating the normalization report might affect your evaluation of normalization methods, the underlying normalized values will be the same. 
+It is important to note that, although we need to include a grouping variable to calculate within-group statistics for *evaluating* normalization methods, the actual *calculation* of these normalizations is done across all samples without regard to grouping when using the default `proteoDA` global options. The default global options may not be appropriate if the data set includes a small number of molecules (less than a few hundred) and/or most of the variables are differentially abundant. Thus, though providing different grouping columns when creating the normalization report might affect your evaluation of normalization methods, the underlying normalized values will be the same. 
 
 
-For these example data, cyclic loess normalization ("cycloess" in the report) looks like a good choice, though all the normalization methods besides simple log2 transformation perform similarly (which is generally a good sign). Now that we've chosen that method, we can normalize our data (this will overwrite the raw data with normalized data, so it's a good idea to save this as a new `DAList` object):
+For these example data, cyclic loess normalization ("cycloess" in the report) looks like a good choice, though all the normalization methods besides simple log2 transformation (unnormalized data) perform similarly, which is generally a good sign. Now that we've chosen the normalization method, we can normalize our data. This will overwrite the raw data with normalized data, so it's a good idea to save this as a new `DAList` object:
 
 ```{r}
+# methods = log2, median, mean, vsn, quantile, cycloess, rlr, gi
 normalized <- normalize_data(filtered, 
                              norm_method = "cycloess")
 ```
@@ -204,16 +215,28 @@ Once the data have been normalized, you can explore the quality and structure of
 
 ```{r, eval = F, message = F}
 write_qc_report(normalized,
-                color_column = "group")
+                color_column = "group",
+                label_column = NULL,
+                output_dir = "01_QC_report",
+                filename = "QC_report.pdf",
+                overwrite = T,
+                top_proteins = 500,        # number of most variable proteins
+                standardize = TRUE,
+                pca_axes = c(1,2),          # first 2 PCs
+                dist_metric = "euclidean",  # stats::dist for options
+                clust_method = "complete",  # stats::hclust for options
+                show_all_proteins = F)      # only proteins with missing data)
 ```
 
 See the reference page of the `write_qc_report()` for more options on how to customize these reports.
 
-In the case of this report, the PCA plot and dendrogram indicate that two samples, Sample_07 and Sample_08, are slight outliers that do not cluster with the rest of the samples. Depending on what information you have on samples, and your overall sample sizes, you may choose to remove such samples, by going back to the `filter_samples()` function (you would want to re-run the downstream protein filtering and normalization functions as well). For this tutorial, we will more forward without further filtering. 
+In the case of this report, the PCA plot and dendrogram indicate that two samples, Sample_07 and Sample_08, are slight outliers that do not cluster with the rest of the samples. Depending on what information you have on samples, and your overall sample sizes, you may choose to remove such samples, by going back to the `filter_samples()` function. Note: you would want to re-run the downstream protein filtering and normalization functions as well. For this tutorial, we will move forward without further filtering. 
 
 ## Specifying a statistical design
 
-Now, we're ready to specify the statistical analysis to perform. `proteoDA` uses a model formula syntax that should be familiar to users of other R modelling functions and packages (e.g, `lm()` or the `lme4` package). Models take the form `~ terms` (unlike other models, no left-hand side is needed: the response variable to be modeled is the protein intensity). `proteoDA` can fit models with and without intercepts (e.g., `~ group` or `~ 0 + group`, respectively). Models may contain multiple terms (e.g., `~ group + sex`), and those terms could be interactive (e.g., `~ group * sex`). `proteoDA` also has limited support for mixed models with random effects: users can include a single random-effect term that influences the intercept (e.g., `~ group + (1 | batch)`).
+Now, we're ready to specify the statistical analysis to perform. `proteoDA` uses a model formula syntax that should be familiar to users of other R modelling functions and packages (e.g, `lm()` or the `lme4` package). Models take the form `~ terms`.  Unlike other models, no left-hand side is needed: the response variable to be modeled is the protein abundance.
+
+`proteoDA` can fit models with and without intercepts (e.g., `~ group` or `~ 0 + group`, respectively). Models may contain multiple terms (e.g., `~ group + sex`), and those terms could be interactive (e.g., `~ group * sex`) or additive (e.g., `~ group + sex`). `proteoDA` also has limited support for mixed models with random effects: users can include a single random-effect term that influences the intercept (e.g., `~ group + (1 | batch)`).
 
 The model fitting in `proteoDA` is performed using functions from the `limma` [R package](https://bioconductor.org/packages/release/bioc/html/limma.html). We highly recommend [this guide](https://doi.org/10.12688/f1000research.27893.1) from the `limma` team on specifying experimental designs and contrasts: though the syntax is slightly different, much of the material applies to `proteoDA` as well. 
 
@@ -231,7 +254,7 @@ intercept <- add_design(normalized,
 This intercept model will estimate two quantities for each protein: 
 
 1. The intercept, which will be the average expression in one of the two groups, which we will call the reference group.
-1. The difference in average expression between the reference group and the second group. This second quantity is the differential abundance that we're interested in. 
+2. The difference in average expression between the reference group and the second group. This second quantity is the differential abundance that we're interested in. 
 
 There is an important issue to consider: which group will be the reference group? `proteoDA` follows the `R` default, in which the category that is first in alphabetical order is the reference group. In this example data, that means the reference group is the cancer group, which we can see by examining the design matrix:
 
@@ -283,21 +306,39 @@ no_intercept <- add_contrasts(no_intercept,
                               contrasts_vector = "cancer_vs_normal = cancer - normal")
 ```
 
-Contrasts should follow this form: `contrast_name = contrast - operation`, where "contrast name" will be the new name for the term being estimated and the "contrast operation" section gives the mathematical operation used to create a new contrast (here, subtracting the normal term from the cancer term). In some cases, a user may have many contrasts they want to calculate, and typing them all by hand could be a pain. In that case, users can specify contrasts in a `.csv` file:
+Contrasts should follow this form: `contrast_name = contrast - operation`, where "contrast name" will be the new name for the term being estimated and the "contrast operation" section gives the mathematical operation used to create a new contrast, such as subtracting the normal term from the cancer term. In some cases, a user may have many contrasts they want to calculate, and typing them all by hand could be problematic. In that case, users can specify contrasts in a `.csv` file:
 
 ```{r, message = F}
 no_intercept <- add_contrasts(no_intercept,
                               contrasts_file = system.file("extdata/contrasts.csv", package = "proteoDA"))
 ```
 
-Contrasts can be quite elaborate, and can include more than two terms. Again, [this guide](https://doi.org/10.12688/f1000research.27893.1) is a great resource. It also provides guidance on when to use which type of model: with categorical data the different models are mathematically equivalent, but one form may be more intuitive for certain analyses. In general, intercept models are better when there are multiple statistical categories that each only has two levels (e.g., a design like `~ treatment + sex`, where treatment is a case/control factor and sex is male or female). No-intercept models are more intuitive when there is one factor with many categories that you want to compare between (e.g., a design like `~ tissue`, where tissue contains tissues A, B, and C and you want to compare A to B, B to C, and A to C). 
+Contrasts can be quite elaborate, and can include more than two terms. Again, [this guide](https://doi.org/10.12688/f1000research.27893.1) is a great resource. It also provides guidance on when to use which type of model. In general, intercept models are better when there are multiple statistical categories and each only has two levels (e.g., a design like `~ treatment + sex`, where treatment is a case/control factor and sex is male or female).
+
+No-intercept models are more intuitive when there is one factor with many categories that you want to compare between (e.g., a design like `~ tissue`, where tissue contains tissues A, B, and C and you want to compare A to B, B to C, and A to C). 
 
 For this tutorial, we'll continue using the intercept model. 
 
 ## Fitting the model and getting results
 
-The next two functions in the `proteoDA` pipeline are quite simple: `fit_limma_model()` performs model fitting, and takes no arguments besides a `DAList`. `extract_DA_data()` extracts statistical results tables from the model fit and adds them to the results slot of the `DAList`. 
+The next two functions in the `proteoDA` pipeline are quite simple: `fit_limma_model()` performs model fitting, and takes no arguments besides a `DAList`. `extract_DA_data()` extracts statistical results tables from the model fit and adds them to the results slot of the `DAList`. The two functions can be run separately or piped together as seen in the examples below. 
 
+```{r, message=FALSE}
+# Splitting up functionality
+# First, fit the model
+fit <- fit_limma_model(intercept)
+
+# Extract results ---------------------------------------------------------
+results <- extract_DA_results(fit,
+                              pval_thresh = 0.05,
+                              lfc_thresh = 1,
+                              adj_method = "BH",
+                              extract_intercept = F)
+
+
+```
+
+Pipe the two functions together. 
 ```{r, message=FALSE}
 final <- intercept |>
   fit_limma_model() |>
@@ -307,13 +348,13 @@ final <- intercept |>
 
 The `results` slot of a `DAList` holds a list, where each element in the list is a named data frame providing the results for that statistical term. Intercept terms are ignored by default, but this can be overridden. Users can also change the *p*-value and log fold-change thresholds necessary for differential abundance to be declared statistically significant: check out the reference pages for both functions for more information.
 
-In theory, one could explore the statistical results within R:
+Explore the statistical results within R using this command:
 
 ```{r}
 head(final$results$cancer)
 ```
 
-The results tables provide information on the estimated log fold-change (logFC) of protein abundance, statistical results (confidence intervals, t and B statistics), and significance levels (raw and adjusted *p*-values). However, `proteoDA` also provides functions for exporting these results to `.csv` files, Excel spreadsheets, and interactive reports that make exploring your results simple. 
+The result tables provide information on the estimated log2 fold-change (logFC) of protein abundance, statistical results (confidence intervals, t and B statistics), and significance levels (raw and adjusted *p*-values). However, `proteoDA` also provides functions for exporting these results to `.csv` files, Excel spreadsheets, and interactive reports that make exploring your results simple. Two additional output columns are included in the final Excel spreadsheet flagging proteins that are significant by both log2 fold change and either the unadjusted p-value or the adjusted p-value. The values 1, 0, and -1 are provided in the "sig.Pval" and "sig.FDR" columns where a 1 indicates the protein is significant by both thresholds and is up-regulated, while a -1 indicates the protein is significant and down-regulated. This makes filtering for the up-regulated or down-regulated proteins based on a log2 fold change and a p-value threshold simple. 
 
 
 ## Outputing results
@@ -322,14 +363,27 @@ You can output statistical results into tabular data files with `write_limma_tab
 
 
 ```{r, eval = F}
-write_limma_tables(results)
+write_limma_tables(final,
+                   output_dir = "02_DA_results",
+                   overwrite = T,
+                   contrasts_subdir = NULL,
+                   summary_csv=NULL,
+                   combined_file_csv = NULL,
+                   spreadsheet_xlsx = NULL,
+                   add_filter = T)
 ```
 
 Users can also generate both static PDF plots and interactive HTML reports of their results with `write_limma_plots()`:
 
 ```{r, eval = FALSE}
-write_limma_plots(results,
-                  grouping_column = "group")
+write_limma_plots(final,
+                  grouping_column = "group",
+                  table_columns = c("uniprot_id","protein_info"),
+                  title_column = "uniprot_id",
+                  output_dir = "02_DA_results",
+                  tmp_subdir = "tmp",
+                  height = 1000,
+                  width = 1000)
 ```
 
 Both functions will save their output to the current working directory by default, but the output directory, file names, and a variety of other options can be set by the user (see their reference pages). 
