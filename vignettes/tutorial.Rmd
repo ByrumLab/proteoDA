@@ -7,8 +7,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteIndexEntry{Tutorial: proteomics analysis using proteoDA}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
