@@ -46,19 +46,19 @@ bibliography: references.bib
 ---
 
 # Summary
-`proteoDA` is an R package designed to analyze high resolution intensity-based mass spectrometry data. `proteoDA` was designed to be streamlined and user-friendly. `proteoDA` is built around a `DAList`, a custom R class, which is used to hold the data, statistical design, and results for a differential abundance analysis. Users import protein abundance data, protein annotation data, and sample metadata into a `DAList`, and all further functions operate on that list. Once the data are in `DAList`, `proteoDA` provides functions for further steps of the analysis \autoref{fig:workflow}. 
+`proteoDA` is an R package designed to analyze high resolution, intensity-based mass spectrometry data. `proteoDA` was designed to be streamlined and user-friendly: it uses simple syntax, functions can be easily assembled into pipelines, model specification is simple yet powerful and flexible, and `proteoDA` provides functions to generate rich plots, results, and interactive reports. 
 
-`proteoDA` includes functions for 1) evaluation of multiple normalization methods using a graphical report based on the `proteiNorm` normalization tool [@Graw2021; @Chawade2014], 2) generation of graphical quality control reports to assess data quality and sample clustering, 3) flexible specification and fitting of differential abundance models (including mixed models), using the R package `limma` to perform model fitting [@Ritchie2015; @Law2020], and 4) generation of tabular results files, as well as interactive and portable HTML result files, using the R package `Glimma` [@Su2017]. Please see the ByrumLab/proteoDA/vignettes/tutorial.html for more details. 
+`proteoDA` is built around a `DAList`, a custom R class, which is used to hold the data, statistical design, and results for a differential abundance analysis. Users import protein abundance data, protein annotation data, and sample metadata into a `DAList`, and all further functions operate on that list. Once the data are in `DAList`, `proteoDA` provides functions for further steps of the analysis \autoref{fig:workflow}. 
 
 ![A flowchart of the proteoDA workflow.\label{fig:workflow}](proteoDA_flowchart.png) 
-
-
-`proteoDA` provides all the functions necessary to evaluate the quality, remove unwanted samples, filter proteins with missing values, normalize the data, perform statistical analysis, and export the results into an interactive HTML report. 
+`proteoDA` includes functions for 1) handling missing data and filtering samples and proteins based on metadata, annotation information, or missing data thresholds, 2) evaluation of multiple normalization methods using a graphical report based on the `proteiNorm` normalization tool [@Graw2021; @Chawade2014], 3) generation of graphical quality control reports to assess data quality and sample clustering, 4) flexible specification and fitting of differential abundance models (including mixed models), using the R package `limma` to perform model fitting [@Ritchie2015; @Law2020], and 5) generation of tabular results files, as well as interactive and portable HTML result files, using the R package `Glimma` [@Su2017]. `proteoDA` includes a detailed tutorial vignette that explains the analytic pipeline and key functions in further detail.  
 
 
 # Statement of need
 
-`proteoDA` was designed to help researchers with minimal knowledge of R extract insights from proteomic data. `proteoDA` allows users to quickly assess the quality of a mass spectrometry experiment, normalize the data, control for batch effects, and define flexible linear model designs for a wide variety of proteomic experiments. In addition to providing quantitative analysis for experiments, `proteoDA` is widely used in the classroom as well as the IDeA National Resource for Quantitative Proteomics workshops for faculty and students. The package is robust but flexible to account for a wide variety of proteomics experiments and provides a training tutorial explaining normalization and linear model designs. 
+`proteoDA` was designed to help researchers with minimal knowledge of R extract insights from proteomic data. `proteoDA` was originally developed to support the needs of a high-volume proteomics core facility which analyzes hundreds of proteomics projects per year and produces research outputs and reports for customers with a wide range of expertise in proteomics. Not coincidentally, the features that make proteoDA useful for a high-volume core (simple yet flexible syntax, ease of pipeline creation, minimal need for R code for customization, and rich output reports) also make it ideal for users with minimal R experience.
+
+`proteoDA` allows users to quickly assess the quality of a mass spectrometry experiment, normalize the data, control for batch effects, and define flexible linear model designs for a wide variety of proteomic experiments. In addition to providing quantitative analysis for experiments, `proteoDA` is used in the classroom as well as the IDeA National Resource for Quantitative Proteomics workshops for faculty and students.
 
 # Acknowledgements
 
