@@ -42,7 +42,8 @@ library(proteoDA)
 
 ## Workflow
 
-![proteoDA workflow flowchart](data-raw/proteoDA_flowchar.png?raw=true)
+![proteoDA workflow
+flowchart](./data-raw/proteoDA_flowchar.png?raw=true)
 
 ## Example pipeline
 
