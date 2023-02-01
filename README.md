@@ -30,7 +30,7 @@ Using the `build_vignettes = TRUE` argument will build the tutorial
 vignette when you install, which you can access by running
 `browseVignettes(package = "proteoDA")`. However, building the vignettes
 requires some additional software dependencies. If you run into issues
-when installing the vignettes, you can set `build_vignettes = FALSW` and
+when installing the vignettes, you can set `build_vignettes = FALSE` and
 find a pre-built `.html` version of the tutorial in the `vignettes`
 folder on [GitHub](https://github.com/ByrumLab/proteoDA).
 
@@ -61,7 +61,7 @@ annotation_data <- input_data[,1:4] # select columns 1 to 4
 # Match up row names of metadata with column names of data
 rownames(sample_metadata) <- sample_metadata$data_column_name
 
-# Assemble into DIAlist
+# Assemble into DAList
 raw <- DAList(data = intensity_data,
               annotation = annotation_data,
               metadata = sample_metadata)
