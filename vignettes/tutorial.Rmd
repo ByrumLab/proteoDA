@@ -101,7 +101,11 @@ Now, we're ready to make our `DAList` of the raw data.
 ```{r}
 raw <- DAList(data = intensity_data,
               annotation = annotation_data,
-              metadata = sample_metadata)
+              metadata = sample_metadata,
+              design = NULL,
+              eBayes_fit = NULL,
+              results = NULL,
+              tags = NULL)
 ```
 
 You can examine the individual elements of the `DAList` using the `$` operator in R:
@@ -175,7 +179,12 @@ The `write_norm_report()` functions applies all 8 normalization methods to a dat
 # This will save in your current working directory by default, but
 # you can use the output_dir argument to specify a different output. 
 write_norm_report(filtered,
-                  grouping_column = "group")
+                  grouping_column = "group",
+                  output_dir = "01_QC_report",
+                  filename = "normalization.pdf",
+                  overwrite = T,
+                  suppress_zoom_legend = FALSE,
+                  use_ggrastr = FALSE)
 ```
 
 The first page of the PDF output should look like this:
@@ -206,7 +215,17 @@ Once the data have been normalized, you can explore the quality and structure of
 
 ```{r, eval = F, message = F}
 write_qc_report(normalized,
-                color_column = "group")
+                color_column = "group",
+                label_column = NULL,
+                output_dir = "01_QC_report",
+                filename = "QC_report.pdf",
+                overwrite = T,
+                top_proteins = 500,        # number of most variable proteins
+                standardize = TRUE,
+                pca_axes = c(1,2),          # first 2 PCs
+                dist_metric = "euclidean",  # stats::dist for options
+                clust_method = "complete",  # stats::hclust for options
+                show_all_proteins = F)      # only proteins with missing data))
 ```
 
 See the reference page of the `write_qc_report()` for more options on how to customize these reports.
@@ -313,7 +332,8 @@ fit <- fit_limma_model(intercept)
 results <- extract_DA_results(fit,
                               pval_thresh = 0.05,
                               lfc_thresh = 1,
-                              adj_method = "BH")
+                              adj_method = "BH",
+                              extract_intercept = F)
 ```
 
 Pipe the two functions together. 
@@ -322,7 +342,8 @@ final <- intercept |>
   fit_limma_model() |>
   extract_DA_results(pval_thresh = 0.05, 
                      lfc_thresh = 1,
-                     adj_method = "BH")
+                     adj_method = "BH",
+                     extract_intercept = F)
 ```
 
 The `results` slot of a `DAList` holds a list, where each element in the list is a named data frame providing the results for that statistical term. Intercept terms are ignored by default, but this can be overridden. Users can also change the *p*-value and log fold-change thresholds necessary for differential abundance to be declared statistically significant: check out the reference pages for both functions for more information.
@@ -342,14 +363,28 @@ You can output statistical results into tabular data files with `write_limma_tab
 
 
 ```{r, eval = F}
-write_limma_tables(final)
+write_limma_tables(final,
+                   output_dir = "02_DA_results",
+                   overwrite = T,
+                   contrasts_subdir = NULL,
+                   summary_csv=NULL,
+                   combined_file_csv = NULL,
+                   spreadsheet_xlsx = NULL,
+                   add_filter = T)
 ```
 
 Users can also generate both static PDF plots and interactive HTML reports of their results with `write_limma_plots()`:
 
 ```{r, eval = FALSE}
 write_limma_plots(final,
-                  grouping_column = "group")
+                  grouping_column = "group",
+                  grouping_column = "group",
+                  table_columns = c("uniprot_id","protein_info"),
+                  title_column = "uniprot_id",
+                  output_dir = "02_DA_results",
+                  tmp_subdir = "tmp",
+                  height = 1000,
+                  width = 1000)
 ```
 
 Both functions will save their output to the current working directory by default, but the output directory, file names, and a variety of other options can be set by the user (see their reference pages). 
