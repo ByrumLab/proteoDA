@@ -25,6 +25,8 @@ devtools::install_github("ByrumLab/proteoDA",
                          build_vignettes = TRUE)
 ```
 
+If you run into issues during installation, try setting `build_vignettes = FALSE`: building the vignettes requires extra software dependencies. 
+
 Once `proteoDA` is installed, load it:
 
 ```{r}
@@ -154,7 +156,7 @@ The printed message from `proteoDA` tells us that 203 proteins were removed.
 
 If there are any specific proteins you'd like to remove (e.g., known contaminants, proteins you are uninterested in, etc), you can use the `filter_proteins_by_annotation()` function to remove proteins based on their annotation data. 
 
-It is useful to note that most `proteoDA` functions take a `DAList` as input and return a `DAList` as output. This makes it easy to pipe multiple commands together into data processing pipelines. Below, we can take our raw data, remove the pool samples, convert missing values, and filter out missing proteins all in one pipeline (filtering by proportion this time, just as an example):
+Most `proteoDA` functions take a `DAList` as input and return a `DAList` as output. This makes it easy to pipe multiple commands together into data processing pipelines. Below, we can take our raw data, remove the pool samples, convert missing values, and filter out missing proteins all in one pipeline (filtering by proportion this time, just as an example):
 
 ```{r, message = F}
 filtered <- raw |>
@@ -223,12 +225,12 @@ write_qc_report(normalized,
                 pca_axes = c(1,2),          # first 2 PCs
                 dist_metric = "euclidean",  # stats::dist for options
                 clust_method = "complete",  # stats::hclust for options
-                show_all_proteins = F)      # only proteins with missing data)
+                show_all_proteins = F)      # only proteins with missing data))
 ```
 
 See the reference page of the `write_qc_report()` for more options on how to customize these reports.
 
-In the case of this report, the PCA plot and dendrogram indicate that two samples, Sample_07 and Sample_08, are slight outliers that do not cluster with the rest of the samples. Depending on what information you have on samples, and your overall sample sizes, you may choose to remove such samples, by going back to the `filter_samples()` function. Note: you would want to re-run the downstream protein filtering and normalization functions as well. For this tutorial, we will move forward without further filtering. 
+In the case of this report, the PCA plot and dendrogram indicate that two samples, Sample_07 and Sample_08, are slight outliers that do not cluster with the rest of the samples. Depending on what information you have on your samples and your overall sample sizes, you may choose to remove such samples, by going back to the `filter_samples()` function. Note: you would want to re-run the downstream protein filtering and normalization functions as well. For this tutorial, we will move forward without further filtering. 
 
 ## Specifying a statistical design
 
@@ -304,7 +306,7 @@ no_intercept <- add_contrasts(no_intercept,
                               contrasts_vector = "cancer_vs_normal = cancer - normal")
 ```
 
-Contrasts should follow this form: `contrast_name = contrast - operation`, where "contrast name" will be the new name for the term being estimated and the "contrast operation" section gives the mathematical operation used to create a new contrast, such as subtracting the normal term from the cancer term. In some cases, a user may have many contrasts they want to calculate, and typing them all by hand could be problematic. In that case, users can specify contrasts in a `.csv` file:
+Contrasts should follow this form: `contrast_name = contrast - operation`, where "contrast name" will be the new name for the term being estimated and the "contrast operation" section gives the mathematical operation used to create a new contrast, such as subtracting the normal term from the cancer term, as in this example. In some cases, a user may have many contrasts they want to calculate, and typing them all by hand could be problematic. In that case, users can specify contrasts in a `.csv` file:
 
 ```{r, message = F}
 no_intercept <- add_contrasts(no_intercept,
@@ -332,8 +334,6 @@ results <- extract_DA_results(fit,
                               lfc_thresh = 1,
                               adj_method = "BH",
                               extract_intercept = F)
-
-
 ```
 
 Pipe the two functions together. 
@@ -341,18 +341,20 @@ Pipe the two functions together.
 final <- intercept |>
   fit_limma_model() |>
   extract_DA_results(pval_thresh = 0.05, 
-                     lfc_thresh = 1)
+                     lfc_thresh = 1,
+                     adj_method = "BH",
+                     extract_intercept = F)
 ```
 
 The `results` slot of a `DAList` holds a list, where each element in the list is a named data frame providing the results for that statistical term. Intercept terms are ignored by default, but this can be overridden. Users can also change the *p*-value and log fold-change thresholds necessary for differential abundance to be declared statistically significant: check out the reference pages for both functions for more information.
 
-Explore the statistical results within R using this command:
+You can explore the statistical results within R using this command:
 
 ```{r}
 head(final$results$cancer)
 ```
 
-The result tables provide information on the estimated log2 fold-change (logFC) of protein abundance, statistical results (confidence intervals, t and B statistics), and significance levels (raw and adjusted *p*-values). However, `proteoDA` also provides functions for exporting these results to `.csv` files, Excel spreadsheets, and interactive reports that make exploring your results simple. Two additional output columns are included in the final Excel spreadsheet flagging proteins that are significant by both log2 fold change and either the unadjusted p-value or the adjusted p-value. The values 1, 0, and -1 are provided in the "sig.Pval" and "sig.FDR" columns where a 1 indicates the protein is significant by both thresholds and is up-regulated, while a -1 indicates the protein is significant and down-regulated. This makes filtering for the up-regulated or down-regulated proteins based on a log2 fold change and a p-value threshold simple. 
+The result tables provide information on the estimated log2 fold-change (logFC) of protein abundance, statistical results (confidence intervals, t and B statistics), and significance levels (raw and adjusted *p*-values), and columns indicating whether a protein is considered differentially abundant according to the specified *p*-value and log2 fold-change thresholds (1 indicates up-regulated/more abundant, -1 indicates down-regulated/less abundant, and 0 indicates no statistically significant differential abundance). However, `proteoDA` also provides functions for exporting these results to `.csv` files, Excel spreadsheets, and interactive reports that make exploring your results simple. 
 
 
 ## Outputing results
@@ -375,6 +377,7 @@ Users can also generate both static PDF plots and interactive HTML reports of th
 
 ```{r, eval = FALSE}
 write_limma_plots(final,
+                  grouping_column = "group",
                   grouping_column = "group",
                   table_columns = c("uniprot_id","protein_info"),
                   title_column = "uniprot_id",

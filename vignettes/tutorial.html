@@ -352,6 +352,9 @@ GitHub using the <code>devtools</code> package:</p>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;ByrumLab/proteoDA&quot;</span>, </span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">dependencies =</span> <span class="cn">TRUE</span>, </span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">build_vignettes =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<p>If you run into issues during installation, try setting
+<code>build_vignettes = FALSE</code>: building the vignettes requires
+extra software dependencies.</p>
 <p>Once <code>proteoDA</code> is installed, load it:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(proteoDA)</span></code></pre></div>
 </div>
@@ -439,8 +442,7 @@ already fulfills this criteria.</p></li>
 the protein intensity data. We can check this:</p></li>
 </ol>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(sample_metadata)</span></code></pre></div>
-<pre><code>##  [1] &quot;1&quot;  &quot;2&quot;  &quot;3&quot;  &quot;4&quot;  &quot;5&quot;  &quot;6&quot;  &quot;7&quot;  &quot;8&quot;  &quot;9&quot;  &quot;10&quot; &quot;11&quot; &quot;12&quot; &quot;13&quot; &quot;14&quot; &quot;15&quot;
-## [16] &quot;16&quot; &quot;17&quot;</code></pre>
+<pre><code>##  [1] &quot;1&quot;  &quot;2&quot;  &quot;3&quot;  &quot;4&quot;  &quot;5&quot;  &quot;6&quot;  &quot;7&quot;  &quot;8&quot;  &quot;9&quot;  &quot;10&quot; &quot;11&quot; &quot;12&quot; &quot;13&quot; &quot;14&quot; &quot;15&quot; &quot;16&quot; &quot;17&quot;</code></pre>
 <p>At the moment, the row names are just numbered: <code>DAList()</code>
 won’t be able to match up the rows in <code>sample_metadata</code> to
 the columns in <code>intensity_data</code>. Fortunately, the column name
@@ -533,13 +535,12 @@ proteins were removed.</p>
 contaminants, proteins you are uninterested in, etc), you can use the
 <code>filter_proteins_by_annotation()</code> function to remove proteins
 based on their annotation data.</p>
-<p>It is useful to note that most <code>proteoDA</code> functions take a
-<code>DAList</code> as input and return a <code>DAList</code> as output.
-This makes it easy to pipe multiple commands together into data
-processing pipelines. Below, we can take our raw data, remove the pool
-samples, convert missing values, and filter out missing proteins all in
-one pipeline (filtering by proportion this time, just as an
-example):</p>
+<p>Most <code>proteoDA</code> functions take a <code>DAList</code> as
+input and return a <code>DAList</code> as output. This makes it easy to
+pipe multiple commands together into data processing pipelines. Below,
+we can take our raw data, remove the pool samples, convert missing
+values, and filter out missing proteins all in one pipeline (filtering
+by proportion this time, just as an example):</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>filtered <span class="ot">&lt;-</span> raw <span class="sc">|&gt;</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter_samples</span>(group <span class="sc">!=</span> <span class="st">&quot;Pool&quot;</span>) <span class="sc">|&gt;</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">zero_to_missing</span>() <span class="sc">|&gt;</span></span>
@@ -634,14 +635,14 @@ samples.</p>
 <span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">pca_axes =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>),          <span class="co"># first 2 PCs</span></span>
 <span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">dist_metric =</span> <span class="st">&quot;euclidean&quot;</span>,  <span class="co"># stats::dist for options</span></span>
 <span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>                <span class="at">clust_method =</span> <span class="st">&quot;complete&quot;</span>,  <span class="co"># stats::hclust for options</span></span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>                <span class="at">show_all_proteins =</span> F)      <span class="co"># only proteins with missing data)</span></span></code></pre></div>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>                <span class="at">show_all_proteins =</span> F)      <span class="co"># only proteins with missing data))</span></span></code></pre></div>
 <p>See the reference page of the <code>write_qc_report()</code> for more
 options on how to customize these reports.</p>
 <p>In the case of this report, the PCA plot and dendrogram indicate that
 two samples, Sample_07 and Sample_08, are slight outliers that do not
 cluster with the rest of the samples. Depending on what information you
-have on samples, and your overall sample sizes, you may choose to remove
-such samples, by going back to the <code>filter_samples()</code>
+have on your samples and your overall sample sizes, you may choose to
+remove such samples, by going back to the <code>filter_samples()</code>
 function. Note: you would want to re-run the downstream protein
 filtering and normalization functions as well. For this tutorial, we
 will move forward without further filtering.</p>
@@ -756,10 +757,10 @@ can use the <code>add_contrasts()</code> function to do this:</p>
 <code>contrast_name = contrast - operation</code>, where “contrast name”
 will be the new name for the term being estimated and the “contrast
 operation” section gives the mathematical operation used to create a new
-contrast, such as subtracting the normal term from the cancer term. In
-some cases, a user may have many contrasts they want to calculate, and
-typing them all by hand could be problematic. In that case, users can
-specify contrasts in a <code>.csv</code> file:</p>
+contrast, such as subtracting the normal term from the cancer term, as
+in this example. In some cases, a user may have many contrasts they want
+to calculate, and typing them all by hand could be problematic. In that
+case, users can specify contrasts in a <code>.csv</code> file:</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>no_intercept <span class="ot">&lt;-</span> <span class="fu">add_contrasts</span>(no_intercept,</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>                              <span class="at">contrasts_file =</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata/contrasts.csv&quot;</span>, <span class="at">package =</span> <span class="st">&quot;proteoDA&quot;</span>))</span></code></pre></div>
 <p>Contrasts can be quite elaborate, and can include more than two
@@ -799,7 +800,9 @@ together as seen in the examples below.</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>final <span class="ot">&lt;-</span> intercept <span class="sc">|&gt;</span></span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit_limma_model</span>() <span class="sc">|&gt;</span></span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_DA_results</span>(<span class="at">pval_thresh =</span> <span class="fl">0.05</span>, </span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">lfc_thresh =</span> <span class="dv">1</span>)</span></code></pre></div>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">lfc_thresh =</span> <span class="dv">1</span>,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">adj_method =</span> <span class="st">&quot;BH&quot;</span>,</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">extract_intercept =</span> F)</span></code></pre></div>
 <p>The <code>results</code> slot of a <code>DAList</code> holds a list,
 where each element in the list is a named data frame providing the
 results for that statistical term. Intercept terms are ignored by
@@ -807,37 +810,34 @@ default, but this can be overridden. Users can also change the
 <em>p</em>-value and log fold-change thresholds necessary for
 differential abundance to be declared statistically significant: check
 out the reference pages for both functions for more information.</p>
-<p>Explore the statistical results within R using this command:</p>
+<p>You can explore the statistical results within R using this
+command:</p>
 <div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final<span class="sc">$</span>results<span class="sc">$</span>cancer)</span></code></pre></div>
-<pre><code>##                  logFC      CI.L      CI.R  AveExpr          t         B
-## A0A087X1C5 -0.16248488 -1.795191 1.4702208 22.05255 -0.2130786 -4.634329
-## A0A0B4J1Y9 -1.23638777 -2.854075 0.3812997 24.78467 -1.6364205 -4.540402
-## A0A0C4DH29 -0.05343303 -1.667910 1.5610440 25.99399 -0.0708619 -4.636029
-## A0AVT1     -0.41202774 -1.084512 0.2604561 26.16835 -1.3096614 -4.571243
-## A0FGR8     -0.13495942 -1.145718 0.8757988 24.34038 -0.2858846 -4.632807
-## A0MZ66     -0.22050798 -1.127385 0.6863689 23.62655 -0.5204464 -4.625005
-##              P.Value adj.P.Val sig.PVal sig.FDR
-## A0A087X1C5 0.8342813 0.9768986        0       0
-## A0A0B4J1Y9 0.1236201 0.7870392        0       0
-## A0A0C4DH29 0.9444917 0.9928125        0       0
-## A0AVT1     0.2106483 0.8202240        0       0
-## A0FGR8     0.7790768 0.9768986        0       0
-## A0MZ66     0.6107105 0.9548995        0       0</code></pre>
+<pre><code>##                  logFC      CI.L      CI.R  AveExpr          t         B   P.Value adj.P.Val
+## A0A087X1C5 -0.16248488 -1.795191 1.4702208 22.05255 -0.2130786 -4.634329 0.8342813 0.9768986
+## A0A0B4J1Y9 -1.23638777 -2.854075 0.3812997 24.78467 -1.6364205 -4.540402 0.1236201 0.7870392
+## A0A0C4DH29 -0.05343303 -1.667910 1.5610440 25.99399 -0.0708619 -4.636029 0.9444917 0.9928125
+## A0AVT1     -0.41202774 -1.084512 0.2604561 26.16835 -1.3096614 -4.571243 0.2106483 0.8202240
+## A0FGR8     -0.13495942 -1.145718 0.8757988 24.34038 -0.2858846 -4.632807 0.7790768 0.9768986
+## A0MZ66     -0.22050798 -1.127385 0.6863689 23.62655 -0.5204464 -4.625005 0.6107105 0.9548995
+##            sig.PVal sig.FDR
+## A0A087X1C5        0       0
+## A0A0B4J1Y9        0       0
+## A0A0C4DH29        0       0
+## A0AVT1            0       0
+## A0FGR8            0       0
+## A0MZ66            0       0</code></pre>
 <p>The result tables provide information on the estimated log2
 fold-change (logFC) of protein abundance, statistical results
 (confidence intervals, t and B statistics), and significance levels (raw
-and adjusted <em>p</em>-values). However, <code>proteoDA</code> also
-provides functions for exporting these results to <code>.csv</code>
-files, Excel spreadsheets, and interactive reports that make exploring
-your results simple. Two additional output columns are included in the
-final Excel spreadsheet flagging proteins that are significant by both
-log2 fold change and either the unadjusted p-value or the adjusted
-p-value. The values 1, 0, and -1 are provided in the “sig.Pval” and
-“sig.FDR” columns where a 1 indicates the protein is significant by both
-thresholds and is up-regulated, while a -1 indicates the protein is
-significant and down-regulated. This makes filtering for the
-up-regulated or down-regulated proteins based on a log2 fold change and
-a p-value threshold simple.</p>
+and adjusted <em>p</em>-values), and columns indicating whether a
+protein is considered differentially abundant according to the specified
+<em>p</em>-value and log2 fold-change thresholds (1 indicates
+up-regulated/more abundant, -1 indicates down-regulated/less abundant,
+and 0 indicates no statistically significant differential abundance).
+However, <code>proteoDA</code> also provides functions for exporting
+these results to <code>.csv</code> files, Excel spreadsheets, and
+interactive reports that make exploring your results simple.</p>
 </div>
 <div id="outputing-results" class="section level2">
 <h2>Outputing results</h2>
@@ -856,12 +856,13 @@ and <code>.xlsx</code> files of the statistical results.</p>
 reports of their results with <code>write_limma_plots()</code>:</p>
 <div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_limma_plots</span>(final,</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">grouping_column =</span> <span class="st">&quot;group&quot;</span>,</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">table_columns =</span> <span class="fu">c</span>(<span class="st">&quot;uniprot_id&quot;</span>,<span class="st">&quot;protein_info&quot;</span>),</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">title_column =</span> <span class="st">&quot;uniprot_id&quot;</span>,</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">output_dir =</span> <span class="st">&quot;02_DA_results&quot;</span>,</span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">tmp_subdir =</span> <span class="st">&quot;tmp&quot;</span>,</span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">height =</span> <span class="dv">1000</span>,</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>                  <span class="at">width =</span> <span class="dv">1000</span>)</span></code></pre></div>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">grouping_column =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">table_columns =</span> <span class="fu">c</span>(<span class="st">&quot;uniprot_id&quot;</span>,<span class="st">&quot;protein_info&quot;</span>),</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">title_column =</span> <span class="st">&quot;uniprot_id&quot;</span>,</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">output_dir =</span> <span class="st">&quot;02_DA_results&quot;</span>,</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">tmp_subdir =</span> <span class="st">&quot;tmp&quot;</span>,</span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>                  <span class="at">height =</span> <span class="dv">1000</span>,</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>                  <span class="at">width =</span> <span class="dv">1000</span>)</span></code></pre></div>
 <p>Both functions will save their output to the current working
 directory by default, but the output directory, file names, and a
 variety of other options can be set by the user (see their reference
