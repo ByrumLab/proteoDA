@@ -43,7 +43,7 @@ library(proteoDA)
 ## Workflow
 
 ![proteoDA workflow
-flowchart](./data-raw/proteoDA_flowchar.png?raw=true)
+flowchart](./data-raw/proteoDA_flowchart.png?raw=true)
 
 ## Example pipeline
 
