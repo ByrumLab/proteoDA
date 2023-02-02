@@ -35,11 +35,11 @@ library(proteoDA)
 
 ## Data Import and Requirements
 
-`proteoDA` stores data and results in a `DAList`, a list object with a special structure and class (its an S3 class, for the R nerds). DA stands for "differential abundance", the type of analysis a `DAList` is meant for.  A `DAList` contains 7 items (which we also call slots): data, annotation, metadata, design, eBayes_fit, results, and tags. Generally, you only need to worry about the first three slots, and `proteoDA` will take care of the rest. They are:
+`proteoDA` stores data and results in a `DAList`, a list object with a special structure and class (its an S3 class). DA stands for "differential abundance" indicating the type of analysis is for protein abundance.  A `DAList` contains 7 items, which are called slots: data, annotation, metadata, design, eBayes_fit, results, and tags. Generally, you only need to worry about the first three slots, and `proteoDA` will take care of the rest. They are:
 
 1. **data**- A data frame or matrix containing protein intensity values for each sample.  The rows contain data from a specific protein, and columns represent individual samples. The names of the columns must match the row names of the metadata (see below).
 
-2. **annotation**- A data frame containing annotation information for the proetins. These could be protein accession numbers, description, gene symbols, etc. There is only one required item: the annotation data must contain a column titled "uniprot_id" (no capital letters!), and the values in that column must be unique to each row (this is how `proteoDA` keeps track of the unique proteins in your experiment).
+2. **annotation**- A data frame containing annotation information for the proetins. These could be protein accession numbers, description, gene symbols, etc. There is only one required item: the annotation data must contain a column titled "uniprot_id" (no capital letters!), and the values in that column must be unique to each row. This is how `proteoDA` keeps track of the unique proteins in your experiment.
 
 3. **metadata**- A data frame containing sample information such as sample name, group, gender, batch, etc. The row names of the metadata must match the column names of the data. 
 
@@ -51,7 +51,7 @@ Using some example data, we'll walk through how to prepare existing data for use
 
 2. `metafile.csv`, a comma-separated value file containing sample information and metadata.
 
-These examples come bundled with the `proteoDA` package, and we can import the files and take a look at them using standard R functions:
+These examples come bundled with the `proteoDA` package and can be imported using standard R functions:
 
 ```{r}
 input_data <- read.csv(system.file("extdata/DIA_data.csv.gz", package = "proteoDA"))
@@ -62,15 +62,15 @@ sample_metadata <- read.csv(system.file("extdata/metafile.csv", package = "prote
 head(input_data)
 ```
 
-The `input_data` is a data frame with 9089 rows (each corresponding to one protein) and 21 columns. The first 4 columns give protein annotation information: a UniProt ID, some protein info from the database search, etc. The remaining 17 columns give the per-sample protein intensities.  
+The `input_data` is a data frame with 9089 rows, each corresponding to one protein, and 21 columns. The first 4 columns give protein annotation information: a UniProtID, some protein info from the database search, etc. The remaining 17 columns give the per-sample protein intensities.  
 
 ```{r, eval = F}
 head(sample_metadata)
 ```
 
-The `sample_metadata` is a dataframe with 17 rows giving information on each sample: the column name in the `input_data` which corresponds to that sample, the sample ID, the sample batch (all the same, in this case), and a "group" column describing the sample type: 3 pooled samples used for characterizing all proteins during the database search, 7 samples from normal, non-cancercous tissue, and 7 samples from cancer tissue. The goal of our experiment is to find proteins that are differentially abundance in cancer and non-cancer cells. 
+The `sample_metadata` is a dataframe with 17 rows giving information on each sample, including the column name in the `input_data` which corresponds to that sample, the sample ID, the sample batch (all the same, in this case), a "group" column describing the sample type, three pooled samples used for characterizing all proteins during the database search, seven samples from normal, non-cancercous tissue, and seven samples from cancer tissue. The goal of our experiment is to find proteins that are differentially abundant in cancer compared to non-cancer cells. 
 
-For making our `DAList` object, we need to separate out the protein annotation data and protein intensity data in the `input_data` data frame. There are a number of ways to do this in `R`, but an easy way is to subset each data frame based on the indicies of the desired columns:
+For making our `DAList` object, we need to separate out the protein annotation and protein intensity data in the `input_data` data frame. There are a number of ways to do this in `R`, but an easy way is to subset each data frame based on the indicies of the desired columns:
 
 ```{r}
 intensity_data <- input_data[,5:21] # select columns 5 to 21
@@ -81,7 +81,7 @@ When creating data frames of intensity data and annotation information for a `DA
 
 Finally, before creating our `DAList` object, we can return to the two requirements we mention above: 
 
-1. The annotation data should contain a column name "uniprot_id" which contains a unique entry for each row/protein. Our example data already fulfills this criteria.
+1. The annotation data should contain a column name "uniprot_id", which contains a unique entry for each row/protein. Our example data already fulfills this criteria.
 
 2. The row names of the metadata should equal the column names of the protein intensity data. We can check this:
 
@@ -128,19 +128,19 @@ Before analysis, we need to do some filtering of the raw data. First, we can fil
 ?filter_samples
 ```
 
-This function takes two arguments: an input `DAList` and a condition: a logical expression which describes which samples should be kept. In our case, we want to remove the pool samples, and keep all non-pool samples. So, let's keep all samples where the "group" column in the sample metadata does not equal "Pool":
+This function takes two arguments: an input `DAList` and a condition, which is a logical expression describing which samples should be kept. In our case, we want to remove the pool samples and keep all non-pool samples. So, let's keep all samples where the "group" column in the sample metadata does not equal "Pool":
 
 ```{r, message = F}
 filtered_samples <- filter_samples(raw, group != "Pool")
 ```
 
-Next, we may want to filter out proteins with a large amount of missing data. `proteoDA` provides two functions to do this: `filter_proteins_by_group()` and `filter_proteins_by_proportion()`. With `filter_proteins_by_group()`, the user specifies the minimum number of samples and groups for which a protein must have non-missing data: e.g., a protein must be present in at least 4 samples in at least 1 group to be kept. `filter_proteins_by_proportion()` is similar, but the user specifies a minimum proportion, instead of a minimum number: this is useful for cases when sample sizes are unequal across groups. 
+Next, we may want to filter out proteins with a large amount of missing data. `proteoDA` provides two functions to do this: `filter_proteins_by_group()` and `filter_proteins_by_proportion()`. With `filter_proteins_by_group()`, the user specifies the minimum number of samples and groups for which a protein must have non-missing data: e.g., a protein must be present in at least 4 samples in at least 1 group to be kept. `filter_proteins_by_proportion()` is similar, but the user specifies a minimum proportion, instead of a minimum number. This is useful for cases when sample sizes are unequal across groups. 
 
 It is important to note that these filtering functions only filter on missing values (`r NA`), not zero values. The distinction between missing values and zeroes is important, as the `limma` models we use to estimate differential abundance will treat `r NA` and zero differently. A missing value is ignored, while zero values are included in the statistical model and estimations of log fold-change. Functionally, a zero in the data tells the `limma` model that we know that a protein was not present. This is generally not the case with mass spectrometry data (there are many reasons a protein may not have been detected, even when it is present), so generally zero values should be converted to missing data. However, there are cases where it may be appropriate. In a comparison between tissues from a wild-type and a knockout strain, for example, you may know that the protein associated with the knockout gene is absent and a 0 would be correct.
 
 `proteoDA` has two functions to help you manage missing values in the way that is appropriate for your data: `zero_to_missing()` will convert 0 values to missing data, while `missing_to_zero()` will convert missing values (usually `r NA`, but you can specify other values depending on how your data are encoded) to zero. 
 
-In our example data, many proteins have zero intensity, but we know (from the experiment type, instrument it was run on, etc.) that these do not necessarily represent proteins that are definitely not present. So, we'll convert these to missing values, and then filter out proteins with too much missing data. A good rule of thumb is to require non-missing data in ~2/3 of the replicates in one group. For our example data, with 7 replicates per group, will require non-missing data for at least 4 samples:
+In our example data, many proteins have zero intensity, but we know from the experiment type, instrument it was run on, etc., that these do not necessarily represent proteins that are definitely not present. Therefore, we can convert these to missing values, and then filter out proteins with too much missing data. A good rule of thumb is to require non-missing data in ~2/3 of the replicates in one group. For our example data, with 7 replicates per group, we will require non-missing data for at least 4 samples:
 
 ```{r, message=FALSE}
 # Convert missing values
@@ -195,7 +195,7 @@ knitr::include_graphics("images/proteiNorm.png")
 
 In general, you want to pick a normalization method that has low levels of intra-group variability (PCV, PMAD, and PEV) and high levels of intra-group correlation (COR), with a log2 density ratio that is roughly symmetric around 0. The second page of the normalization report (not shown) gives MA plots of average expression against the average log2 ratio between groups: a good normalization method should have a relatively flat trend (orange line). 
 
-It is important to note that, although we need to include a grouping variable to calculate within-group statistics for *evaluating* normalization methods, the actual *calculation* of these normalizations is done across all samples without regard to grouping when using the default `proteoDA` global options. The default global options may not be appropriate if the data set includes a small number of molecules (less than a few hundred) and/or most of the variables are differentially abundant. Thus, though providing different grouping columns when creating the normalization report might affect your evaluation of normalization methods, the underlying normalized values will be the same. 
+It is important to note that, although we need to include a grouping variable to calculate within-group statistics for *evaluating* normalization methods, the actual *calculation* of these normalizations is done across all samples without regard to grouping when using the default `proteoDA` global options. The default global options may not be appropriate if the data set includes a small number of molecules, less than a few hundred, and/or most of the variables are differentially abundant. Thus, though providing different grouping columns when creating the normalization report might affect your evaluation of normalization methods, the underlying normalized values will be the same. 
 
 
 For these example data, cyclic loess normalization ("cycloess" in the report) looks like a good choice, though all the normalization methods besides simple log2 transformation (unnormalized data) perform similarly, which is generally a good sign. Now that we've chosen the normalization method, we can normalize our data. This will overwrite the raw data with normalized data, so it's a good idea to save this as a new `DAList` object:
@@ -225,7 +225,7 @@ write_qc_report(normalized,
                 pca_axes = c(1,2),          # first 2 PCs
                 dist_metric = "euclidean",  # stats::dist for options
                 clust_method = "complete",  # stats::hclust for options
-                show_all_proteins = F)      # only proteins with missing data))
+                show_all_proteins = F)      # only proteins with missing data
 ```
 
 See the reference page of the `write_qc_report()` for more options on how to customize these reports.
@@ -253,10 +253,10 @@ intercept <- add_design(normalized,
 
 This intercept model will estimate two quantities for each protein: 
 
-1. The intercept, which will be the average expression in one of the two groups, which we will call the reference group.
+1. The intercept, which will be the average expression in one of the two groups and is called the reference group.
 2. The difference in average expression between the reference group and the second group. This second quantity is the differential abundance that we're interested in. 
 
-There is an important issue to consider: which group will be the reference group? `proteoDA` follows the `R` default, in which the category that is first in alphabetical order is the reference group. In this example data, that means the reference group is the cancer group, which we can see by examining the design matrix:
+There is an important issue to consider, which group will be the reference group? `proteoDA` follows the `R` default, in which the category that is first in alphabetical order is the reference group. In this example data, that means the reference group is the cancer group, which we can see by examining the design matrix:
 
 ```{r}
 head(intercept$design$design_matrix)
@@ -346,7 +346,7 @@ final <- intercept |>
                      extract_intercept = F)
 ```
 
-The `results` slot of a `DAList` holds a list, where each element in the list is a named data frame providing the results for that statistical term. Intercept terms are ignored by default, but this can be overridden. Users can also change the *p*-value and log fold-change thresholds necessary for differential abundance to be declared statistically significant: check out the reference pages for both functions for more information.
+The `results` slot of a `DAList` holds a list, where each element in the list is a named data frame providing the results for that statistical term. Intercept terms are ignored by default, but this can be overridden. Users can also change the *p*-value and log2 fold-change thresholds necessary for differential abundance to be declared statistically significant: check out the reference pages for both functions for more information.
 
 You can explore the statistical results within R using this command:
 
@@ -354,7 +354,7 @@ You can explore the statistical results within R using this command:
 head(final$results$cancer)
 ```
 
-The result tables provide information on the estimated log2 fold-change (logFC) of protein abundance, statistical results (confidence intervals, t and B statistics), and significance levels (raw and adjusted *p*-values), and columns indicating whether a protein is considered differentially abundant according to the specified *p*-value and log2 fold-change thresholds (1 indicates up-regulated/more abundant, -1 indicates down-regulated/less abundant, and 0 indicates no statistically significant differential abundance). However, `proteoDA` also provides functions for exporting these results to `.csv` files, Excel spreadsheets, and interactive reports that make exploring your results simple. 
+The result tables provide information on the estimated log2 fold-change (logFC) of protein abundance, statistical results (confidence intervals, t and B statistics), significance levels (raw and adjusted *p*-values), and columns indicating whether a protein is considered differentially abundant according to the specified *p*-value and log2 fold-change thresholds (1 indicates up-regulated/more abundant, -1 indicates down-regulated/less abundant, and 0 indicates no statistically significant differential abundance).  `proteoDA` also provides functions for exporting these results to `.csv` files, Excel spreadsheets, and interactive reports that make exploring your results simple. 
 
 
 ## Outputing results
@@ -377,7 +377,6 @@ Users can also generate both static PDF plots and interactive HTML reports of th
 
 ```{r, eval = FALSE}
 write_limma_plots(final,
-                  grouping_column = "group",
                   grouping_column = "group",
                   table_columns = c("uniprot_id","protein_info"),
                   title_column = "uniprot_id",
