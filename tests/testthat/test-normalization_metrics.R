@@ -86,11 +86,71 @@ test_that("COR returns results of proper length", {
 
   expect_length(COR(data, single_groups), 6)
   expect_length(COR(data, pair_groups), 3)
+  expect_length(COR(data, threes_groups), 6)
   expect_length(COR(data, fourtwo_groups), 7)
   expect_length(COR(data, six_groups), 15)
 })
 
 test_that("COR returns expected values", {
   # handle NAs, single groups, and no variance correctly
+  data <- data.frame(c(1000, 2000, 3000),
+                     c(1000, 2000, 3000),
+                     c(1000, 2000, NA),
+                     c(2000, 1000, 3000),
+                     c(1000, 2000, 3000))
+  groups <- c("a", "a", "b", "b", "c")
+  expect_result <- c(1, -1, 1)
+  expect_equal(unname(COR(data, groups)), expect_result)
+})
 
+test_that("log2ratio returns results of proper length", {
+
+  data <- data.frame(c(10000, 20000),
+                     c(10000, 20000),
+                     c(10000, 20000),
+                     c(10000, 20000),
+                     c(10000, 20000),
+                     c(10000, 20000))
+  single_groups <- c("a", "b", "c", "d", "e", "f")
+  pair_groups <- c("a", "a", "b", "b", "c", "c")
+  threes_groups <- c("a", "a", "a", "b", "b", "b")
+  fourtwo_groups <- c("a", "a", "a", "a", "b", "b")
+  six_groups <- c("a", "a", "a", "a", "a", "a")
+
+  # with no protein ID
+  # length should be number of pw comparisons times # of proteins
+  expect_length(log2ratio(data, single_groups), 30)
+  expect_length(log2ratio(data, pair_groups), 6)
+  expect_length(log2ratio(data, threes_groups), 2)
+  expect_length(log2ratio(data, fourtwo_groups), 2)
+  expect_length(log2ratio(data, six_groups), 0)
+
+
+  # With protein ID
+  # dims should be number of proteins (2)
+  # and number of pw comparisons
+  expect_equal(dim(log2ratio(data, single_groups, keep_protein_ID = T)), c(2, 15))
+  expect_equal(dim(log2ratio(data, pair_groups, keep_protein_ID = T)), c(2, 3))
+  expect_equal(dim(log2ratio(data, threes_groups, keep_protein_ID = T)), c(2, 1))
+  expect_equal(dim(log2ratio(data, fourtwo_groups, keep_protein_ID = T)), c(2, 1))
+  expect_equal(dim(log2ratio(data, six_groups, keep_protein_ID = T)), c(2, 0))
+})
+
+
+test_that("log2ratio calculates correct values", {
+
+  # handle NAs, single groups, and no variance correctly
+  data <- data.frame(c(500, 1500, 500),
+                     c(500, 1500, 500),
+                     c(2000, 2000, NA),
+                     c(2000, 2000, 2000),
+                     c(1500, 1500, 1500))
+  groups <- c("a", "a", "b", "b", "c")
+  expect_result <- c(1500, 500, 1500, 1000, 0, 1000, -500, -500, -500)
+  expect_result_df <- data.frame(V1 = c(1500, 500, 1500),
+                                 V2 = c(1000, 0, 1000),
+                                 V3 = c(-500, -500, -500),
+                                 row.names = c("X1", "X2", "X3"))
+  expect_equal(log2ratio(data, groups), expect_result)
+  expect_equal(log2ratio(data, groups, keep_protein_ID = T), expect_result_df)
 })
