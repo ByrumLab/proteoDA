@@ -9,7 +9,7 @@
 #'     the average (mean) of the per-protein CVs.
 #'   \item PMAD- Calculate the pooled median absolute deviation. The MAD is the
 #'     median of the absolute deviations of each sample from the group median.
-#'     The pooled MAD is the group median of the per-protein PMADs.
+#'     The pooled MAD is the group mean of the per-protein PMADs.
 #'   \item PEV- Calculates the pooled estimate of variance for each group. Uses
 #'     the weighted average method to account for unequal sample sizes (see
 #'     \url{https://en.wikipedia.org/wiki/Pooled_variance}).
@@ -118,7 +118,7 @@ log2ratio <- function(data, groups, keep_protein_ID = F) {
   # calculate mean intensity for each group
   # Original implementation by charity was a nested for loop that ended up calculating group
   # means multiple times
-  # I a one-liner with aggregate, but it was slow as hell
+  # I tried a one-liner with aggregate, but it was slow as hell
   # Switch back to a loop, but now a non-nested one that uses the speedy rowMeans
   mean_prot_by_group <- as.data.frame(matrix(nrow = nrow(data),
                                              ncol = length(unique(groups)),
@@ -126,7 +126,7 @@ log2ratio <- function(data, groups, keep_protein_ID = F) {
                                                              sort(unique(groups)))))
   # Get group means in a loop
   for (group in sort(unique(groups))) {
-    one_group_data <- data[, groups == group]
+    one_group_data <- data[, groups == group, drop = F]
     mean_prot_by_group[, group] <- rowMeans(one_group_data, na.rm = T)
   }
 
