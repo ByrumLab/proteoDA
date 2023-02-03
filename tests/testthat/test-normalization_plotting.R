@@ -4,7 +4,7 @@ test_that("eval_pn_metric_for_plot output has proper structure", {
 
   normList <- apply_all_normalizations(input$data)
 
-  groupings <- alist(sex = input$metadata$sex,
+  groupings <- list(sex = input$metadata$sex,
                      group =  input$metadata$group,
                      treatment = input$metadata$treatment)
 
