@@ -9,7 +9,7 @@
 #'     the average (mean) of the per-protein CVs.
 #'   \item PMAD- Calculate the pooled median absolute deviation. The MAD is the
 #'     median of the absolute deviations of each sample from the group median.
-#'     The pooled MAD is the group median of the per-protein PMADs.
+#'     The pooled MAD is the group mean of the per-protein PMADs.
 #'   \item PEV- Calculates the pooled estimate of variance for each group. Uses
 #'     the weighted average method to account for unequal sample sizes (see
 #'     \url{https://en.wikipedia.org/wiki/Pooled_variance}).

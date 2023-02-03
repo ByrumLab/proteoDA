@@ -33,22 +33,19 @@ test_that("PCV returns expected values", {
 
 test_that("PMAD returns expected values", {
   # control should be 0.
-  # treatment 1 (C and D) should be based on just the first and third proteins
-  # Should be 2/2 = 1
-  # Treatment 2 (E and F) should be (0 + 50 + 2)/3 = 17.33
+  # treatment should be 1.4826
+  # treatment2 should be 1.4826.
+  # Naive would be 1 for these, but the stats::mad() function has a correction
+  # and at such small samples sizes that matters a lot
+  data <- data.frame(sampleA = c(10000, 15000, 30000),
+                     sampleB = c(10000, 15000, 30000),
+                     sampleC = c(4, 17000, 1),
+                     sampleD = c(6, NA, 3),
+                     sampleE = c(4, 4, 4),
+                     sampleF = c(6, 6, 6))
+  groups <- c("control", "control", "treatment", "treatment", "treatment2", "treatment2")
 
-  # Waiting for a response from Charity. PMAD code and documentation are in conflict,
-  # not sure which is right.
-
-  # data <- data.frame(sampleA = c(10000, 15000, 30000),
-  #                    sampleB = c(10000, 15000, 30000),
-  #                    sampleC = c(10000, 17000, 1),
-  #                    sampleD = c(10000, NA, 3),
-  #                    sampleE = c(10000, 10, 1),
-  #                    sampleF = c(10000, 20, 3))
-  # groups <- c("control", "control", "treatment", "treatment", "treatment2", "treatment2")
-  #
-  # expect_equal(unname(PMAD(data, groups)), c(0, 1, 52/3))
+  expect_equal(unname(PMAD(data, groups)), c(0, 1.4826, 1.4826))
 
 })
 
