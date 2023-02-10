@@ -2,7 +2,7 @@
 % Please edit documentation in R/limma_tables.R
 \name{create_combined_results}
 \alias{create_combined_results}
-\title{Write combined results csv}
+\title{Combine statistical results}
 \usage{
 create_combined_results(annotation, data, statlist)
 }
@@ -17,7 +17,6 @@ create_combined_results(annotation, data, statlist)
 A data frame of the combined results.
 }
 \description{
-Internal function used to write the combined statistical results to a .csv
-file.
+Internal function used to construct a data frame of combined results
 }
 \keyword{internal}

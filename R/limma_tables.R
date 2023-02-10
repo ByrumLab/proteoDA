@@ -65,10 +65,10 @@ write_limma_tables <- function(DAList,
   # Check input arguments generally
   input_DAList <- validate_DAList(DAList)
 
-  # Make sure there's a design matrix present already,
+  # Make sure there's results present,
   # tell user to set it first if not
   if (is.null(DAList$results)) {
-    cli::cli_abort(c("Input DAList does not have a results design",
+    cli::cli_abort(c("Input DAList does not have results",
                      "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
   }
 
@@ -145,7 +145,7 @@ write_limma_tables <- function(DAList,
   }
 
   # Write summary CSV -------------------------------------------------------
-  cli::cli_inform("Writing DE summary table to {.path {summary_output_file}}")
+  cli::cli_inform("Writing DA summary table to {.path {summary_output_file}}")
 
   summary <- do.call("rbind",
                      lapply(X = names(DAList$results),
@@ -294,9 +294,9 @@ write_per_contrast_csvs <- function(annotation_df,
   # Note: technically, these could be in different orders across contrasts,
   # If they differed across contrasts.
   per_contrast_results <- lapply(X = results_statlist,
-                                 FUN = function(x) cbind(annotation_df[rownames(data), ],
-                                                         data[rownames(data), ],
-                                                         x[rownames(data), ]))
+                                 FUN = function(x) cbind(annotation_df[rownames(data), , drop = F],
+                                                         data[rownames(data), , drop = F],
+                                                         x[rownames(data), ,drop = F]))
   # Make corresponding filenames
   filenames <- file.path(output_dir, paste0(names(per_contrast_results), ".csv"))
   # write
@@ -318,10 +318,9 @@ write_per_contrast_csvs <- function(annotation_df,
 
 
 
-#' Write combined results csv
+#' Combine statistical results
 #'
-#' Internal function used to write the combined statistical results to a .csv
-#' file.
+#' Internal function used to construct a data frame of combined results
 #'
 #' @param annotation A data frame of annotation data for each gene/protein.
 #' @param data A data frame of normalized intensity data for each sample.
@@ -339,14 +338,14 @@ create_combined_results <- function(annotation,
   # Reorder rows and rename cols for each element of the results statlist
   results_for_combine <- lapply(X = names(statlist),
                                 function(x) {
-                                  tmp <- statlist[[x]][row_order, ,drop = F]
+                                  tmp <- statlist[[x]][row_order, , drop = F]
                                   colnames(tmp) <- paste(colnames(tmp), x, sep = "_")
                                   tmp
                                 })
 
   ## combine, annotation, data and combined stat results
-  combined_results <- cbind(annotation[row_order, ],
-                            data[row_order, ],
+  combined_results <- cbind(annotation[row_order, , drop = F],
+                            data[row_order, , drop = F],
                             results_for_combine)
 
   combined_results
@@ -402,7 +401,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   # Add annotation columns -----------------------------------------------------
 
   # Subset and rename
-  annot <- annotation[row_order, ]
+  annot <- annotation[row_order, , drop = F]
   colnames(annot) <- newNames
   annot <- make_excel_hyperlinks(data = annot,
                                  url.col = "UniProt ID",
@@ -493,7 +492,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   openxlsx::addStyle(wb, sheet = sheetName, style = colStyle,
                      rows = title_row + 1, cols = data_col_start:data_col_end, stack=TRUE)
 
-  openxlsx::writeData(wb, sheet = sheetName, x = data[row_order, ],
+  openxlsx::writeData(wb, sheet = sheetName, x = data[row_order, ,drop = F],
                       startCol = data_col_start,
                       startRow = title_row + 1,
                       colNames = TRUE,
@@ -525,7 +524,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   for(i in base::seq_along(names(statlist))) {
 
     stats <- statlist[[i]]
-    stats<-stats[row_order, ]
+    stats<-stats[row_order, , drop = F]
     comparison <- names(statlist)[i]
     title_color <- colors2[i]
     header_color <- lightcolors2[i]
@@ -652,7 +651,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
 #'
 make_excel_hyperlinks <- function(data, url.col, url) {
 
-  ids <- data[,url.col]
+  ids <- data[,url.col, drop = T]
   tmp <- is.na(ids)
   url2 <- paste0(url, ids)
   ids2 <- paste0("HYPERLINK(\"", url2, "\", \"", ids, "\")")
