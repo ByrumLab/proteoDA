@@ -98,10 +98,10 @@ write_limma_plots <- function(DAList = NULL,
   # Check input arguments generally
   input_DAList <- validate_DAList(DAList)
 
-  # Make sure there's a design matrix present already,
+  # Make sure there's a results present already,
   # tell user to set it first if not
   if (is.null(DAList$results)) {
-    cli::cli_abort(c("Input DAList does not have a results design",
+    cli::cli_abort(c("Input DAList does not have results",
                      "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
   }
 
@@ -132,11 +132,18 @@ write_limma_plots <- function(DAList = NULL,
 
   # If title column is supplied
   if (!is.null(title_column)) {
+    # check that it is of length 1
+    if (length(title_column) != 1) {
+      cli::cli_abort(c("Length of {.arg title_column} does not equal 1",
+                       "i" = "Only specify one column name for {.arg title_column}"))
+
+    }
     # Check that it exists in the annotation
     if (!title_column %in% colnames(DAList$annotation)) {
       cli::cli_abort(c("Column {.arg {title_column}} not found in annotation of {.arg DAList}",
                        "i" = "Check the column names with {.code colnames(DAList$annotation)}."))
     }
+
     # Grab the possible titles and truncate them
     temp_keys <- stringr::str_trunc(DAList$annotation[,title_column], width = 20, side = "right")
 
@@ -303,9 +310,9 @@ write_limma_plots <- function(DAList = NULL,
 
     # Prep data
     data <- prep_plot_model_data(DAList$results, contrast)
-    counts <- DAList$data[rownames(data),]
+    counts <- DAList$data[rownames(data), , drop = F]
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
-    anno <- shared_anno[rownames(data), ] # double-check/ensure that annotation data are in the right order
+    anno <- shared_anno[rownames(data), , drop = F] # double-check/ensure that annotation data are in the right order
 
     # Add the non log-10 p values to the annotation data, for use
     # in  the table
