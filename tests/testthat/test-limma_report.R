@@ -209,7 +209,8 @@ test_that("write_limma_plots does not alter user working directory", {
   # When specifying custom wd
   on.exit(unlink(c("tempfortesting/control_DA_report.html",
                    "tempfortesting/treatment_DA_report.html",
-                   "tempfortesting/static_plots"), recursive = T), add = T)
+                   "tempfortesting/static_plots",
+                   "tempfortesting/"), recursive = T), add = T)
 
   suppressMessages(
     expect_message(
@@ -241,7 +242,8 @@ test_that("write_limma_plots creates output files", {
                               "static_plots/treatment-volcano-adjusted-pval.pdf",
                               "static_plots/treatment-volcano-raw-pval.pdf")
 
-  on.exit(unlink(expected_files_default, recursive = T), add = T)
+  on.exit(unlink(c(expected_files_default,
+                   "static_plots"), recursive = T), add = T)
 
   suppressMessages(write_limma_plots(input,
                                      grouping_column = "treatment",
@@ -261,7 +263,9 @@ test_that("write_limma_plots creates output files", {
                              "tempfortest/static_plots/treatment-pval-hist.pdf",
                              "tempfortest/static_plots/treatment-volcano-adjusted-pval.pdf",
                              "tempfortest/static_plots/treatment-volcano-raw-pval.pdf")
-  on.exit(unlink(expected_files_custom, recursive = T), add = T)
+  on.exit(unlink(c(expected_files_custom,
+                 "tempfortest/static_plots",
+                 "tempfortest"), recursive = T), add = T)
   suppressMessages(
     write_limma_plots(input,
                       grouping_column = "treatment",

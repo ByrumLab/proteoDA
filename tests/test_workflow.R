@@ -140,10 +140,6 @@ write_qc_report(norm_reb,
                 overwrite = T, standardize = T, top_proteins = nrow(norm_reb$data),
                 pca_axes = c(2, 5))
 
-write_qc_report(norm_kaul,
-                color_column = "group",
-                filename = "kaul_qc_update.pdf",
-                overwrite = T)
 
 
 # Make design -------------------------------------------------------------
@@ -244,7 +240,7 @@ results_higgs <- extract_DA_results(fit_higgs, extract_intercept = F)
 write_limma_tables(results_lupashin, overwrite = T)
 
 write_limma_tables(results_ndu,
-                   overwrite = F)
+                   overwrite = T)
 
 write_limma_tables(results_ndu_random,
                    output_dir = "Ndu_random_s3obj",
@@ -283,7 +279,8 @@ write_limma_plots(results_reb,
 
 write_limma_plots(results_reb,
                   grouping_column = "group",
-                  output_dir = "reb_s3obj/")
+                  output_dir = "reb_s3obj/",
+                  overwrite = T)
 
 write_limma_plots(results_lupashin,
                   grouping_column = "group",
@@ -316,6 +313,7 @@ write_limma_plots(results_higgs,
                   grouping_column = "group",
                   output_dir = "higgs_s3obj")
 write_limma_plots(results_higgs,
-                  #key_column = "Protein.Name",
+                  title_column = "Protein.Name",
                   grouping_column = "group",
-                  output_dir = "higgs_s3obj")
+                  output_dir = "higgs_s3obj",
+                  overwrite = T)
