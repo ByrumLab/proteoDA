@@ -109,6 +109,7 @@ test_that("write_limma_tables informs user of output dir and filenames when not 
 
   on.exit(unlink(c("per_contrast_results/control.csv",
                    "per_contrast_results/treatment.csv",
+                   "per_contrast_results",
                    "DA_summary.csv",
                    "combined_results.csv",
                    "results.xlsx"), recursive = T), add = T)
@@ -184,7 +185,9 @@ test_that("write_limma_tables messages user when overwriting", {
                    "per_contrast_results/treatment.csv",
                    "DA_summary.csv",
                    "combined_results.csv",
-                   "results.xlsx"), recursive = T), add = T)
+                   "results.xlsx",
+                   "per_contrast_results"),
+                 recursive = T), add = T)
 
   suppressMessages(write_limma_tables(input))
   suppressMessages(
@@ -206,7 +209,9 @@ test_that("write_limma_tables creates output files", {
                                "combined_results.csv",
                                "results.xlsx")
 
-  on.exit(unlink(expected_files_default, recursive = T), add = T)
+  on.exit(unlink(c(expected_files_default,
+                   "per_contrast_results"),
+                 recursive = T), add = T)
 
   suppressMessages(write_limma_tables(input, overwrite = F))
   expect_true(all(file.exists(expected_files_default)))
@@ -217,7 +222,9 @@ test_that("write_limma_tables creates output files", {
                                "tempfortest/sum.csv",
                                "tempfortest/combo.csv",
                                "tempfortest/res.xlsx")
-  on.exit(unlink(expected_files_custom, recursive = T), add = T)
+  on.exit(unlink(c(expected_files_custom,
+                   "tempfortest"),
+                 recursive = T), add = T)
   suppressMessages(
     write_limma_tables(input,
                        output_dir = "tempfortest",

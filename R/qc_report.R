@@ -10,7 +10,9 @@
 #'   supplied, all samples will be the same color.
 #' @param label_column Optional. The name of column within the targets data frame
 #'   which contains labels to use for plotting figures. When not supplied,
-#'   defaults to using the column names of the data in processed_data.
+#'   defaults to using the column names of the data in processed_data. To ensure
+#'   good plot formatting, sample labels will be truncated to 20 characters, and
+#'   the function will give an error if the sample labels are not unique.
 #' @param filename The file name of the report to be saved. Must end in .pdf. Will
 #'   default to "QC_Report.pdf" if no filename is provided.
 #' @param top_proteins The number of most variable proteins to use

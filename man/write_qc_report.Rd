@@ -28,7 +28,9 @@ supplied, all samples will be the same color.}
 
 \item{label_column}{Optional. The name of column within the targets data frame
 which contains labels to use for plotting figures. When not supplied,
-defaults to using the column names of the data in processed_data.}
+defaults to using the column names of the data in processed_data. To ensure
+good plot formatting, sample labels will be truncated to 20 characters, and
+the function will give an error if the sample labels are not unique.}
 
 \item{output_dir}{The directory in which to save the report. If the directory
 does not exist, it will be created. If not provided, will default to
