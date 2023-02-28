@@ -48,7 +48,9 @@ qc_violin_plot <- function(data,
                                      vjust = 0.5),
           axis.title.x = element_blank(),
           plot.title = element_text(hjust = 0.5),
-          panel.grid = element_blank()) +
+          panel.grid = element_blank(),
+          legend.text = element_text(size = 14),
+          legend.title = element_text(size = 16)) +
     ylab("Normalized intensity")
 }
 
@@ -110,7 +112,9 @@ qc_pca_plot <- function(data,
     geom_point() +
     scale_color_manual(values = colorGroup(groups), limits = unique(groups), name = NULL) +
     theme_bw() +
-    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.text = element_text(size = 14),
+          legend.title = element_text(size = 16)) +
     xlab(paste0("PC", pca_axes[1], " (", round(pca$summary["Proportion of Variance", pca_axes[1]] * 100, 2), " %)")) +
     ylab(paste0("PC", pca_axes[2], " (", round(pca$summary["Proportion of Variance", pca_axes[2]] * 100, 2), " %)"))
 
@@ -193,13 +197,21 @@ qc_dendro_plot <- function(data,
                                   group = groups)
 
   # Make plot
+  # Adjust the bottom margin based on the length of the longest
+  # sample label, so labels don't go over plot edges
+  longest_label <- max(stringr::str_length(sample_labels))
+  # Only do it when > 50 samples
+  bottom_margin <- ifelse(length(sample_labels > 50), 12*longest_label, 80)
+
   ggtree::ggtree(hc) %<+% sample_group_info +
     ggtree::layout_dendrogram() +
     ggtree::geom_tippoint(aes(color = .data$group)) +
     ggtree::geom_tiplab(aes(color = .data$group), angle=90, hjust=1, offset = -0.5, show.legend=FALSE) +
     scale_color_manual(values = colorGroup(groups), limits = unique(groups), name = NULL) +
-    ggtree::theme_dendrogram(plot.margin=margin(6,6,80,6)) +
-    theme(plot.title = element_text(hjust = 0.5))
+    ggtree::theme_dendrogram(plot.margin=margin(6,6,bottom_margin,6)) +
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.text = element_text(size = 14),
+          legend.title = element_text(size = 16))
 
 }
 
@@ -238,7 +250,9 @@ qc_corr_hm <- function(data,
       Sample = list(
         title = "Groups",
         at = levels(groups),
-        labels = paste(levels(groups))
+        labels = paste(levels(groups)),
+        title_gp = grid::gpar(fontsize = 16),
+        labels_gp = grid::gpar(fontsize = 14)
       )
     )
   )
@@ -246,13 +260,14 @@ qc_corr_hm <- function(data,
   # Adjust plot size based on number of samples
   # This also occurs in the write_qc_report function and qc_corr_hm function.
   # If you make changes here, make corresponding changes in those functions
+  # For plots with lots of samples, dynamically size with a minimum
   fontsize <- ifelse(length(groups) < 100, 12, 10)
   if (ncol(data) > 50) {
-    height <- 15
-    width <- 15
+    height <- max((10/72)*ncol(data), 14) - 2
+    width <- max((10/72)*ncol(data), 14) - 2
   } else {
-    height <- 6
-    width <- 6
+    height <- 9
+    width <- 9
   }
 
 
@@ -278,8 +293,8 @@ qc_corr_hm <- function(data,
     left_annotation = NULL,
     column_labels = sample_labels,
     row_labels = sample_labels,
-    width = grid::unit(width, "in"),
-    height = grid::unit(height, "in")
+    heatmap_width = grid::unit(width, "in"),
+    heatmap_height = grid::unit(height, "in")
   )
 
   # Output the Heatmap as a gTree object,
@@ -288,7 +303,7 @@ qc_corr_hm <- function(data,
   grid::grid.grabExpr(
     ComplexHeatmap::draw(
       hm_corr, heatmap_legend_side = "top",
-      ht_gap = grid::unit(2, "cm")
+      ht_gap = grid::unit(1.5, "in")
     )
   )
 }
@@ -348,12 +363,13 @@ qc_missing_hm <- function(data,
   # Adjust plot size based on number of samples
   # This also occurs in the write_qc_report function and qc_corr_hm function.
   # If you make changes here, make corresponding changes in those functions
+  # For plots with lots of samples, dynamically size with a minimum
   if (ncol(data) > 50) {
-    height <- 15
-    width <- 15
+    height <- max((10/72)*ncol(data), 14) - 2
+    width <- max((10/72)*ncol(data), 14) - 2
   } else {
-    height <- 6
-    width <- 6
+    height <- 9
+    width <- 9
   }
 
   # Then order the groups/batches/etc
@@ -365,9 +381,13 @@ qc_missing_hm <- function(data,
   ColAnn <- ComplexHeatmap::HeatmapAnnotation(
     sample = sorted_groups,
     col = list(sample = colorGroup(groups)),
-    annotation_legend_param = list(sample = list(title = "Group",
-                                                 at = unique(sorted_groups),
-                                                 labels = paste("", unique(sorted_groups)))),
+    annotation_legend_param = list(
+      sample = list(title = "Group",
+                    at = unique(sorted_groups),
+                    labels = paste("", unique(sorted_groups))),
+      title_gp = grid::gpar(fontsize = 16),
+      labels_gp = grid::gpar(fontsize = 14)
+    ),
     show_legend = T
   )
   # Plot heatmap
@@ -381,13 +401,15 @@ qc_missing_hm <- function(data,
     name = "Status",
     column_names_gp = grid::gpar(fontsize=7),
     heatmap_legend_param = list(at = c(0, 1),
-                                labels = c("Missing", "Valid")),
+                                labels = c("Missing", "Valid"),
+                                title_gp = grid::gpar(fontsize = 16),
+                                labels_gp = grid::gpar(fontsize = 14)),
     show_heatmap_legend = T,
     top_annotation = ColAnn,
     cluster_columns = cluster,
     column_labels = sorted_labels,
-    width = grid::unit(width, "in"),
-    height = grid::unit(height, "in")
+    heatmap_width = grid::unit(width, "in"),
+    heatmap_height = grid::unit(height, "in")
   )
 
 
@@ -399,7 +421,7 @@ qc_missing_hm <- function(data,
       hm_clust,
       heatmap_legend_side = "right",
       annotation_legend_side = "right",
-      ht_gap = grid::unit(2, "cm"),
+      ht_gap = grid::unit(1.5, "in"),
       column_title = "Missing Values"
       )
     )

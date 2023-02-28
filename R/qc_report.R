@@ -123,8 +123,24 @@ write_qc_report <- function(DAList,
                        "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
     }
     sample_labels <- as.character(DAList$metadata[,label_column])
+    if (any(duplicated(sample_labels))) {
+      cli::cli_abort(c("Sample labels in {label_column} column are not unique"))
+    }
   } else { # Use colnames of the data if not provided
     sample_labels <- colnames(DAList$data)
+  }
+
+  # If necessary, truncate sample labels
+  if (any(stringr::str_length(sample_labels) > 20)) {
+    sample_labels <- stringr::str_trunc(sample_labels, width = 20, side = "right")
+    num_too_long <- sum(stringr::str_length(sample_labels) > 20, na.rm = T)
+    cli::cli_inform(c("{cli::qty(num_too_long)} {?A/Some} sample label{?s} longer than 20 characters",
+                      "i" = "Truncating sample labels to 20 characters for plotting"))
+
+    if (any(duplicated(sample_labels))) {
+      cli::cli_abort(c("Sample labels in {label_column} column are not unique after truncation",
+                       "i" = "Modify values in {label_column} or use a different column"))
+    }
   }
 
   ############
@@ -222,11 +238,11 @@ write_qc_report <- function(DAList,
 
   # missing value heatmap <- cluster by grouping column
   miss_heatmap_groups <- qc_missing_hm(data = norm_data,
-                                        groups = groups,
-                                        sample_labels = sample_labels,
-                                        column_sort = "group",
-                                        group_var_name = color_column,
-                                        show_all_proteins = show_all_proteins)
+                                       groups = groups,
+                                       sample_labels = sample_labels,
+                                       column_sort = "group",
+                                       group_var_name = color_column,
+                                       show_all_proteins = show_all_proteins)
 
   ###############################
   ## Save plots, check, return ##
@@ -241,7 +257,10 @@ write_qc_report <- function(DAList,
                        miss_heatmap_cluster,
                        miss_heatmap_groups)
   } else { # when <50 samples, group first plots together on 1 page
-    plots_list <-  list(patchwork::patchworkGrob(violin_plot + pca_plot + dendro_plot),
+    joint_plot <- patchwork::wrap_plots(violin_plot, pca_plot, dendro_plot) &
+      theme(plot.margin = margin(0,0,0,0))
+
+    plots_list <-  list(patchwork::patchworkGrob(joint_plot),
                         correlation_heatmap,
                         miss_heatmap_cluster,
                         miss_heatmap_groups)
@@ -253,11 +272,14 @@ write_qc_report <- function(DAList,
   # If you make changes here, make corresponding changes in the
   # qc_corr_hm and qc_missing_hm functions
   if (ncol(norm_data) > 50) {
-    height <- 17
-    width <- 17
+    # With > 50 samples, sample labels
+    # are in 10 pt font. 72pt per inch
+    # Dynamically size, with a minimum
+    height <- max((10/72)*ncol(norm_data), 14)
+    width <- max((10/72)*ncol(norm_data), 14)
   } else {
-    height <- 8.5
-    width <- 22
+    height <- 10
+    width <- 30
   }
 
   # Then save

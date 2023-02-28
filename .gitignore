@@ -27,6 +27,8 @@ for_testing/bs_tab_listen.Rmd
 .Rdata
 .httr-oauth
 inst/doc
+update/
+previous/
 
 # Some generated stuff in the vignette folder
 vignettes/*.R
