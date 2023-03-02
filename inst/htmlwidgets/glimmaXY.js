@@ -20,6 +20,8 @@ HTMLWidgets.widget({
 
       renderValue: function(x)
       {
+        console.log("x.data");
+        console.log(x.data)
 
         //console.log(x);
         var handler = new vegaTooltip.Handler();
@@ -29,7 +31,9 @@ HTMLWidgets.widget({
         xyContainer.setAttribute("class", "xyContainerSingle");
         plotContainer.appendChild(xyContainer);
 
-        var xyTable = HTMLWidgets.dataframeToD3(x.data.table)
+        var xyTable = HTMLWidgets.dataframeToD3(x.data.table);
+        console.log("xyTable");
+        console.log(xyTable);
         var xySpec = createXYSpec(x.data, xyTable, width, height);
         var xyView = new vega.View(vega.parse(xySpec), {
           renderer: 'svg',

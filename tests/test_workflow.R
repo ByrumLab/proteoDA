@@ -262,6 +262,11 @@ write_limma_tables(results_higgs,
 
 write_limma_plots(results_reb,
                   grouping_column = "group",
+                  output_dir = "reb_s3obj_pre_edits",
+                  title_column = "Accession.Number", overwrite = T)
+
+write_limma_plots(results_reb,
+                  grouping_column = "group",
                   output_dir = "reb_s3obj",
                   title_column = "Accession.Number", overwrite = T)
 

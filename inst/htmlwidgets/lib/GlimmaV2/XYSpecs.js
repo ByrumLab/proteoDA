@@ -2,6 +2,7 @@
 // parametrise graph encoding for MDS plot
 function createXYSpec(xyData, xyTable, width, height)
 {
+
   var tooltip = makeVegaTooltip(xyData.cols);
 
   // if an annotation is given, search for a symbol column (case insensitive)
@@ -47,7 +48,7 @@ function createXYSpec(xyData, xyTable, width, height)
         "round": true,
         "nice": true,
         "zero": false,
-        "domain": { "data": "source", "field": xyData.x },
+        "domain": { "data": "source", "field": "AveExpr" },
         "range": "width"
       },
       {
@@ -56,7 +57,7 @@ function createXYSpec(xyData, xyTable, width, height)
         "round": true,
         "nice": true,
         "zero": false,
-        "domain": { "data": "source", "field": xyData.y },
+        "domain": { "data": "source", "field": "logFC" },
         "range": "height"
       },
       {
@@ -84,7 +85,7 @@ function createXYSpec(xyData, xyTable, width, height)
         "domain": false,
         "orient": "bottom",
         "tickCount": 5,
-        "title": xyData.x
+        "title": "x-axis"
       },
       {
         "scale": "y",
@@ -92,7 +93,7 @@ function createXYSpec(xyData, xyTable, width, height)
         "domain": false,
         "orient": "left",
         "titlePadding": 5,
-        "title": xyData.y
+        "title": "y-axis"
       }
     ],
     "marks": [
@@ -102,8 +103,8 @@ function createXYSpec(xyData, xyTable, width, height)
         "from": { "data": "source" },
         "encode": {
           "update": {
-            "x": { "scale": "x", "field": xyData.x },
-            "y": { "scale": "y", "field": xyData.y },
+            "x": { "scale": "x", "field": "AveExpr" },
+            "y": { "scale": "y", "field": "logFC"},
             "shape": "circle",
             "size" : [ {"test": "datum.status == 0", "value": 5}, {"value": 25} ],
             "opacity": {"value": 0.65},
@@ -121,8 +122,8 @@ function createXYSpec(xyData, xyTable, width, height)
         "from": { "data": "selected_points" },
         "encode": {
           "update": {
-            "x": { "scale": "x", "field": xyData.x },
-            "y": { "scale": "y", "field": xyData.y },
+            "x": { "scale": "x", "field": "AveExpr" },
+            "y": { "scale": "y", "field": "logFC" },
             "shape": "circle",
             "size": {"value": 120},
             "fill": { "scale": "colour_scale", "field": "status" },
@@ -140,8 +141,8 @@ function createXYSpec(xyData, xyTable, width, height)
         "from": { "data": "selected_points" },
         "encode": {
           "update": {
-            "x": { "scale": "x", "field": xyData.x },
-            "y": { "scale": "y", "field": xyData.y, "offset": -10 },
+            "x": { "scale": "x", "field": "AveExpr" },
+            "y": { "scale": "y", "field": "logFC", "offset": -10 },
             "fill": { "value": "black" },
             "fontWeight": {"value": "bold"},
             "opacity": { "value": 1 },

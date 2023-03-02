@@ -21,25 +21,27 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
 
-# {.tabset .tabset-fade .tabset-pills}
 
 ```{r chunk1, results = "asis", fig.keep='none'}
-plot_list <- c("Volcano adjusted P",
-               "Volcano raw P",
-               "MD adjusted P",
-               "MD raw P")
-src <- lapply(plot_list, function(plot) {
-  plot <- deparse(plot)
-  knitr::knit_expand(file = "plot_template.Rmd")
-})
 
-res <- knitr::knit_child(text = unlist(src), quiet = TRUE, options = list(root.dir = getwd()))
-cat(res, sep = "\n")
+
+uams_glimmaXY(
+  model_data = data, 
+  counts = counts,
+  groups = groups,
+  sample.cols = unname(colorGroup(groups)[groups]),
+  status.cols = c("#00bfff", "#858585", "#ff3030"),
+  status = status,
+  anno = anno,
+  display.columns = cols_to_display,
+  main = " ",
+  width = width,
+  height = height
+  )
 ```
 
-# {-}
 
-```{js, echo = F}
+```{js, echo = F, eval = F}
 
 // The code here is used to get around an issue that arises with the headers of
 // the datatables. In brief, all 4 datatables are drawn originally, but only the one

@@ -40,8 +40,6 @@ uams_glimmaXY(
         groups = groups,
         sample.cols = unname(colorGroup(groups)[groups]),
         status.cols = c("#00bfff", "#858585", "#ff3030"),
-        xlab = xlab,
-        ylab = ylab,
         status = status,
         anno = anno,
         display.columns = cols_to_display,

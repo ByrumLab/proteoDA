@@ -32,3 +32,5 @@ inst/doc
 vignettes/*.R
 /doc/
 /Meta/
+
+reb_s3obj_pre_edits/

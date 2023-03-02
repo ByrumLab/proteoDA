@@ -305,11 +305,20 @@ write_limma_plots <- function(DAList = NULL,
 
 
 
+
+
   # Loop over contrasts, making static plots and reports for each
   for (contrast in names(DAList$results)) {
 
     # Prep data
     data <- prep_plot_model_data(DAList$results, contrast)
+
+
+    # Some of this used to happen in the other html template.
+    # Need to work on fixes, especially for the satus
+    cols_to_display <- c(internal_table_columns, "AveExpr", "logFC", "p", "adjusted_p")
+    status <- data$sig.FDR
+
     counts <- DAList$data[rownames(data), , drop = F]
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
     anno <- shared_anno[rownames(data), , drop = F] # double-check/ensure that annotation data are in the right order
