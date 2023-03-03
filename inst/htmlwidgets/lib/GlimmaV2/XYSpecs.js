@@ -29,21 +29,47 @@ function createXYSpec(xyData, xyTable, width, height)
         },
         {
           "name": "x_axis",
-          "value": "AveExpr",
+          "value": "logFC",
+          "on": [
+            {
+             "events": [
+                {"signal": "pval_type"},
+                {"signal": "plot_type"}
+                ],
+              "update": "(plot_type == \"MD\" ? \"AveExpr\" : \"logFC\")"
+            }
+          ]
+        },
+        {
+          "name": "y_axis",
+          "value": "negLog10adjP",
+           "on": [
+            {
+              "events": [
+                {"signal": "pval_type"},
+                {"signal": "plot_type"}
+                ],
+              "update": "(plot_type == \"MD\" ? \"logFC\" : (pval_type == \"raw\" ? \"negLog10rawP\" : \"negLog10adjP\"))"
+            }
+            ]
+        },
+        {
+          "name": "plot_type",
+          "value": "volcano",
           "bind": {
             "input": "select",
-            "options": ["AveExpr", "logFC"],
-            "name": "X-axis data: ",
+            "options": ["volcano", "MD"],
+            "name": "Plot type: ",
             "style": "width: 200px; margin-bottom: 10px;"
           }
         },
         {
-          "name": "y_axis",
-          "value": "logFC",
+          "name": "pval_type",
+          "value": "adjusted",
           "bind": {
             "input": "select",
-            "options": ["logFC", "negLog10adjP", "negLog10rawP"],
-            "name": "Y-axis data: ",
+            "options": ["raw", "adjusted"],
+            "name": "P-value type: ",
             "style": "width: 200px; margin-bottom: 10px;"
           }
         }
@@ -68,7 +94,7 @@ function createXYSpec(xyData, xyTable, width, height)
         "round": true,
         "nice": true,
         "zero": false,
-        "domain": { "data": "source", "field": {"signal": "x_axis" } },
+        "domain": { "data": "source", "field": {"signal" : "x_axis"}},
         "range": "width"
       },
       {
@@ -77,7 +103,10 @@ function createXYSpec(xyData, xyTable, width, height)
         "round": true,
         "nice": true,
         "zero": false,
-        "domain": { "data": "source", "field": {"signal": "y_axis" } },
+        "domain": {
+          "data": "source",
+          "field": {"signal" : "y_axis"}
+        },
         "range": "height"
       },
       {
@@ -105,7 +134,7 @@ function createXYSpec(xyData, xyTable, width, height)
         "domain": false,
         "orient": "bottom",
         "tickCount": 5,
-        "title": "x-axis"
+        "title": {"signal" : "x_axis"}
       },
       {
         "scale": "y",
@@ -113,7 +142,7 @@ function createXYSpec(xyData, xyTable, width, height)
         "domain": false,
         "orient": "left",
         "titlePadding": 5,
-        "title": "y-axis"
+        "title": {"signal" : "y_axis"}
       }
     ],
     "marks": [
@@ -123,8 +152,11 @@ function createXYSpec(xyData, xyTable, width, height)
         "from": { "data": "source" },
         "encode": {
           "update": {
-            "x": { "scale": "x", "field": {"signal": "x_axis" } },
-            "y": { "scale": "y", "field": {"signal": "y_axis" } },
+            "x": { "scale": "x", "field": {"signal" : "x_axis"} },
+            "y": {
+              "scale": "y",
+              "field": {"signal" : "y_axis"}
+            },
             "shape": "circle",
             "size" : [ {"test": "datum.status == 0", "value": 5}, {"value": 25} ],
             "opacity": {"value": 0.65},
@@ -142,8 +174,11 @@ function createXYSpec(xyData, xyTable, width, height)
         "from": { "data": "selected_points" },
         "encode": {
           "update": {
-            "x": { "scale": "x", "field": {"signal": "x_axis" }},
-            "y": { "scale": "y", "field": {"signal": "y_axis" }},
+            "x": { "scale": "x", "field": {"signal" : "x_axis"}},
+            "y": {
+              "scale": "y",
+              "field": {"signal" : "y_axis"}
+            },
             "shape": "circle",
             "size": {"value": 120},
             "fill": { "scale": "colour_scale", "field": "status" },
@@ -161,8 +196,12 @@ function createXYSpec(xyData, xyTable, width, height)
         "from": { "data": "selected_points" },
         "encode": {
           "update": {
-            "x": { "scale": "x", "field": {"signal": "x_axis" } },
-            "y": { "scale": "y", "field": {"signal": "y_axis" }, "offset": -10 },
+            "x": { "scale": "x", "field": {"signal" : "x_axis"} },
+            "y": {
+              "scale": "y",
+              "field": {"signal" : "y_axis"},
+              "offset": -10
+            },
             "fill": { "value": "black" },
             "fontWeight": {"value": "bold"},
             "opacity": { "value": 1 },
