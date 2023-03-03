@@ -97,46 +97,99 @@ full_higgs_chain <- higgs |>
   filter_proteins_by_proportion(min_prop = 1) |>
   normalize_data(norm_method = "cycloess")
 
-write_qc_report(full_higgs_chain,
-                color_column = "group",
-                filename = "higgs_qc_update.pdf",
-                overwrite = T)
 
 write_qc_report(full_higgs_chain,
-                output_dir = "temp",
+                output_dir = "update",
                 color_column = "group",
-                filename = "higgs_qc_update.pdf",
+                filename = "higgs_qc.pdf",
                 overwrite = T)
 
+# To test longer IDs, reverse the
+# sample ID strings so they're still unique after truncation
+full_higgs_chain$metadata$sampleIDs_rev <- stringi::stri_reverse(full_higgs_chain$metadata$sampleIDs)
 write_qc_report(full_higgs_chain,
+                output_dir = "update",
                 color_column = "group",
-                label_column = "sampleIDs",
-                filename = "higgs_qc_update_samplelabs.pdf",
+                label_column = "sampleIDs_rev",
+                filename = "higgs_qc_samplelabs.pdf",
+                overwrite = T)
+
+# Some "normal" ones
+write_qc_report(norm_ndu,
+                output_dir = "update",
+                color_column = "group",
+                filename = "ndu_qc.pdf",
                 overwrite = T)
 
 write_qc_report(norm_ndu,
-                color_column = "group",
-                filename = "ndu_qc_update.pdf",
-                overwrite = T)
-
-write_qc_report(norm_ndu,
-                filename = "ndu_qc_update_batch.pdf",
+                output_dir = "update",
+                filename = "ndu_qc_batch.pdf",
                 overwrite = T)
 
 
 write_qc_report(norm_lupashin,
+                output_dir = "update",
                 color_column = "group",
-                filename = "lupashin_qc_update.pdf",
+                filename = "lupashin_qc.pdf",
                 overwrite = T)
+
+# Use the Zhan data to test different sizes:
+# really big (regular data)
+# just over 50, and
+# just under 50
+norm_zhan$metadata$long_ID <- stringr::str_pad(norm_zhan$metadata$sample, width = 25, side = "right", pad = "X")
+norm_zhan_50 <- norm_zhan %>%
+  filter_samples(as.numeric(number) %% 2 == 0) %>%
+  filter_samples(rep(c(T, F), times = 54))
+
+norm_zhan_49 <- norm_zhan %>%
+  filter_samples(as.numeric(number) %% 2 == 0) %>%
+  filter_samples(c(rep(c(T, F), times = 49), rep(F, 10)))
 
 write_qc_report(norm_zhan,
+                output_dir = "update",
                 color_column = "group",
-                filename = "zhan_qc_update.pdf",
+                filename = "zhan_qc.pdf",
+                overwrite = T)
+write_qc_report(norm_zhan,
+                output_dir = "update",
+                label_column = "long_ID",
+                color_column = "group",
+                filename = "zhan_qc_ids.pdf",
                 overwrite = T)
 
-write_qc_report(norm_reb,
+
+write_qc_report(norm_zhan_50,
+                output_dir = "update",
                 color_column = "group",
-                filename = "rebello_qc_update_changes.pdf",
+                filename = "zhan54_qc.pdf",
+                overwrite = T)
+write_qc_report(norm_zhan_50,
+                output_dir = "update",
+                label_column = "long_ID",
+                color_column = "group",
+                filename = "zhan54_qc_ids.pdf",
+                overwrite = T)
+
+
+write_qc_report(norm_zhan_49,
+                output_dir = "update",
+                color_column = "group",
+                filename = "zhan49_qc.pdf",
+                overwrite = T)
+write_qc_report(norm_zhan_49,
+                output_dir = "update",
+                label_column = "long_ID",
+                color_column = "group",
+                filename = "zhan49_qc_ids.pdf",
+                overwrite = T)
+
+
+
+write_qc_report(norm_reb,
+                output_dir = "update",
+                color_column = "group",
+                filename = "rebello_qc.pdf",
                 overwrite = T, standardize = T, top_proteins = nrow(norm_reb$data),
                 pca_axes = c(2, 5))
 

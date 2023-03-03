@@ -90,6 +90,58 @@ test_that("write_qc_report checks label column", {
   )
 })
 
+test_that("write_qc_report warns when truncating sample labels", {
+  input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
+    normalize_data("log2")
+  on.exit(unlink("QC_Report.pdf"), add = T)
+
+  input$metadata$id_long <- stringr::str_pad(input$metadata$sample_ID,
+                                             width = 25,
+                                             side = "right",
+                                             pad = "x")
+
+  suppressMessages(
+    expect_message(
+      write_qc_report(input,
+                      label_column = "id_long",
+                      overwrite = T),
+      "Truncating sample labels to 20"
+    )
+  )
+})
+
+test_that("write_qc_report gives error if sample labels aren't unique", {
+
+  input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
+    normalize_data("log2")
+  on.exit(unlink("QC_Report.pdf"), add = T)
+
+  input$metadata$id_long <- stringr::str_pad(input$metadata$sample_ID,
+                                             width = 25,
+                                             side = "left",
+                                             pad = "x")
+  # With truncation
+  suppressMessages(
+    expect_error(
+      write_qc_report(input,
+                      label_column = "id_long",
+                      overwrite = T),
+      "not unique after truncation"
+    )
+  )
+  # without truncation
+  input$metadata$sample_ID[1] <- input$metadata$sample_ID[2]
+  suppressMessages(
+    expect_error(
+      write_qc_report(input,
+                      label_column = "sample_ID",
+                      overwrite = T),
+      "column are not unique"
+    )
+  )
+
+})
+
 
 test_that("write_qc_report informs user of output dir and filename when not supplied", {
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
