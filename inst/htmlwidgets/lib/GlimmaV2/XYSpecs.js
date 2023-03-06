@@ -37,7 +37,7 @@ function createXYSpec(xyData, xyTable, width, height)
                 {"signal": "pval_type"},
                 {"signal": "plot_type"}
                 ],
-              "update": "(plot_type == \"MD\" ? \"AveExpr\" : \"logFC\")"
+              "update": "(plot_type == \"MD\" ? \"average_intensity\" : \"logFC\")"
             }
           ]
         },

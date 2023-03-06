@@ -221,6 +221,9 @@ extract_DA_results <- function(DAList, pval_thresh = 0.05, lfc_thresh = 1, adj_m
     outcomes <- cbind(outcomes_table_rawp[, x, drop = F], outcomes_table_adjp[, x, drop = F])
     colnames(outcomes) <- c("sig.PVal", "sig.FDR")
     one_contrast_results <- cbind(one_contrast_table[, limmaStatColums], outcomes[rownames(outcomes), ])
+    # limma names for expression/array studies, rename to average_intensity for protein data
+    colnames(one_contrast_results)[colnames(one_contrast_results) == "AveExpr"] <- "average_intensity"
+    one_contrast_results
   })
   names(results_per_contrast) <- contrast_names
 

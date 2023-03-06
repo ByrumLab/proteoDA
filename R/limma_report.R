@@ -266,10 +266,6 @@ write_limma_plots <- function(DAList = NULL,
     template_package <- "proteoDA"
   }
 
-
-  file.copy(from = system.file("report_templates/glimma_xy_plot.Rmd",
-                               package = template_package),
-            to = "plot_template.Rmd", overwrite = T)
   file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
                                package = template_package),
             to = "report_template.Rmd", overwrite = T)
@@ -316,7 +312,7 @@ write_limma_plots <- function(DAList = NULL,
 
     # Some of this used to happen in the other html template.
     # Need to work on fixes, especially for the status
-    cols_to_display <- c(internal_table_columns, "AveExpr", "logFC", "p", "adjusted_p")
+    cols_to_display <- c(internal_table_columns, "average_intensity", "logFC", "p", "adjusted_p")
     status <- data$sig.FDR
 
     counts <- DAList$data[rownames(data), , drop = F]
@@ -529,13 +525,13 @@ static_MD_plot <- function(data, lfc_thresh, contrast, pval_type) {
 
   if (pval_type == "raw") {
     final <- base +
-      geom_point(aes(x = .data$AveExpr,
+      geom_point(aes(x = .data$average_intensity,
                      y = .data$logFC,
                      color = .data$sig.pval.fct,
                      alpha = .data$sig.pval.fct), na.rm = T)
   } else if (pval_type == "adjusted") {
     final <- base +
-      geom_point(aes(x = .data$AveExpr,
+      geom_point(aes(x = .data$average_intensity,
                      y = .data$logFC,
                      color = .data$sig.FDR.fct,
                      alpha = .data$sig.FDR.fct), na.rm = T)

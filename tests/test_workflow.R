@@ -333,7 +333,7 @@ write_limma_plots(results_reb,
                   output_dir = "reb_s3obj/title_and_table_cols",
                   grouping_column = "group",
                   title_column = "Protein.Name",
-                  table_columns = c("Molecular.Weight", "Gene_name"))
+                  table_columns = c("Molecular.Weight", "Gene_name"), overwrite = T)
 
 
 write_limma_plots(results_lupashin,
