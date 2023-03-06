@@ -29,7 +29,7 @@ uams_glimmaXY(
   model_data = data, 
   counts = counts,
   groups = groups,
-  sample.cols = unname(colorGroup(groups)[groups]),
+  sample.cols = unname(colorGroup(groups)),
   status.cols = c("#00bfff", "#858585", "#ff3030"),
   status = status,
   anno = anno,

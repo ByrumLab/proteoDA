@@ -76,16 +76,22 @@ UAMS_buildXYData <- function(table, status, main, display.columns, anno, counts,
   if (length(status.cols) != 3) {
     stop("status.cols\n arg must have exactly 3 elements for [downreg, notDE, upreg]")
   }
-  xData <- list(data = list(table = table,
-                            cols = display.columns, counts = counts, groups = groups,
-                            levels = level, expCols = colnames(groups), annoCols = if (is.null(anno)) {
-                              -1
-                            } else {
-                              colnames(anno)
-                            }, statusColours = status.cols, sampleColours = if (is.null(sample.cols)) {
-                              -1
-                            } else {
-                              sample.cols
-                            }, samples = colnames(counts), title = main))
+  xData <- list(
+    data = list(
+      table = table,
+      cols = display.columns,
+      counts = counts,
+      groups = groups,
+      levels = level,
+      expCols = colnames(groups),
+      numUniqueGroups = length(unique(groups)),
+      annoCols = if (is.null(anno)) {-1} else {colnames(anno)},
+      statusColours = status.cols,
+      sampleColours = if (is.null(sample.cols)) {-1} else {sample.cols},
+      samples = colnames(counts),
+      title = main
+    )
+  )
+
   return(xData)
 }

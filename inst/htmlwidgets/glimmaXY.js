@@ -54,7 +54,7 @@ HTMLWidgets.widget({
           plotContainer.appendChild(expressionContainer);
           xyContainer.setAttribute("class", "xyContainer");
           countsMatrix = HTMLWidgets.dataframeToD3(x.data.counts);
-          var expressionSpec = createExpressionSpec(width, height, x.data.expCols, x.data.sampleColours, x.data.samples);
+          var expressionSpec = createExpressionSpec(width, height, x.data.expCols, x.data.sampleColours, x.data.samples, x.data.numUniqueGroups);
           var expressionView = new vega.View(vega.parse(expressionSpec), {
             renderer: 'svg',
             container: expressionContainer,
@@ -374,6 +374,12 @@ function updateExpressionPlot(countsRow, data, geneName) {
   data.expressionView.signal("min_count", Math.round(min_value*100)/100 );
   data.expressionView.runAsync();
   updateAxisMessage(data);
+  // log the median data set
+  console.log("Table data");
+  console.log(JSON.parse(JSON.stringify(data.expressionView.data("table"))));
+  console.log("Median data");
+  console.log(data.expressionView.data("medians"));
+
 }
 
 /**

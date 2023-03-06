@@ -1,4 +1,4 @@
-function createExpressionSpec(width, height, expColumns, sampleColours, samples)
+function createExpressionSpec(width, height, expColumns, sampleColours, samples, numUniqueGroups)
 {
 
     let colourscheme_signal =
@@ -17,6 +17,8 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
     /* must match counts term in processExpression */
     expColumns.push("normalized intensity");
     let tooltip = makeVegaTooltip(expColumns);
+    let tooltip_median = makeVegaTooltip(["group", "median"]);
+
     return {
         "$schema": "https://vega.github.io/schema/vega/v5.json",
         "width": width*0.40,
@@ -64,7 +66,20 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
                     },
                     sampleColours == -1 ? colourscheme_signal : samplecols_signal
                 ],
-        "data": {"name": "table"},
+        "data": [
+          {"name": "table"},
+          {"name": "medians",
+           "source" : "table",
+           "transform" :
+             [{
+              "type": "aggregate",
+              "groupby": ["group"],
+              "fields": ["normalized intensity"],
+              "ops": ["median"],
+              "as": ["median"]
+             }]
+          }
+        ],
         "scales":
         [
             {
@@ -85,8 +100,8 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
             {
                 "name": "color",
                 "type": "ordinal",
-                "domain": sampleColours == -1 ? { "data": "table", "field": "group" } : samples,
-                "range": sampleColours == -1 ? { "scheme": { "signal": "colourscheme" } } : sampleColours
+                "domain": { "data": "table", "field": "group" },
+                "range": sampleColours
             }
         ],
         "axes":
@@ -107,27 +122,43 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples)
                 "title": "normalized intensity"
             }
         ],
-        "marks":
-        [{
-                "name": "marks",
-                "type": "symbol",
-                "from": {"data": "table"},
-                "encode": {
-                    "update": {
-                        "x": {"scale": "x", "field": "group", "offset": {"field": "offset"}},
-                        "y": {"scale": "y", "field": "normalized intensity"},
-                        "shape": {"value": "circle"},
-                        "fill": { "scale": "color", "field": sampleColours == -1 ? "group" : "sample" },
-                        "strokeWidth": {"value": 1},
-                        "opacity": {"value": 0.8},
-                        "size": {"value": 100},
-                        "stroke": {"value": "#575757"},
-                        "tooltip": tooltip
-                    }
+        "marks": [
+          {
+            "name": "marks",
+            "type": "symbol",
+            "from": {"data": "table"},
+            "encode": {
+                "update": {
+                    "x": {"scale": "x", "field": "group", "offset": {"field": "offset"}},
+                    "y": {"scale": "y", "field": "normalized intensity"},
+                    "shape": {"value": "circle"},
+                    "fill": { "scale": "color", "field": "group"},
+                    "strokeWidth": {"value": 1},
+                    "opacity": {"value": 0.8},
+                    "size": {"value": 100},
+                    "tooltip": tooltip
                 }
-            }]
+            }
+          },
+          {
+            "name": "med_lines",
+            "type": "symbol",
+            "from": {"data": "medians"},
+            "encode": {
+              "update": {
+                "x": {"scale": "x", "field": "group"},
+                "y": {"scale": "y", "field": "median"},
+                "shape": {"value": "stroke"},
+                "stroke": {"scale" : "color", "field": "group"},
+                "strokeWidth": {"value": 3.5},
+                "opacity": {"value": 1},
+                "size": {"value": 1000},
+                "tooltip": tooltip_median
+              }
+            }
+          }
+        ]
     };
-
 }
 
 
