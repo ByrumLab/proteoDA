@@ -315,7 +315,7 @@ write_limma_plots <- function(DAList = NULL,
 
 
     # Some of this used to happen in the other html template.
-    # Need to work on fixes, especially for the satus
+    # Need to work on fixes, especially for the status
     cols_to_display <- c(internal_table_columns, "AveExpr", "logFC", "p", "adjusted_p")
     status <- data$sig.FDR
 
