@@ -6,6 +6,7 @@ function createXYSpec(xyData, xyTable, width, height)
   var tooltip = makeVegaTooltip(xyData.cols);
 
   // if an annotation is given, search for a symbol column (case insensitive)
+  // TODO: COULD THIS BE REMOVED?
   if (xyData.annoCols != -1) {
     var symbolIndex = xyData.annoCols.map(x => x.toLowerCase()).indexOf("symbol");
     var symbolField = symbolIndex >= 0 ? xyData.annoCols[symbolIndex] : "symbol";
@@ -19,7 +20,7 @@ function createXYSpec(xyData, xyTable, width, height)
     "padding": {"left": 0, "top": 0, "right": 0, "bottom": 10},
     "autosize": {"type": "fit", "resize": true},
     "title": {
-      "text": xyData.title
+      "text": xyData.title // TODO: Could remove?? or do plot type?
     },
     "signals":
       [
@@ -41,6 +42,19 @@ function createXYSpec(xyData, xyTable, width, height)
           ]
         },
         {
+          "name": "x_axis_title",
+          "value": "log2 fold-change (logFC)",
+          "on": [
+            {
+             "events": [
+                {"signal": "pval_type"},
+                {"signal": "plot_type"}
+                ],
+              "update": "(plot_type == \"MD\" ? \"average intensity\" : \"log2 fold-change (logFC)\")"
+            }
+          ]
+        },
+        {
           "name": "y_axis",
           "value": "negLog10adjP",
            "on": [
@@ -50,6 +64,32 @@ function createXYSpec(xyData, xyTable, width, height)
                 {"signal": "plot_type"}
                 ],
               "update": "(plot_type == \"MD\" ? \"logFC\" : (pval_type == \"raw\" ? \"negLog10rawP\" : \"negLog10adjP\"))"
+            }
+            ]
+        },
+                {
+          "name": "y_axis_title",
+          "value": "-log10(adjusted P)",
+           "on": [
+            {
+              "events": [
+                {"signal": "pval_type"},
+                {"signal": "plot_type"}
+                ],
+              "update": "(plot_type == \"MD\" ? \"log2 fold-change (logFC)\" : (pval_type == \"raw\" ? \"-log10(raw P)\" : \"-log10(adjusted P)\"))"
+            }
+            ]
+        },
+        {
+          "name": "point_color",
+          "value": "sig.FDR.fct",
+           "on": [
+            {
+              "events": [
+                {"signal": "pval_type"},
+                {"signal": "plot_type"}
+                ],
+              "update": "(pval_type == \"raw\" ? \"sig.pval.fct\" : \"sig.FDR.fct\")"
             }
             ]
         },
@@ -134,7 +174,7 @@ function createXYSpec(xyData, xyTable, width, height)
         "domain": false,
         "orient": "bottom",
         "tickCount": 5,
-        "title": {"signal" : "x_axis"}
+        "title": {"signal" : "x_axis_title"}
       },
       {
         "scale": "y",
@@ -142,7 +182,7 @@ function createXYSpec(xyData, xyTable, width, height)
         "domain": false,
         "orient": "left",
         "titlePadding": 5,
-        "title": {"signal" : "y_axis"}
+        "title": {"signal" : "y_axis_title"}
       }
     ],
     "marks": [
@@ -160,7 +200,7 @@ function createXYSpec(xyData, xyTable, width, height)
             "shape": "circle",
             "size" : [ {"test": "datum.status == 0", "value": 5}, {"value": 25} ],
             "opacity": {"value": 0.65},
-            "fill": { "scale": "colour_scale", "field": "status" },
+            "fill": { "scale": "colour_scale", "field": {"signal": "point_color"} },
             "strokeWidth": {"value": 1},
             "stroke": {"value": "transparent"},
             "tooltip": tooltip
@@ -181,7 +221,7 @@ function createXYSpec(xyData, xyTable, width, height)
             },
             "shape": "circle",
             "size": {"value": 120},
-            "fill": { "scale": "colour_scale", "field": "status" },
+            "fill": { "scale": "colour_scale", "field":  {"signal": "point_color"}  },
             "strokeWidth": { "value": 1 },
             "stroke": { "value": "black" },
             "opacity": { "value": 1 },
