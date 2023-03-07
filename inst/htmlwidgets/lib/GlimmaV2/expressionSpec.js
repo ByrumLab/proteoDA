@@ -1,16 +1,6 @@
 function createExpressionSpec(width, height, expColumns, sampleColours, samples, numUniqueGroups)
 {
 
-    let colourscheme_signal =
-    {
-        "name": "colourscheme",
-        "value": "category10",
-        "bind": {
-                    "input": "select",
-                    "options": [ "category10", "accent", "category20", "category20b", "category20c", "dark2", "paired", "pastel1", "pastel2", "set1", "set2", "set3", "tableau10", "tableau20"]
-                }
-    };
-
     /* need an empty signal if sample.cols argument has been supplied */
     let samplecols_signal = { "name": "samplecols_active" };
 
@@ -64,7 +54,11 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples,
                         "name": "max_y",
                         "update": " (ylim_max < max_count) ? null : ylim_max"
                     },
-                    sampleColours == -1 ? colourscheme_signal : samplecols_signal
+                    samplecols_signal,
+                    {
+                      "name": "median_linewidth",
+                      "value":  ((width*0.4)/(numUniqueGroups + 1)*0.6)*((width*0.4)/(numUniqueGroups + 1)*0.6)
+                    }
                 ],
         "data": [
           {"name": "table"},
@@ -152,7 +146,7 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples,
                 "stroke": {"scale" : "color", "field": "group"},
                 "strokeWidth": {"value": 3.5},
                 "opacity": {"value": 1},
-                "size": {"value": 1000},
+                "size": {"signal": "median_linewidth"},
                 "tooltip": tooltip_median
               }
             }
@@ -160,5 +154,3 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples,
         ]
     };
 }
-
-
