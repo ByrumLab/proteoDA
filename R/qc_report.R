@@ -140,8 +140,8 @@ write_qc_report <- function(DAList,
                       "i" = "Truncating sample labels to 20 characters for plotting"))
 
     if (any(duplicated(sample_labels))) {
-      cli::cli_abort(c("Sample labels in {label_column} column are not unique after truncation",
-                       "i" = "Modify values in {label_column} or use a different column"))
+      cli::cli_abort(c("Sample labels are not unique after truncation",
+                       "i" = "Supply a different column to use as sample labels with {.arg label_column}"))
     }
   }
 
