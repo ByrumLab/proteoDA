@@ -93,14 +93,6 @@ test_that("write_limma_plots checks title column", {
                       title_column = c("xxx")),
     "not found in annotation"
   )
-
-  # values must be unique
-  input$annotation$uniprot_id[2] <- input$annotation$uniprot_id[1]
-  expect_error(
-    write_limma_plots(input,
-                      grouping_column = "treatment"),
-    "not unique"
-  )
 })
 
 test_that("write_limma_plots check height and width args", {

@@ -358,8 +358,23 @@ write_limma_plots(results_zhan,
 write_limma_plots(results_higgs,
                   grouping_column = "group",
                   output_dir = "higgs_s3obj/default_cols", overwrite = T)
+
+# Is the | symbol in protein name the issue???
+results_higgs$annotation$long_accession <- stringr::str_pad(results_higgs$annotation$Accession.Number, width = "25", side = "right", pad = "X")
 write_limma_plots(results_higgs,
                   title_column = "Protein.Name",
                   grouping_column = "group",
-                  output_dir = "higgs_s3obj/title_col",
+                  output_dir = "higgs_s3obj/title_col/protein_name",
+                  overwrite = T)
+
+write_limma_plots(results_higgs,
+                  title_column = "long_accession",
+                  grouping_column = "group",
+                  output_dir = "higgs_s3obj/title_col/long_accession",
+                  overwrite = T)
+
+write_limma_plots(results_higgs,
+                  title_column = "Accession.Number",
+                  grouping_column = "group",
+                  output_dir = "higgs_s3obj/title_col/accession_number",
                   overwrite = T)

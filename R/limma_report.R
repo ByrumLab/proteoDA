@@ -145,13 +145,7 @@ write_limma_plots <- function(DAList = NULL,
     }
 
     # Grab the possible titles and truncate them
-    temp_keys <- stringr::str_trunc(DAList$annotation[,title_column], width = 20, side = "right")
-
-    # check that they're not duplicated
-    if (any(duplicated(temp_keys))) {
-      cli::cli_abort(c("values in {.arg {title_column}} were not unique after truncating to 15 characters.",
-                       "i" = "Use a different column with unique values."))
-    }
+    title_values <- stringr::str_trunc(DAList$annotation[,title_column], width = 20, side = "right", ellipsis = "...")
 
     # And add title column to the display table
     table_columns <- unique(c(table_columns, title_column))
@@ -273,7 +267,7 @@ write_limma_plots <- function(DAList = NULL,
   # once we create the files, ensure they're deleted if there's an error below
   on.exit(expr = {
     cli::cli_inform("Removing temporary files from {.path {output_dir}}")
-    unlink(c("logo_higherres.png", "plot_template.Rmd", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
+    unlink(c("logo_higherres.png", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
   }, add = T, after = F)
 
   # Prep to loop over contrasts
@@ -300,9 +294,6 @@ write_limma_plots <- function(DAList = NULL,
   }
 
 
-
-
-
   # Loop over contrasts, making static plots and reports for each
   for (contrast in names(DAList$results)) {
 
@@ -324,12 +315,11 @@ write_limma_plots <- function(DAList = NULL,
     anno$p <- round(data$P.Value, digits = 4)
     anno$`adjusted_p` <- round(data$adj.P.Val, digits = 4)
 
-    # Change unique ids if title column was specified
-    # checks were done above to ensure these are OK.
+    # Set up column of titles to be used in the vega abundance plot
     if (!is.null(title_column)) {
-        rownames(counts) <- temp_keys
-        rownames(anno) <- temp_keys
-        rownames(data) <- temp_keys
+      data$internal_title_column <- title_values
+    } else {
+      data$internal_title_column <- rownames(data)
     }
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
     # make and save static plots
