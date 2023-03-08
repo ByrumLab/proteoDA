@@ -7,7 +7,7 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples,
     /* must match counts term in processExpression */
     expColumns.push("normalized intensity");
     let tooltip = makeVegaTooltip(expColumns);
-    let tooltip_median = makeVegaTooltip(["group", "median"]);
+    let tooltip_mean = makeVegaTooltip(["group", "mean"]);
 
     return {
         "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -56,21 +56,21 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples,
                     },
                     samplecols_signal,
                     {
-                      "name": "median_linewidth",
+                      "name": "mean_linewidth",
                       "value":  ((width*0.4)/(numUniqueGroups + 1)*0.6)*((width*0.4)/(numUniqueGroups + 1)*0.6)
                     }
                 ],
         "data": [
           {"name": "table"},
-          {"name": "medians",
+          {"name": "means",
            "source" : "table",
            "transform" :
              [{
               "type": "aggregate",
               "groupby": ["group"],
               "fields": ["normalized intensity"],
-              "ops": ["median"],
-              "as": ["median"]
+              "ops": ["mean"],
+              "as": ["mean"]
              }]
           }
         ],
@@ -137,17 +137,17 @@ function createExpressionSpec(width, height, expColumns, sampleColours, samples,
           {
             "name": "med_lines",
             "type": "symbol",
-            "from": {"data": "medians"},
+            "from": {"data": "means"},
             "encode": {
               "update": {
                 "x": {"scale": "x", "field": "group"},
-                "y": {"scale": "y", "field": "median"},
+                "y": {"scale": "y", "field": "mean"},
                 "shape": {"value": "stroke"},
                 "stroke": {"scale" : "color", "field": "group"},
                 "strokeWidth": {"value": 3.5},
                 "opacity": {"value": 1},
-                "size": {"signal": "median_linewidth"},
-                "tooltip": tooltip_median
+                "size": {"signal": "mean_linewidth"},
+                "tooltip": tooltip_mean
               }
             }
           }
