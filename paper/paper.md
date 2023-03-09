@@ -61,7 +61,15 @@ Quantitative proteomics analysis is growing in popularity with the advancement o
 
 # Statement of need
 
-`proteoDA` was designed to help researchers with minimal knowledge of R extract insights from proteomics data. `proteoDA` allows users to quickly assess the quality of a mass spectrometry experiment, normalize the data, control for batch effects, and define flexible linear model designs for a wide variety of proteomic experiments. In addition to providing quantitative analysis for experiments, `proteoDA` is widely used in the classroom as well as the IDeA National Resource for Quantitative Proteomics workshops for faculty and students. The package is robust but flexible to account for a wide variety of proteomics experiments and provides a training tutorial explaining normalization and linear model designs. 
+`proteoDA` was designed to help researchers with minimal knowledge of R extract insights from proteomics data. `proteoDA` allows users to 
+quickly assess the quality of a mass spectrometry experiment, normalize the data, control for batch effects, and define flexible linear model 
+designs for a wide variety of proteomic experiments. In addition to providing quantitative analysis for experiments, `proteoDA` delivers 
+interactive and sharable data visualizations that empower data analysis and domain reserchers alike to explore data finding, save high quality 
+figures, and generate new insights. `proteoDA` is widely used in the classroom as well as the IDeA National Resource for Quantitative Proteomics 
+workshops for faculty and students. The package is robust but flexible to account for a wide variety of proteomics experiments and provides a 
+training tutorial explaining normalization and linear model designs. In contrast to other comprehensive proteomics analysis packages, `proteoDA` 
+delivers an interactive, sharable data product that allows domain researchers to visualize their results in a web browser with the need for 
+dedicated server-side infrastructure [@Ranathunge2022; @Wolski2022].   
 
 # Acknowledgements
 
