@@ -109,19 +109,18 @@ write_limma_plots <- function(DAList = NULL,
   # And set it
   if (is.null(grouping_column)) { # If no groups provided, abort
     cli::cli_abort("{.arg grouping_column} cannot be empty")
-  } else { # check that grouping column exists in the target data frame
-    if (length(grouping_column) != 1) {
-      cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
-                       "i" = "Only specify one column name for {.arg grouping_column}"))
-
-    }
-    if (grouping_column %notin% colnames(DAList$metadata)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DAList}",
-                       "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
-    }
-    # And set it
-    groups <- as.character(DAList$metadata[,grouping_column])
   }
+  if (length(grouping_column) != 1) {
+    cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
+                     "i" = "Only specify one column name for {.arg grouping_column}"))
+  }
+  if (grouping_column %notin% colnames(DAList$metadata)) {
+    cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DAList}",
+                     "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
+  }
+  # And set it
+  groups <- as.character(DAList$metadata[,grouping_column])
+
 
   # check that the table columns exist in the annotation
   if (!all(table_columns %in% colnames(DAList$annotation))) {
@@ -169,7 +168,6 @@ write_limma_plots <- function(DAList = NULL,
     cli::cli_inform("Setting output directory to current working directory:")
     cli::cli_inform("{.path {output_dir}}")
   }
-
 
 
   # Set up list of expected files, warn about overwriting if they exist
@@ -265,13 +263,16 @@ write_limma_plots <- function(DAList = NULL,
             to = "report_template.Rmd", overwrite = T)
 
   # once we create the files, ensure they're deleted if there's an error below
-  on.exit(expr = {
-    cli::cli_inform("Removing temporary files from {.path {output_dir}}")
-    unlink(c("logo_higherres.png", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
-  }, add = T, after = F)
+  on.exit(
+    expr = {
+      cli::cli_inform("Removing temporary files from {.path {output_dir}}")
+      unlink(c("logo_higherres.png", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
+    },
+    add = T,
+    after = F
+  )
 
   # Prep to loop over contrasts
-
   contrast_count <- 1
   num_contrasts <- length(names(DAList$results))
 
@@ -284,11 +285,11 @@ write_limma_plots <- function(DAList = NULL,
     # the javascript will be mad. Replace with underscores.
     tbl_cols <- which(colnames(shared_anno) %in% table_columns)
     colnames(shared_anno)[tbl_cols] <- stringr::str_replace_all(colnames(shared_anno)[tbl_cols],
-                                                         "\\.",
-                                                         "_")
+                                                                "\\.",
+                                                                "_")
     internal_table_columns <- stringr::str_replace_all(table_columns,
-                                              "\\.",
-                                              "_")
+                                                       "\\.",
+                                                       "_")
   } else { # If no periods, can just use the provided table columns internally
     internal_table_columns <- table_columns
   }
@@ -300,9 +301,6 @@ write_limma_plots <- function(DAList = NULL,
     # Prep data
     data <- prep_plot_model_data(DAList$results, contrast)
 
-
-    # Some of this used to happen in the other html template.
-    # Need to work on fixes, especially for the status
     cols_to_display <- c(internal_table_columns, "average_intensity", "logFC", "p", "adjusted_p")
     status <- data$sig.FDR
 
@@ -344,7 +342,6 @@ write_limma_plots <- function(DAList = NULL,
       rm(volcano, MD)
     }
 
-
     pval_hist <- static_pval_histogram(data = data, contrast = contrast)
     ggsave(filename = file.path("static_plots", paste0(contrast, "-pval-hist.pdf")),
            plot = pval_hist,
@@ -370,6 +367,7 @@ write_limma_plots <- function(DAList = NULL,
     contrast_count <- contrast_count + 1
   }
 
+  # Check for all results files
   if (any(!file.exists(stringr::str_remove(expected_results,
                                            pattern = paste0("^", output_dir, "/"))))) {
     failed <- expected_results[!file.exists(stringr::str_remove(expected_results,
@@ -379,6 +377,7 @@ write_limma_plots <- function(DAList = NULL,
 
   }
 
+  # If success, return input object
   invisible(input_DAList)
 }
 
@@ -401,8 +400,6 @@ prep_plot_model_data <- function(model_results, contrast) {
   # convert missing values in sig cols to 0
   # and add factor columns for static plots
   data <- model_results[[contrast]]
-  data$`P value` <- data$P.Value
-  data$`Adjusted P value` <- data$adj.P.Val
   data$negLog10rawP <- -log(data$P.Value, 10)
   data$negLog10adjP <- -log(data$adj.P.Val, 10)
   data$sig.PVal <- ifelse(is.na(data$sig.PVal), 0, data$sig.PVal)
