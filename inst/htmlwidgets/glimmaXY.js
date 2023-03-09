@@ -121,7 +121,7 @@ class State {
    */
   set selected(selected) {
     this._selected = selected;
-    let htmlString = selected.map(x => `<span>${x.gene}</span>`).join("");
+    let htmlString = selected.map(x => `<span>${x.internal_id_for_brushing}</span>`).join("");
     $(this.data.controlContainer.getElementsByClassName("geneDisplay")[0])
       .html(htmlString);
     /* update save btn */
@@ -134,12 +134,12 @@ class State {
 
   /**
    * Adds a gene to the selection if it's not already selected, or remove it otherwise
-   * @param  {Gene} gene Gene data object which has been clicked on
+   * @param  {internal_id_for_brushing} gene Gene data object which has been clicked on
    */
-  toggleGene(gene) {
-    let loc = containsGene(this.selected, gene);
-    this.selected = loc >= 0 ? remove(this.selected, loc) : this.selected.concat(gene);
-    this._expressionUpdateHandler(loc < 0, gene);
+  toggleGene(internal_id_for_brushing) {
+    let loc = containsGene(this.selected, internal_id_for_brushing);
+    this.selected = loc >= 0 ? remove(this.selected, loc) : this.selected.concat(internal_id_for_brushing);
+    this._expressionUpdateHandler(loc < 0, internal_id_for_brushing);
   }
 
   /**
@@ -147,16 +147,16 @@ class State {
    * @param {Boolean} selectionOccurred True if a gene was selected, false if it was de-selected
    * @param  {Gene} gene Gene data object which has been clicked on
    */
-  _expressionUpdateHandler(selectionOccurred, gene) {
+  _expressionUpdateHandler(selectionOccurred, internal_id_for_brushing) {
     if (!this.data.expressionView) return;
     if (selectionOccurred) {
-      let countsRow = this.data.countsMatrix[gene.index];
-      updateExpressionPlot(countsRow, this.data, gene.gene);
+      let countsRow = this.data.countsMatrix[internal_id_for_brushing.index];
+      updateExpressionPlot(countsRow, this.data, internal_id_for_brushing.internal_id_for_brushing);
     }
     else if (this.selected.length > 0) {
       let last = this.selected[this.selected.length-1];
       let countsRow = this.data.countsMatrix[last.index];
-      updateExpressionPlot(countsRow, this.data, last.gene);
+      updateExpressionPlot(countsRow, this.data, last.internal_id_for_brushing);
     }
     else {
       clearExpressionPlot(this.data);
@@ -187,7 +187,7 @@ function setupXYInteraction(data) {
             visible: false,
           },
         ],
-        rowId: "gene",
+        rowId: "internal_id_for_brushing",
         dom: '<"geneDisplay fade-in">Bfrtip',
         buttons: {
           dom: {
@@ -302,7 +302,7 @@ function XYSignalListener(datatable, state, datum, data) {
   data.xyView.runAsync();
 
   datatable.search('').columns().search('').draw();
-  var regex_search = state.selected.map(x => '^' + x.gene + '$').join('|');
+  var regex_search = state.selected.map(x => '^' + x.internal_id_for_brushing + '$').join('|');
   datatable.columns(0).search(regex_search, regex=true, smart=false).draw();
 }
 
@@ -370,7 +370,7 @@ function updateExpressionPlot(countsRow, data, geneName) {
 
   // for title of abundance plot, find selected gene in the xytable
   // and then pass on the internal_title_column
-  let selected_gene_row = data.xyTable.find(x => x.gene === geneName);
+  let selected_gene_row = data.xyTable.find(x => x.internal_id_for_brushing === geneName);
   data.expressionView.signal("title_signal", selected_gene_row.internal_title_column.toString());
   let max_value = Math.max(...result.map(x => x["normalized intensity"]));
   let min_value = Math.min(...result.map(x => x["normalized intensity"]));
@@ -443,7 +443,7 @@ function containsGene(arr, datum) {
   let i;
   for (i = 0; i < arr.length; i++)
   {
-    if (arr[i]['gene'] === datum['gene'])
+    if (arr[i]['internal_id_for_brushing'] === datum['internal_id_for_brushing'])
     {
       loc = i;
       break;
