@@ -2,15 +2,7 @@
 // parametrise graph encoding for MDS plot
 function createXYSpec(xyData, xyTable, width, height)
 {
-
   var tooltip = makeVegaTooltip(xyData.cols);
-
-  // if an annotation is given, search for a symbol column (case insensitive)
-  // TODO: COULD THIS BE REMOVED?
-  if (xyData.annoCols != -1) {
-    var symbolIndex = xyData.annoCols.map(x => x.toLowerCase()).indexOf("symbol");
-    var symbolField = symbolIndex >= 0 ? xyData.annoCols[symbolIndex] : "symbol";
-  }
 
   return {
     "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -19,9 +11,6 @@ function createXYSpec(xyData, xyTable, width, height)
     "height": height * 0.35,
     "padding": {"left": 0, "top": 0, "right": 0, "bottom": 10},
     "autosize": {"type": "fit", "resize": true},
-    "title": {
-      "text": xyData.title // TODO: Could remove?? or do plot type?
-    },
     "signals":
       [
         {
@@ -226,27 +215,6 @@ function createXYSpec(xyData, xyTable, width, height)
             "stroke": { "value": "black" },
             "opacity": { "value": 1 },
             "tooltip": tooltip
-          }
-        }
-      },
-      // symbol text
-      {
-        "name": "selected_text",
-        "type": "text",
-        "from": { "data": "selected_points" },
-        "encode": {
-          "update": {
-            "x": { "scale": "x", "field": {"signal" : "x_axis"} },
-            "y": {
-              "scale": "y",
-              "field": {"signal" : "y_axis"},
-              "offset": -10
-            },
-            "fill": { "value": "black" },
-            "fontWeight": {"value": "bold"},
-            "opacity": { "value": 1 },
-            "text": {"field": xyData.annoCols == -1 ? "symbol" : symbolField },
-            "fontSize": {"value": 12}
           }
         }
       }

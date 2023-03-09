@@ -12,8 +12,8 @@ test_that("prep_plot_model_data outputs the proper data and format", {
                                       contrast = "treatment")
 
   expect_cols <- c("logFC", "CI.L", "CI.R", "average_intensity", "t", "B", "P.Value",
-                   "adj.P.Val", "sig.PVal", "sig.FDR", "P value",
-                   "Adjusted P value", "negLog10rawP", "negLog10adjP",
+                   "adj.P.Val", "sig.PVal", "sig.FDR",
+                   "negLog10rawP", "negLog10adjP",
                    "sig.pval.fct", "sig.FDR.fct")
 
 

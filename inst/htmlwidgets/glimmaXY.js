@@ -54,7 +54,7 @@ HTMLWidgets.widget({
           plotContainer.appendChild(expressionContainer);
           xyContainer.setAttribute("class", "xyContainer");
           countsMatrix = HTMLWidgets.dataframeToD3(x.data.counts);
-          var expressionSpec = createExpressionSpec(width, height, x.data.expCols, x.data.sampleColours, x.data.samples, x.data.numUniqueGroups);
+          var expressionSpec = createExpressionSpec(width, height, x.data.expCols, x.data.sampleColours, x.data.numUniqueGroups);
           var expressionView = new vega.View(vega.parse(expressionSpec), {
             renderer: 'svg',
             container: expressionContainer,
@@ -74,7 +74,6 @@ HTMLWidgets.widget({
           height: height,
           cols: x.data.cols,
           groups: x.data.groups,
-          levels: x.data.levels,
           expressionContainer: expressionContainer,
           width: width
         };
@@ -332,7 +331,6 @@ function updateExpressionPlot(countsRow, data, geneName) {
   let groups = data.groups.group;
   let numUniqueGroups = [...new Set(groups)].length;
   let samples = data.groups.sample;
-  let levels = data.levels;
   let result = [];
   for (col in countsRow)
   {
@@ -361,9 +359,7 @@ function updateExpressionPlot(countsRow, data, geneName) {
        result.push(curr);
     }
   }
-  if (levels != null) {
-    result.sort((a, b) => levels.indexOf(a.group) - levels.indexOf(b.group));
-  }
+
   // Uncomment next line to log the results to the console for debugging
   //console.log(JSON.parse(JSON.stringify(result)));
   data.expressionView.data("table", result);
@@ -383,7 +379,6 @@ function updateExpressionPlot(countsRow, data, geneName) {
   //console.log(JSON.parse(JSON.stringify(data.expressionView.data("table"))));
   //console.log("Median data");
   //console.log(data.expressionView.data("medians"));
-
 }
 
 /**

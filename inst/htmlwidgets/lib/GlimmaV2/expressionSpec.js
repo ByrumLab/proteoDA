@@ -1,4 +1,4 @@
-function createExpressionSpec(width, height, expColumns, sampleColours, samples, numUniqueGroups)
+function createExpressionSpec(width, height, expColumns, sampleColours, numUniqueGroups)
 {
 
     /* need an empty signal if sample.cols argument has been supplied */

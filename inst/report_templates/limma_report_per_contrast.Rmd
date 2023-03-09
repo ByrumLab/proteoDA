@@ -31,7 +31,6 @@ uams_glimmaXY(
   status = status,
   anno = anno,
   display.columns = cols_to_display,
-  main = " ",
   width = width,
   height = height
 )
