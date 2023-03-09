@@ -18,6 +18,33 @@ uams_glimmaXY <- function(model_data,
   table <- model_data
   table$gene <- rownames(model_data)
 
+  # Need to change this to a for loop, I guess?
+  # or maybe lapply? regular apply is corercing to matrix and messing up the types
+
+  # Round all numeric values to 4 digits, to make everything look nicer in tables
+  table <- data.frame(lapply(table, FUN = function(col) {
+    if (is.numeric(col)) {
+      output <- round(col, digits = 4)
+    } else {
+      output <- col
+    }
+    output
+  }))
+
+  anno <- data.frame(lapply(anno, FUN = function(col) {
+    if (is.numeric(col)) {
+      output <- round(col, digits = 4)
+    } else {
+      output <- col
+    }
+    output
+  }))
+
+  counts <- round(counts, digits = 4)
+
+
+
+
   xData <- UAMS_buildXYData(table, status, main, display.columns,
                             anno, counts, status.cols, sample.cols, groups)
   return(UAMS_glimmaXYWidget(xData, width, height, html))
