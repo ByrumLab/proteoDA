@@ -21,10 +21,7 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
 
-
 ```{r chunk1, results = "asis", fig.keep='none'}
-
-
 uams_glimmaXY(
   model_data = data, 
   counts = counts,
@@ -37,69 +34,5 @@ uams_glimmaXY(
   main = " ",
   width = width,
   height = height
-  )
-```
-
-
-```{js, echo = F, eval = F}
-
-// The code here is used to get around an issue that arises with the headers of
-// the datatables. In brief, all 4 datatables are drawn originally, but only the one
-// for the first tab is visible when it is drawn. The 3 datatables in the inactive
-// tabs get drawn incorrectly (header width doesn't match), and would only get corrected
-// when the table was redrawn (e.g., when selecting a gene in the plot).
-// We needed a way to trigger re-drawing of a table when it was shown.
-
-// After much SO and google, I tried out a variety of approaches. Listening for
-// shown.bs.tab events didn't work. I did a lot to trigger re-drawing on the
-// click of a new tab, but the redrawing happened too fast, before the content was
-// displayed, so it was still wrong. 
-
-// Eventually, I found this code at
-// https://www.seanmcp.com/articles/event-listener-for-class-change/
-
-// It uses mutation observes to listen for changes in the class attribute of 
-// the DOMs element of the 4 different named elements which contain the HTMLwidgets
-// When the class changes (e.g, from empty to active)
-// All 4 tables are redrawn. Could maybe clean up to only redraw one table, 
-// but it isn't a huge deal. 
-
-// Define a function to call when the mutation observer notices a change
-// For each mutation (change) in the list of mutations,
-// we check to see if it is a change to the class attribute.
-// If so, we re-draw the tables. 
-function callback(mutationsList, observer) {
-   mutationsList.forEach(mutation => {
-      if (mutation.attributeName === 'class') {
-        $($.fn.dataTable.tables()).DataTable() // can do only one table by indexing [] after tables()[1])
-          .columns.adjust(); 
-      }
-    })
-}
-
-// Set up a mutation observer function
-const mutationObserver = new MutationObserver(callback)
-
-// Make the mutation observer watch for changes in each of the
-// IDed elements which contain the main results. 
-mutationObserver.observe(
-  document.getElementById("volcano-adjusted-p"),
-  {attributes: true }
 )
-    
-mutationObserver.observe(
-  document.getElementById("volcano-raw-p"),
-  {attributes: true }
-)
-    
-mutationObserver.observe(
-  document.getElementById("md-adjusted-p"),
-  {attributes: true }
-)
-
-mutationObserver.observe(
-  document.getElementById("md-raw-p"),
-  {attributes: true }
-)
-
 ```
