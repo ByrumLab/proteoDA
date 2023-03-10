@@ -23,6 +23,8 @@ function createExpressionSpec(width, height, expColumns, sampleColours, numUniqu
         "name": "title_signal",
         "value": ""
       },
+      // Users can set custom ylims bound to vega
+      // number selection fields
       {
         "name": "ylim_min",
         "value": null,
@@ -39,39 +41,49 @@ function createExpressionSpec(width, height, expColumns, sampleColours, numUniqu
           "class": "ylim_max"
         }
       },
+      // These signals then check the min and max
+      // values of the data coming in and pass that on to
+      // the domain for the y axis
       {
         "name": "min_count",
         "value": null
       },
       {
-          "name": "max_count",
-          "value": 0
+        "name": "max_count",
+        "value": 0
       },
       {
-          "name": "min_y",
-          "update": " (ylim_min === null || ylim_min == \"\") ? null : (ylim_min > min_count) ? null : ylim_min"
+        "name": "min_y",
+        "update": "(ylim_min === null || ylim_min == \"\") ? null : (ylim_min > min_count) ? null : ylim_min"
       },
       {
-          "name": "max_y",
-          "update": " (ylim_max < max_count) ? null : ylim_max"
+        "name": "max_y",
+        "update": "(ylim_max < max_count) ? null : ylim_max"
       },
+      // length/width of the mean line is the square of the desired length in pixels.
+      // calculation is similar to the calcs done for offset in
+      // glimmaXY.js, using 60% of the pixels alloted to each group
       {
         "name": "mean_linewidth",
         "value":  ((width*0.4)/(numUniqueGroups + 1)*0.6)*((width*0.4)/(numUniqueGroups + 1)*0.6)
       }
     ],
     "data": [
+      // main data comes from the table signal, passed in from the JS code
+      // in glimmaXY.js
       {"name": "table"},
+      // Then, from the incomign data,
+      // calculate the means using vega transfroms and aggregates
       {"name": "means",
        "source" : "table",
        "transform" : [
-         {"type": "aggregate",
+         {
+           "type": "aggregate",
            "groupby": ["group"],
            "fields": ["normalized intensity"],
            "ops": ["mean"],
            "as": ["mean"]
-
-        }
+         }
        ]
       }
     ],
@@ -116,6 +128,7 @@ function createExpressionSpec(width, height, expColumns, sampleColours, numUniqu
       }
     ],
     "marks": [
+      // The main marks of intensity
       {
         "name": "marks",
         "type": "symbol",
@@ -133,6 +146,7 @@ function createExpressionSpec(width, height, expColumns, sampleColours, numUniqu
           }
         }
       },
+      // The mean lines
       {
         "name": "mean_lines",
         "type": "symbol",
