@@ -1,13 +1,14 @@
-
-// parametrise graph encoding for MDS plot
+// Returns the vega spec for the left side (XY) plot
 function createXYSpec(xyData, xyTable, width, height)
 {
+  // Make the tooltip string first using the JS function
+  // in lib/GlimmaV2/makeTooltip.js
   var tooltip = makeVegaTooltip(xyData.cols);
 
   return {
     "$schema": "https://vega.github.io/schema/vega/v5.json",
     "description": "Testing ground for GlimmaV2",
-    "width": xyData.counts == -1 ? (width*0.9) : (width * 0.5),
+    "width": width * 0.5,
     "height": height * 0.35,
     "padding": {"left": 0, "top": 0, "right": 0, "bottom": 10},
     "autosize": {"type": "fit", "resize": true},
@@ -17,6 +18,34 @@ function createXYSpec(xyData, xyTable, width, height)
           "name": "click", "value": null,
           "on": [ {"events": "mousedown", "update": "[datum, now()]" } ]
         },
+        // Some custom signals
+        // The two main ones are the plot_type and pval_type,
+        // which are bound to selection boxes using vega's selection binding
+        // Once plot type and pval type are chosen, those signals are passed
+        // down to other signals which output the appropriate columns to use for
+        // the axes, axes titles, etc.
+        {
+          "name": "plot_type",
+          "value": "volcano",
+          "bind": {
+            "input": "select",
+            "options": ["volcano", "MD"],
+            "name": "Plot type: ",
+            "style": "width: 200px; margin-bottom: 10px;"
+          }
+        },
+        {
+          "name": "pval_type",
+          "value": "adjusted",
+          "bind": {
+            "input": "select",
+            "options": ["raw", "adjusted"],
+            "name": "P-value type: ",
+            "style": "width: 200px; margin-bottom: 10px;"
+          }
+        },
+        // Set x axis data and title based on plot type
+        // Only two options
         {
           "name": "x_axis",
           "value": "logFC",
@@ -43,6 +72,9 @@ function createXYSpec(xyData, xyTable, width, height)
             }
           ]
         },
+        // Setting y axis is slightly more complicated, with three options.
+        // vega has slightly limited syntax, can't use a complicated function,
+        // just use nested ternary opertors.
         {
           "name": "y_axis",
           "value": "negLog10adjP",
@@ -69,6 +101,7 @@ function createXYSpec(xyData, xyTable, width, height)
             }
             ]
         },
+        // point color scale just based on p-value type
         {
           "name": "point_color",
           "value": "sig.FDR.fct",
@@ -81,26 +114,6 @@ function createXYSpec(xyData, xyTable, width, height)
               "update": "(pval_type == \"raw\" ? \"sig.pval.fct\" : \"sig.FDR.fct\")"
             }
             ]
-        },
-        {
-          "name": "plot_type",
-          "value": "volcano",
-          "bind": {
-            "input": "select",
-            "options": ["volcano", "MD"],
-            "name": "Plot type: ",
-            "style": "width: 200px; margin-bottom: 10px;"
-          }
-        },
-        {
-          "name": "pval_type",
-          "value": "adjusted",
-          "bind": {
-            "input": "select",
-            "options": ["raw", "adjusted"],
-            "name": "P-value type: ",
-            "style": "width: 200px; margin-bottom: 10px;"
-          }
         }
       ],
     "data":
@@ -141,7 +154,6 @@ function createXYSpec(xyData, xyTable, width, height)
       {
         "name": "colour_scale",
         "type": "ordinal",
-        // co-ordinate w/ domain of status
         "domain": ["downReg", "nonDE", "upReg"],
         "range": xyData.statusColours
       }
@@ -187,7 +199,7 @@ function createXYSpec(xyData, xyTable, width, height)
               "field": {"signal" : "y_axis"}
             },
             "shape": "circle",
-            "size" : [ {"test": "datum.status == 0", "value": 5}, {"value": 25} ],
+            "size" : {"value": 25},
             "opacity": {"value": 0.65},
             "fill": { "scale": "colour_scale", "field": {"signal": "point_color"} },
             "strokeWidth": {"value": 1},
@@ -197,6 +209,7 @@ function createXYSpec(xyData, xyTable, width, height)
         }
       },
       // overlaying selected points
+      // with a larger mark when selected
       {
         "name": "selected_marks",
         "type": "symbol",
