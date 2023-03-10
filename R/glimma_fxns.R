@@ -1,7 +1,35 @@
+#' Make an HTMLwidget for the interactive report
+#'
+#' This internal function is called within the .Rmd report template as
+#' part of the user-facing \code{\link{write_limma_plots}} function. It takes in
+#' data on statistical results, annotation, and sample intensities (partially
+#' assembled in \code{\link{write_limma_plots}} and then passed on the to .RMD
+#' environment), does some further processing, packages
+#' it into the form needed for our interactive report, and then outputs an
+#' HTMLwidget for use in the HTML file generated from the .Rmd.
+#'
+#' @param model_data The output from the \code{\link{prep_plot_model_data}}
+#'   function, containing statistical results for a single contrast.
+#' @param counts A matrix or dataframe of the raw or normalized data from the
+#'   data slot of a DAList.
+#' @param groups A vector of group identities for each sample. Should have
+#'   same length as the number of cols in counts.
+#' @param anno annotation data, with added p-value columns.
+#' @param display.columns A vector of columns to display in the output table.
+#' @param status.cols A vector of colors to use for down regulated, nonDE,
+#'   and upregulated proteins. Must be of length 3.
+#' @param sample.cols A vector of colors for each sample. Should have the same
+#'   length as groups.
+#' @param height The height of the interactive report objects, in pixels.
+#' @param width The width of the interactive report objects, in pixels..
+#'
+#' @return An HTMLwidget containing our interactive plots and tables
+#'
+#' @keywords internal
+#'
 uams_glimmaXY <- function(model_data,
                           counts,
                           groups,
-                          status,
                           anno,
                           display.columns,
                           status.cols,

@@ -302,7 +302,6 @@ write_limma_plots <- function(DAList = NULL,
     data <- prep_plot_model_data(DAList$results, contrast)
 
     cols_to_display <- c(internal_table_columns, "average_intensity", "logFC", "p", "adjusted_p")
-    status <- data$sig.FDR
 
     counts <- DAList$data[rownames(data), , drop = F]
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
