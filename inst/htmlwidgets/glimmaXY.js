@@ -1,11 +1,8 @@
 HTMLWidgets.widget({
 
   name: 'glimmaXY',
-
   type: 'output',
-
-  factory: function(el, width, height)
-  {
+  factory: function(el, width, height) {
 
     var plotContainer = document.createElement("div");
     var controlContainer = document.createElement("div");
@@ -17,13 +14,9 @@ HTMLWidgets.widget({
     widget.appendChild(controlContainer);
 
     return {
-
-      renderValue: function(x)
-      {
-        console.log("x.data");
-        console.log(x.data)
-
-        //console.log(x);
+      renderValue: function(x) {
+        //console.log("x.data");
+        //console.log(x.data)
         var handler = new vegaTooltip.Handler();
 
         // create container elements
@@ -32,8 +25,6 @@ HTMLWidgets.widget({
         plotContainer.appendChild(xyContainer);
 
         var xyTable = HTMLWidgets.dataframeToD3(x.data.table);
-        console.log("xyTable");
-        console.log(xyTable);
         var xySpec = createXYSpec(x.data, xyTable, width, height);
         var xyView = new vega.View(vega.parse(xySpec), {
           renderer: 'svg',
@@ -144,7 +135,7 @@ class State {
   /**
    * Manages updates to the expression plot based on the most recently selected gene
    * @param {Boolean} selectionOccurred True if a gene was selected, false if it was de-selected
-   * @param  {Gene} gene Gene data object which has been clicked on
+   * @param  {internal_id_for_brushing} gene Gene data object which has been clicked on
    */
   _expressionUpdateHandler(selectionOccurred, internal_id_for_brushing) {
     if (!this.data.expressionView) return;
@@ -218,6 +209,7 @@ function setupXYInteraction(data) {
     // Loop of column indices, get column names
     for (var i = 0; i < col_number; i++) {
       var title = $(datatable.column(i).header()).text();
+      // don't show the log-transformed p value cols, just used for plotting
       if (title === "negLog10adjP") {
         $(datatable.column(i).visible(false));
       }
