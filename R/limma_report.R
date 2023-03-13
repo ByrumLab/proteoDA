@@ -109,19 +109,18 @@ write_limma_plots <- function(DAList = NULL,
   # And set it
   if (is.null(grouping_column)) { # If no groups provided, abort
     cli::cli_abort("{.arg grouping_column} cannot be empty")
-  } else { # check that grouping column exists in the target data frame
-    if (length(grouping_column) != 1) {
-      cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
-                       "i" = "Only specify one column name for {.arg grouping_column}"))
-
-    }
-    if (grouping_column %notin% colnames(DAList$metadata)) {
-      cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DAList}",
-                       "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
-    }
-    # And set it
-    groups <- as.character(DAList$metadata[,grouping_column])
   }
+  if (length(grouping_column) != 1) {
+    cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
+                     "i" = "Only specify one column name for {.arg grouping_column}"))
+  }
+  if (grouping_column %notin% colnames(DAList$metadata)) {
+    cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DAList}",
+                     "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
+  }
+  # And set it
+  groups <- as.character(DAList$metadata[,grouping_column])
+
 
   # check that the table columns exist in the annotation
   if (!all(table_columns %in% colnames(DAList$annotation))) {
@@ -145,13 +144,7 @@ write_limma_plots <- function(DAList = NULL,
     }
 
     # Grab the possible titles and truncate them
-    temp_keys <- stringr::str_trunc(DAList$annotation[,title_column], width = 20, side = "right")
-
-    # check that they're not duplicated
-    if (any(duplicated(temp_keys))) {
-      cli::cli_abort(c("values in {.arg {title_column}} were not unique after truncating to 15 characters.",
-                       "i" = "Use a different column with unique values."))
-    }
+    title_values <- stringr::str_trunc(DAList$annotation[,title_column], width = 20, side = "right", ellipsis = "...")
 
     # And add title column to the display table
     table_columns <- unique(c(table_columns, title_column))
@@ -175,7 +168,6 @@ write_limma_plots <- function(DAList = NULL,
     cli::cli_inform("Setting output directory to current working directory:")
     cli::cli_inform("{.path {output_dir}}")
   }
-
 
 
   # Set up list of expected files, warn about overwriting if they exist
@@ -266,22 +258,21 @@ write_limma_plots <- function(DAList = NULL,
     template_package <- "proteoDA"
   }
 
-
-  file.copy(from = system.file("report_templates/glimma_xy_plot.Rmd",
-                               package = template_package),
-            to = "plot_template.Rmd", overwrite = T)
   file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
                                package = template_package),
             to = "report_template.Rmd", overwrite = T)
 
   # once we create the files, ensure they're deleted if there's an error below
-  on.exit(expr = {
-    cli::cli_inform("Removing temporary files from {.path {output_dir}}")
-    unlink(c("logo_higherres.png", "plot_template.Rmd", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
-  }, add = T, after = F)
+  on.exit(
+    expr = {
+      cli::cli_inform("Removing temporary files from {.path {output_dir}}")
+      unlink(c("logo_higherres.png", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
+    },
+    add = T,
+    after = F
+  )
 
   # Prep to loop over contrasts
-
   contrast_count <- 1
   num_contrasts <- length(names(DAList$results))
 
@@ -294,15 +285,14 @@ write_limma_plots <- function(DAList = NULL,
     # the javascript will be mad. Replace with underscores.
     tbl_cols <- which(colnames(shared_anno) %in% table_columns)
     colnames(shared_anno)[tbl_cols] <- stringr::str_replace_all(colnames(shared_anno)[tbl_cols],
-                                                         "\\.",
-                                                         "_")
+                                                                "\\.",
+                                                                "_")
     internal_table_columns <- stringr::str_replace_all(table_columns,
-                                              "\\.",
-                                              "_")
+                                                       "\\.",
+                                                       "_")
   } else { # If no periods, can just use the provided table columns internally
     internal_table_columns <- table_columns
   }
-
 
 
   # Loop over contrasts, making static plots and reports for each
@@ -310,6 +300,9 @@ write_limma_plots <- function(DAList = NULL,
 
     # Prep data
     data <- prep_plot_model_data(DAList$results, contrast)
+
+    cols_to_display <- c(internal_table_columns, "average_intensity", "logFC", "p", "adjusted_p")
+
     counts <- DAList$data[rownames(data), , drop = F]
     counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
     anno <- shared_anno[rownames(data), , drop = F] # double-check/ensure that annotation data are in the right order
@@ -319,12 +312,11 @@ write_limma_plots <- function(DAList = NULL,
     anno$p <- round(data$P.Value, digits = 4)
     anno$`adjusted_p` <- round(data$adj.P.Val, digits = 4)
 
-    # Change unique ids if title column was specified
-    # checks were done above to ensure these are OK.
+    # Set up column of titles to be used in the vega abundance plot
     if (!is.null(title_column)) {
-        rownames(counts) <- temp_keys
-        rownames(anno) <- temp_keys
-        rownames(data) <- temp_keys
+      data$internal_title_column <- title_values
+    } else {
+      data$internal_title_column <- rownames(data)
     }
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
     # make and save static plots
@@ -348,7 +340,6 @@ write_limma_plots <- function(DAList = NULL,
              units = "in")
       rm(volcano, MD)
     }
-
 
     pval_hist <- static_pval_histogram(data = data, contrast = contrast)
     ggsave(filename = file.path("static_plots", paste0(contrast, "-pval-hist.pdf")),
@@ -375,6 +366,7 @@ write_limma_plots <- function(DAList = NULL,
     contrast_count <- contrast_count + 1
   }
 
+  # Check for all results files
   if (any(!file.exists(stringr::str_remove(expected_results,
                                            pattern = paste0("^", output_dir, "/"))))) {
     failed <- expected_results[!file.exists(stringr::str_remove(expected_results,
@@ -384,6 +376,7 @@ write_limma_plots <- function(DAList = NULL,
 
   }
 
+  # If success, return input object
   invisible(input_DAList)
 }
 
@@ -406,8 +399,6 @@ prep_plot_model_data <- function(model_results, contrast) {
   # convert missing values in sig cols to 0
   # and add factor columns for static plots
   data <- model_results[[contrast]]
-  data$`P value` <- data$P.Value
-  data$`Adjusted P value` <- data$adj.P.Val
   data$negLog10rawP <- -log(data$P.Value, 10)
   data$negLog10adjP <- -log(data$adj.P.Val, 10)
   data$sig.PVal <- ifelse(is.na(data$sig.PVal), 0, data$sig.PVal)
@@ -520,13 +511,13 @@ static_MD_plot <- function(data, lfc_thresh, contrast, pval_type) {
 
   if (pval_type == "raw") {
     final <- base +
-      geom_point(aes(x = .data$AveExpr,
+      geom_point(aes(x = .data$average_intensity,
                      y = .data$logFC,
                      color = .data$sig.pval.fct,
                      alpha = .data$sig.pval.fct), na.rm = T)
   } else if (pval_type == "adjusted") {
     final <- base +
-      geom_point(aes(x = .data$AveExpr,
+      geom_point(aes(x = .data$average_intensity,
                      y = .data$logFC,
                      color = .data$sig.FDR.fct,
                      alpha = .data$sig.FDR.fct), na.rm = T)

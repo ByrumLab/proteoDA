@@ -266,6 +266,7 @@ fit_reb <- fit_limma_model(norm_reb)
 
 fit_ndu_random <- norm_ndu |>
   add_design(design_formula = "~ 0 + treatment + (1 | tissue)") |>
+  add_contrasts(contrasts_vector = "SLCKO_vs_control = SLCKO  - Control") |>
   fit_limma_model()
 
 full_higgs_chain <- higgs |>
@@ -313,60 +314,67 @@ write_limma_tables(results_higgs,
 
 # testing report making ---------------------------------------------------
 
+
 write_limma_plots(results_reb,
                   grouping_column = "group",
-                  output_dir = "reb_s3obj",
+                  output_dir = "reb_s3obj/default_cols",
+                  overwrite = T)
+
+write_limma_plots(results_reb,
+                  grouping_column = "group",
+                  output_dir = "reb_s3obj/title_col",
                   title_column = "Accession.Number", overwrite = T)
 
 write_limma_plots(results_reb,
-                  grouping_column = "group",
-                  output_dir = "reb_s3obj_nocustom", overwrite = T)
-write_limma_plots(results_reb,
-                  grouping_column = "group", overwrite = T)
-
-write_limma_plots(results_reb,
-                  output_dir = "many_cols",
+                  output_dir = "reb_s3obj/title_and_table_cols",
                   grouping_column = "group",
                   title_column = "Protein.Name",
-                  table_columns = c("Molecular.Weight", "Gene_name"))
+                  table_columns = c("Molecular.Weight", "Gene_name"), overwrite = T)
 
-write_limma_plots(results_reb,
-                  grouping_column = "group",
-                  output_dir = "reb_s3obj/",
-                  overwrite = T)
 
 write_limma_plots(results_lupashin,
                   grouping_column = "group",
-                  output_dir = "Lupashin_s3obj")
+                  output_dir = "Lupashin_s3obj", overwrite = T)
 
 write_limma_plots(results_ndu,
                   grouping_column = "group",
-                  output_dir = "Ndu_s3obj")
+                  output_dir = "Ndu_s3obj", overwrite = T)
 
 write_limma_plots(results_ndu_random,
                   grouping_column = "group",
-                  output_dir = "Ndu_random_s3obj")
+                  output_dir = "Ndu_random_s3obj", overwrite = T)
 
 
 write_limma_plots(results_zhan,
                   grouping_column = "group",
-                  output_dir = "zhan_s3obj")
-
-write_limma_plots(results_zhan,
-                  grouping_column = "group")
-
-
+                  output_dir = "zhan_s3obj",
+                  overwrite = T)
 
 write_limma_plots(results_zhan,
                   grouping_column = "group",
                   output_dir = "zhan_wide_s3obj",
-                   width = 2000)
+                   width = 2000, overwrite = T)
 
 write_limma_plots(results_higgs,
                   grouping_column = "group",
-                  output_dir = "higgs_s3obj")
+                  output_dir = "higgs_s3obj/default_cols", overwrite = T)
+
+# Is the | symbol in protein name the issue???
+results_higgs$annotation$long_accession <- stringr::str_pad(results_higgs$annotation$Accession.Number, width = "25", side = "right", pad = "X")
 write_limma_plots(results_higgs,
                   title_column = "Protein.Name",
                   grouping_column = "group",
-                  output_dir = "higgs_s3obj",
+                  output_dir = "higgs_s3obj/title_col/protein_name",
+                  overwrite = T)
+
+write_limma_plots(results_higgs,
+                  title_column = "long_accession",
+                  grouping_column = "group",
+                  output_dir = "higgs_s3obj/title_col/long_accession",
+                  overwrite = T)
+
+write_limma_plots(results_higgs,
+                  title_column = "Accession.Number",
+                  grouping_column = "group",
+                  output_dir = "higgs_s3obj/title_col/accession_number",
                   overwrite = T)

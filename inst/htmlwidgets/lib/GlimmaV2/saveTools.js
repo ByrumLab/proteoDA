@@ -1,5 +1,5 @@
-function addSavePlotButton(controlContainer, xy_obj, exp_obj=null, 
-  text="Save Plot", summaryText="Summary plot", expressionText="Expression plot") 
+function addSavePlotButton(controlContainer, xy_obj, exp_obj=null,
+  text="Save Plot", summaryText="Left (volcano/MD) plot", expressionText="Right (abundance) plot")
 {
   // set up button elements
   var dropdownDiv = document.createElement("div");
@@ -11,10 +11,10 @@ function addSavePlotButton(controlContainer, xy_obj, exp_obj=null,
 
   var dropdownContent = document.createElement("div");
   dropdownContent.setAttribute("class", "dropdown-content");
-  
+
   var pngSummaryBtn = addSaveButtonElement(xy_obj, text=summaryText+" (PNG)", type='png');
   var svgSummaryBtn = addSaveButtonElement(xy_obj, text=summaryText+" (SVG)", type='svg');
-  
+
   // add elements to container
   dropdownDiv.appendChild(dropdownButton);
   dropdownDiv.appendChild(dropdownContent);
@@ -26,7 +26,7 @@ function addSavePlotButton(controlContainer, xy_obj, exp_obj=null,
   if (exp_obj) {
     var pngExpressionBtn = addSaveButtonElement(exp_obj, text=expressionText+" (PNG)", type='png');
     var svgExpressionBtn = addSaveButtonElement(exp_obj, text=expressionText+" (SVG)", type='svg');
-  
+
     dropdownContent.appendChild(pngExpressionBtn);
     dropdownContent.appendChild(svgExpressionBtn);
   }
@@ -113,16 +113,16 @@ function addSaveDataElement(state, data, saveAllText, saveSelectText) {
   dropdownContent.appendChild(saveSelectBtn);
   dropdownContent.appendChild(saveAllBtn);
   buttonContainer.appendChild(dropdownContent);
-} 
+}
 
 function saveTableClickListener(state, data, save_all)
 {
   if (save_all)
   {
-    if (confirm(`This will save the table and counts data for all ${data.xyTable.length} genes.`)) 
+    if (confirm(`This will save the table and counts data for all ${data.xyTable.length} genes.`))
     {
       /* only include counts if it is provided */
-      let arr = data.countsMatrix==null ? 
+      let arr = data.countsMatrix==null ?
         data.xyTable : data.xyTable.map( x => $.extend(x, data.countsMatrix[x.index]) );
       saveJSONArrayToCSV(arr);
     }
@@ -148,7 +148,7 @@ function saveJSONArrayToCSV(jsonArray)
 function JSONArrayToCSV(array)
 {
   var fields = Object.keys(array[0])
-  var replacer = function(key, value) { return value === null ? '' : value } 
+  var replacer = function(key, value) { return value === null ? '' : value }
   var csv = array.map(function(row){
     return fields.map(function(fieldName){
       return JSON.stringify(row[fieldName], replacer)

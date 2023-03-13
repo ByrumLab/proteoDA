@@ -1,102 +1,122 @@
-uams_glimmaXY <- function (x, y, xlab = "x", ylab = "y", dge = NULL, counts = dge$counts,
-                           groups = dge$samples$group, status = rep(0, length(x)), anno = NULL,
-                           display.columns = NULL, status.cols = c("#1052bd", "silver",
-                                                                   "#cc212f"), sample.cols = NULL, main = "XY Plot", html = NULL,
-                           width = 920, height = 920)
-{
-  if (length(x) != length(y))
-    stop("Error: x and y args must have the same length.")
-  table <- data.frame(signif(x, digits = 4), signif(y, digits = 4))
-  colnames(table) <- c(xlab, ylab)
-  if (!is.null(counts)) {
-    table <- cbind(gene = rownames(counts), table)
+#' Make an HTMLwidget for the interactive report
+#'
+#' This internal function is called within the .Rmd report template as
+#' part of the user-facing \code{\link{write_limma_plots}} function. It takes in
+#' data on statistical results, annotation, and sample intensities (partially
+#' assembled in \code{\link{write_limma_plots}} and then passed on the to .RMD
+#' environment), does some further processing, packages
+#' it into the form needed for our interactive report, and then outputs an
+#' HTMLwidget for use in the HTML file generated from the .Rmd.
+#'
+#' @param model_data The output from the \code{\link{prep_plot_model_data}}
+#'   function, containing statistical results for a single contrast.
+#' @param counts A matrix or dataframe of the raw or normalized data from the
+#'   data slot of a DAList.
+#' @param groups A vector of group identities for each sample. Should have
+#'   same length as the number of cols in counts.
+#' @param anno annotation data, with added p-value columns.
+#' @param display.columns A vector of columns to display in the output table.
+#' @param status.cols A vector of colors to use for down regulated, nonDE,
+#'   and upregulated proteins. Must be of length 3.
+#' @param sample.cols A vector of colors for each sample. Should have the same
+#'   length as groups.
+#' @param height The height of the interactive report objects, in pixels.
+#' @param width The width of the interactive report objects, in pixels..
+#'
+#' @return An HTMLwidget containing our interactive plots and tables
+#'
+#' @keywords internal
+#'
+uams_glimmaXY <- function(model_data,
+                          counts,
+                          groups,
+                          anno,
+                          display.columns,
+                          status.cols,
+                          sample.cols,
+                          width,
+                          height) {
+
+  # Some possible mild argument checking?
+  # Though user will never really call this
+  if (length(status.cols) != 3) {
+    stop("status.cols\n arg must have exactly 3 elements for [downreg, notDE, upreg]")
   }
-  else if (!is.null(rownames(x))) {
-    table <- cbind(gene = rownames(x), table)
-  }
-  else if (!is.null(rownames(y))) {
-    table <- cbind(gene = rownames(y), table)
+  if (is.null(groups)) {
+    groups <- factor("group")
   }
   else {
-    table <- cbind(gene = seq_along(x), table)
+    if (ncol(counts) != length(groups))
+      stop("Length of groups must be equal to the number of columns in counts.\n")
   }
-  xData <- UAMS_buildXYData(table, status, main, display.columns,
-                            anno, counts, xlab, ylab, status.cols, sample.cols, groups)
-  return(UAMS_glimmaXYWidget(xData, width, height, html))
-}
+
+  # The model table should be the output from
+  # prep_plot_model_data.
+  table_for_widget <- cbind(model_data, anno)
+  table_for_widget$internal_id_for_brushing <- rownames(model_data)
+  display.columns <- c("internal_id_for_brushing", display.columns)
 
 
-UAMS_glimmaXYWidget <- function (xData, width, height, html)
-{
-  widget <- htmlwidgets::createWidget(name = "glimmaXY", xData, package = "proteoDA",
-                                      width = width, height = height, elementId = NULL,
-                                      sizingPolicy = htmlwidgets::sizingPolicy(defaultWidth = width,
-                                                                               defaultHeight = height, browser.fill = TRUE, viewer.suppress = TRUE))
-  if (is.null(html)) {
-    return(widget)
-  }
-  else {
-    message("Saving widget...")
-    htmlwidgets::saveWidget(widget, file = html)
-    message(html, " generated.")
-  }
-}
-
-
-UAMS_buildXYData <- function (table, status, main, display.columns, anno, counts,
-                              xlab, ylab, status.cols, sample.cols, groups)
-{
-  if (is.null(counts)) {
-    counts <- -1
-    level <- NULL
-  }
-  else {
-    counts <- data.frame(counts)
-    if (is.null(groups)) {
-      groups <- factor("group")
+  # Round all numeric values to 4 digits, to make everything look nicer in tables
+  table_for_widget <- data.frame(lapply(table_for_widget, FUN = function(col) {
+    if (is.numeric(col)) {
+      output <- round(col, digits = 4)
+    } else {
+      output <- col
     }
-    else {
-      if (ncol(counts) != length(groups))
-        stop("Length of groups must be equal to the number of columns in counts.\n")
-    }
-    level <- levels(groups)
-    groups <- data.frame(group = groups)
-    groups <- cbind(groups, sample = colnames(counts))
-  }
-  status <- sapply(status, function(x) {
-    switch(as.character(x), `-1` = "downReg", `0` = "nonDE",
-           `1` = "upReg")
-  })
-  if (length(status) != nrow(table))
-    stop("Status vector\n     must have the same number of genes as the main arguments.")
-  table <- cbind(table, status = as.vector(status))
-  if (!is.null(anno)) {
-    table <- cbind(table, anno)
-  }
-  if (is.null(display.columns)) {
-    display.columns <- colnames(table)
-  }
-  else {
-    if (!(xlab %in% display.columns))
-      display.columns <- c(display.columns, xlab)
-    if (!(ylab %in% display.columns))
-      display.columns <- c(display.columns, ylab)
-    if (!("gene" %in% display.columns))
-      display.columns <- c("gene", display.columns)
-  }
-  table <- data.frame(index = 0:(nrow(table) - 1), table)
-  if (length(status.cols) != 3)
-    stop("status.cols\n          arg must have exactly 3 elements for [downreg, notDE, upreg]")
-  xData <- list(data = list(x = xlab, y = ylab, table = table,
-                            cols = display.columns, counts = counts, groups = groups,
-                            levels = level, expCols = colnames(groups), annoCols = if (is.null(anno)) {
-                              -1
-                            } else {
-                              colnames(anno)
-                            }, statusColours = status.cols, sampleColours = if (is.null(sample.cols)) {
-                              -1
-                            } else {
-                              sample.cols
-                            }, samples = colnames(counts), title = main))
-  return(xData)
+    output
+  }))
+
+  table_for_widget <- data.frame(index = 0:(nrow(table_for_widget) - 1), table_for_widget)
+
+  # To reduce final size, only output cols we need
+  # Required cols for plotting
+  req_cols <- c("p", "adjusted_p", "uniprot_id",
+                "sig.pval.fct", "sig.FDR.fct",
+                "negLog10rawP", "negLog10adjP",
+                "logFC", "average_intensity",
+                "internal_id_for_brushing", "internal_title_column", "index")
+  # And the user-requested display columns
+  output_cols <- unique(c(req_cols, display.columns))
+
+  table_for_widget <- table_for_widget[,colnames(table_for_widget) %in% output_cols, drop = F]
+
+
+  # Counts is a matrix, can just round it
+  counts <- data.frame(round(counts, digits = 4))
+
+  groups_df <- data.frame(group = groups,
+                          sample = colnames(counts))
+
+  # Build the data to pass to the htmlwidget
+  xData <- list(
+    data = list(
+      table = table_for_widget,
+      cols = display.columns,
+      counts = counts,
+      groups = groups_df,
+      expCols = colnames(groups_df),
+      numUniqueGroups = length(unique(groups_df$group)),
+      statusColours = status.cols,
+      sampleColours = if (is.null(sample.cols)) {-1} else {sample.cols}
+    )
+  )
+
+  # make the widget
+  widget <- htmlwidgets::createWidget(
+    name = "glimmaXY",
+    xData,
+    package = "proteoDA",
+    width = width,
+    height = height,
+    elementId = NULL,
+    sizingPolicy = htmlwidgets::sizingPolicy(
+      defaultWidth = width,
+      defaultHeight = height,
+      browser.fill = TRUE,
+      viewer.suppress = TRUE
+    )
+  )
+
+  widget
 }

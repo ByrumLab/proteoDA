@@ -1,11 +1,8 @@
 HTMLWidgets.widget({
 
   name: 'glimmaXY',
-
   type: 'output',
-
-  factory: function(el, width, height)
-  {
+  factory: function(el, width, height) {
 
     var plotContainer = document.createElement("div");
     var controlContainer = document.createElement("div");
@@ -17,11 +14,9 @@ HTMLWidgets.widget({
     widget.appendChild(controlContainer);
 
     return {
-
-      renderValue: function(x)
-      {
-
-        //console.log(x);
+      renderValue: function(x) {
+        //console.log("x.data");
+        //console.log(x.data)
         var handler = new vegaTooltip.Handler();
 
         // create container elements
@@ -29,7 +24,7 @@ HTMLWidgets.widget({
         xyContainer.setAttribute("class", "xyContainerSingle");
         plotContainer.appendChild(xyContainer);
 
-        var xyTable = HTMLWidgets.dataframeToD3(x.data.table)
+        var xyTable = HTMLWidgets.dataframeToD3(x.data.table);
         var xySpec = createXYSpec(x.data, xyTable, width, height);
         var xyView = new vega.View(vega.parse(xySpec), {
           renderer: 'svg',
@@ -50,7 +45,7 @@ HTMLWidgets.widget({
           plotContainer.appendChild(expressionContainer);
           xyContainer.setAttribute("class", "xyContainer");
           countsMatrix = HTMLWidgets.dataframeToD3(x.data.counts);
-          var expressionSpec = createExpressionSpec(width, height, x.data.expCols, x.data.sampleColours, x.data.samples);
+          var expressionSpec = createExpressionSpec(width, height, x.data.expCols, x.data.sampleColours, x.data.numUniqueGroups);
           var expressionView = new vega.View(vega.parse(expressionSpec), {
             renderer: 'svg',
             container: expressionContainer,
@@ -70,7 +65,6 @@ HTMLWidgets.widget({
           height: height,
           cols: x.data.cols,
           groups: x.data.groups,
-          levels: x.data.levels,
           expressionContainer: expressionContainer,
           width: width
         };
@@ -117,7 +111,7 @@ class State {
    */
   set selected(selected) {
     this._selected = selected;
-    let htmlString = selected.map(x => `<span>${x.gene}</span>`).join("");
+    let htmlString = selected.map(x => `<span>${x.internal_id_for_brushing}</span>`).join("");
     $(this.data.controlContainer.getElementsByClassName("geneDisplay")[0])
       .html(htmlString);
     /* update save btn */
@@ -130,29 +124,29 @@ class State {
 
   /**
    * Adds a gene to the selection if it's not already selected, or remove it otherwise
-   * @param  {Gene} gene Gene data object which has been clicked on
+   * @param  {internal_id_for_brushing} gene Gene data object which has been clicked on
    */
-  toggleGene(gene) {
-    let loc = containsGene(this.selected, gene);
-    this.selected = loc >= 0 ? remove(this.selected, loc) : this.selected.concat(gene);
-    this._expressionUpdateHandler(loc < 0, gene);
+  toggleGene(internal_id_for_brushing) {
+    let loc = containsGene(this.selected, internal_id_for_brushing);
+    this.selected = loc >= 0 ? remove(this.selected, loc) : this.selected.concat(internal_id_for_brushing);
+    this._expressionUpdateHandler(loc < 0, internal_id_for_brushing);
   }
 
   /**
    * Manages updates to the expression plot based on the most recently selected gene
    * @param {Boolean} selectionOccurred True if a gene was selected, false if it was de-selected
-   * @param  {Gene} gene Gene data object which has been clicked on
+   * @param  {internal_id_for_brushing} gene Gene data object which has been clicked on
    */
-  _expressionUpdateHandler(selectionOccurred, gene) {
+  _expressionUpdateHandler(selectionOccurred, internal_id_for_brushing) {
     if (!this.data.expressionView) return;
     if (selectionOccurred) {
-      let countsRow = this.data.countsMatrix[gene.index];
-      updateExpressionPlot(countsRow, this.data, gene.gene);
+      let countsRow = this.data.countsMatrix[internal_id_for_brushing.index];
+      updateExpressionPlot(countsRow, this.data, internal_id_for_brushing.internal_id_for_brushing);
     }
     else if (this.selected.length > 0) {
       let last = this.selected[this.selected.length-1];
       let countsRow = this.data.countsMatrix[last.index];
-      updateExpressionPlot(countsRow, this.data, last.gene);
+      updateExpressionPlot(countsRow, this.data, last.internal_id_for_brushing);
     }
     else {
       clearExpressionPlot(this.data);
@@ -183,7 +177,7 @@ function setupXYInteraction(data) {
             visible: false,
           },
         ],
-        rowId: "gene",
+        rowId: "internal_id_for_brushing",
         dom: '<"geneDisplay fade-in">Bfrtip',
         buttons: {
           dom: {
@@ -215,6 +209,7 @@ function setupXYInteraction(data) {
     // Loop of column indices, get column names
     for (var i = 0; i < col_number; i++) {
       var title = $(datatable.column(i).header()).text();
+      // don't show the log-transformed p value cols, just used for plotting
       if (title === "negLog10adjP") {
         $(datatable.column(i).visible(false));
       }
@@ -298,7 +293,7 @@ function XYSignalListener(datatable, state, datum, data) {
   data.xyView.runAsync();
 
   datatable.search('').columns().search('').draw();
-  var regex_search = state.selected.map(x => '^' + x.gene + '$').join('|');
+  var regex_search = state.selected.map(x => '^' + x.internal_id_for_brushing + '$').join('|');
   datatable.columns(0).search(regex_search, regex=true, smart=false).draw();
 }
 
@@ -328,7 +323,6 @@ function updateExpressionPlot(countsRow, data, geneName) {
   let groups = data.groups.group;
   let numUniqueGroups = [...new Set(groups)].length;
   let samples = data.groups.sample;
-  let levels = data.levels;
   let result = [];
   for (col in countsRow)
   {
@@ -357,19 +351,26 @@ function updateExpressionPlot(countsRow, data, geneName) {
        result.push(curr);
     }
   }
-  if (levels != null) {
-    result.sort((a, b) => levels.indexOf(a.group) - levels.indexOf(b.group));
-  }
+
   // Uncomment next line to log the results to the console for debugging
   //console.log(JSON.parse(JSON.stringify(result)));
   data.expressionView.data("table", result);
-  data.expressionView.signal("title_signal", geneName.toString());
+
+  // for title of abundance plot, find selected gene in the xytable
+  // and then pass on the internal_title_column
+  let selected_gene_row = data.xyTable.find(x => x.internal_id_for_brushing === geneName);
+  data.expressionView.signal("title_signal", selected_gene_row.internal_title_column.toString());
   let max_value = Math.max(...result.map(x => x["normalized intensity"]));
   let min_value = Math.min(...result.map(x => x["normalized intensity"]));
   data.expressionView.signal("max_count", Math.round(max_value*100)/100 );
   data.expressionView.signal("min_count", Math.round(min_value*100)/100 );
   data.expressionView.runAsync();
   updateAxisMessage(data);
+  // log the median data set
+  //console.log("Table data");
+  //console.log(JSON.parse(JSON.stringify(data.expressionView.data("table"))));
+  //console.log("Median data");
+  //console.log(data.expressionView.data("medians"));
 }
 
 /**
@@ -429,7 +430,7 @@ function containsGene(arr, datum) {
   let i;
   for (i = 0; i < arr.length; i++)
   {
-    if (arr[i]['gene'] === datum['gene'])
+    if (arr[i]['internal_id_for_brushing'] === datum['internal_id_for_brushing'])
     {
       loc = i;
       break;

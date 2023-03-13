@@ -11,9 +11,9 @@ test_that("prep_plot_model_data outputs the proper data and format", {
   out_control <- prep_plot_model_data(model_results = input$results,
                                       contrast = "treatment")
 
-  expect_cols <- c("logFC", "CI.L", "CI.R", "AveExpr", "t", "B", "P.Value",
-                   "adj.P.Val", "sig.PVal", "sig.FDR", "P value",
-                   "Adjusted P value", "negLog10rawP", "negLog10adjP",
+  expect_cols <- c("logFC", "CI.L", "CI.R", "average_intensity", "t", "B", "P.Value",
+                   "adj.P.Val", "sig.PVal", "sig.FDR",
+                   "negLog10rawP", "negLog10adjP",
                    "sig.pval.fct", "sig.FDR.fct")
 
 
@@ -92,14 +92,6 @@ test_that("write_limma_plots checks title column", {
                       grouping_column = "treatment",
                       title_column = c("xxx")),
     "not found in annotation"
-  )
-
-  # values must be unique
-  input$annotation$uniprot_id[2] <- input$annotation$uniprot_id[1]
-  expect_error(
-    write_limma_plots(input,
-                      grouping_column = "treatment"),
-    "not unique"
   )
 })
 
