@@ -34,7 +34,7 @@ will return an error.
 filtered <- filter_samples(DAList,
                            sample_ID != "abc123")
 
-# Remove any sample which contains the string "control" in the treatment:
+# Keep any sample which contains the string "control" in the treatment:
 filtered <- filter_samples(DAList,
                            grepl(pattern = "control",
                                  x = treatment))
