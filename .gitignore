@@ -2,7 +2,17 @@
 .Rproj.user
 .Rhistory
 .DS_Store
+.Rdata
 
+# Package infra to ignore
+.covrignore
+.httr-oauth
+inst/doc
+
+# Some generated stuff in the vignette folder
+vignettes/*.R
+/doc/
+/Meta/
 
 # Data, results, and other files during package testing
 for_testing/UAMS_Academic_Horz_CMYK.jpg
@@ -14,25 +24,5 @@ for_testing/*_files/
 for_testing/*.html
 for_testing/Example Data
 for_testing/libs/
-Kinter_DIA_022521_Samples_Report_BQ.csv
-logs/*
-*_BQ*
-targets*.csv
-protein_analysis/
-phospho_analysis/
-output_*/
 for_testing/package_test_scripts_091622/
 for_testing/bs_tab_listen.Rmd
-*_s3obj/*
-.Rdata
-.httr-oauth
-inst/doc
-update/
-previous/
-
-# Some generated stuff in the vignette folder
-vignettes/*.R
-/doc/
-/Meta/
-
-reb_s3obj_pre_edits/

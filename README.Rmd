@@ -16,6 +16,10 @@ knitr::opts_chunk$set(
 
 # proteoDA
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/tjthurman/proteoDA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tjthurman/proteoDA/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 proteoDA is a streamlined, user-friendly R package for the analysis of high resolution mass spectrometry protein data. The package uses a custom S3 class that keeps the R objects consistent across the pipeline and is easily pipe-able, so minimal R knowledge is required. 
 
 ## Installation
