@@ -288,7 +288,7 @@ pn_plot_MD <- function(normList, grouping, use_ggrastr = F) {
   # possibly using ggrastr
   if (use_ggrastr) {
     if (!requireNamespace("ggrastr", quietly = TRUE)) {
-      cli::cli_abort(c("Package \"ggrastr\" must be installed in order to use it."))
+      cli::cli_abort(c("Package \"ggrastr\" must be installed in order to use it.")) #nocov
     }
 
     base_plot <- plotData |>

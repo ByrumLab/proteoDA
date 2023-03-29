@@ -4,7 +4,11 @@
 \alias{filter_proteins_by_proportion}
 \title{Filter protein data by proportion of quantified samples in group}
 \usage{
-filter_proteins_by_proportion(DAList, min_prop, grouping_column = "group")
+filter_proteins_by_proportion(
+  DAList,
+  min_prop = NULL,
+  grouping_column = "group"
+)
 }
 \arguments{
 \item{DAList}{A DAList object to be filtered.}

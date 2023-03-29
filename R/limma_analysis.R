@@ -50,7 +50,7 @@ fit_limma_model <- function(DAList) {
   if (!is.null(DAList$design$random_factor)) {
 
     if (!requireNamespace("statmod", quietly = TRUE)) {
-      cli::cli_abort(c("Package \"statmod\" must be installed to model a random effect"))
+      cli::cli_abort(c("Package \"statmod\" must be installed to model a random effect")) #nocov
     }
 
     block <- DAList$metadata[, DAList$design$random_factor, drop = T]
@@ -65,8 +65,8 @@ fit_limma_model <- function(DAList) {
       cli::cli_abort(c("Estimated intra-block correlation is negative.",
                        "Rerun model without the random effect."))
     } else if (corfit$consensus.correlation < 0.05) {
-      cli::cli_inform(cli::col_yellow(c("Estimated intra-block correlation is low.",
-                                        "Consider using a model with no random effect.")))
+      cli::cli_inform(cli::col_yellow(c("Estimated intra-block correlation is low.", #nocov
+                                        "Consider using a model with no random effect."))) #nocov
     } else {
       intra_block_cor <- corfit$consensus.correlation
     }
@@ -88,7 +88,7 @@ fit_limma_model <- function(DAList) {
 
   # Annoying statmod issue still...
   if (!requireNamespace("statmod", quietly = TRUE)) {
-    cli::cli_abort(c("Package \"statmod\" must be installed to perform empirical Bayes moderation of test statistics"))
+    cli::cli_abort(c("Package \"statmod\" must be installed to perform empirical Bayes moderation of test statistics")) #nocov
   }
 
   # Fit empirical bayes model

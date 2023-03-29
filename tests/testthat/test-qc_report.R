@@ -279,5 +279,16 @@ test_that("write_qc_report creates proper output file", {
   )
 
   expect_true(file.exists("tempdirfortesting/temp.pdf"))
+
+  # More than 50 samples
+  input <- readRDS(test_path("fixtures", "norm_report_input_52samp.rds")) |>
+    normalize_data("log2")
+  suppressMessages(
+    write_qc_report(input,
+                    overwrite = T)
+  )
+
+  expect_true(file.exists("QC_Report.pdf"))
+
 })
 

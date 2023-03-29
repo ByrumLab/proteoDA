@@ -63,7 +63,7 @@ normalize_data <- function(DAList,
     normalized_data <- do.call(what = paste0(norm_method, "Norm"),
                                args = list(logDat = log2_dat))
   } else {
-    cli::cli_abort("{.arg {norm_method}} is not a valid normalization method")
+    cli::cli_abort("{.arg {norm_method}} is not a valid normalization method") #nocov
   }
 
   # Update data

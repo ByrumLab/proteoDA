@@ -9,7 +9,8 @@ test_metadata <- data.frame(sample_ID = paste0("sample", 1:6),
 rownames(test_metadata) <- test_metadata$sample_ID
 test_data <- as.data.frame(matrix(data = 1:60, nrow = 10))
 colnames(test_data) <- test_metadata$sample_ID
-test_annotation <- data.frame(uniprot_id = paste0("protein", 1:10))
+test_annotation <- data.frame(uniprot_id = paste0("protein", 1:10),
+                              gene_symbol = paste0("protein", 1:10))
 input <- DAList(data = test_data,
                 annotation = test_annotation,
                 metadata = test_metadata) |>

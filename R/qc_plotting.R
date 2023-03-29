@@ -173,7 +173,7 @@ qc_dendro_plot <- function(data,
   )
 
   if (is.null(sample_labels)) {
-    sample_labels <- colnames(data)
+    sample_labels <- colnames(data) #nocov
   } else {
     colnames(data) <- sample_labels
   }
@@ -236,7 +236,7 @@ qc_corr_hm <- function(data,
 
 
   if (is.null(sample_labels)) {
-    sample_labels <- colnames(data)
+    sample_labels <- colnames(data) #nocov
   }
 
   # Calculate correlation matrix
@@ -334,7 +334,7 @@ qc_missing_hm <- function(data,
   column_sort <- rlang::arg_match(column_sort)
 
   if (is.null(sample_labels)) {
-    sample_labels <- colnames(data)
+    sample_labels <- colnames(data) #nocov
   }
 
   # Set up the column ordering for the different options
@@ -349,7 +349,7 @@ qc_missing_hm <- function(data,
     order <- order(groups)
     title <- paste0("Sorted by ", group_var_name)
   } else {
-    cli::cli_abort("Invalid value for {.arg column_sort}: cannot be {.val {column_sort}}")
+    cli::cli_abort("Invalid value for {.arg column_sort}: cannot be {.val {column_sort}}") #nocov
   }
 
   #Prepare data

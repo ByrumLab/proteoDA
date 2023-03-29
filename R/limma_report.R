@@ -253,7 +253,7 @@ write_limma_plots <- function(DAList = NULL,
   # when this function is being called for internal UAMS use
   # Internal UAMS use includes a flag
   if (!is.null(DAList$tags$uams_internal)) {
-    template_package <- "proteoDAuams"
+    template_package <- "proteoDAuams" #nocov
   } else {
     template_package <- "proteoDA"
   }
@@ -369,10 +369,10 @@ write_limma_plots <- function(DAList = NULL,
   # Check for all results files
   if (any(!file.exists(stringr::str_remove(expected_results,
                                            pattern = paste0("^", output_dir, "/"))))) {
-    failed <- expected_results[!file.exists(stringr::str_remove(expected_results,
+    failed <- expected_results[!file.exists(stringr::str_remove(expected_results, #nocov start
                                                                 pattern = paste0("^", output_dir, "/")))]
     cli::cli_abort(c("Failed to write the following {cli::qty(length(failed))} results file{?s}:",
-                     "!" = "{.path {failed}}"))
+                     "!" = "{.path {failed}}")) #nocov end
 
   }
 
@@ -469,7 +469,7 @@ static_volcano_plot <- function(data, lfc_thresh, pval_thresh, contrast, pval_ty
       scale_y_continuous(breaks = seq(from = 0, to = ceiling(max(-log10(data$adj.P.Val), na.rm = T)) + 1, by = 1)) +
       ylab("-log10(adjP)")
   } else{
-    stop("invalid value for pval_type")
+    stop("invalid value for pval_type") #nocov
   }
   final
 }
@@ -522,7 +522,7 @@ static_MD_plot <- function(data, lfc_thresh, contrast, pval_type) {
                      color = .data$sig.FDR.fct,
                      alpha = .data$sig.FDR.fct), na.rm = T)
   } else{
-    stop("invalid value for pval_type")
+    stop("invalid value for pval_type") #nocov
   }
   final
 }

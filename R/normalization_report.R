@@ -182,7 +182,7 @@ write_norm_report <- function(DAList,
          useDingbats = T)
 
   if (!file.exists(file.path(output_dir, filename))) {
-    cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
+    cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}")) #nocov
   }
 
   invisible(input_DAList)

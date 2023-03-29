@@ -109,9 +109,9 @@ colorGroup <- function(group) {
     groupCol <- binfcolors[1:length(unique(group))]
     names(groupCol) <- unique(group)
   }
-  if(length(unique(group)) > 12) { # Rare
+  if(length(unique(group)) > 12) { #Rare
     if (!requireNamespace("grDevices", quietly = TRUE)) {
-      cli::cli_abort(c("Package \"grDevices\" must be installed to make plots for more than 12 groups"))
+      cli::cli_abort(c("Package \"grDevices\" must be installed to make plots for more than 12 groups")) #nocov
     }
     groupCol <- c(grDevices::rainbow(length(unique(group))))
     names(groupCol) <- unique(group)

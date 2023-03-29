@@ -238,6 +238,29 @@ test_that("write_limma_tables creates output files", {
 })
 
 
+test_that("write_limma_tables creates output files when more than 12 stat results", {
+
+  input <- readRDS(test_path("fixtures", "final_output_input.rds"))
+
+
+  input$results <- rep(input$results, 7)
+  expected_files_default <-  c("per_contrast_results/control.csv",
+                               "per_contrast_results/treatment.csv",
+                               "DA_summary.csv",
+                               "combined_results.csv",
+                               "results.xlsx")
+
+  on.exit(unlink(c(expected_files_default,
+                   "per_contrast_results"),
+                 recursive = T), add = T)
+
+  suppressMessages(write_limma_tables(input, overwrite = F))
+  expect_true(all(file.exists(expected_files_default)))
+
+})
+
+
+
 
 
 
