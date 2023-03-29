@@ -113,6 +113,7 @@ test_that("write_norm_report creates proper output file when using ggrastr", {
   on.exit(unlink("normalization_report.pdf"), add = T)
 
   skip_if_not_installed("ggrastr")
+  skip_on_ci() #skip when running on GitHub actions to avoid cairo dependency issues.
   suppressMessages(write_norm_report(input, grouping_column = "group", use_ggrastr = T, overwrite = T))
   expect_true(file.exists("normalization_report.pdf"))
 })
