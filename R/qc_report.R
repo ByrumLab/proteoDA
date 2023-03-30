@@ -293,7 +293,7 @@ write_qc_report <- function(DAList,
          units = "in")
 
   if (!file.exists(file.path(output_dir, filename))) {
-    cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}"))
+    cli::cli_abort(c("Failed to create {.path {file.path(output_dir, filename)}}")) #nocov
   }
 
   invisible(input_DAList)

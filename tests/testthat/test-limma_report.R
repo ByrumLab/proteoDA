@@ -219,6 +219,7 @@ test_that("write_limma_plots does not alter user working directory", {
 test_that("write_limma_plots creates output files", {
 
   input <- readRDS(test_path("fixtures", "final_output_input.rds"))
+  input$annotation$`uniprot.id2` <- paste0(input$annotation$uniprot_id, "X")
 
 
   expected_files_default <- c("control_DA_report.html",
@@ -240,6 +241,13 @@ test_that("write_limma_plots creates output files", {
   suppressMessages(write_limma_plots(input,
                                      grouping_column = "treatment",
                                      overwrite = F))
+  expect_true(all(file.exists(expected_files_default)))
+
+
+  suppressMessages(write_limma_plots(input,
+                                     grouping_column = "treatment",
+                                     title_column = "uniprot.id2",
+                                     overwrite = T))
   expect_true(all(file.exists(expected_files_default)))
 
   # Non-standard directory and files

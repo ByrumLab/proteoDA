@@ -299,7 +299,7 @@ filter_proteins_by_group <- function(DAList,
 #'
 #'
 filter_proteins_by_proportion <- function(DAList,
-                                          min_prop,
+                                          min_prop = NULL,
                                           grouping_column = "group") {
   validate_DAList(DAList)
 

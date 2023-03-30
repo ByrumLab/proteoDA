@@ -15,10 +15,11 @@
 ^protein_analysis
 ^phospho_analysis
 ^output_\\*
-^tests/test_workflow.R$
 ^paper\\*
 ^doc$
 ^Meta$
 ^.github/*$
 ^previous/*$
 ^update/*$
+^.covrignore$
+^\.github$

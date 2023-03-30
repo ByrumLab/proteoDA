@@ -1,6 +1,6 @@
 
 
-library(devtools)
+library(devtools) # nocov start
 library(tidyverse)
 
 
@@ -378,3 +378,5 @@ write_limma_plots(results_higgs,
                   grouping_column = "group",
                   output_dir = "higgs_s3obj/title_col/accession_number",
                   overwrite = T)
+
+# nocov start

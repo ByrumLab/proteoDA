@@ -3,9 +3,9 @@
 #' start with the tutorial vignette: `browseVignettes(package = "proteoDA")`
 #' @keywords internal
 #' @importFrom rlang .data
-"_PACKAGE"
+"_PACKAGE" # nocov
 
-NULL
+NULL # nocov
 
 
 #' Dummy function for statmod import
@@ -17,8 +17,8 @@ NULL
 #' function that includes a statmod import.
 #'
 #' @return NULL
-dummy_statmod <- function() {
+dummy_statmod <- function() { # nocov start
   x <- statmod::vecmat()
 
   NULL
-}
+} # nocov end

@@ -3,6 +3,13 @@
 
 # proteoDA
 
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/ByrumLab/proteoDA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ByrumLab/proteoDA/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/github/ByrumLab/proteoDA/branch/main/graph/badge.svg)](https://app.codecov.io/github/ByrumLab/proteoDA?branch=main)
+<!-- badges: end -->
+
 proteoDA is a streamlined, user-friendly R package for the analysis of
 high resolution mass spectrometry protein data. The package uses a
 custom S3 class that keeps the R objects consistent across the pipeline

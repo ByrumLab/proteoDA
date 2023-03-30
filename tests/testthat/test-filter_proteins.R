@@ -1,6 +1,16 @@
 
 
 # filter_proteins_by_annotation --------------------------------------------
+test_that("filter_proteins_by_annotation checks input is DAList", {
+  expect_error(filter_proteins_by_annotation("x", x == T), "DAList object")
+})
+
+test_that("filter_proteins_by_annotation checks input contains annotation", {
+  input <- readRDS(test_path("fixtures", "filter_protein_annotation_input.rds"))
+  input["annotation"] <- list(NULL)
+  expect_error(filter_proteins_by_annotation(input, x == T), "does not contain annotation")
+})
+
 
 test_that("filter_proteins_by_annotation removes proteins as expected", {
 
@@ -28,6 +38,12 @@ test_that("filter_proteins_by_annotation gives error when filtering on nonexisti
 
 
 # filter_proteins_by_groups -----------------------------------------------
+test_that("filter_proteins_by_group checks input contains metadata", {
+  input <- readRDS(test_path("fixtures", "filter_protein_annotation_input.rds"))
+  input["metadata"] <- list(NULL)
+  expect_error(filter_proteins_by_group(input, min_reps = 1, min_groups = 1), "must include metadata")
+})
+
 
 test_that("filter_proteins_by_groups gives error when group column is not present", {
   input <- readRDS(test_path("fixtures", "filter_proteins_by_group_input.rds"))
@@ -66,6 +82,12 @@ test_that("filter_proteins_by_groups removes proteins as expected", {
 })
 
 # filter_proteins_by_proportion -----------------------------------------------
+test_that("filter_proteins_by_proportion checks input contains metadata", {
+  input <- readRDS(test_path("fixtures", "filter_protein_annotation_input.rds"))
+  input["metadata"] <- list(NULL)
+  expect_error(filter_proteins_by_proportion(input, min_prop = 0.7), "must include metadata")
+})
+
 
 test_that("filter_proteins_by_proportion gives error when group column is not present", {
   input <- readRDS(test_path("fixtures", "filter_proteins_by_proportion_input.rds"))

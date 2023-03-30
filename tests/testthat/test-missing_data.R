@@ -1,3 +1,11 @@
+test_that("missing_to_zero checks that input is DAList", {
+  expect_error(missing_to_zero("x"), "must be a DAList object")
+})
+
+test_that("zero_to_missing checks that input is DAList", {
+  expect_error(zero_to_missing("x"), "must be a DAList object")
+})
+
 test_that("missing_to_zero converts missing values as expected", {
 
   input <- readRDS(test_path("fixtures", "missing_to_zero_input.rds"))

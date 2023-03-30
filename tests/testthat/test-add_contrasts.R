@@ -180,6 +180,29 @@ test_that("add_contrasts outputs proper contrast when contrasts_file is supplied
 
 })
 
+test_that("add_contrasts outputs proper contrast when contrasts_file is supplied as txt", {
+  input <- readRDS(test_path("fixtures", "add_contrasts_input.rds"))
+
+  contrast <- c("Treatment_vs_Control= treatment - control")
+
+  output <- add_contrasts(input,
+                          contrasts_file = test_path("fixtures", "good_contrast.txt"))
+
+  expected_matrix <-
+    matrix(data = c(-1,1),
+           nrow = 2,
+           ncol = 1,
+           dimnames = list(
+             Levels = c("control", "treatment"),
+             Contrasts = c("Treatment_vs_Control")
+           )
+    )
+
+  expect_equal(output$design$contrast_vector, contrast)
+  expect_equal(output$design$contrast_matrix, expected_matrix)
+
+})
+
 
 
 

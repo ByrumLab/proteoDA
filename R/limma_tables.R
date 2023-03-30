@@ -160,7 +160,7 @@ write_limma_tables <- function(DAList,
                    row.names = F)
 
   if (!file.exists(summary_output_file)) {
-    cli::cli_abort(c("Failed to write summary {.path .csv} to {.path {summary_output_file}}"))
+    cli::cli_abort(c("Failed to write summary {.path .csv} to {.path {summary_output_file}}")) #nocov
   }
 
 
@@ -175,10 +175,10 @@ write_limma_tables <- function(DAList,
                                                   results_statlist = DAList$results,
                                                   output_dir = per_contrast_dir)
   if (!all(contrast_csv_success)) {
-    failed <- names(contrast_csv_success)[!contrast_csv_success]
+    failed <- names(contrast_csv_success)[!contrast_csv_success] #nocov start
     cli::cli_abort(c("Failed to write {.path .csv} results for
                      {cli::qty(sum(!contrast_csv_success))} contrast{?s}:",
-                     "!" = "{.val {failed}"))
+                     "!" = "{.val {failed}")) #nocovend
   }
 
 
@@ -194,13 +194,13 @@ write_limma_tables <- function(DAList,
   ## write combined results csv
   combined_results_csv <- combined_results
 
-  # format Gene_name values so that excel does not convert them to date format
+  # format gene_symbol values so that excel does not convert them to date format
   # e.g. SEPT11, SEPT9, SEPT7, EPT2, SEPT6, MARC1, SEPT8, SEPT10, MARC2
-  if ("Gene_name" %in% colnames(combined_results_csv)) {
-    combined_results_csv$Gene_name <- paste0('"=""', combined_results_csv$Gene_name,'"""')
+  if ("gene_symbol" %in% colnames(combined_results_csv)) {
+    combined_results_csv$gene_symbol <- paste0('"=""', combined_results_csv$gene_symbol,'"""')
   }
 
-  csv_quote_cols <- which(colnames(combined_results_csv) != "Gene_name")
+  csv_quote_cols <- which(colnames(combined_results_csv) != "gene_symbol")
   utils::write.csv(x = combined_results_csv,
                    file = combined_output_file,
                    row.names = F,
@@ -208,7 +208,7 @@ write_limma_tables <- function(DAList,
 
 
   if (!file.exists(combined_output_file)) {
-    cli::cli_abort(c("Failed to write combined results {.path .csv} to {.path {combined_output_file}}"))
+    cli::cli_abort(c("Failed to write combined results {.path .csv} to {.path {combined_output_file}}")) #nocov
   }
 
 
@@ -227,7 +227,7 @@ write_limma_tables <- function(DAList,
                     add_filter = add_filter)
 
   if (!file.exists(excel_output_file)) {
-    cli::cli_abort(c("Failed to write combined results Excel spreadsheet to {.path {excel_output_file}}"))
+    cli::cli_abort(c("Failed to write combined results Excel spreadsheet to {.path {excel_output_file}}")) #nocov
   }
 
   # If everything works, return input DAList
@@ -285,8 +285,8 @@ write_per_contrast_csvs <- function(annotation_df,
 
   # format annotation_df GN column so that excel does not convert them to date format
   # e.g. SEPT11, SEPT9, SEPT7, EPT2, SEPT6, MARC1, SEPT8, SEPT10, MARC2
-  annotation_df$Gene_name <- paste0('"=""',annotation_df$Gene_name,'"""')
-  csv_quote_cols <- which(colnames(annotation_df)!="Gene_name")
+  annotation_df$gene_symbol <- paste0('"=""',annotation_df$gene_symbol,'"""')
+  csv_quote_cols <- which(colnames(annotation_df)!="gene_symbol")
 
   # make list combining
   # annotation, intensity data, and statistical results

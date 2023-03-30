@@ -40,14 +40,10 @@ uams_glimmaXY <- function(model_data,
   # Some possible mild argument checking?
   # Though user will never really call this
   if (length(status.cols) != 3) {
-    stop("status.cols\n arg must have exactly 3 elements for [downreg, notDE, upreg]")
+    stop("status.cols\n arg must have exactly 3 elements for [downreg, notDE, upreg]") #nocov
   }
-  if (is.null(groups)) {
-    groups <- factor("group")
-  }
-  else {
-    if (ncol(counts) != length(groups))
-      stop("Length of groups must be equal to the number of columns in counts.\n")
+  if (ncol(counts) != length(groups)) {
+      stop("Length of groups must be equal to the number of columns in counts.\n") #nocov
   }
 
   # The model table should be the output from
