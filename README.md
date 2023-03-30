@@ -55,7 +55,7 @@ flowchart](./data-raw/proteoDA_flowchart.png?raw=true)
 ## Example pipeline
 
 Here’s an example pipeline, going from data import to final results. For
-a detailed explanation of the pipeline, check out the tutorial vignette:
+a detailed explanation of the pipeline, check out the tutorial vignette.
 
 ``` r
 # Load data
@@ -101,8 +101,39 @@ final <- normalized |>
   fit_limma_model() |>
   extract_DA_results()
 
+
+
 # Export results
 write_limma_tables(final)
 write_limma_plots(final,
                   grouping_column = "group")
 ```
+
+## Getting help
+
+For general help on using `proteoDA`, check out the tutorial vignette by
+running `browseVignettes(package = "proteoDA")`. If you did not build
+the vignette upon install, you can find a pre-built `.html` version of
+the vignette in the `vignettes` folder on
+[GitHub](https://github.com/ByrumLab/proteoDA). Additional information
+can be found in the documentation for each function. If you need further
+assistance, [file an issue on
+GitHub](https://github.com/ByrumLab/proteoDA/issues).
+
+## Reporting issues
+
+If you find any bugs or unexpected behaviors, [file an issue on
+GitHub](https://github.com/ByrumLab/proteoDA/issues). It is helpful if
+you can include a minimal reproducible example (reprex) that triggers
+the issue, check out the `reprex` [R
+package](https://reprex.tidyverse.org/) for more information and tools
+on creating reproducible examples.
+
+## Contributing
+
+We welcome code contributions from users. To contribute, [open a pull
+request](https://github.com/ByrumLab/proteoDA/pulls) against the main
+branch. Please note that the proteoDA project is released with a
+[Contributor Code of
+Conduct](https://contributor-covenant.org/version/2/1/CODE_OF_CONDUCT.html).
+By contributing to this project, you agree to abide by its terms.
