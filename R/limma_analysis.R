@@ -164,7 +164,7 @@ extract_DA_results <- function(DAList, pval_thresh = 0.05, lfc_thresh = 1, adj_m
   }
 
   if (any(!is.numeric(lfc_thresh),
-          lfc_thresh <= 0)) {
+          lfc_thresh < 0)) {
     cli::cli_abort(c("{.arg lfc_thresh} must be a numeric value greater >= 0."))
   }
 
