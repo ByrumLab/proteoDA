@@ -25,7 +25,7 @@ authors:
     - family-names: Stephanie D.
     given-names: Byrum
     orcid: https://orcid.org/0000-0002-1783-3610
-title: ByrumLab/proteoDA: Initial Release
+title: proteoDA: a package for quantitative proteomics
 version: 1.0.0
 date-released: 2023-05-23
 doi: 10.5281/zenodo.7962306
