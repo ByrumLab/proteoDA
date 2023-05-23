@@ -1,0 +1,49 @@
+{
+    "description": "<p>This is the first release of proteoDA.</p>", 
+    "license": "other-open", 
+    "title": "proteoDA: a package for quantitative proteomics", 
+    "version": "1.0.0", 
+    "upload_type": "software", 
+    "publication_date": "2023-05-23", 
+    "creators": [
+        {
+            "name": "Timothy J. Thurman"
+        }, 
+        {
+            "name": "Charity L. Washam"
+        }, 
+        {
+            "name": "Duah Alkam"
+        }, 
+       {
+            "name": "Jordan T. Bird"
+        },   
+      {
+            "name": "Allen Gies"
+        }, 
+        {
+            "affiliation": "University of Arkansas Medical Sciences", 
+            "name": "Kalyani Dhusia"
+        }, 
+        {
+            "name": "Michael S. Robeson, II"
+        }, 
+        {
+            "name": "Stephanie D. Byrum"
+        } 
+        
+    ], 
+    "access_right": "open", 
+    "related_identifiers": [
+        {
+            "scheme": "url", 
+            "identifier": "https://github.com/ByrumLab/proteoDA/tree/1.0.0", 
+            "relation": "isSupplementTo"
+        }, 
+        {
+            "scheme": "doi", 
+            "identifier": "10.5281/zenodo.7962305", 
+            "relation": "isVersionOf"
+        }
+    ]
+}
