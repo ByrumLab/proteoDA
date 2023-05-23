@@ -1,0 +1,30 @@
+proteoDA-version: 1.0.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Timothy J.
+    given-names: Thurman
+    orcid: https://orcid.org/0000-0002-9602-6226
+    - family-names: Charity L.
+    given-names: Washam
+    orcid: https://orcid.org/0000-0001-5761-9304
+    - family-names: Duah
+    given-names: Alkam
+    orcid: https://orcid.org/0000-0002-5965-7694
+    - family-names: Jordan T.
+    given-names: Bird
+    orcid: https://orcid.org/0000-0001-5753-6058
+    - family-names: Allen 
+    given-names: Gies
+    orcid: https://orcid.org/0000-0003-2492-0429
+    - family-names: Kalyani
+    given-names: Dhusia
+    orcid: https://orcid.org/0000-0002-8803-1295
+    - family-names: Michael S. 
+    given-names: Robeson, II
+    orcid: https://orcid.org/0000-0001-7119-6301
+    - family-names: Stephanie D.
+    given-names: Byrum
+    orcid: https://orcid.org/0000-0002-1783-3610
+title: ByrumLab/proteoDA: Initial Release
+version: 1.0.0
+date-released: 2023-05-23
