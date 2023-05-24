@@ -27,7 +27,7 @@ authors:
   - name: Kalyani Dhusia
     orcid: 0000-0002-8803-1295
     affiliation: 1
-  - name: Michael S. Robeson, II
+  - name: Michael S. Robeson II
     orcid: 0000-0001-7119-6301
     affiliation: 2
   - name: Stephanie D. Byrum
