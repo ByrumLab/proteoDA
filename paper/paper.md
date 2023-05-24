@@ -37,7 +37,7 @@ authors:
 affiliations:
  - name: Department of Biochemistry and Molecular Biology, University of Arkansas for Medical Sciences, Little Rock, AR, USA
    index: 1
- - name: Department of Biomedical Imaging, University of Arkansas for Medical Sciences, Little Rock, AR, USA
+ - name: Department of Biomedical Informatics, University of Arkansas for Medical Sciences, Little Rock, AR, USA
    index: 2
  - name: Arkansas Children's Research Institute, Little Rock, AR, USA
    index: 3
