@@ -4,7 +4,7 @@
 # proteoDA
 
 <!-- badges: start -->
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7962306.svg)](https://doi.org/10.5281/zenodo.7962306)
 [![R-CMD-check](https://github.com/ByrumLab/proteoDA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ByrumLab/proteoDA/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/github/ByrumLab/proteoDA/branch/main/graph/badge.svg)](https://app.codecov.io/github/ByrumLab/proteoDA?branch=main)
