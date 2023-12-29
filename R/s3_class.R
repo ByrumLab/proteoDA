@@ -125,6 +125,29 @@ DAList <- function(data,
                    results = NULL,
                    tags = NULL) {
 
+  # Check if data, annotation, and metadata
+  # are tibble, convert to data frames if so.
+  if (any(c("tbl_df", "tbl") %in% class(data))) {
+    cli::cli_warn(
+      "Input data is a tibble, converting to data frame"
+    )
+    data <- as.data.frame(data)
+  }
+
+  if (any(c("tbl_df", "tbl") %in% class(annotation))) {
+    cli::cli_warn(
+      "Input annotation is a tibble, converting to data frame"
+    )
+    annotation <- as.data.frame(annotation)
+  }
+
+  if (any(c("tbl_df", "tbl") %in% class(metadata))) {
+    cli::cli_warn(
+      "Input metadata is a tibble, converting to data frame"
+    )
+    metadata <- as.data.frame(metadata)
+  }
+
   # Check for a uniprot_id column in annotation
   if ("uniprot_id" %notin% colnames(annotation)) {
     cli::cli_abort(
@@ -204,6 +227,25 @@ validate_DAList <- function(x) {
   }
 
   ## Check each element
+
+  # Make sure data aren't tibbles
+  if (any(c("tbl_df", "tbl") %in% class(x$data))) {
+    cli::cli_abort(
+      "Data slot is a tibble, must be a matrix or data frame"
+    )
+  }
+
+  if (any(c("tbl_df", "tbl") %in% class(x$annotation))) {
+    cli::cli_abort(
+      "Annotation slot is a tibble, must be a matrix or data frame"
+    )
+  }
+
+  if (any(c("tbl_df", "tbl") %in% class(x$metadata))) {
+    cli::cli_abort(
+      "Metadata slot is a tibble, must be a matrix or data frame"
+    )
+  }
 
   # Data
   if (!any(c(is.data.frame(x$data), is.matrix(x$data)))) {
