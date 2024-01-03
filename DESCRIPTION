@@ -1,6 +1,6 @@
 Package: proteoDA
 Title: Streamlined Differential Abundance Analysis of Proteomic Data
-Version: 0.0.0.9002
+Version: 1.0.1
 Authors@R: 
     c(
       person(given = "Timothy", family = "Thurman", email = "tthurman@uams.edu", role = c("aut", "cre")),
@@ -37,6 +37,7 @@ Depends:
 Suggests:
     grDevices,
     ggrastr,
+    tibble,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Encoding: UTF-8

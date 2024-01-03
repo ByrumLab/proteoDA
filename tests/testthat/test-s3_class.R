@@ -39,6 +39,37 @@ test_that("DAList() gives useful error when data and annotation have different n
                "same number of rows")
 })
 
+test_that("DAList() converts input tibbles to data frames with warning", {
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+
+  expect_warning(DAList(data = tibble::tibble(dfs$data),
+                        annotation = dfs$annotation,
+                        metadata = dfs$metadata),
+                 "Input data")
+
+  expect_warning(DAList(data = dfs$data,
+                        annotation = tibble::tibble(dfs$annotation),
+                        metadata = dfs$metadata),
+                 "Input annotation")
+
+  colnames(dfs$data) <- 1:4
+  expect_warning(DAList(data = dfs$data,
+                        annotation = dfs$annotation,
+                        metadata = tibble::tibble(dfs$metadata)),
+                 "Input metadata")
+
+  tmp <- suppressWarnings(
+    DAList(data = tibble::tibble(dfs$data),
+           annotation = tibble::tibble(dfs$annotation),
+           metadata = tibble::tibble(dfs$metadata))
+  )
+
+  expect_true(class(tmp$data) == "data.frame")
+  expect_true(class(tmp$annotation) == "data.frame")
+  expect_true(class(tmp$metadata) == "data.frame")
+
+})
+
 # Internal validator ------------------------------------------------------
 
 test_that("validate_DAList checks for proper number and order of slots", {
@@ -68,14 +99,25 @@ test_that("validate_DAList checks data slot", {
   input$data <- as.matrix(input$data)
   # Works if a matrix
   expect_s3_class(validate_DAList(input), class = "DAList")
-  # Fails if not a matrix of df
+  # Fails if not a matrix or df
   input$data <- "fail"
   expect_error(validate_DAList(input), " data frame or matrix")
+
+
 
   # Fails if df is not numeric
   input$data <- dfs$data
   input$data$sampleA <- as.character(input$data$sampleA)
   expect_error(validate_DAList(input), "numeric")
+
+  # fails if data is a tibble
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata)
+  input$data <- tibble::tibble(input$data)
+  expect_error(validate_DAList(input), "tibble")
+
 })
 
 test_that("validate_DAList checks the annotation slot", {
@@ -92,6 +134,14 @@ test_that("validate_DAList checks the annotation slot", {
   # Fails if uniprot_id not present
   colnames(input$annotation) <- c("x", "y")
   expect_error(validate_DAList(input), "uniprot_id")
+
+  # fails if annotation is a tibble
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata)
+  input$annotation <- tibble::tibble(input$annotation)
+  expect_error(validate_DAList(input), "tibble")
 
 })
 
@@ -136,6 +186,16 @@ test_that("validate_DAList checks the metadata", {
   rownames(input$metadata)[1] <- "xxx"
   expect_error(validate_DAList(input),
                "column names of the data")
+
+  # fails if metadata is a tibble
+  dfs <- readRDS(test_path("fixtures", "s3-class_input.rds"))
+  input <- DAList(data = dfs$data,
+                  annotation = dfs$annotation,
+                  metadata = dfs$metadata)
+  input$metadata <- tibble::tibble(input$metadata)
+  expect_error(validate_DAList(input), "tibble")
+
+
 })
 
 test_that("validate_DAList checks the design", {
