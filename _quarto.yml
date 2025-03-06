@@ -1,0 +1,9 @@
+title: "{{< var my-title >}}"
+author:
+  - name: "{{< var author >}}"
+  - name: "{{< var author2 >}}"
+date: "`r format(Sys.Date(), '%Y %b %d')`"
+format:
+  pptx:
+    reference-doc: StJude_template.pptx
+    output-file: Project_Summary
