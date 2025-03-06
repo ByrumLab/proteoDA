@@ -1,0 +1,46 @@
+Package: proteoDA
+Title: Streamlined Differential Abundance Analysis of Proteomic Data
+Version: 1.0.1
+Authors@R: 
+    c(
+      person(given = "Timothy", family = "Thurman", email = "tthurman@uams.edu", role = c("aut", "cre")),
+      person(given = "Charity", family = "Washam", email = "cwasham@uams.edu", role = c("aut")),
+      person(given = "Jordan", family = "Bird", email = "jtbird@uams.edu", role = c("ctb")),
+      person(given = "Stephanie", family = "Byrum", email = "sbyrum@uams.edu", role = c("aut"))
+    )
+Description: Functions for performing differential abundance analysis of proteomic data.
+License: GPL (>= 3)
+biocViews:
+Imports:
+    circlize,
+    cli (>= 3.6.0),
+    ComplexHeatmap,
+    ggplot2 (>= 3.4.0),
+    ggrepel,
+    ggtree (>= 3.4.0),
+    grid,
+    gridExtra,
+    htmlwidgets,
+    knitr,
+    limma,
+    MASS,
+    openxlsx,
+    patchwork,
+    preprocessCore,
+    rlang (>= 1.0.0),
+    rmarkdown,
+    statmod (>= 1.2.2), 
+    stringr,
+    vsn
+Depends: 
+    R (>= 4.1.0)
+Suggests:
+    grDevices,
+    ggrastr,
+    tibble,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.2
+VignetteBuilder: knitr

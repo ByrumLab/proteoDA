@@ -1,0 +1,84 @@
+---
+title: ""
+pagetitle: "`r contrast`"
+output: 
+  html_document:
+    mathjax: null
+    self_contained: true
+---
+
+```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
+knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, cache = F)
+```
+
+```{css, echo=FALSE}
+.main-container {
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+```
+
+```{r logo, fig.align="left", out.width="40%"}
+knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_apps/proteomics_apps/proteoDA/inst/report_templates/CPM_Hz.png", rel_path = F)
+```
+
+### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
+
+```{r chunk1, results = "asis", fig.keep='none'}
+uams_glimmaXY(
+  model_data = data, 
+  counts = counts,
+  groups = groups,
+  sample.cols = unname(colorGroup(groups)),
+  status.cols = c("#00bfff", "#858585", "#ff3030"),
+  anno = anno,
+  display.columns = cols_to_display,
+  width = width,
+  height = height
+)
+```
+
+
+```{r}
+to_html_table <- function(dataframe) {
+ htmltools::tags$table(
+  htmltools::tags$thead(htmltools::tags$tr(htmltools::tags$td(" ", style = "text-align:left;"), lapply(colnames(dataframe), function(x) htmltools::tags$th(htmltools::HTML(paste0("&nbsp;&nbsp;"), x), style = "text-align:right;")))),
+  htmltools::tags$tbody(
+   lapply(1:nrow(dataframe), function(x) {htmltools::tags$tr(htmltools::tags$td(rownames(dataframe)[x], style = "text-align:left;"), lapply(dataframe[x,], function(y) htmltools::tags$td(y, style = "text-align:right;")))})
+  ))
+}
+```
+
+```{r}
+# Get contrast matrix,
+# ignoring when no contrast matrix
+if (is.null(DAList$design$contrast_matrix)) {
+  this_contrast_matrix <- as.data.frame(list(" " = "Not applicable"), optional = T, row.names = c(" "))
+} else {
+  this_contrast_matrix <- as.data.frame(DAList$design$contrast_matrix)[contrast]
+}
+```
+
+
+```{r, results='hold'}
+htmltools::tags$br()
+htmltools::tags$br()
+htmltools::tags$br()
+htmltools::tags$details(
+  htmltools::tags$summary("Model details"),
+  htmltools::tags$br(),
+  htmltools::tags$strong("Model equation: "),
+  DAList$design$design_formula,
+  htmltools::tags$br(), 
+  htmltools::tags$strong("Design matrix:"),
+  htmltools::tags$br(),
+  to_html_table(DAList$design$design_matrix),
+  htmltools::tags$br(),
+  htmltools::tags$strong("Contrast for this report:"),
+  htmltools::tags$br(),
+  to_html_table(this_contrast_matrix))
+htmltools::tags$br()
+htmltools::tags$br()
+htmltools::tags$br()
+```

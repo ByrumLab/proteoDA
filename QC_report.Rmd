@@ -1,0 +1,423 @@
+---
+title: "QC_report"
+#pagetitle: "PI_DATE"
+author: Center For Proteomics and Metabolomics
+output: html_document
+---
+
+```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
+knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, cache = F)
+```
+
+
+```{r logo, fig.align="center", out.width="40%"}
+knitr::include_graphics(path = "inst/report_templates/CPM_Hz.png", rel_path = F)
+```
+
+
+```{r}
+
+## GENERATE QC PLOTS
+source("proteoDA_params.R")
+# DiaNN quan output
+setwd(working_dir)
+
+library(devtools) # nocov start
+library(tidyverse)
+
+devtools::load_all() # run local functions without installing
+
+results <- readRDS("results.rds")
+DA_sum <- read.csv(file=file.path(DA_dir, "DA_summary.csv"))
+
+## LOAD PACKAGES AND SOURCE FUNCGIONS
+## devtools::load_all(path = "C:/Users/washamcharityl/Documents/GitHub/repos/rnaseqDA/")
+
+library(ggplot2)
+library(gridExtra)
+
+## load functions for QC plots
+source("R/ggplot2_plots/checks_2.R")
+source("R/ggplot2_plots/split_by_groups.R")
+source("R/ggplot2_plots/rename_samples_2.R")
+source("R/ggplot2_plots/get_colors.R")
+source("R/ggplot2_plots/qc_pvca_ggplot_7.R")
+source("R/ggplot2_plots/qc_totInt_barplot_by_group_9.R")
+source("R/ggplot2_plots/qc_pca_ggplot_subgroups_8.R")
+source("R/ggplot2_plots/qc_dendrogram_ggplot_3.R")
+source("R/ggplot2_plots/qc_violin_ggplot_4.R")
+source("R/ggplot2_plots/qc_boxplot_ggplot_5.R")
+
+## PLOT COLORS
+#install.packages('Polychrome')
+
+```
+
+##  QC report for `r methods_filename` 
+
+Quality control plots for the evaluation of sample quality include total intensity for each sample, missing value heatmap indicating the overall percentage of proteins with missing values in each sample, PCA of sample similarity in the first two principle components, and a clustered dendrogram indicating sample similarity by sample group. 
+
+### insert sample list as table here? 
+
+### **Differential Abundance Summary** 
+
+1. **"contrast"** is the sample group comparison
+2. **"type"** indicates the number of proteins that were up-regulated, down-regulated, or not significant
+3. **"sig.PVal"** indicates the number of proteins significant by both p-value and log2 fold changed based on the *significant threshold*
+4. **"sig.FDR"** indicates the number of proteins significant by both adjusted p-value and log2 fold changed based on the *significant threshold*
+5. **"pval_thresh"** is the unadjusted and adjusted p-value significance threshold
+6. **"lfc_thresh"** is the log2 fold change significance threshold
+7. **"p_adj_method"** is the multiple test correction method. **"BH"** indicates Benjamini-Hochberg, or FDR, adjustment. 
+
+```{r DAsummary}
+
+knitr::kable(DA_sum)
+
+```
+
+
+```{r colors, message=FALSE, warning=FALSE, echo = F, include = F}
+# using the "results" object
+
+all_colors2 <- lapply(colnames(results$metadata),
+                      function(x){
+                        get_colors(group = c(results$metadata[, x]))
+                      })
+names(all_colors2) <- colnames(results$metadata)
+
+####
+#dir.create(QC_dir)
+if (!dir.exists(QC_dir)) {dir.create(QC_dir)}
+
+```
+
+```{r boxplot, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 1. Protein Intensities for each sample', include = T}
+
+
+boxplot5 <- qc_boxplot_plot5(data = results$data,
+                                  groups = results$metadata$group,
+                                  sample_labels = results$metadata$sample,
+                                  title = NULL,
+                                  text.sizes = c(12,10,10,10),
+                                  legend.position = "right")
+
+
+boxplot5
+```
+
+```{r}
+ggsave(file = file.path(QC_dir,"Boxplot_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
+       plot = boxplot5, 
+       path = NULL, 
+       width = 10, 
+       height = 6, 
+       units = c("in"), 
+       dpi = 300)
+
+```
+
+```{r barplot, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 1. Total Protein Intensities for each sample', include = T}
+
+my_grouping_columns <- barplot_grouping_columns
+
+bar1 <- lapply(my_grouping_columns, function(x){
+  b <- qc_totInt_ggplot7(DAList          = results,
+                         label_column    = plot_labels,
+                         grouping_column = x,
+                         percentile      = 0,
+                         colors          = all_colors2$x,
+                         # title           = x,
+                         legend.position = "none")
+ # b$p <- b$p + labs(title = "total norm intensity")
+})
+
+#bar1$p <- bar1$p + labs(title = "total norm intensity barplot by group")
+#bar1
+
+names(bar1) <- my_grouping_columns
+
+bar1
+```
+
+```{r}
+ggsave(file = file.path(QC_dir,"Barplot_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
+       plot = bar1$group$p, 
+       path = NULL, 
+       width = 10, 
+       height = 6, 
+       units = c("in"), 
+       dpi = 300)
+
+```
+
+### **Figure 1.** Total Protein Intensities for each sample
+
+```{r barplotsplit, message=FALSE, warning=FALSE, results='hide', echo = F, fig.align='center', fig.cap='Figure 2. Total Intensities of samples split by group', include = T}
+
+## TOTAL INTENSITY BAR PLOT BY GROUP
+my_grouping_columns <- barplot_grouping_columns
+
+bar2 <- lapply(my_grouping_columns, function(x){
+  bar2_group <- qc_totInt_by_group_ggplot7(DAList          = results,
+                                           label_column    = plot_labels,
+                                           grouping_column = x,
+                                           percentile      = 0,
+                                           colors          = all_colors2$x,
+                                           ncol            = 6,
+                                           legend.position = "bottom"
+  )
+})
+
+names(bar2) <- "group"
+## 1 column 3 rows, legends collected and placed at bottom
+## of plot. plot title added to the first plot at the top
+
+p3 <- lapply(my_grouping_columns, function(x){
+  ((bar2$group$tot.int +
+      labs(title = "total intensity barplot by group",
+           subtitle = "median normalized with 15%"))
+  ) +
+    patchwork::plot_layout(ncol    = 1,
+                           nrow    = 1,
+                           widths  = c(1), ## rel. w/h of plots
+                           heights = c(1), ## c(1,5,1) middle taller
+                           guides  = 'collect', ## collects legend
+                           tag_level = "keep" ## keeps tags A-Z seq. order
+    ) & theme(legend.position = "bottom", ## use & to add theme stuff
+              axis.title.x    = element_blank(),
+              plot.title      = element_text(size = 16)
+              
+    )
+})
+names(p3) <- "group"
+
+p3 
+```
+
+```{r}
+ggsave(file = file.path(QC_dir,"Barplot_split_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
+       plot = p3$group, 
+       path = NULL, 
+       width = 10, 
+       height = 6, 
+       units = c("in"), 
+       dpi = 600)
+
+```
+
+### **Figure 1.** Total Protein Intensities for each sample
+
+
+```{r missingheatmap, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 3. Total Intensities of samples', include = F}
+## MISSING VALUE HEATMAP BY GROUP (BLACK INDICATES MISSING VALUES)
+## requires package naniar
+
+tmp <- results
+tmp <- zero_to_missing(tmp)
+
+## split in to groups
+tmp <- rename_samples(DAList          = tmp,
+                      label_column    = plot_labels,
+                      grouping_column = NULL,
+                      sort = T)
+
+tmp2 <- split_by_groups(data = tmp$data, groups = tmp$metadata$group)
+
+h3 <- lapply(tmp2, function(x){
+  g <- naniar::vis_miss(x = x,
+                        warn_large_data = F,
+                        sort_miss       = T, ## colms
+                        cluster         = T, ## rows
+                        show_perc       = T,
+                        show_perc_col   = T)
+  g$theme$plot.margin <- margin(c(1,4,1,0), unit = "cm")
+  g + labs(title = "")
+})
+
+
+for(i in 1:length(h3)){
+  h3[[i]] <- h3[[i]] +
+    labs(title = names(h3)[i]) +
+    theme(plot.title = element_text(size=16))
+}
+h3
+```
+
+```{r missingAll, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 3. Heatmap of proteins with missing values in each sample', include = T}
+
+## ALL SAMPLES MISSING VALUE HEATMAP
+tmp <- results
+tmp <- zero_to_missing(tmp)
+
+h4 <- naniar::vis_miss(x = data.frame(tmp$data),
+                       warn_large_data = F,
+                       sort_miss       = F, ## colms
+                       cluster         = T, ## rows
+                       show_perc       = T,
+                       show_perc_col   = T)
+h4$theme$plot.margin <- margin(c(1,4,1,0), unit = "cm")
+
+h4 + labs(title = "")
+
+rm(list=c("tmp","tmp2"))
+
+```
+
+```{r}
+ggsave(file = file.path(QC_dir,"Heatmap_MissingVal_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
+       plot = h4, 
+       path = NULL, 
+       width = 10, 
+       height = 6, 
+       units = c("in"), 
+       dpi = 600)
+
+```
+
+```{r pcaPCs, message=FALSE, warning=FALSE, echo = F, include = F}
+
+## PCA PLOTS (COLORED BY OUTLIERS)
+
+tmp <- results
+#tmp <- missing_to_zero(tmp)
+
+pc5 <- lapply(list(c(1,2),c(3,4),c(5,6)), function(x){
+  
+  qc_pca_plot7(data          = tmp$data,
+               groups        = tmp$metadata$group,
+               sample_labels = tmp$metadata$sample,
+               text.sizes    = c(14,14,14,11),
+               point.size    = 3,
+               label.size    = 2.5,
+               max.labels    = 1000,
+               top           = nrow(tmp$data),
+               standardize   = TRUE,
+               pca_axes      = x,
+               colors        = all_colors2$group,
+               title         = "",
+               max_pc        = 20,
+               legend.position = "right",
+               show.plot     = FALSE)
+  
+})
+names(pc5) <- c("pc12","pc34","pc56")
+
+pc5
+```
+
+```{r}
+ggsave(file = file.path(QC_dir,"PCA_PC12.png"), # use .extension such as .png, .pdf, .jpeg
+       plot = pc5$pc12$p, 
+       path = NULL, 
+       width = 10, 
+       height = 6, 
+       units = c("in"), 
+       dpi = 600)
+
+ggsave(file = file.path(QC_dir,"PCA_PC34.png"), # use .extension such as .png, .pdf, .jpeg
+       plot = pc5$pc34$p, 
+       path = NULL, 
+       width = 10, 
+       height = 6, 
+       units = c("in"), 
+       dpi = 600)
+
+ggsave(file = file.path(QC_dir,"PCA_PC56.png"), # use .extension such as .png, .pdf, .jpeg
+       plot = pc5$pc56$p, 
+       path = NULL, 
+       width = 10, 
+       height = 6, 
+       units = c("in"), 
+       dpi = 600)
+
+```
+
+```{r pcaPC12_groups, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 4. PCA Principle Components 1 and 2', include = F}
+
+# my_grouping_columns <- c("plate", "group_survive", "group_survive_time_cor", "time_cor")
+tmp <- results
+
+#my_grouping_columns <- pca_grouping_columns
+my_grouping_columns <- c("group","sample")
+
+pc7 <- lapply(my_grouping_columns, function(x){
+  
+  g <- qc_pca_plot7(data          = tmp$data,
+                    groups        = tmp$metadata[, x],
+                    sample_labels = tmp$metadata$sample,
+                    text.sizes    = c(14,14,14,11),
+                    point.size    = 3,
+                    label.size    = 2.5,
+                    max.labels    = 1000,
+                    top           = nrow(tmp$data),
+                    standardize   = TRUE,
+                    pca_axes      = c(1,2),
+                    colors        = all_colors2$x,
+                    title         = x,
+                    max_pc        = 20,
+                    legend.position = "bottom",
+                    show.plot     = FALSE)
+  g$p
+})
+names(pc7) <- my_grouping_columns
+pc7
+
+```
+
+```{r}
+ggsave(file = file.path(QC_dir,"PCA_byGroup.png"), # use .extension such as .png, .pdf, .jpeg
+       plot = pc7$group, 
+       path = NULL, 
+       width = 10, 
+       height = 6, 
+       units = c("in"), 
+       dpi = 600)
+
+```
+
+```{r}
+
+pdf(file=file.path(QC_dir, "PCA_byGroup2.pdf"), height=10,width=10)
+pc7
+dev.off()
+
+```
+
+```{r dendrogram, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 5. Clustered dendrogram', include = T}
+## DENDROGRAM (COLORED BY NA OUTLIERS)
+my_grouping_columns <- den_grouping_columns
+
+den1 <- lapply(my_grouping_columns, function(x) {
+  
+  den <- qc_dendrogram(data         = results$data,
+                       groups        = results$metadata[,x],
+                       sample_labels = results$metadata$sample,
+                       top           = nrow(results$data),
+                       standardize   = TRUE,
+                       dist_metric   = "euclidean",
+                       clust_method  = "complete",
+                       colors        = all_colors2$x,
+                       point.size    = 3,
+                       text.sizes    = c(14,3,9),
+                       legend.position = "right",
+                       title         = "",
+                       show.plot     = FALSE)
+  
+  den$p
+})
+
+names(den1) <- my_grouping_columns
+den1
+
+```
+
+```{r}
+ggsave(file = file.path(QC_dir,"Dendrogram_byGroup.png"), # use .extension such as .png, .pdf, .jpeg
+       plot = den1$group, 
+       path = NULL, 
+       width = 10, 
+       height = 6, 
+       units = c("in"), 
+       dpi = 600)
+
+```
