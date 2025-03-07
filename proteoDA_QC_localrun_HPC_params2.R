@@ -1,5 +1,6 @@
 library(devtools) # nocov start
 library(tidyverse)
+library(yaml)
 
 devtools::load_all() # run local functions without installing
 
@@ -225,3 +226,15 @@ for (i in 1:length(results$results)){
     filenames=NULL,
     dpi=600)
 }
+
+### UPDATE _variables.yml with params for Project Name and authors.
+
+variables <- yaml.load_file("_variables.yml")
+variables$title <- project_name
+variables$author <- author
+variables$author2 <- author2
+
+# You can also add new variables
+# variables$new_var <- 42
+
+write_yaml(variables, "_variables.yml")
