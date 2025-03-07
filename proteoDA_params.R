@@ -4,7 +4,9 @@
 working_dir ="/research/rgs01/home/clusterHome/sbyrum/projects/proteoda_test/proteoDA"
 
 #### Variables for METHODS REPORT
-methods_filename = "PI_DATE"
+author = "Vishwajeeth R. Pagala"
+author2 = "Zuo-Fei Yuan"
+project_name = "PI_DATE"
 instrument = "Bruker timsTOF HT"
 SearchEngine = "DIA-NN (version 1.8.2)"
 database = "Proteome ID: UP000005640, 81,791 proteins"
