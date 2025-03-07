@@ -7,7 +7,7 @@ source("proteoDA_params.R")
 rmarkdown::render("DIA_methods_report.Rmd",
                   knit_root_dir = getwd(),
                   #intermediates_dir = tmp_subdir,
-                  output_file = paste0(methods_filename, "_methods.html"),
+                  output_file = paste0(project_name, "_methods.html"),
                   quiet = T)
 
 ## Generate QC_report
@@ -15,5 +15,5 @@ rmarkdown::render("DIA_methods_report.Rmd",
 rmarkdown::render("QC_report.Rmd",
                   knit_root_dir = getwd(),
                   #intermediates_dir = tmp_subdir,
-                  output_file = paste0(methods_filename, "_QC_report.html"),
+                  output_file = paste0(project_name, "_QC_report.html"),
                   quiet = T)
