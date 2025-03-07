@@ -1,8 +1,8 @@
 ---
-title: "Project Summary"
+title: "{{< var title >}}"
 author: 
-  - name: "Vishwajeeth R. Pagala" 
-  - name: "Zuo-Fei Yuan"
+  - name: "{{< var author >}}" 
+  - name: "{{< var author2 >}}"
 date: "`r format(Sys.Date(), '%Y %b %d')`"
 format:
   pptx:
