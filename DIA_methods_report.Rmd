@@ -1,5 +1,5 @@
 ---
-title: "DIA Methods"
+#title: "DIA Methods"
 #pagetitle: "PI_DATE"
 author: Center For Proteomics and Metabolomics
 output: html_document
