@@ -5,23 +5,22 @@ author: Center For Proteomics and Metabolomics
 output: html_document
 ---
 
-```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
-knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, cache = F)
+```{r setup, message=FALSE, warning=FALSE, echo = FALSE, include = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", echo = FALSE, cache = FALSE)
 ```
 
 
 ```{r logo, fig.align="center", out.width="40%"}
-knitr::include_graphics(path = "inst/report_templates/CPM_Hz.png", rel_path = F)
+knitr::include_graphics(path = "inst/report_templates/CPM_Hz.png", rel_path = FALSE)
 ```
 
 [add variables for text]::
 
 ```{r}
-instrument = instrument
-SearchEngine = SearchEngine
-database = database
-db_version = db_version
-
+instrument <- instrument
+search_engine <- SearchEngine
+database <- database
+db_version <- db_version
 ```
 
 ##  **DIA Methods** 
@@ -34,7 +33,7 @@ The samples were analyzed on a `r instrument` instrument coupled to EvosepOne (E
 
 ### **Data Analysis** 
 
-The raw timsTOF data (.d folders) were imported into `r SearchEngine` [1,2] and analyzed with the library-free mode. Human protein sequences (`r database`) were downloaded from UniProt database (`r db_version`). The protein FASTA file was then used for in silico library generation with the following settings: Trypsin/P with maximum 2 missed cleavage; Oxidation on Methionine as variable modification; maximum number of variable modifications set to 2; peptide length from 7 to 30; precursor charge 1–4; precursor m/z from 400 to 1200; fragment m/z from 200 to 1800. The search parameters of DIA-NN were set as follows: precursor FDR 1%; mass accuracy at MS1 and MS2 both set to 10 ppm; scan window set to 0 (automatic inference); isotopologues and MBR (Match-Between-Run) turned on; No shared spectra enabled; protein inference at gene level; heuristic protein inference enabled; quantification strategy set to Robust LC (high precision); neural network classifier single-pass mode; cross-run normalization turned off; Library generation set to smart profiling; Speed and RAM usage set to optimal results. The search results were further filtered with precursor q value <0.01 and protein group q value <0.01 at the library level. For quantification, DIA-NN first obtained precursor quantities by summing the intensities of the top six fragments (ranked by their library intensities) for each precursor. Precursors corresponding to unique proteins were then used for protein-level quantification and intensities of protein groups were obtained using the MaxLFQ algorithm implemented in the iq r package [3]. Proteins with more than 50% missing values in either the Healthy or MDS group were excluded from further analysis. Cross-run normalization was then performed based on the median protein intensity of each sample.
+The raw timsTOF data (.d folders) were imported into `r search_engine` [1,2] and analyzed with the library-free mode. Human protein sequences (`r database`) were downloaded from UniProt database (`r db_version`). The protein FASTA file was then used for in silico library generation with the following settings: Trypsin/P with maximum 2 missed cleavage; Oxidation on Methionine as variable modification; maximum number of variable modifications set to 2; peptide length from 7 to 30; precursor charge 1–4; precursor m/z from 400 to 1200; fragment m/z from 200 to 1800. The search parameters of DIA-NN were set as follows: precursor FDR 1%; mass accuracy at MS1 and MS2 both set to 10 ppm; scan window set to 0 (automatic inference); isotopologues and MBR (Match-Between-Run) turned on; No shared spectra enabled; protein inference at gene level; heuristic protein inference enabled; quantification strategy set to Robust LC (high precision); neural network classifier single-pass mode; cross-run normalization turned off; Library generation set to smart profiling; Speed and RAM usage set to optimal results. The search results were further filtered with precursor q value <0.01 and protein group q value <0.01 at the library level. For quantification, DIA-NN first obtained precursor quantities by summing the intensities of the top six fragments (ranked by their library intensities) for each precursor. Precursors corresponding to unique proteins were then used for protein-level quantification and intensities of protein groups were obtained using the MaxLFQ algorithm implemented in the iq r package [3]. Proteins with more than 50% missing values in either the Healthy or MDS group were excluded from further analysis. Cross-run normalization was then performed based on the median protein intensity of each sample.
 
 ## **Acknowledgements**
 
