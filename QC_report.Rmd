@@ -1,5 +1,5 @@
 ---
-title: "QC_report"
+#title: "QC_report"
 #pagetitle: "PI_DATE"
 author: Center For Proteomics and Metabolomics
 output: html_document
@@ -53,7 +53,7 @@ source("R/ggplot2_plots/qc_boxplot_ggplot_5.R")
 
 ```
 
-##  QC report for `r methods_filename` 
+##  QC report for `r project_name` 
 
 Quality control plots for the evaluation of sample quality include total intensity for each sample, missing value heatmap indicating the overall percentage of proteins with missing values in each sample, PCA of sample similarity in the first two principle components, and a clustered dendrogram indicating sample similarity by sample group. 
 
