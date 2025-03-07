@@ -1,8 +1,9 @@
-library(devtools) # nocov start
+#library(devtools) # nocov start
+library("proteoDA")
 library(tidyverse)
 library(yaml)
 
-devtools::load_all() # run local functions without installing
+#devtools::load_all() # run local functions without installing
 
 ## proteoDA_params.R should be in same directory as this file
 ## test this 
@@ -169,63 +170,114 @@ if (!dir.exists(QC_dir)) {dir.create(QC_dir)}
 
 library(pdftools)
 
-## convert Adjusted p-value Volcano plots from pdf to png for PowerPoint 
-for (i in 1:length(results$results)){
-  
-   pdf_file <- file.path(names(results$results)[i], "-volcano-adjusted-pval.pdf", fsep="")
-   pdf_file2 <- file.path(DA_dir, "static_plots", pdf_file, fsep = "/")
+# Define the output directory
+output_dir <- file.path(DA_dir, "static_plots")
 
- plot_png <- pdf_convert(
-   pdf_file2,
-   format = "png",
-   pages = NULL,
-   filenames=NULL,
-   dpi=600)
+# Ensure output directory exists
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
 }
 
-## convert raw p-value Volcano plots from pdf to png for PowerPoint 
+# Convert Adjusted p-value Volcano plots from PDF to PNG
+for (i in 1:length(results$results)) {
 
-for (i in 1:length(results$results)){
-  
-  pdf_file <- file.path(names(results$results)[i], "-volcano-raw-pval.pdf", fsep="")
-  pdf_file2 <- file.path(DA_dir, "static_plots", pdf_file, fsep = "/")
-  
-  plot_png <- pdf_convert(
-    pdf_file2,
-    format = "png",
-    pages = 1,
-    filenames=NULL,
-    dpi=600)
+  # Correctly construct the input PDF file path
+  pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-volcano-adjusted-pval.pdf"))
+
+  # Ensure the PDF file exists before converting
+  if (file.exists(pdf_file)) {
+
+    # Convert to PNG with proper filename pattern
+    pdf_convert(
+      pdf_file,
+      format = "png",
+      pages = NULL,
+      filenames = file.path(output_dir, paste0(names(results$results)[i], "-volcano-adjusted-pval_%d.png")),
+      dpi = 600
+    )
+
+  } else {
+    message("File not found: ", pdf_file)
+  }
 }
 
-## convert Adjusted p-value MD plots from pdf to png for PowerPoint 
-for (i in 1:length(results$results)){
-  
-   pdf_file <- file.path(names(results$results)[i], "-MD-adjusted-pval.pdf", fsep="")
-   pdf_file2 <- file.path(DA_dir, "static_plots", pdf_file, fsep = "/")
 
- plot_png <- pdf_convert(
-   pdf_file2,
-   format = "png",
-   pages = NULL,
-   filenames=NULL,
-   dpi=600)
+for (i in 1:length(results$results)) {
+
+  # Correctly construct the input PDF file path
+  pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-volcano-raw-pval.pdf"))
+
+  # Ensure the PDF file exists before converting
+  if (file.exists(pdf_file)) {
+
+    # Convert to PNG with proper filename pattern
+    pdf_convert(
+      pdf_file,
+      format = "png",
+      pages = NULL,
+      filenames = file.path(output_dir, paste0(names(results$results)[i], "-volcano-raw-pval_%d.png")),
+      dpi = 600
+    )
+
+  } else {
+    message("File not found: ", pdf_file)
+  }
 }
 
-## convert raw p-value MD plots from pdf to png for PowerPoint 
+# Define the output directory
+output_dir <- file.path(DA_dir, "static_plots")
 
-for (i in 1:length(results$results)){
-  
-  pdf_file <- file.path(names(results$results)[i], "-MD-raw-pval.pdf", fsep="")
-  pdf_file2 <- file.path(DA_dir, "static_plots", pdf_file, fsep = "/")
-  
-  plot_png <- pdf_convert(
-    pdf_file2,
-    format = "png",
-    pages = 1,
-    filenames=NULL,
-    dpi=600)
+# Ensure output directory exists
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
 }
+
+# Convert Adjusted p-value Volcano plots from PDF to PNG
+for (i in 1:length(results$results)) {
+
+  # Correctly construct the input PDF file path
+  pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-MD-adjusted-pval.pdf"))
+
+  # Ensure the PDF file exists before converting
+  if (file.exists(pdf_file)) {
+
+    # Convert to PNG with proper filename pattern
+    pdf_convert(
+      pdf_file,
+      format = "png",
+      pages = NULL,
+      filenames = file.path(output_dir, paste0(names(results$results)[i], "-MD-adjusted-pval_%d.png")),
+      dpi = 600
+    )
+
+  } else {
+    message("File not found: ", pdf_file)
+  }
+}
+
+
+for (i in 1:length(results$results)) {
+
+  # Correctly construct the input PDF file path
+  pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-MD-raw-pval.pdf"))
+
+  # Ensure the PDF file exists before converting
+  if (file.exists(pdf_file)) {
+
+    # Convert to PNG with proper filename pattern
+    pdf_convert(
+      pdf_file,
+      format = "png",
+      pages = NULL,
+      filenames = file.path(output_dir, paste0(names(results$results)[i], "-MD-raw-pval_%d.png")),
+      dpi = 600
+    )
+
+  } else {
+    message("File not found: ", pdf_file)
+  }
+}
+
 
 ### UPDATE _variables.yml with params for Project Name and authors.
 
