@@ -1,4 +1,4 @@
 library(testthat)
-library(proteoDA)
+library(proteoDAstjude)
 
-test_check("proteoDA")
+test_check("proteoDAstjude")
