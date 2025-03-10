@@ -16,7 +16,7 @@ the metadata data.frame which gives information on how to group the samples.}
 character length? Default: False}
 }
 \value{
-If all checks pass the function returns the {.arg grouping_column}
+If all checks pass the function returns the /code{grouping_column}
 column name.
 }
 \description{

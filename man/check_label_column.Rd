@@ -13,16 +13,16 @@ check_label_column(metadata, label_column, verbose = FALSE)
 the metadata data.frame which contains labels to use to identify each sample.
 To facilitate good plot formatting, when verbose = TRUE a warning message
 is invoked if sample label values have more than 15 characters.
-The function will give an error if the {.arg label_column} is not a column
-in {.arg metadata}, label values have missing values, blanks, or are not
+The function will give an error if the /code{label_column} is not a column
+in /code{metadata}, label values have missing values, blanks, or are not
 unique. A warning is displayed if the label values do not follow R syntax
 rules.}
 
-\item{verbose}{logical. Should the values of the label_colum be checked for
+\item{verbose}{logical. Should the values of the label_column be checked for
 character length? Default: False}
 }
 \value{
-If all checks pass the function returns the {.arg label_column}
+If all checks pass the function returns the /code{label_column}
 column name.
 }
 \description{
