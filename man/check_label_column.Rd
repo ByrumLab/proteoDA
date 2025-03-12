@@ -2,59 +2,65 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_label_column}
 \alias{check_label_column}
-\title{Metadata label_column validator.}
+\title{Metadata Label Column Validator}
 \usage{
 check_label_column(metadata, label_column, verbose = FALSE)
 }
 \arguments{
-\item{metadata}{a data.frame of sample metadata. Rows are samples.}
+\item{metadata}{A \code{data.frame} containing sample metadata, where rows
+represent samples.}
 
-\item{label_column}{The name of column or column index within
-the metadata data.frame which contains labels to use to identify each sample.
-To facilitate good plot formatting, when verbose = TRUE a warning message
-is invoked if sample label values have more than 15 characters.
-The function will give an error if the /code{label_column} is not a column
-in /code{metadata}, label values have missing values, blanks, or are not
-unique. A warning is displayed if the label values do not follow R syntax
-rules.}
+\item{label_column}{The name or index of the column in \code{metadata} that contains
+labels used to identify each sample. The function checks if \code{label_column}:
+\itemize{
+\item Exists in \code{metadata}.
+\item Contains non-missing and non-blank values.
+\item Has unique values.
+\item Adheres to R syntax rules (a warning is issued if not).
+Additionally, if \code{verbose = TRUE}, a warning is displayed when label values
+exceed 15 characters to encourage better plot formatting.
+}}
 
-\item{verbose}{logical. Should the values of the label_column be checked for
-character length? Default: False}
+\item{verbose}{Logical. If \code{TRUE}, checks whether the label values exceed
+15 characters. Default: \code{FALSE}.}
 }
 \value{
-If all checks pass the function returns the /code{label_column}
-column name.
+The validated column name of \code{label_column}, if all checks pass.
 }
 \description{
-Internal function for validating metadata sample label_column information
-for a DGEList object.
+Internal function for validating the sample label column in a metadata
+\code{data.frame} for a \code{DGEList} object.
 }
 \examples{
 \dontrun{
-if(interactive()){
+if (interactive()) {
 
-metadata <- data.frame(sample = c("C1","C2","T1","T2"),
-                       sample_id = c("C100","C202","T303","T100"),
-                       condition = c("Control","Control","Treatment",
-                                     "Treatment"))
+metadata <- data.frame(
+  sample = c("C1", "C2", "T1", "T2"),
+  sample_id = c("C100", "C202", "T303", "T100"),
+  condition = c("Control", "Control", "Treatment", "Treatment")
+)
 
-metadata2 <- data.frame(sample = c("C1","C2","T1","T2"),
-                        sample = c("C100","C202","T303","T100"),
-                        condition = c("Control","Control","Treatment",
-                                      "Treatment"), check.names = FALSE)
+metadata2 <- data.frame(
+  sample = c("C1", "C2", "T1", "T2"),
+  sample = c("C100", "C202", "T303", "T100"),
+  condition = c("Control", "Control", "Treatment", "Treatment"),
+  check.names = FALSE
+)
 
-metadata3 <- data.frame(sample = c("C2","C2","T1","T2"),
-                        sample_id = c("C100","C202",NA,"T100"),
-                        sample_name = c("sample_1","sample_2","","sample_4"),
-                        condition = c("Control","Control","Treatment",
-                                      "Treatment"))
+metadata3 <- data.frame(
+  sample = c("C2", "C2", "T1", "T2"),
+  sample_id = c("C100", "C202", NA, "T100"),
+  sample_name = c("sample_1", "sample_2", "", "sample_4"),
+  condition = c("Control", "Control", "Treatment", "Treatment")
+)
 
-metadata4 <- data.frame(long_sample_column_name = c("C1","C2","T1","T2"),
-                        sample_id = c("C100","C202","chemo_treatment_303",
-                        "chemo_treatment_100"),
-                        condition = c("Control","Control","Treatment",
-                                      "Treatment"),
-                        row.names = c("C100","C202","T303","T100_long_row_name"))
+metadata4 <- data.frame(
+  long_sample_column_name = c("C1", "C2", "T1", "T2"),
+  sample_id = c("C100", "C202", "chemo_treatment_303", "chemo_treatment_100"),
+  condition = c("Control", "Control", "Treatment", "Treatment"),
+  row.names = c("C100", "C202", "T303", "T100_long_row_name")
+)
 
 check_label_column(metadata = metadata, label_column = "sample_id")
 check_label_column(metadata = metadata, label_column = 2)
@@ -65,8 +71,9 @@ check_label_column(metadata = metadata3, label_column = 2)
 check_label_column(metadata = metadata3, label_column = "sample_name")
 check_label_column(metadata = metadata4, label_column = "sample_id")
 
-  }
 }
+}
+
 
 }
 \keyword{internal}

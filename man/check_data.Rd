@@ -2,25 +2,25 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_data}
 \alias{check_data}
-\title{check if x is a data.frame or matrix}
+\title{Check if an object is a data.frame or matrix}
 \usage{
 check_data(x)
 }
 \arguments{
-\item{x}{an object to be tested. (e.g. counts, metadata, annotation)}
+\item{x}{An object to be tested (e.g., counts, metadata, annotation).}
 }
 \value{
-The function returns TRUE if x is a data.frame or matrix
-If x is not a data.frame or matrix the function returns FALSE.
+Logical. Returns \code{TRUE} if \code{x} is a \code{data.frame} or \code{matrix}, otherwise returns \code{FALSE}.
 }
 \description{
-for internal use. helper function. NEED TO UPDATE
+Internal helper function to determine whether an object is a \code{data.frame} or \code{matrix}.
 }
 \examples{
 \dontrun{
-if(interactive()){
- #EXAMPLE1
- }
+if (interactive()) {
+  check_data(data.frame(a = 1:3, b = 4:6)) # TRUE
+  check_data(matrix(1:9, nrow = 3))        # TRUE
+  check_data(list(a = 1, b = 2))           # FALSE
 }
-
+}
 }

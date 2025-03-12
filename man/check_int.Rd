@@ -2,38 +2,27 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_int}
 \alias{check_int}
-\title{function identifies positive integer values}
+\title{Identify Positive Integer Values}
 \usage{
 check_int(x)
 }
 \arguments{
-\item{x}{description x a value to be tested. x must be single value of
-length = 1L The function identifies positive whole numbers including 0
-https://www3.ntu.edu.sg/home/ehchua/programming/howto/Regexe.html}
+\item{x}{A single value to be tested. Must be of length 1L.}
+}
+\value{
+Logical. Returns \code{TRUE} if \code{x} is a positive integer (including 0), otherwise returns \code{FALSE}.
 }
 \description{
-this function does some stuff NEED TO UPDATW
+Internal helper function to check if a value is a positive whole number (including zero).
 }
 \examples{
-
 \dontrun{
-if(interactive()){
-
-df <- data.frame(c1 = c(1, "ABC", Inf),
-                 c2 = c(NA, 4.3, 6))
-
-sapply(unlist(df), check_int)
-
-mat <- matrix(c(1, NA, 2, Inf, -2, 10),
-              nrow = 3, ncol = 2, byrow = TRUE,
-              dimnames = list(c(paste0("gene_",1:3)), c("C1","C2")))
-
-sapply(c(mat), check_int)
-
-c(mat)[sapply(c(mat), check_int) == FALSE]
-
+if (interactive()) {
+  check_int(5)      # TRUE
+  check_int(0)      # TRUE
+  check_int(-3)     # FALSE
+  check_int(4.5)    # FALSE
+  check_int("ABC")  # FALSE
 }
 }
-
-
 }

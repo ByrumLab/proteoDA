@@ -2,28 +2,25 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_file}
 \alias{check_file}
-\title{check if x is a file that exists}
+\title{Check if a file exists}
 \usage{
 check_file(x)
 }
 \arguments{
-\item{x}{an object to be tested.}
+\item{x}{A character string representing a file path.}
 }
 \value{
-if x is a character string that points to
-a file that exists the function returns TRUE. if x is not a character string
-of length 1 that is not empty or is not a valid file name the function
-returns FALSE
+Logical. Returns \code{TRUE} if \code{x} is a valid file path and the file exists.
+Returns \code{FALSE} if \code{x} is not a valid string or the file does not exist.
 }
 \description{
-for internal use. helper function. NEED TO UPDATE
+Internal helper function to verify if an input string corresponds to an existing file.
 }
 \examples{
-
 \dontrun{
-if(interactive()){
-# no examples yet
- }
+if (interactive()) {
+  check_file("path/to/existing_file.txt") # TRUE if file exists
+  check_file("nonexistent_file.txt")      # FALSE
 }
-
+}
 }

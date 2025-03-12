@@ -2,39 +2,32 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_string}
 \alias{check_string}
-\title{checks that x is a character string of length 1.}
+\title{Validate Single Character String}
 \usage{
 check_string(x)
 }
 \arguments{
-\item{x}{a value to be checked.}
+\item{x}{A value to be checked.}
 }
 \value{
-the function returns TRUE if x is a character string of length 1.
-the function returns FALSE if x is any of the following numeric,
-has length > 1L, is an empty string, series of blank spaces,
-NA, NULL, Inf etc.
+Logical. Returns \code{TRUE} if \code{x} is a character string of length 1.
+Returns \code{FALSE} if \code{x} is numeric, a vector (length > 1L), an empty string, white spaces,
+\code{NA}, \code{NULL}, \code{Inf}, etc.
 }
 \description{
-for internal use. helper function. NEED TO UPDATE
+Internal helper function to check whether \code{x} is a valid character string of length 1.
 }
 \examples{
-
 \dontrun{
-if(interactive()){
-
-check_string(x = "ProjectID_122522")
-check_string(x = 123)
-check_string(x = NA)
-check_string(x = NULL)
-check_string(x = c("oh","snap"))
-check_string(x = TRUE)
-check_string(x = "     ")
-check_string(x = "")
-check_string(x = Inf)
-
- }
+if (interactive()) {
+  check_string("ProjectID_122522") # TRUE
+  check_string(123)                # FALSE
+  check_string(NA)                 # FALSE
+  check_string(NULL)               # FALSE
+  check_string(c("oh", "snap"))    # FALSE
+  check_string("     ")            # FALSE
+  check_string("")                 # FALSE
+  check_string(Inf)                # FALSE
 }
-
-
+}
 }

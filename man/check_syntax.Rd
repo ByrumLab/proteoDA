@@ -2,71 +2,34 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_syntax}
 \alias{check_syntax}
-\title{check if a vector of values follow R syntax rules.}
+\title{Check if a vector follows R syntax rules}
 \usage{
 check_syntax(x)
 }
 \arguments{
-\item{x}{vector of values to check.}
+\item{x}{A vector of values to check.}
 }
 \value{
-If the input and test vectors are identical the function returns TRUE
-and FALSE otherwise.
+Logical. Returns \code{TRUE} if all values in \code{x} follow R syntax rules, otherwise returns \code{FALSE}.
 }
 \description{
-for internal use. helper function. NEED TO UPDATE
+Internal helper function to verify whether values in a vector conform to R's variable naming rules.
 }
 \details{
-NEED TO UPDATE
-The input vector is compared to a test vector created using
-base::make.names() function (duplicate values allowed).
-Note: A syntactically valid name consists of letters, numbers and the dot or
-underline characters and starts with a letter or the dot not followed
-by a number. see: base::make.names and base::make.unique.
+This function checks whether values in \code{x} comply with R's syntactic name rules using \code{make.names()}.
+\itemize{
+\item A valid name consists of letters, numbers, dots (\code{.}), or underscores (\verb{_}).
+\item It must start with a letter or a dot not followed by a number.
+\item See: \code{base::make.names()} and \code{base::make.unique()}.
+}
 }
 \examples{
-
 \dontrun{
-if(interactive()){
-
-check_syntax(x = c("C1","C2","T1","T2"))
-check_syntax(x = c("C 100","C 202","T 303","T 100"))
-check_syntax(x = c("Treat-A","Treat-A","Treat-B","Treat-B"))
-check_syntax(x = c(1, 2, 1, 2))
-
-metadata <- data.frame(sample = c("C1","C2","T1","T2"),
-                       sample_id = c("C 100","C 202","T 303","T 100"),
-                       condition = c("Treat-A","Treat-A","Treat-B","Treat-B"),
-                       batch = c(1, 2, 1, 2))
-
-sapply(metadata, function(x){ check_syntax(x = x)})
-apply(X = metadata, MARGIN = 2, FUN = check_syntax)
-
-
-tmp <- lapply(metadata, function(i){
-  ## if all values are numbers then return original values
-  if(all(sapply(i, FUN = check_num))){
-    values <- i
-    cli::cli_inform(c("v"="all numeric. no check. returning
-                                    ORIGINAL values."))
-  } else {
-    ## if any values are non-numeric check R syntax
-    ## if vector does not follow R syntax return converted values
-    if(!check_syntax(x = i)){
-      values <- make.names(names = i, unique = FALSE, allow_ = TRUE)
-      cli::cli_inform(c("x"="failed. returning NEW values."))
-    } else {
-      ## if any values are non-numeric check R syntax
-      ## if vector follows R syntax return original values
-      values <- i
-      cli::cli_inform(c("v"="passed. returning ORIGINAL values."))
-    }
-  }
-  values
-})
-metadata_syntax <- data.frame(do.call("cbind", tmp))
-
-  }
+if (interactive()) {
+  check_syntax(c("C1", "C2", "T1", "T2"))       # TRUE
+  check_syntax(c("C 100", "C-202", "T 303"))    # FALSE
+  check_syntax(c("Var_1", "Var.2", ".Valid"))   # TRUE
+  check_syntax(c(1, 2, 3, 4))                   # TRUE (coerced to strings)
 }
-
+}
 }

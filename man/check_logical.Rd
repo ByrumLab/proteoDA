@@ -2,43 +2,30 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_logical}
 \alias{check_logical}
-\title{checks that x is a TRUE or FALSE logical of length 1.}
+\title{Check if a Value is a TRUE or FALSE Logical of Length 1}
 \usage{
 check_logical(x)
 }
 \arguments{
-\item{x}{a value to be checked.}
+\item{x}{A value to be checked.}
 }
 \value{
-the function returns TRUE if x is a TRUE OR FALSE logical of length 1.
-the function returns FALSE if x is any of the following numeric,
-has length > 1L, is an empty string, a series of blank spaces,
-NA, NULL, or a character string.
+Logical. Returns \code{TRUE} if \code{x} is a logical value (\code{TRUE} or \code{FALSE}) of length 1.
+Returns \code{FALSE} if \code{x} is any of the following: numeric, character string, length greater than 1,
+empty string, a series of blank spaces, \code{NA}, \code{NULL}, or non-logical values.
 }
 \description{
-for internal use. helper function. NEED TO UPDATE
+Internal helper function to verify if \code{x} is a logical value (TRUE or FALSE) of length 1.
 }
 \examples{
-
 \dontrun{
-if(interactive()){
-
-check_logical(x = "ProjectID_122522")
-check_logical(x = 123)
-check_logical(x = 1.2342)
-check_logical(x = NA)
-check_logical(x = NULL)
-check_logical(x = c("oh","snap"))
-check_logical(x = TRUE)
-check_logical(x = FALSE)
-check_logical(x = c(TRUE,TRUE))
-check_logical(x = "TRUE")
-check_logical(x = "     ")
-check_logical(x = "")
-check_logical(x = Inf)
-
+if (interactive()) {
+  check_logical(TRUE)    # TRUE
+  check_logical(FALSE)   # TRUE
+  check_logical(1)       # FALSE
+  check_logical("TRUE")  # FALSE
+  check_logical(c(TRUE, FALSE)) # FALSE
+  check_logical(NA)      # FALSE
 }
 }
-
-
 }

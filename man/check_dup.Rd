@@ -2,37 +2,32 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_dup}
 \alias{check_dup}
-\title{Identify duplicate values.}
+\title{Identify Duplicate Values}
 \usage{
 check_dup(x)
 }
 \arguments{
-\item{x}{a vector of values to be tested. This parameter is typically a vector of
-column names, row names, or vector of values in a particular column.}
+\item{x}{A vector of values to be tested. This is typically a vector of column names,
+row names, or values in a particular column of a data frame.}
 }
 \value{
-The function returns a vector of duplicate values.
-If no duplicates are present the function returns NULL to allow
-follow-up custom error messaging.
+The function returns a vector of duplicate values. If no duplicates are found,
+it returns \code{NULL}. This allows for custom error handling if desired.
 }
 \description{
-General purpose function that identifies duplicate values in a vector.
+This function identifies duplicate values in a vector. It can be used to find duplicate
+column names, row names, or values in any particular column of a data frame.
 }
 \examples{
 \dontrun{
-  if(interactive()){
-
-x <- c("A", "A", "B", "C", "D", "D", "D","E")
-y <- c(1, 2, 3, "A", "B", "C")
-
+if(interactive()){
+  x <- c("A", "A", "B", "C", "D", "D", "D", "E")
+  y <- c(1, 2, 3, "A", "B", "C")
 ## returns vector of duplicates identified
-dup_present <- check_dup(x = x)
-dup_present
-
+  dup_present <- check_dup(x = x)
 ## returns NULL if all unique
-dup_not_present <- check_dup(x = y)
-dup_not_present
+  dup_not_present <- check_dup(x = y)
 
-  }
+}
 }
 }

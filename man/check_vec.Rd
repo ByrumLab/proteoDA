@@ -2,56 +2,49 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_vec}
 \alias{check_vec}
-\title{Check if a vector x includes a set of reference values.}
+\title{Check if a Vector Includes a Set of Reference Values}
 \usage{
 check_vec(x, ref)
 }
 \arguments{
-\item{x}{a vector of values to be checked. The length of x
-must be equal to or greater than the ref vector with
-no duplicate values matching the reference. This parameter
-is typically the values from a particular metadata
-or annotation column.}
+\item{x}{A vector of values to be checked. The length of \code{x} must be equal to or greater than \code{ref} with no duplicates.
+This is typically a metadata or annotation column.}
 
-\item{ref}{a vector of allowed values. All values in the ref
-set must be unique with no NA or empty values. This parameter
-is typically the column names or row names of a counts matrix.}
+\item{ref}{A vector of allowed reference values. All values in \code{ref} must be unique, and it must contain no \code{NA} or empty values.
+This is typically column names or row names in a counts matrix.}
 }
 \value{
-The function returns TRUE if the check is successful
-and FALSE if the check is unsuccessful.
+Logical. Returns \code{TRUE} if all values in \code{ref} are found in \code{x}, otherwise returns \code{FALSE}.
 }
 \description{
-General purpose function that checks if a reference vector is a
-subset of a given input vector x.
+This function checks if a reference vector (\code{ref}) is a subset of the input vector (\code{x}).
+The function ensures that \code{x} has the same or greater length than \code{ref} and that no duplicates exist in \code{ref}.
+Both \code{x} and \code{ref} must follow R's syntax rules for valid variable names (e.g., column names and row names).
 }
 \details{
-x should have the same or longer length as the number of values
-in ref with no duplicated values. The values in x and ref must
-follow R's syntax rules for variable names (i.e. column names
-and row names).
-
-See \code{\link{base::make.names}} for naming requirements.
+See \code{\link{base::make.names}} for naming rules.
 }
 \examples{
-
 \dontrun{
-if(interactive()){
+if (interactive()) {
+  # ref is a subset of x
+  x <- paste0("gene_", 1:10)
+  ref <- paste0("gene_", 3:7)
+  check_vec(x = x, ref = ref)
 
-## ref is a subset of x
-x   <- paste0("gene_", 1:10)
-ref <- paste0("gene_", 3:7)
-check_vec(x = x, ref = ref)
+  # x does not include all ref values
+  x <- paste0("gene_", 1:5)
+  ref <- paste0("gene_", 4:6)
+  check_vec(x = x, ref = ref)
 
-## x does not include all ref values
-x   <- paste0("gene_", 1:5)
-ref <- paste0("gene_", 4:6)
-check_vec(x = x, ref = ref)
+  # x does not include any ref values
+  x <- paste0("gene_", 1:5)
+  ref <- paste0("gene_", 20:22)
+  check_vec(x = x, ref = ref)
 
-## x does not include any ref values
-x   <- paste0("gene_", 1:5)
-ref <- paste0("gene_", 20:22)
-check_vec(x = x, ref = ref)
+  # x contains duplicates, NA, empty strings, or blank spaces
+  ref <- c("gene_", "NA", " ")
+  check_vec(x = x, ref = ref)
 
 ## x is < ref
 ## x contains duplicates

@@ -2,44 +2,32 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_num}
 \alias{check_num}
-\title{function identifies positive numeric values}
+\title{Identify Positive Numeric Values}
 \usage{
 check_num(x)
 }
 \arguments{
-\item{x}{a value to be tested. x must be value of length = 1L}
+\item{x}{A single value to be tested.}
 }
 \value{
-the function returns TRUE if x is a positive numeric value
-greater than or equal to zero. The function returns FALSE if x is
-any of the following: non-numeric, a character string, vector with
-multiple values (length > 1L), an empty string (blank), white space
-e.g. blank spaces, tabs, new lines), NA, NULL, Inf, or a number less
-than zero i.e. negative number etc.
+Logical. Returns \code{TRUE} if \code{x} is a valid positive numeric value (≥ 0).
+Returns \code{FALSE} for non-numeric inputs, characters, multiple values, empty strings, white spaces,
+\code{NA}, \code{NULL}, \code{Inf}, or negative numbers.
 }
 \description{
-this function is used to check that the norm.factors are valid numeric values
+Internal helper function to verify if \code{x} is a valid positive numeric value (≥ 0).
 }
 \examples{
-
 \dontrun{
-if(interactive()){
-
-check_num(x = "snap")
-check_num(x = 1.4323)
-check_num(x = c(12,130))
-check_num(x = NA)
-check_num(x = -45)
-check_num(x = Inf)
-check_num(x = 0)
-check_num(x = "    ")
-check_num(x = " \n")
-check_num(x = "")
-check_num(x = 1e6)
-check_num(x = 1/12)
-
- }
+if (interactive()) {
+  check_num(1.4323)   # TRUE
+  check_num(0)        # TRUE
+  check_num(-45)      # FALSE
+  check_num(Inf)      # FALSE
+  check_num("snap")   # FALSE
+  check_num("  ")     # FALSE
+  check_num(NA)       # FALSE
+  check_num(1e6)      # TRUE
 }
-
-
+}
 }
