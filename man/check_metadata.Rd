@@ -2,23 +2,31 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_metadata}
 \alias{check_metadata}
-\title{Metadata validator.}
+\title{Validate Metadata Structure}
 \usage{
 check_metadata(x, verbose = FALSE)
 }
 \arguments{
-\item{x}{a data.frame of sample metadata. Rows are samples.}
+\item{x}{A \code{data.frame} containing sample metadata. Each row represents a sample.}
 
-\item{verbose}{logical. Should the row names be checked for
-character length? Default: FALSE.}
+\item{verbose}{A logical value indicating whether to check if row and column names exceed
+a character length threshold. Default is \code{FALSE}.}
 }
 \value{
-If all checks pass the function returns the input metadata as a
-data.frame (invisible).
+Invisibly returns the validated input \code{data.frame}.
 }
 \description{
-Internal function for validating the structure of an input metadata
-data.frame.
+This internal function checks the validity of a metadata \code{data.frame}, ensuring
+it meets structural requirements such as unique column names, non-empty row names,
+and appropriate formatting.
+}
+\details{
+\itemize{
+\item Ensures \code{x} is a \code{data.frame} and not empty.
+\item Checks that column names are present, unique, and free from \code{NA} or blank values.
+\item Ensures row names are not missing, blank, or duplicated.
+\item If \code{verbose = TRUE}, warns if row or column names exceed 15 characters.
+}
 }
 \examples{
 \dontrun{

@@ -2,28 +2,29 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{find_id_column}
 \alias{find_id_column}
-\title{Identify id column.}
+\title{Identify ID Column}
 \usage{
 find_id_column(x, ref)
 }
 \arguments{
-\item{x}{a data.frame. The values in each column will be queried against
-the reference. x is typically a data.frame of metadata or annotation.}
+\item{x}{A data frame. The columns in \code{x} will be queried against the reference
+values provided in \code{ref}. \code{x} is typically a data frame of metadata or annotation.}
 
-\item{ref}{a character vector of reference values. The values in ref must be
-unique with no NAs or blanks. ref values are typically the column names or
-row names of a counts matrix (sample ids / gene ids) with x defined as
-metadata or annotation.}
+\item{ref}{A character vector of reference values. The values in \code{ref} must be
+unique, and should not contain any \code{NA} or blank values. The values in \code{ref} are
+typically the column or row names of a counts matrix (e.g., sample IDs or gene IDs).}
 }
 \value{
-The function returns the first column name in \code{x} that contains all
-reference values.
+The function returns the name of the first column in \code{x} that contains
+all the reference values. If no matching column is found, the function will return an error.
 }
 \description{
-NEED TO UPDATE
+This function identifies the first column in a data frame \code{x} that contains
+all the values specified in the \code{ref} vector. The \code{ref} values should typically
+represent sample or gene IDs, and the function checks for the presence of these
+reference values in the columns of \code{x}.
 }
 \examples{
-
 \dontrun{
 if(interactive()){
 

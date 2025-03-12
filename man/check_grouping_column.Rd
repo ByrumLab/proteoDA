@@ -2,61 +2,72 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_grouping_column}
 \alias{check_grouping_column}
-\title{metadata group column validator.}
+\title{Metadata Grouping Column Validator}
 \usage{
 check_grouping_column(metadata, grouping_column, verbose = FALSE)
 }
 \arguments{
-\item{metadata}{a data.frame of sample metadata. Rows are samples.}
+\item{metadata}{A \code{data.frame} containing sample metadata, where rows represent samples.}
 
-\item{grouping_column}{The name of column or column index within
-the metadata data.frame which gives information on how to group the samples.}
+\item{grouping_column}{The name or index of the column in \code{metadata} that provides
+information on how to group the samples. The function checks if \code{grouping_column}:
+\itemize{
+\item Exists in \code{metadata}.
+\item Contains non-missing and non-blank values.
+\item Has unique values (if required for analysis).
+Additionally, if \code{verbose = TRUE}, a warning is displayed when grouping values
+exceed 15 characters to encourage better formatting.
+}}
 
-\item{verbose}{logical. Should the grouping_column be checked for
-character length? Default: False}
+\item{verbose}{Logical. If \code{TRUE}, checks whether values in \code{grouping_column}
+exceed 15 characters. Default: \code{FALSE}.}
 }
 \value{
-If all checks pass the function returns the /code{grouping_column}
-column name.
+The validated column name of \code{grouping_column}, if all checks pass.
 }
 \description{
-Internal function for validating metadata grouping column information
+Internal function for validating the grouping column in a metadata \code{data.frame}.
 }
 \examples{
-
 \dontrun{
+if (interactive()) {
 
-metadata <- data.frame(sample = c("C1","C2","T1","T2"),
-                       sample_id = c("C100","C202","T303","T100"),
-                       condition = c("Control","Control","Treatment","Treatment"))
+metadata <- data.frame(
+  sample = c("C1", "C2", "T1", "T2"),
+  sample_id = c("C100", "C202", "T303", "T100"),
+  condition = c("Control", "Control", "Treatment", "Treatment")
+)
 
-metadata2 <- data.frame(sample = c("C1","C2","T1","T2"),
-                        sample = c("C100","C202","T303","T100"),
-                        condition = c("Control","Control","Treatment","Treatment"),
-                        check.names = FALSE)
+metadata2 <- data.frame(
+  sample = c("C1", "C2", "T1", "T2"),
+  sample = c("C100", "C202", "T303", "T100"),
+  condition = c("Control", "Control", "Treatment", "Treatment"),
+  check.names = FALSE
+)
 
-metadata3 <- data.frame(sample = c("C2","C2","T1","T2"),
-                        sample_id = c("C100","C202",NA,"T100"),
-                        sample_name = c("sample_1","sample_2","","sample_4"),
-                        condition = c("Baseline_Saline_Control",
-                                      "Baseline_Saline_Control",
-                                      "Treatment","Treatment"),
-                        treatment = c("","Control","Chemo","Chemo"),
-                        group = c("Control",NA,"Treatment",""),
-                        chemo = c("Control","Saline","Treatment","Treatment"),
-                        check.names = FALSE)
+metadata3 <- data.frame(
+  sample = c("C2", "C2", "T1", "T2"),
+  sample_id = c("C100", "C202", NA, "T100"),
+  sample_name = c("sample_1", "sample_2", "", "sample_4"),
+  condition = c("Baseline_Saline_Control", "Baseline_Saline_Control", "Treatment", "Treatment"),
+  treatment = c("", "Control", "Chemo", "Chemo"),
+  group = c("Control", NA, "Treatment", ""),
+  chemo = c("Control", "Saline", "Treatment", "Treatment"),
+  check.names = FALSE
+)
 
-
-check_grouping_column(metadata = metadata,  grouping_column = "condition")
-check_grouping_column(metadata = metadata,  grouping_column = "replicates")
-check_grouping_column(metadata = metadata,  grouping_column = 7)
+check_grouping_column(metadata = metadata, grouping_column = "condition")
+check_grouping_column(metadata = metadata, grouping_column = "replicates")
+check_grouping_column(metadata = metadata, grouping_column = 7)
 check_grouping_column(metadata = metadata2, grouping_column = 3)
 check_grouping_column(metadata = metadata2, grouping_column = "sample")
 check_grouping_column(metadata = metadata3, grouping_column = "condition")
 check_grouping_column(metadata = metadata3, grouping_column = 5)
 check_grouping_column(metadata = metadata3, grouping_column = "group")
-check_grouping_column(metadata = metadata4, grouping_column = 7)
+check_grouping_column(metadata = metadata3, grouping_column = 7)
 
 }
+}
+
 }
 \keyword{internal}

@@ -2,25 +2,24 @@
 % Please edit documentation in R/ggplot_checks.R
 \name{check_long}
 \alias{check_long}
-\title{Identify values above a specified character length.}
+\title{Identify Values Above a Specified Character Length}
 \usage{
 check_long(x, char_thresh = 15, na.rm = FALSE)
 }
 \arguments{
-\item{x}{a vector of values. This parameter is typically a vector of
-column names, row names, or vector of values in a particular metadata column.}
+\item{x}{A vector of values. This parameter is typically a vector of column names,
+row names, or values in a particular metadata column.}
 
-\item{char_thresh}{numeric value greater than or equal to 0.
-(numeric; >= 1).
-which values in x are long.}
+\item{char_thresh}{A numeric value (greater than or equal to 0). This defines the
+maximum allowed character length for values in \code{x}. Any value exceeding this length
+will be returned.}
 
-\item{na.rm}{logical, Should NA's be omitted?. Default: FALSE}
+\item{na.rm}{A logical value indicating whether to remove \code{NA} values from \code{x}. Default is \code{FALSE}.}
 }
 \value{
-The function returns a vector of values in x that exceed the
-maximum number of characters threshold. If all values are below the
-char_thresh the function returns NULL. If \emph{na.rm = FALSE}
-any NA and NaN values in x will be included in the returned output.
+The function returns a vector of values in \code{x} that exceed the specified
+\code{char_thresh} character length. If no such values exist, it returns \code{NULL}. If
+\code{na.rm = FALSE}, \code{NA} and \code{NaN} values in \code{x} will be included in the output.
 \subsection{x(no NAs) + na.rm = TRUE/FALSE + all below ==> NULL}{
 }
 
@@ -40,27 +39,23 @@ any NA and NaN values in x will be included in the returned output.
 }
 }
 \description{
-General purpose function that identifies values in a vector that exceed a
-maximum number of characters in length. This function is used to identify
-long sample names and group labels that may lead to sub-optimal visualizations
+This function identifies values in a vector that exceed a specified maximum number
+of characters. This is often used to identify long sample names or group labels that
+could cause issues in visualizations or presentations.
 }
 \examples{
-
 \dontrun{
-
- x  <- c("Con_01", "Con_02", NA, "TAC_Treatment_01", "", Inf, NaN, "TAC_Treat_02")
- y  <- c("Con_01", "Con_02", "Treat_01", "Treat_101")
- z  <- c("Con_01", NA, "TAC_Treatment_01", "TAC_Treat_02", "", Inf)
-
+if(interactive()){
+  x <- c("Con_01", "Con_02", NA, "TAC_Treatment_01", "", Inf, NaN, "TAC_Treat_02")
+  y <- c("Con_01", "Con_02", "Treat_01", "Treat_101")
+  z <- c("Con_01", NA, "TAC_Treatment_01", "TAC_Treat_02", "", Inf)
  ## identify values with more than 15 characters
- check_long(x = x, char_thresh = 15, na.rm = FALSE)
-
+  check_long(x = x, char_thresh = 15, na.rm = FALSE)
  ## identify values with more than 8 characters
- check_long(x = y, char_thresh = 8)
-
+  check_long(x = y, char_thresh = 8)
  ## identify values with more than 6 characters
- check_long(x = y, char_thresh = 6)
-
+  check_long(x = y, char_thresh = 6)
+}
 }
 
 }
