@@ -22,23 +22,66 @@ qc_dendrogram(
 )
 }
 \arguments{
-\item{standardize}{Should input data be standardized to a mean of 0 and std.dev of
-1 before performing PCA and dendrogram clustering? If input data are
-not yet standardized, should be TRUE. Default is TRUE.}
+\item{data}{A numeric matrix or data frame with samples as columns and features (e.g. proteins) as rows.}
 
-\item{dist_metric}{The metric used to define distance for dendrogram clustering.
-Default is "euclidean". See \code{\link[stats:dist]{stats::dist}} for options.}
+\item{groups}{A vector indicating sample groupings for color coding in the dendrogram.}
 
-\item{clust_method}{The agglomeration method to use for dendrogram clustering.
-Default is "complete", See \code{\link[stats:hclust]{stats::hclust}} for options.}
+\item{sample_labels}{A vector of sample labels. If NULL, column names of \code{data} are used.}
+
+\item{text.sizes}{A numeric vector specifying text sizes for title, leaf labels, and legend text.}
+
+\item{top}{The number of the most variable proteins to use in the analysis.}
+
+\item{standardize}{A logical value indicating whether to standardize data (mean = 0, SD=1).}
+
+\item{dist_metric}{A character string specifying the distance metric (e.g., "euclidean", "manhattan").}
+
+\item{clust_method}{A character string specifying the clustering method (e.g., "complete", "ward.D2").}
+
+\item{colors}{A vector of colors corresponding to group levels.}
+
+\item{legend.position}{A character string specifying legend position (e.g., "right", "bottom").}
+
+\item{title}{A character string specifying the plot title.}
+
+\item{subtitle}{A character string specifying the plot subtitle. It can be NULL.}
+
+\item{show.plot}{A logical value indicating whether to display the plot.}
+
+\item{point.sizes}{A numeric value specifying the size of the node circles.}
 }
 \value{
-A ggplot object of the plot.
+A ggplot list containing
+\itemize{
+\item \code{p} - a ggplot dendrogram object.
+\item \code{hc} - The hierarchical clustering object
+\item \code{data_na} - the processed data used in the clustering
+\item \code{sample_group_info} - A data frame containing sample labels and groups
+\item \code{param} - A list of parameters used in the function
+}
 }
 \description{
 Performs and then plots a hierarchical clustering analysis of sample intensities
-across samples. Sample labels are colored according to the "groups" argument,
+across samples. Sample labels are colored according to the \code{groups} argument,
 with colors determined by the \code{\link{colorGroup}} function. By default,
 uses only the 500 most variable proteins for the analysis.
+}
+\examples{
+\dontrun{
+den <- qc_dendrogram(data = results$data,
+                 groups        = results$metadata$group,
+                 sample_labels = results$metadata$sample,
+                 top           = nrow(results$data),
+                 standardize   = TRUE,
+                 dist_metric   = "euclidean",
+                 clust_method  = "complete",
+                 colors        = all_colors2$group,
+                 point.size    = 3,
+                 text.sizes    = c(14,3,9),
+                 legend.position = "right",
+                 title         = "",
+                 show.plot     = FALSE)
+
+}
 }
 \keyword{internal}

@@ -1,22 +1,58 @@
-
-
-
 #' Dendrogram for QC report
 #'
 #' Performs and then plots a hierarchical clustering analysis of sample intensities
-#' across samples. Sample labels are colored according to the "groups" argument,
+#' across samples. Sample labels are colored according to the `groups` argument,
 #' with colors determined by the \code{\link{colorGroup}} function. By default,
 #' uses only the 500 most variable proteins for the analysis.
 #'
-#' @inheritParams qc_mds_plot
-#' @inheritParams write_qc_report
+#' @param data A numeric matrix or data frame with samples as columns and features (e.g. proteins) as rows.
+#' @param groups A vector indicating sample groupings for color coding in the dendrogram.
+#' @param sample_labels A vector of sample labels. If NULL, column names of `data` are used.
+#' @param text.sizes A numeric vector specifying text sizes for title, leaf labels, and legend text.
+#' @param point.sizes A numeric value specifying the size of the node circles.
+#' @param top The number of the most variable proteins to use in the analysis.
+#' @param standardize A logical value indicating whether to standardize data (mean = 0, SD=1).
+#' @param dist_metric A character string specifying the distance metric (e.g., "euclidean", "manhattan").
+#' @param clust_method A character string specifying the clustering method (e.g., "complete", "ward.D2").
+#' @param colors A vector of colors corresponding to group levels.
+#' @param legend.position A character string specifying legend position (e.g., "right", "bottom").
+#' @param title A character string specifying the plot title. 
+#' @param subtitle A character string specifying the plot subtitle. It can be NULL.
+#' @param show.plot A logical value indicating whether to display the plot. 
 #'
-#' @return A ggplot object of the plot.
-#' @keywords internal
+#' @return A ggplot list containing
+#' \itemize{
+#'   \item \code{p} - a ggplot dendrogram object.
+#'   \item \code{hc} - The hierarchical clustering object
+#'   \item \code{data_na} - the processed data used in the clustering
+#'   \item \code{sample_group_info} - A data frame containing sample labels and groups
+#'   \item \code{param} - A list of parameters used in the function
+#'}   
+#'   
 #'
 #' @importFrom ggplot2 aes theme element_text margin
 #' @importFrom ggtree %<+% ggtree layout_dendrogram geom_tippoint geom_tiplab theme_dendrogram
+#' @keywords internal
+#' @export
 #'
+#' @examples
+#' \dontrun{
+#' den <- qc_dendrogram(data = results$data,
+#'                  groups        = results$metadata$group,
+#'                  sample_labels = results$metadata$sample,
+#'                  top           = nrow(results$data),
+#'                  standardize   = TRUE,
+#'                  dist_metric   = "euclidean",
+#'                  clust_method  = "complete",
+#'                  colors        = all_colors2$group,
+#'                  point.size    = 3,
+#'                  text.sizes    = c(14,3,9),
+#'                  legend.position = "right",
+#'                  title         = "",
+#'                  show.plot     = FALSE)
+#'
+#' }
+
 qc_dendrogram <- function(data,
                           groups = NULL, ## vector
                           sample_labels = NULL, ## vector
@@ -140,9 +176,51 @@ qc_dendrogram <- function(data,
 
 }
 
+#' Dendrogram for QC Report with Subgroups
+#' 
+#' Generates dendrograms for different subgroups within a dataset. 
+#' Each dendrogram highlights one subgroup while keeping others in grayscale. 
+#' 
+#' @param DAList A list containing data and metadata. 
+#' @param grouping_column A character string specifying the sample metadata column to use for subgrouping (e.g., "group","batch", etc)
+#' @param label_column An optional character string specifying the sample metadata column for sample labels. 
+#' @param text.sizes A numeric vector specifying the text sizes for the title, leaf labels, and legend text. 
+#' @param point.size A numeric vector specifying the size of the node circles. 
+#' @param group_color A character string specifying the highlight color for the subgroup. 
+#' @param top The number of the most variable proteins to use in the analysis. 
+#' @param standardize A logical value indicating whether to standardize data (e.g., mean = 0, SD= 1).
+#' @param dist_metric A character string specifying the distance metric (e.g., "euclidean", "manhattan").
+#' @param clust_method A character string specifying the clustering method (e.g, "complete", "ward.D2")
+#' @param legend.position A character string specifying the legend position (e.g., "right", "left", "top", "bottom").
+#' @param show.plot A logical value indicating whether to display the plot. 
+#' 
+#' @return A list of dendrogram plots for each subgroup. 
+#'
+#' @importFrom ggplot2 aes theme element_text margin
+#' @importFrom ggtree %<+% ggtree layout_dendrogram geom_tippoint geom_tiplab theme_dendrogram
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # An example of plot
+#' den-> qc_dendrogram_subgroups(DAList = results, 
+#'                                grouping_column = 
 
-
-
+#' den <- qc_dendrogram(DAList           = results,
+#'                     grouping_column  = results$metadata$group,
+#'                     label_column     = results$metadata$sample,
+#'                     top           = nrow(results$data),
+#'                     standardize   = TRUE,
+#'                     dist_metric   = "euclidean",
+#'                     clust_method  = "complete",
+#'                     colors        = all_colors2$group,
+#'                     point.size    = 3,
+#'                     text.sizes    = c(14,3,9),
+#'                     legend.position = "right",
+#'                     title         = "",
+#'                     show.plot     = FALSE)
+#'
+#' }
 
 
 qc_dendrogram_subgroups <- function(DAList,
