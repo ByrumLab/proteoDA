@@ -1,4 +1,6 @@
-
+#' Generate a QC Boxplot of sample intensities
+#' 
+#' @param 
 ## data = matrix or df of intensities
 ## groups = vector class membership
 ## sample_labels =  vector names ot display on plot
