@@ -10,7 +10,7 @@
 #' @return A ggplot object representing the violin plot.
 #' @import ggplot2 testthat utils
 #' 
-#' @example
+#' @examples
 #' \dontrun {
 #' # example of violin plot colored by groups 
 #' violin1 <- qc_violin(data            = results$data,
