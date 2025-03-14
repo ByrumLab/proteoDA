@@ -31,7 +31,11 @@ Imports:
     rmarkdown,
     statmod (>= 1.2.2), 
     stringr,
-    vsn
+    vsn,
+    Polychrome,
+    ggplotify,
+    testthat,
+    viridisLite
 Depends: 
     R (>= 4.1.0)
 Suggests:

@@ -35,3 +35,20 @@ A ggplot object representing the violin plot.
 \description{
 Generate a Violin Plot for Intensity Data
 }
+\examples{
+\dontrun {
+# example of violin plot colored by groups 
+violin1 <- qc_violin(data            = results$data,
+                     groups          = results$metadata$group,
+                     sample_labels   = results$metadata$sample,
+                     title           = "",
+                     text.sizes      = c(12, 10, 10, 10),
+                     legend.position = "right",
+                     color_palette   = c("#66c2A5","#8DA0CB", "#FC8D62")  
+                     )
+
+
+}
+
+
+}
