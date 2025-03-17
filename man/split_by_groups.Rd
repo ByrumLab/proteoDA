@@ -38,6 +38,4 @@ if(interactive()){
 
  }
 }
-
 }
-\keyword{internal}

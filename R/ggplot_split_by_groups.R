@@ -14,7 +14,6 @@
 #'
 #' @rdname split_by_groups
 #'
-#' @keywords internal
 #'
 #' @return The function returns a list in which each element is a data.frame
 #'   for an individual group.
@@ -34,7 +33,7 @@
 #'
 #'  }
 #' }
-#'
+#' @export
 split_by_groups <- function(data,
                             groups){
  
