@@ -163,6 +163,20 @@ qc_pca_plot7 <- function(data,
                                       multiple = FALSE)
   show.legend <- ifelse(legend.position == "none", FALSE, TRUE)
 
+  if(legend.position == "right"){
+    # margin order t, r, b, l
+    legend.margin = c(0, 0.5, 0, 0)
+  }
+  
+  if(legend.position == "bottom"){
+    # margin order t, r, b, l
+    legend.margin = c(0.2, 0, 0.5, 0)
+  }
+  
+  if(legend.position == "none"){
+    legend.margin = c(0, 0, 0, 0)
+  }
+  
   if (is.null(title)) {
     title <- ""
   }
@@ -220,6 +234,12 @@ qc_pca_plot7 <- function(data,
   pca_data <- as.data.frame(pca$x[, pca_axes])
   pca_data$ind <- rownames(pca_data)
   colnames(pca_data) <- c("x", "y", "ind")
+  
+  ## meta data
+  sample_group_info <- data.frame(ind = colnames(data),
+                                  groups = groups,
+                                  labels=sample_labels)
+  
 
   plot_data <- merge(pca_data, sample_group_info, by = "ind")
 
