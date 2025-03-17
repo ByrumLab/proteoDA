@@ -285,6 +285,7 @@ variables <- yaml.load_file("_variables.yml")
 variables$title <- project_name
 variables$author <- author
 variables$author2 <- author2
+variables$project <- project_name
 
 # You can also add new variables
 # variables$new_var <- 42
