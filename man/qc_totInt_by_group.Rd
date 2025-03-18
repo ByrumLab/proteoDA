@@ -24,7 +24,7 @@ qc_totInt_by_group(
 
 \item{percentile}{A numeric value (0-1) for the percentile threshold to flag low-intensity samples.}
 
-\item{colors}{A vector of colors for groups. Defaults to a color-blind friendly palette (viridis).}
+\item{colors}{A vector of colors for groups. Defaults to a color-blind friendly palette (max 12, >12 uses Polychrome).}
 
 \item{nrow}{Number of rows for facet wrapping.}
 
@@ -50,6 +50,8 @@ barplot1 <- qc_totInt_by_group(DAList = results,
                             grouping_column = "group",
                             percentile = 0,
                             colors = NULL,   # or c("#E69F00", "#56B4E9", "#009E73")
+                            nrow = NULL,
+                            ncol = NULL,
                             legend.position = "right")
 
 }

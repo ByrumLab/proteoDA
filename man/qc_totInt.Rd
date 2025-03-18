@@ -22,7 +22,7 @@ qc_totInt(
 
 \item{percentile}{A numeric value (0-1) specifying the percentile threshold for identifying low-intensity samples.}
 
-\item{colors}{A vector of colors (one per group). If NULL, a color-blind friendly palette (viridis) is used.}
+\item{colors}{A vector of colors (one per group). If NULL, a predefined color palette is used.}
 
 \item{legend.position}{A string specifying legend position. Options: "none", "right", "top", "left", "bottom".}
 }
@@ -39,18 +39,4 @@ A list containing:
 \description{
 This function creates a barplot where samples are organized and colored by group.
 It also identifies potential outliers based on a specified percentile of total intensity values.
-}
-\examples{
-\dontrun {
-
-barplot1 <- qc_totInt(DAList = results,
-                 label_column = "sample",
-                 grouping_column = "group",
-                 percentile = 0,
-                 colors = NULL,
-                 legend.position = "right")
-
-}
-
-
 }

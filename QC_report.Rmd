@@ -22,12 +22,9 @@ source("proteoDA_params.R")
 # DiaNN quan output
 setwd(working_dir)
 
-library(devtools) # nocov start
-library(tidyverse)
+library(proteoDAstjude)
 
-devtools::load_all() # run local functions without installing
-
-results <- readRDS("results.rds")
+results <- readRDS("results_NA.rds")
 DA_sum <- read.csv(file=file.path(DA_dir, "DA_summary.csv"))
 
 ## LOAD PACKAGES AND SOURCE FUNCGIONS
@@ -35,18 +32,6 @@ DA_sum <- read.csv(file=file.path(DA_dir, "DA_summary.csv"))
 
 library(ggplot2)
 library(gridExtra)
-
-## load functions for QC plots
-source("R/ggplot2_plots/checks_2.R")
-source("R/ggplot2_plots/split_by_groups.R")
-source("R/ggplot2_plots/rename_samples_2.R")
-source("R/ggplot2_plots/get_colors.R")
-source("R/ggplot2_plots/qc_pvca_ggplot_7.R")
-source("R/ggplot2_plots/qc_totInt_barplot_by_group_9.R")
-source("R/ggplot2_plots/qc_pca_ggplot_subgroups_8.R")
-source("R/ggplot2_plots/qc_dendrogram_ggplot_3.R")
-source("R/ggplot2_plots/qc_violin_ggplot_4.R")
-source("R/ggplot2_plots/qc_boxplot_ggplot_5.R")
 
 ## PLOT COLORS
 #install.packages('Polychrome')
@@ -79,11 +64,11 @@ knitr::kable(DA_sum)
 ```{r colors, message=FALSE, warning=FALSE, echo = F, include = F}
 # using the "results" object
 
-all_colors2 <- lapply(colnames(results$metadata),
+all_colors <- lapply(colnames(results$metadata),
                       function(x){
                         get_colors(group = c(results$metadata[, x]))
                       })
-names(all_colors2) <- colnames(results$metadata)
+names(all_colors) <- colnames(results$metadata)
 
 ####
 #dir.create(QC_dir)
@@ -94,12 +79,16 @@ if (!dir.exists(QC_dir)) {dir.create(QC_dir)}
 ```{r boxplot, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 1. Protein Intensities for each sample', include = T}
 
 
-boxplot5 <- qc_boxplot_plot5(data = results$data,
+boxplot5 <- qc_boxplot(data = results$data,
                                   groups = results$metadata$group,
                                   sample_labels = results$metadata$sample,
                                   title = NULL,
                                   text.sizes = c(12,10,10,10),
-                                  legend.position = "right")
+                                  legend.position = "right",
+                                  boxplot_alpha = NULL,
+                                  boxplot_width = NULL,
+                                  plot_margin = NULL,
+                                  colorblind_palette = all_colors$group)
 
 
 boxplot5
@@ -121,11 +110,11 @@ ggsave(file = file.path(QC_dir,"Boxplot_allsamples.png"), # use .extension such 
 my_grouping_columns <- barplot_grouping_columns
 
 bar1 <- lapply(my_grouping_columns, function(x){
-  b <- qc_totInt_ggplot7(DAList          = results,
+  b <- qc_totInt(DAList          = results,
                          label_column    = plot_labels,
                          grouping_column = x,
                          percentile      = 0,
-                         colors          = all_colors2$x,
+                         colors          = all_colors$x,
                          # title           = x,
                          legend.position = "none")
  # b$p <- b$p + labs(title = "total norm intensity")
@@ -158,7 +147,7 @@ ggsave(file = file.path(QC_dir,"Barplot_allsamples.png"), # use .extension such 
 my_grouping_columns <- barplot_grouping_columns
 
 bar2 <- lapply(my_grouping_columns, function(x){
-  bar2_group <- qc_totInt_by_group_ggplot7(DAList          = results,
+  bar2_group <- qc_totInt_by_group(DAList          = results,
                                            label_column    = plot_labels,
                                            grouping_column = x,
                                            percentile      = 0,
@@ -169,34 +158,12 @@ bar2 <- lapply(my_grouping_columns, function(x){
 })
 
 names(bar2) <- "group"
-## 1 column 3 rows, legends collected and placed at bottom
-## of plot. plot title added to the first plot at the top
-
-p3 <- lapply(my_grouping_columns, function(x){
-  ((bar2$group$tot.int +
-      labs(title = "total intensity barplot by group",
-           subtitle = "median normalized with 15%"))
-  ) +
-    patchwork::plot_layout(ncol    = 1,
-                           nrow    = 1,
-                           widths  = c(1), ## rel. w/h of plots
-                           heights = c(1), ## c(1,5,1) middle taller
-                           guides  = 'collect', ## collects legend
-                           tag_level = "keep" ## keeps tags A-Z seq. order
-    ) & theme(legend.position = "bottom", ## use & to add theme stuff
-              axis.title.x    = element_blank(),
-              plot.title      = element_text(size = 16)
-              
-    )
-})
-names(p3) <- "group"
-
-p3 
+bar2$group$plot 
 ```
 
 ```{r}
 ggsave(file = file.path(QC_dir,"Barplot_split_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
-       plot = p3$group, 
+       plot = bar2$group$plot, 
        path = NULL, 
        width = 10, 
        height = 6, 

@@ -34,8 +34,7 @@ Imports:
     vsn,
     Polychrome,
     ggplotify,
-    testthat,
-    viridisLite
+    testthat
 Depends: 
     R (>= 4.1.0)
 Suggests:
