@@ -15,28 +15,21 @@ A named vector of colors, where names correspond to unique group labels.
 }
 \description{
 Assigns colors to each unique sample group in metadata. If the number of groups is 12 or fewer,
-colors are assigned using \code{\link{colorGroup}}. For more than 12 groups, the function
-uses the \pkg{Polychrome} to generate a distinct color palette.
+colors are assigned using a color-blind friendly palette. For more than 12 groups, the function
+uses the Polychrome package to generate a distinct color palette.
 }
 \details{
 \itemize{
-\item If there are 12 or fewer unique groups, the function assigns colors using \code{\link{colorGroup}}.
-\item If there are more than 12 groups, it leverages \pkg{Polychrome} to generate distinct colors. The function
-uses \code{\link{binfcolors}} as seed colors to create a new color palette
-instead of creating rainbow color palette using colorGroup() function
-\item If \pkg{grDevices} is not installed, an error is thrown when handling more than 12 groups.
-\item group must be a vector
+\item If there are 12 or fewer unique groups, the function assigns colors using a predefined
+color-blind friendly palette.
+\item If there are more than 12 groups, it leverages Polychrome to generate distinct colors.
+\item If grDevices is not installed, an error is thrown when handling more than 12 groups.
+\item group must be a vector.
 }
 }
 \examples{
-\dontrun {
-# example code
-group <- factor(c("A","B","C"))
-get_colors(group) 
 
-# example2 
-group_color <- get_colors(group = results$metadata$group)
-
-}
+group <- factor(c("A", "B", "C"))
+get_colors(group)
 
 }

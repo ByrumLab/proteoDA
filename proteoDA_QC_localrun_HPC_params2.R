@@ -1,6 +1,6 @@
 #library(devtools) # nocov start
-library("proteoDA")
-library(tidyverse)
+library("proteoDAstjude")
+#library(tidyverse)
 library(yaml)
 
 #devtools::load_all() # run local functions without installing
@@ -143,6 +143,8 @@ write_limma_tables(results,
 
 ## table_columns must match the protein annotation information. Displayed in the html Table
 ## title_column is displayed on the protein intensity plot (can be changed to Genes)
+
+saveRDS(results, "results_NA.rds")
 
 results <- missing_to_zero(results)
 
