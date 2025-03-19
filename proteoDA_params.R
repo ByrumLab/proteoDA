@@ -8,9 +8,10 @@ author = "Vishwajeeth R. Pagala"
 author2 = "Zuo-Fei Yuan"
 project_name = "PI_DATE"
 instrument = "Bruker timsTOF HT"
-SearchEngine = "DIA-NN (version 1.8.2)"
+search_engine = "DIA-NN (version 1.8.2)"
 database = "Proteome ID: UP000005640, 81,791 proteins"
 db_version = "version 2023/04/28"
+organism = "Homo sapien"
 
 ### input files and subset quan and protein annotation 
 input_quan = "data/uni_prot_quan_rmNA_norm_proteoDA.csv"

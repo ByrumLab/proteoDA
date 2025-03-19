@@ -18,7 +18,7 @@ knitr::include_graphics(path = "inst/report_templates/CPM_Hz.png", rel_path = FA
 
 ```{r}
 instrument <- instrument
-search_engine <- SearchEngine
+search_engine <- search_engine
 database <- database
 db_version <- db_version
 ```
@@ -45,3 +45,10 @@ The raw timsTOF data (.d folders) were imported into `r search_engine` [1,2] and
 2. https://pubmed.ncbi.nlm.nih.gov/35803928/
 3. https://pubmed.ncbi.nlm.nih.gov/31909781/
 
+## **R sessionInfo()**
+
+```{r}
+
+sessionInfo()
+
+```
