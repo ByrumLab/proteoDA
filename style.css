@@ -1,0 +1,9 @@
+body .main-container {
+max-width: 1800px;
+}
+
+body {
+  max-width: 1500px;
+  margin: auto;
+ padding: 5em;
+}   

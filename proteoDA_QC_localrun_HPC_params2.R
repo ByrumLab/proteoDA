@@ -293,3 +293,7 @@ variables$project <- project_name
 # variables$new_var <- 42
 
 write_yaml(variables, "_variables.yml")
+
+sink("sessionInfo.txt")
+sessionInfo()
+sink()
