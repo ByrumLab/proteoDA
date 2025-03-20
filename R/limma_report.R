@@ -255,7 +255,7 @@ write_limma_plots <- function(DAList = NULL,
   if (!is.null(DAList$tags$uams_internal)) {
     template_package <- "proteoDAuams" #nocov
   } else {
-    template_package <- "proteoDAstjude"
+    template_package <- "proteoDA"
   }
 
   file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
@@ -266,7 +266,7 @@ write_limma_plots <- function(DAList = NULL,
   on.exit(
     expr = {
       cli::cli_inform("Removing temporary files from {.path {output_dir}}")
-      unlink(c("CPM_Hz.png", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
+      unlink(c("logo_higherres.png", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
     },
     add = T,
     after = F
