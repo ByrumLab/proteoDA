@@ -43,14 +43,14 @@ qc_pca_plot7_subgroups <- function(DAList,
                                    show.plot = TRUE,
                                    max_pc = NULL) {
 
-  DAList <- proteoDA:::validate_DAList(x = DAList)
+  DAList <- proteoDAstjude:::validate_DAList(x = DAList)
 
   grouping_column <- check_grouping_column(metadata = DAList$metadata,
                                            grouping_column = grouping_column)
   groups <- DAList$metadata[, grouping_column]
 
   if (!is.factor(groups)) {
-    groups <- proteoDA:::make_factor(x = groups)
+    groups <- proteoDAstjude:::make_factor(x = groups)
   } else {
     groups <- droplevels(x = groups)
   }
@@ -64,7 +64,7 @@ qc_pca_plot7_subgroups <- function(DAList,
   }
 
   if (is.null(group_color)) {
-    group_color <- proteoDA:::binfcolors[1]
+    group_color <- proteoDAstjude:::binfcolors[1]
   }
 
   if (length(group_color) != 1L) {
@@ -190,13 +190,13 @@ qc_pca_plot7 <- function(data,
   }
 
   if (!is.factor(groups)) {
-    groups <- proteoDA:::make_factor(as.character(groups), prefix = NULL)
+    groups <- proteoDAstjude:::make_factor(as.character(groups), prefix = NULL)
   }
   groups <- droplevels(x = groups)
 
   # Plot colors
   if (is.null(colors)) {
-    colors <- proteoDA:::colorGroup(levels(groups))
+    colors <- proteoDAstjude:::colorGroup(levels(groups))
   }
 
   if (!all(length(colors) == length(levels(groups)))) {
@@ -211,11 +211,11 @@ qc_pca_plot7 <- function(data,
   if (is.null(sample_labels)) {
     sample_labels = colnames(data)
   }
-  sample_labels <- proteoDA:::make_factor(as.character(sample_labels))
+  sample_labels <- proteoDAstjude:::make_factor(as.character(sample_labels))
 
   # Top variable proteins
   dat <- data[!apply(is.na(data), 1, any), ]
-  dat <- dat[order(proteoDA:::rowVars(as.matrix(dat)), decreasing = TRUE), ]
+  dat <- dat[order(proteoDAstjude:::rowVars(as.matrix(dat)), decreasing = TRUE), ]
 
   if (is.null(top)) { top <- nrow(dat) }
   top2 <- ifelse(nrow(dat) >= top, top, nrow(dat))
@@ -364,7 +364,7 @@ qc_pca_scree_plot7 <- function(pca,
                      check.names = F,
                      fix.empty.names = F,
                      stringsAsFactors = F)
-  data$PC <- proteoDA:::make_factor(as.character(data$PC))
+  data$PC <- proteoDAstjude:::make_factor(as.character(data$PC))
 
   scree_data <- data[1:num_pc, ]
 
