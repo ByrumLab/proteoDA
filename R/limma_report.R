@@ -266,7 +266,7 @@ write_limma_plots <- function(DAList = NULL,
   on.exit(
     expr = {
       cli::cli_inform("Removing temporary files from {.path {output_dir}}")
-      unlink(c("logo_higherres.png", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
+      unlink(c("CPM_Hz.png", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
     },
     add = T,
     after = F
