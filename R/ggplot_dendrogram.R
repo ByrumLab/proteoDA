@@ -94,7 +94,7 @@ qc_dendrogram <- function(data,
   if (is.null(subtitle)) { subtitle <- "" }
 
   if(is.null(groups)) { groups <- rep(1, ncol(data)) }
-  groups <- proteoDA:::make_factor(as.character(groups), prefix=NULL)
+  groups <- proteoDAstjude:::make_factor(as.character(groups), prefix=NULL)
   stopifnot(length(groups)==ncol(data))
 
   ## get plot colors 1 per group levels i.e. unique groups
@@ -123,14 +123,14 @@ qc_dendrogram <- function(data,
   if(!all(length(sample_labels) == ncol(data))){
     stop("vector of samples_labels < the number of data columns.")
   }
-  sample_labels <- proteoDA:::make_factor(as.character(sample_labels))
+  sample_labels <- proteoDAstjude:::make_factor(as.character(sample_labels))
   ## meta data
   sample_group_info <- data.frame(ind = colnames(data), groups = groups,
                                   labels = sample_labels)
 
   ## top variable genes
   data <- data[!apply(is.na(data), 1, any), ]
-  data <- data[order(proteoDA:::rowVars(as.matrix(data)), decreasing = TRUE), ]
+  data <- data[order(proteoDAstjude:::rowVars(as.matrix(data)), decreasing = TRUE), ]
 
   if(is.null(top)) { top <- nrow(data) }
   top2 <- ifelse(nrow(data) >= top, top, nrow(data))
@@ -238,7 +238,7 @@ qc_dendrogram_subgroups <- function(DAList,
 
 
   ## validate DAList
-  DAList <- proteoDA:::validate_DAList(x = DAList)
+  DAList <- proteoDAstjude:::validate_DAList(x = DAList)
 
   ## check grouping column is a column in metadata. if not a factor make a factor
   ## then define groups vector
@@ -247,7 +247,7 @@ qc_dendrogram_subgroups <- function(DAList,
 
   ## make groups a factor and drop empty levels
   if(!is.factor(groups)){
-    groups <- proteoDA:::make_factor(x = as.character(groups))
+    groups <- proteoDAstjude:::make_factor(x = as.character(groups))
   }
   groups <- droplevels(x = groups)
 
@@ -266,7 +266,7 @@ qc_dendrogram_subgroups <- function(DAList,
   ## if group color is not defined set as blueberry from binfcolors
   ## if defined check that a single value is provided if not error
   if(is.null(group_color)){
-    group_color <- proteoDA:::binfcolors[1]
+    group_color <- proteoDAstjude:::binfcolors[1]
   }
   if((length(group_color) != 1L)){
     cli::cli_abort("The group_color argument should be one color.")
