@@ -20,7 +20,7 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 ```
 
 ```{r logo, fig.align="left", out.width="40%"}
-knitr::include_graphics(path = "hpcf/authorized_apps/proteomics_apps/proteoDA2/CPM_Hz.png", rel_path = F)
+knitr::include_graphics(path = system.file("report_templates/CPM_Hz.png", package = "proteoDAstjude"), rel_path = F)
 ```
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
