@@ -11,6 +11,8 @@
 #' @param nrow Number of rows for facet wrapping.
 #' @param ncol Number of columns for facet wrapping.
 #' @param legend.position Position of the legend ('none', 'right', 'top', 'left', 'bottom').
+#' @param plot_size A numeric value of length 2 indicating the width and height of the plot (in inches). Optional.
+#' @param save_path A character string specifying the file path to save the plot. If NULL, the plot is not saved. 
 #'
 #' @return A list containing ggplot objects for total intensity, total number, and total missing values barplots.
 #' @examples
@@ -26,7 +28,11 @@
 #'                             colors = NULL,   # or c("#E69F00", "#56B4E9", "#009E73")
 #'                             nrow = NULL,
 #'                             ncol = NULL,
-#'                             legend.position = "right")
+#'                             legend.position = "right",
+#'                             plot_size = c(12, 6),
+#'                             save_path = "Intensity_barplot.png")
+#'# save plot 
+#'ggplot2::ggsave("total_intensity_plot.png", result$plot, width = result@plot_size[1], height= result@plot_size[2])
 #'
 #' }
 #'
@@ -39,7 +45,9 @@ qc_totInt_by_group <- function(DAList,
                                colors = NULL,
                                nrow = NULL,
                                ncol = NULL,
-                               legend.position = "none") {
+                               legend.position = "none",
+                               plot_size = NULL,
+                               save_path = "Intensity_barplot.png") {
   
   legend.position <- rlang::arg_match(legend.position,
                                       c("none", "right", "top", "left", "bottom"))
@@ -83,6 +91,20 @@ qc_totInt_by_group <- function(DAList,
     cli::cli_abort("Number of colors does not match the number of unique groups.")
   }
   
+  # add validation for the plot_size
+  if (!is.null(plot_size)) {
+    if (!is.numeric(plot_size) || length(plot_size) !=2) {
+      cli::cli_abort("plot_size must be numeric vector of length 2 (width, height).")
+    }
+  }
+  
+  # add validation for save_path
+  if (!is.null(save_path)){
+    if (!is.character(save_path) || length(save_path) !=1) {
+      cli::cli_abort("save_path must be a single character string.")
+    }
+  }
+  
   # Create the plot
   p <- ggplot(bar_data, aes(x = label, y = tot.int, fill = group)) +
     geom_bar(stat = "identity") +
@@ -101,10 +123,20 @@ qc_totInt_by_group <- function(DAList,
           legend.position = legend.position) +
     guides(fill=guide_legend(title=grouping_column))
   
+  ## save the plot if requested
+  if (!is.null(save_path)) {
+    if (is.null(plot_size)) {
+      ggplot2::ggsave(filename = save_path, plot = p, dpi = 300)
+    } else {
+      ggplot2::ggsave(filename = save_path, plot = p, width = plot_size[1], height = plot_size[2], dpi = 300)
+    }
+  }
+  
   return(list(
     plot = p,
     data = bar_data,
     colors = colors,
-    threshold = perc_int_thresh
+    threshold = perc_int_thresh,
+    plot_size = plot_size
   ))
 }

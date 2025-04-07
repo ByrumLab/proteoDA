@@ -191,7 +191,7 @@ The barplot indicates the sum of intensities of proteins in each sample.The samp
 
 ## TOTAL INTENSITY BAR PLOT BY GROUP
 my_grouping_columns <- barplot_grouping_columns
-
+source("R/ggplot_barplot_TotInt_by_Group.R")
 bar2 <- lapply(my_grouping_columns, function(x){
      bar2_group <- qc_totInt_by_group(
                   DAList = results_NA,
@@ -199,7 +199,8 @@ bar2 <- lapply(my_grouping_columns, function(x){
                   grouping_column = x,
                   percentile = 0,
                   colors = NULL,   
-                  legend.position = "bottom"
+                  legend.position = "bottom",
+                  plot_size = c(12,6)
 )
 })
 names(bar2) <- "group"
@@ -211,7 +212,7 @@ bar2$group$plot
 ggsave(file = file.path(QC_dir,"Barplot_split_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
        plot = bar2$group$plot, 
        path = NULL, 
-       width = 10, 
+       width = 10,  # make this a variable in the params.R file 
        height = 6, 
        units = c("in"), 
        dpi = 300)
