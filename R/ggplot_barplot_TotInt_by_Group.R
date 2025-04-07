@@ -117,7 +117,7 @@ qc_totInt_by_group <- function(DAList,
     ) +
     facet_wrap(~ group, scales = "free_x", shrink = F, nrow = nrow, ncol = ncol) + # split by groups
     ggtitle(paste("Total Intensity by", grouping_column)) + # add title above the facets
-    geom_text(aes(label=tot.num), position=position_dodge(width=0.9), vjust=-0.5, size = 3) +  # add number of proteins
+    geom_text(aes(label=tot.num), position=position_dodge(width=0.9), vjust=-0.5, size = 5) +  # add number of proteins
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
           legend.position = legend.position) +
