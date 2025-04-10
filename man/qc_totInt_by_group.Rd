@@ -12,7 +12,9 @@ qc_totInt_by_group(
   colors = NULL,
   nrow = NULL,
   ncol = NULL,
-  legend.position = "none"
+  legend.position = "none",
+  plot_size = NULL,
+  save_path = "Intensity_barplot.png"
 )
 }
 \arguments{
@@ -31,6 +33,10 @@ qc_totInt_by_group(
 \item{ncol}{Number of columns for facet wrapping.}
 
 \item{legend.position}{Position of the legend ('none', 'right', 'top', 'left', 'bottom').}
+
+\item{plot_size}{A numeric value of length 2 indicating the width and height of the plot (in inches). Optional.}
+
+\item{save_path}{A character string specifying the file path to save the plot. If NULL, the plot is not saved.}
 }
 \value{
 A list containing ggplot objects for total intensity, total number, and total missing values barplots.
@@ -52,7 +58,11 @@ barplot1 <- qc_totInt_by_group(DAList = results,
                             colors = NULL,   # or c("#E69F00", "#56B4E9", "#009E73")
                             nrow = NULL,
                             ncol = NULL,
-                            legend.position = "right")
+                            legend.position = "right",
+                            plot_size = c(12, 6),
+                            save_path = "Intensity_barplot.png")
+# save plot 
+ggplot2::ggsave("total_intensity_plot.png", result$plot, width = result@plot_size[1], height= result@plot_size[2])
 
 }
 

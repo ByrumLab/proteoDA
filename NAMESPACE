@@ -3,6 +3,7 @@
 export(DAList)
 export(add_contrasts)
 export(add_design)
+export(compute_movingSD_zscores)
 export(extract_DA_results)
 export(filter_proteins_by_annotation)
 export(filter_proteins_by_group)
