@@ -17,6 +17,6 @@ create_combined_results(annotation, data, statlist)
 A data frame of the combined results.
 }
 \description{
-Internal function used to construct a data frame of combined results
+Internal function used to construct a data frame of combined results.
 }
 \keyword{internal}

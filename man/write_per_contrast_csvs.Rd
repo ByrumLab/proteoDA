@@ -4,7 +4,16 @@
 \alias{write_per_contrast_csvs}
 \title{Write per-contrast results csvs}
 \usage{
-write_per_contrast_csvs(annotation_df, data, results_statlist, output_dir)
+write_per_contrast_csvs(
+  annotation_df,
+  data,
+  results_statlist,
+  output_dir,
+  annotation_cols = NULL,
+  metadata = NULL,
+  group_col = "group",
+  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")
+)
 }
 \arguments{
 \item{annotation_df}{A data frame of annotation data for each gene/protein.}
@@ -14,13 +23,19 @@ write_per_contrast_csvs(annotation_df, data, results_statlist, output_dir)
 \item{results_statlist}{A list of per-contrast DE results.}
 
 \item{output_dir}{The directory in which to save the per-contrast csv files.}
+
+\item{annotation_cols}{Optional character vector of annotation column names to include.}
+
+\item{metadata}{Optional list of metadata (e.g. DAList$metadata) for filtering data columns by sample group.}
+
+\item{group_col}{Character. Name of the grouping column within metadata to match contrast samples.}
+
+\item{stat_cols}{Optional character vector of statistical columns to include from the results_statlist. If NULL, include all.}
 }
 \value{
-A logical vector indicting whether each contrast file was
-successfully written.
+A logical vector indicating whether each contrast file was successfully written.
 }
 \description{
-Internal function used to write per-contrast statistical results to a .csv
-file.
+Internal function used to write per-contrast statistical results to .csv files.
 }
 \keyword{internal}
