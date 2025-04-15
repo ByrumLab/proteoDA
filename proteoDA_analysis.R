@@ -51,7 +51,17 @@ filtered_proteins <- filter_proteins_by_group(filtered_samples,
                                               grouping_column = group)
 
 
+# creates multiple DAList objects for analysis.
 
+filtered_DALists <- filter_proteins_per_contrast(
+  DAList = filtered_samples,
+  contrasts_file = "data/contrasts.csv",
+  min_reps = 3,
+  require_both_groups = FALSE,
+  grouping_column = "group"
+)
+summary_df <- attr(filtered_DALists, "retention_summary")
+write.csv(summary_df, "filtered_protein_counts.csv", row.names = FALSE)
 
 ###### OUTPUT
 #Keeping only protein entries with non-missing intensity in at least 2 samples in at least 1 group
@@ -95,11 +105,15 @@ norm$tags$norm_method <- "diann_quan"
 no_intercept <- add_design(norm,
                             design_formula = design)
 
+no_intercept$design
+limma:::is.fullrank(no_intercept$design$design_matrix)
+limma:::nonEstimable(x = no_intercept$design$design_matrix)
 # add sample group comparisons
 # defining in code
 #no_intercept <- add_contrasts(no_intercept,
  #                             contrasts_vector = "CHP212_Trt_vs_CHP212_ctrl = CHP212_Trt - CHP212_Ctrl")
 
+colnames(no_intercept$design$design_matrix) 
 no_intercept <- add_contrasts(no_intercept,
                               contrasts_file = contrasts)
 
@@ -132,6 +146,14 @@ results <- extract_DA_results(fit,
 
 results <- compute_movingSD_zscores(results, binsize = 1000)
 
+# Build a customized statlist
+statlist <- build_statlist(
+  results = results$results,
+  movingSDs = results$tags$movingSDs,
+  z_scores = results$tags$logFC_z_scores,
+  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")
+)
+
 ##############
 # WRITE DATA TABLES TO FILE
 # includes an overall Excel file with all comparisons added
@@ -144,7 +166,9 @@ write_limma_tables(results,
                    summary_csv=NULL,
                    combined_file_csv = NULL,
                    spreadsheet_xlsx = NULL,
-                   add_filter = T)
+                   add_filter = T,
+                   color_palette = NULL,
+                   add_contrasts_sheets = TRUE)
 
 
 ##############
