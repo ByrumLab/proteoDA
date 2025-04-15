@@ -7,72 +7,40 @@
 write_limma_tables(
   DAList,
   output_dir = NULL,
-  overwrite = F,
+  overwrite = FALSE,
   contrasts_subdir = NULL,
   summary_csv = NULL,
   combined_file_csv = NULL,
   spreadsheet_xlsx = NULL,
-  add_filter = T
+  add_filter = TRUE,
+  color_palette = NULL,
+  add_contrast_sheets = TRUE
 )
 }
 \arguments{
-\item{DAList}{A DAList object, with statistical results in the results slot.}
+\item{DAList}{A DAList object with statistical results.}
 
-\item{output_dir}{The directory in which to output tables. If not specified,
-will default to the current working directory.}
+\item{output_dir}{Directory to output tables. Defaults to working directory.}
 
-\item{overwrite}{Should results files be overwritten? Default is FALSE.}
+\item{overwrite}{Logical. Overwrite existing files?}
 
-\item{contrasts_subdir}{The subdirectory within output_dir to write the per-contrast
-result .csv files. If not specified, will be "per_contrast_results".}
+\item{contrasts_subdir}{Subdirectory for per-contrast CSV files.}
 
-\item{summary_csv}{The filename of the csv file giving a summary of the number
-of DA genes per contrast. If not specified, will be "DA_summary.csv".}
+\item{summary_csv}{Filename for summary CSV.}
 
-\item{combined_file_csv}{The filename of the combined results csv file. If
-not specified, will be combined_results.csv.}
+\item{combined_file_csv}{Filename for combined results CSV.}
 
-\item{spreadsheet_xlsx}{The filename of the Excel spreadsheet containing the
-results. If not specified, will be results.xlsx.}
+\item{spreadsheet_xlsx}{Filename for Excel spreadsheet.}
 
-\item{add_filter}{Should per-column filters be added to the spreadsheet?
-Default is TRUE. These can sometimes cause unstable spreadsheet files,
-try setting to FALSE if you're having issues with the Excel output.}
+\item{add_filter}{Logical. Add filters to Excel columns?}
+
+\item{color_palette}{Optional color palette for Excel output.}
+
+\item{add_contrast_sheets}{Logical. Whether to add each per-contrast CSV as a worksheet in the Excel file.}
 }
 \value{
 Invisibly returns the input DAList.
 }
 \description{
-This function prepares and then saves a number of tables of results:
-\enumerate{
-\item A .csv summarizing the number of direction of differentially
-expressed genes for each contrast (see \code{summary_csv}).
-\item An Excel spreadsheet of the intensity and
-statistical results for all contrasts/terms in the results slot of the
-DAList (see \code{spreadsheet_xlsx}).
-\item A results .csv file with the same data as the Excel spreadsheet,
-but in a flat .csv file withour formatting (see \code{combined_file_csv}).
-\item A folder of results .csv file which contain the results for each
-contrast.
-}
-}
-\examples{
-\dontrun{
-  # Using defaults
-  write_limma_tables(DAList)
-
- # Customize output directory
- # and filenames
- write_limma_tables(DAList,
-                    output_dir = "DA_results",
-                    contrasts_subdir = "by_contrast",
-                    summary_csv = "my_summary.csv",
-                    combined_file_csv = "all_results.csv",
-                    spreadsheet_xlsx = "all_results.xlsx")
-
- # If the xlsx files have issues, try removing the
- # per-column filters in the spreadsheet
- write_limma_tables(DAList,
-                    add_filter = F)
-}
+Generates CSV and Excel summary tables from a limma differential analysis list.
 }
