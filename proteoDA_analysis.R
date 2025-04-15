@@ -52,7 +52,6 @@ filtered_proteins <- filter_proteins_by_group(filtered_samples,
 
 
 
-
 ###### OUTPUT
 #Keeping only protein entries with non-missing intensity in at least 2 samples in at least 1 group
 #Filtered 35 entries from the dataset leaving 8358 entries for analysis
@@ -95,10 +94,12 @@ norm$tags$norm_method <- "diann_quan"
 no_intercept <- add_design(norm,
                             design_formula = design)
 
+
 # add sample group comparisons
 # defining in code
 #no_intercept <- add_contrasts(no_intercept,
  #                             contrasts_vector = "CHP212_Trt_vs_CHP212_ctrl = CHP212_Trt - CHP212_Ctrl")
+
 
 no_intercept <- add_contrasts(no_intercept,
                               contrasts_file = contrasts)
@@ -132,6 +133,7 @@ results <- extract_DA_results(fit,
 
 results <- compute_movingSD_zscores(results, binsize = 1000)
 
+
 ##############
 # WRITE DATA TABLES TO FILE
 # includes an overall Excel file with all comparisons added
@@ -144,7 +146,7 @@ write_limma_tables(results,
                    summary_csv=NULL,
                    combined_file_csv = NULL,
                    spreadsheet_xlsx = NULL,
-                   add_filter = T)
+
 
 
 ##############
