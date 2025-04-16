@@ -173,15 +173,21 @@ build_statlist <- function(results, movingSDs, z_scores,
     msd <- movingSDs[[contrast]]
     z   <- z_scores[[contrast]]
     
-    base_cols <- intersect(stat_cols, colnames(res))
-    df <- res[, base_cols, drop = FALSE]
+    # Ensure rownames are preserved
+    row_ids <- rownames(res)
+    df <- data.frame(row.names = row_ids)
     
-    # Add tag columns only if requested
-    if ("movingSDs" %in% stat_cols) {
-      df$movingSDs <- msd
-    }
-    if ("logFC_z_scores" %in% stat_cols) {
-      df$logFC_z_scores <- z
+    for (col in stat_cols) {
+      if (col %in% colnames(res)) {
+        df[[col]] <- res[[col]]
+      } else if (col == "movingSDs") {
+        df[[col]] <- msd
+      } else if (col == "logFC_z_scores") {
+        df[[col]] <- z
+      } else {
+        warning(sprintf("Column '%s' not found in results or tags for contrast '%s'", col, contrast))
+        df[[col]] <- NA  # fill missing with NAs to maintain column structure
+      }
     }
     
     statlist[[contrast]] <- df
@@ -189,9 +195,6 @@ build_statlist <- function(results, movingSDs, z_scores,
   
   return(statlist)
 }
-
-
-
 
 
 
@@ -240,7 +243,13 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
     Value = c(nrow(annotation), ncol(data), length(statlist))
   )
   
-  # Section 2: Statistical thresholds used
+  # Section 2: Filtering parameters
+  filtering_data <- data.frame(
+    Parameter = c("Minimum replicates per group", "Minimum number of groups with detection"),
+    Value = c(filt_min_reps, filt_min_groups)
+  )
+  
+  # Section 3: Statistical thresholds used
   criteria_data <- data.frame(
     Criterion = c("Adjusted p-value threshold (FDR)", "Log2 fold-change threshold", "Significance definition"),
     Value = c(pval_thresh, lfc_thresh, paste0(
@@ -249,7 +258,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
     ))
   )
   
-  # Section 3: Contrast-level summary
+  # Section 4: Contrast-level summary
   overview_summary <- do.call("rbind", lapply(names(statlist), function(contrast_name) {
     tmp <- statlist[[contrast_name]][, c("logFC", "adj.P.Val"), drop = FALSE]
     sig_up <- sum(tmp$logFC >= lfc_thresh & tmp$adj.P.Val <= pval_thresh, na.rm = TRUE)
@@ -268,21 +277,25 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   openxlsx::writeData(wb, sheet = "Overview", x = "Dataset Summary", startRow = 1, startCol = 1)
   openxlsx::writeData(wb, sheet = "Overview", x = overview_data, startRow = 2, startCol = 1)
   
-  openxlsx::writeData(wb, sheet = "Overview", x = "Significance Criteria", startRow = 6, startCol = 1)
-  openxlsx::writeData(wb, sheet = "Overview", x = criteria_data, startRow = 7, startCol = 1)
+  openxlsx::writeData(wb, sheet = "Overview", x = "Filtering Criteria", startRow = 6, startCol = 1)
+  openxlsx::writeData(wb, sheet = "Overview", x = filtering_data, startRow = 7, startCol = 1)
   
-  openxlsx::writeData(wb, sheet = "Overview", x = "Contrast Summary", startRow = 11, startCol = 1)
-  openxlsx::writeData(wb, sheet = "Overview", x = overview_summary, startRow = 12, startCol = 1, withFilter = TRUE)
+  openxlsx::writeData(wb, sheet = "Overview", x = "Significance Criteria", startRow = 10, startCol = 1)
+  openxlsx::writeData(wb, sheet = "Overview", x = criteria_data, startRow = 11, startCol = 1)
+  
+  contrast_start_row <- 15
+  openxlsx::writeData(wb, sheet = "Overview", x = "Contrast Summary", startRow = contrast_start_row, startCol = 1)
+  openxlsx::writeData(wb, sheet = "Overview", x = overview_summary, startRow = contrast_start_row + 1, startCol = 1, withFilter = TRUE)
   
   # Styling
   header_style <- openxlsx::createStyle(textDecoration = "bold", fontSize = 12, halign = "left")
-  openxlsx::addStyle(wb, "Overview", header_style, rows = c(1, 6, 11), cols = 1, gridExpand = TRUE)
+  openxlsx::addStyle(wb, "Overview", header_style, rows = c(1, 6, 10, contrast_start_row), cols = 1, gridExpand = TRUE)
   
   table_header_style <- openxlsx::createStyle(textDecoration = "bold", fgFill = "#D9EAD3")
-  openxlsx::addStyle(wb, "Overview", table_header_style, rows = c(2, 7, 12), cols = 1:3, gridExpand = TRUE)
+  openxlsx::addStyle(wb, "Overview", table_header_style, rows = c(2, 7, 11, contrast_start_row + 1), cols = 1:3, gridExpand = TRUE)
   
-  # Optional: freeze pane below criteria
-  openxlsx::freezePane(wb, sheet = "Overview", firstActiveRow = 13)
+  # Optional: freeze pane below contrast summary headers
+  openxlsx::freezePane(wb, sheet = "Overview", firstActiveRow = contrast_start_row + 2)
   
   
   # Set up annotation columns -----------------------------------------------
@@ -505,13 +518,27 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
     negStyle  <- openxlsx::createStyle(fontColour="#006100", bgFill="#C6EFCE")
     normStyle <- openxlsx::createStyle(fontColour="#000000", bgFill="#FFFFFF")
     
-    fc.col    <- grep("logFC", colnames(stats)) + stat.start - 1
+    # fc.col    <- grep("logFC", colnames(stats)) + stat.start - 1
+    # fc.rule1  <- paste0(">=", lfc_thresh)
+    # fc.rule2  <- paste0("<=", -lfc_thresh)
+    # fdr.col   <- grep("adj.P.Val", colnames(stats)) + stat.start - 1
+    # fdr.rule  <- paste0("<=", pval_thresh)
+    # pval.col  <- grep("P.Value", colnames(stats)) + stat.start - 1
+    # pval.rule <- paste0("<=", pval_thresh)
+    
+    fc.idx   <- grep("^logFC$", colnames(stats))
+    fdr.idx  <- grep("^adj.P.Val$", colnames(stats))
+    pval.idx <- grep("^P.Value$", colnames(stats))
+    
+    fc.col    <- fc.idx + stat.start - 1
+    fdr.col   <- fdr.idx + stat.start - 1
+    pval.col  <- pval.idx + stat.start - 1
+    
     fc.rule1  <- paste0(">=", lfc_thresh)
     fc.rule2  <- paste0("<=", -lfc_thresh)
-    fdr.col   <- grep("adj.P.Val", colnames(stats)) + stat.start - 1
     fdr.rule  <- paste0("<=", pval_thresh)
-    pval.col  <- grep("P.Value", colnames(stats)) + stat.start - 1
     pval.rule <- paste0("<=", pval_thresh)
+    
     
     
     openxlsx::conditionalFormatting(wb, sheet = sheetName,
