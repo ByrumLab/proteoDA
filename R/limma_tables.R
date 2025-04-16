@@ -39,7 +39,7 @@ write_per_contrast_csvs <- function(annotation_df,
                                     annotation_cols = NULL,
                                     metadata = NULL,
                                     group_col = "group",
-                                    stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")) {
+                                    stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores", "sig.PVal","sig.FDR")) {
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
   }
@@ -687,7 +687,7 @@ write_limma_tables <- function(DAList,
                                                   annotation_cols = c("uniprot_id","Genes","Accession.Number","Identified.Peptides","Protein.Description"),
                                                   metadata = DAList$metadata,
                                                   group_col = "group",
-                                                  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")) 
+                                                  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores","sig.PVal","sig.FDR")) 
   if (!all(contrast_csv_success)) {
     failed <- names(contrast_csv_success)[!contrast_csv_success]
     cli::cli_abort(c("Failed to write {.path .csv} results for contrast(s):",
