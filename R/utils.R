@@ -285,3 +285,20 @@ check_rows_in <- function(obj=list(), ref_rows=c()){
   })))
 }
 
+#' Negation of \code{\%in\%}
+#'
+#' A convenience function that returns the negation of `%in%`, i.e., checks
+#' whether elements of `x` are not in `table`.
+#'
+#' @param x A vector of values to be matched.
+#' @param table A vector of values to be matched against.
+#'
+#' @return A logical vector indicating if elements of `x` are not in `table`.
+#' @examples
+#' 1 %notin% c(2, 3, 4)  # TRUE
+#' "a" %notin% c("b", "c")  # TRUE
+#' "a" %notin% c("a", "b")  # FALSE
+#' @export
+`%notin%` <- function(x, table) {
+  !(x %in% table)
+}
