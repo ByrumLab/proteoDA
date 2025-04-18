@@ -14,7 +14,8 @@ write_limma_tables(
   spreadsheet_xlsx = NULL,
   add_filter = TRUE,
   color_palette = NULL,
-  add_contrast_sheets = TRUE
+  add_contrast_sheets = TRUE,
+  statlist = NULL
 )
 }
 \arguments{
