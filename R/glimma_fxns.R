@@ -26,7 +26,6 @@
 #' @keywords internal
 #'
 uams_glimmaXY <- function(DAList,
-                          model_data,
                           contrast,
                           display.columns,
                           grouping_column,
@@ -34,6 +33,9 @@ uams_glimmaXY <- function(DAList,
                           sample.cols,
                           width,
                           height) {
+  
+  # Get model_data from results 
+  model_data <- DAList$results[[contrast]] 
   
   # Pull counts and annotation conditionally
   if (!is.null(DAList$data_per_contrast) && contrast %in% names(DAList$data_per_contrast)) {
