@@ -5,22 +5,10 @@ output:
   html_document:
     mathjax: null
     self_contained: true
-params:
-    DAList: !r NULL
-    contrast: !r NULL
-    model_data: !r NULL
-    table_columns: !r NULL
-    title_column: !r NULL
-    grouping_column: !r NULL
-    width: !r 1000
-    height: !r 1000
 ---
 
 ```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
 knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, cache = F)
-library(ggplot2)
-library(patchwork)
-library(proteoDAstjude)
 ```
 
 ```{css, echo=FALSE}
@@ -35,64 +23,20 @@ library(proteoDAstjude)
 knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_apps/proteomics_apps/proteoDA/inst/report_templates/CPM_Hz.png", rel_path = F)
 ```
 
-### Contrast
-**Current contrast:** `r params$contrast`
+### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
 
 ```{r chunk1, results = "asis", fig.keep='none'}
-# Extract required params
-DAList <- params$DAList
-contrast <- params$contrast
-model_data <- params$model_data
-internal_table_columns <- params$table_columns
-title_column <- params$title_column
-grouping_column <- params$grouping_column
-width <- params$width
-height <- params$height
- 
-# Use per-contrast data and annotation if available
-if (!is.null(DAList$data_per_contrast) && contrast %in% names(DAList$data_per_contrast)) {
-  counts <- DAList$data_per_contrast[[contrast]]
-} else {
-  counts <- DAList$data[rownames(model_data), , drop = FALSE]
-}
- 
-if (!is.null(DAList$annotation_per_contrast) && contrast %in% names(DAList$annotation_per_contrast)) {
-  anno <- DAList$annotation_per_contrast[[contrast]]
-} else {
-  anno <- DAList$annotation[rownames(model_data), , drop = FALSE]
-}
- 
-# Ensure annotation matches model_data rows
-anno <- anno[rownames(model_data), , drop = FALSE]
- 
-# Add p-values to annotation
-anno$p <- round(model_data$P.Value, 4)
-anno$adjusted_p <- round(model_data$adj.P.Val, 4)
- 
-# Add title column if available
-if (!is.null(title_column)) {
-  title_values <- stringr::str_trunc(anno[[title_column]], width = 20, side = "right", ellipsis = "...")
-  model_data$internal_title_column <- title_values[match(rownames(model_data), rownames(anno))]
-} else {
-  model_data$internal_title_column <- rownames(model_data)
-}
- 
-# Align group vector with counts
-grouping_vector <- DAList$metadata[colnames(counts), grouping_column, drop = TRUE]
-
-# Glimma interactive plot
 uams_glimmaXY(
-  model_data     = model_data,
-  counts         = counts,
-  groups         = grouping_vector,
-  anno           = anno,
-  display.columns= internal_table_columns,
-  status.cols    = c("#00bfff", "#858585", "#ff3030"),
-  sample.cols    = NULL,
-  width          = width,
-  height         = height
+  model_data = data, 
+  counts = counts,
+  groups = groups,
+  sample.cols = unname(colorGroup(groups)),
+  status.cols = c("#00bfff", "#858585", "#ff3030"),
+  anno = anno,
+  display.columns = cols_to_display,
+  width = width,
+  height = height
 )
-
 ```
 
 
