@@ -5,19 +5,27 @@
 \title{\%notin\% operator, opposite of \%in\%}
 \usage{
 x \%notin\% table
+
+x \%notin\% table
 }
 \arguments{
-\item{x}{vector or \code{NULL}: the values to be matched.
-    \link[base]{Long vectors} are supported.}
+\item{x}{A vector of values to be matched.}
 
-\item{table}{vector or \code{NULL}: the values to be matched against.
-    \link[base]{Long vectors} are not supported.}
+\item{table}{A vector of values to be matched against.}
 }
 \value{
 A logical vector, indicating if a match was NOT located for each
 element of of the search list.
+
+A logical vector indicating if elements of \code{x} are not in \code{table}.
 }
 \description{
-\%notin\% operator, opposite of \%in\%
+A convenience function that returns the negation of \code{\%in\%}, i.e., checks
+whether elements of \code{x} are not in \code{table}.
+}
+\examples{
+1 \%notin\% c(2, 3, 4)  # TRUE
+"a" \%notin\% c("b", "c")  # TRUE
+"a" \%notin\% c("a", "b")  # FALSE
 }
 \keyword{internal}

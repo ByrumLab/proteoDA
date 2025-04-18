@@ -24,7 +24,8 @@ filter_proteins_per_contrast(
 \item{grouping_column}{Character. Name of the column in DAList$metadata used to assign group membership.}
 }
 \value{
-A named list of filtered DAList objects, one for each contrast, with a \code{retention_summary} attribute.
+A DAList object with updated $filtered_proteins_per_contrast, $data_per_contrast,
+$annotation_per_contrast, and a $tags$retention_summary table.
 }
 \description{
 This function filters proteins contrast-by-contrast based on non-missing intensity
@@ -32,13 +33,15 @@ values in a defined sample group column (e.g., "group" or "condition").
 }
 \details{
 Contrast names are read from a no-header CSV file where each row is of the form:
-\code{GroupA_vs_GroupB=GroupA - GroupB}. The part before the "=" is used as the contrast ID.
+\code{GroupA_vs_GroupB=GroupA - GroupB}. The part before the \code{=} is used as the contrast ID.
 
 For each contrast, proteins are retained only if they have at least \code{min_reps} values
 in either or both groups involved in the contrast (as determined by \code{require_both_groups}).
+The function also stores per-contrast versions of the $data and $annotation slots
+into DAList$data_per_contrast and DAList$annotation_per_contrast.
 }
 \examples{
-filtered_list <- filter_proteins_per_contrast(
+filtered_DAList <- filter_proteins_per_contrast(
   DAList = raw_DAList,
   contrasts_file = "data/contrasts.csv",
   min_reps = 2,

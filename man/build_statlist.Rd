@@ -5,20 +5,19 @@
 \title{Build a cleaned statlist for export to Excel (renaming z_scores)}
 \usage{
 build_statlist(
-  results,
-  movingSDs,
-  z_scores,
-  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")
+  DAList,
+  stat_cols = c("logFC", "P.Value", "adj.P.Val", "sig.PVal", "sig.FDR", "movingSDs",
+    "logFC_z_scores")
 )
 }
 \arguments{
+\item{stat_cols}{Character vector of column names to include from the results. Defaults include additional stats from tags.}
+
 \item{results}{A named list of data frames. Each element is a contrast result (e.g., DAList$results$contrast_name).}
 
 \item{movingSDs}{A named list of numeric vectors for each contrast (e.g., DAList$tags$movingSDs).}
 
 \item{z_scores}{A named list of numeric vectors for each contrast (e.g., DAList$tags$logFC_z_scores).}
-
-\item{stat_cols}{Character vector of column names to include from the results. Defaults include additional stats from tags.}
 }
 \value{
 A named list of filtered data frames per contrast.
