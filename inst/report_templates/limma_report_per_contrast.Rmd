@@ -28,12 +28,12 @@ knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_app
 ```{r chunk1, results = "asis", fig.keep='none'}
 uams_glimmaXY(
   DAList = results, 
-  model_data = model_data,
+  #model_data = model_data,
   contrast = contrast,
   grouping_column = "group",
   sample.cols = NULL,
   status.cols = c("#00bfff", "#858585", "#ff3030"),
-  display.columns = internal_table_columns,
+  display.columns = c("uniprot_id", "description"),
   width = width,
   height = height
 )
