@@ -374,12 +374,10 @@ filter_proteins_by_proportion <- function(DAList,
 #' values in a defined sample group column (e.g., "group" or "condition").
 #'
 #' Contrast names are read from a no-header CSV file where each row is of the form:
-#' `GroupA_vs_GroupB=GroupA - GroupB`. The part before the `=` is used as the contrast ID.
+#' `GroupA_vs_GroupB=GroupA - GroupB`. The part before the "=" is used as the contrast ID.
 #'
 #' For each contrast, proteins are retained only if they have at least `min_reps` values
 #' in either or both groups involved in the contrast (as determined by `require_both_groups`).
-#' The function also stores per-contrast versions of the $data and $annotation slots
-#' into DAList$data_per_contrast and DAList$annotation_per_contrast.
 #'
 #' @param DAList A DAList object containing $data, $annotation, and $metadata.
 #' @param contrasts_file Path to a no-header .csv file with contrast names in the form "GroupA_vs_GroupB=GroupA - GroupB".
@@ -387,12 +385,11 @@ filter_proteins_by_proportion <- function(DAList,
 #' @param require_both_groups Logical. If TRUE, protein must meet `min_reps` in both contrast groups. If FALSE, just one.
 #' @param grouping_column Character. Name of the column in DAList$metadata used to assign group membership.
 #'
-#' @return A DAList object with updated $filtered_proteins_per_contrast, $data_per_contrast,
-#'   $annotation_per_contrast, and a $tags$retention_summary table.
+#' @return A named list of filtered DAList objects, one for each contrast, with a `retention_summary` attribute.
 #' @export
 #'
 #' @examples
-#' filtered_DAList <- filter_proteins_per_contrast(
+#' filtered_list <- filter_proteins_per_contrast(
 #'   DAList = raw_DAList,
 #'   contrasts_file = "data/contrasts.csv",
 #'   min_reps = 2,
@@ -400,72 +397,158 @@ filter_proteins_by_proportion <- function(DAList,
 #'   grouping_column = "group"
 #' )
 filter_proteins_per_contrast <- function(DAList,
+                                         
                                          contrasts_file,
+                                         
                                          min_reps = 2,
+                                         
                                          require_both_groups = TRUE,
+                                         
                                          grouping_column = "group") {
+  
   validate_DAList(DAList)
   
   if (!file.exists(contrasts_file)) {
+    
     cli::cli_abort("Could not find contrasts file: {.file {contrasts_file}}")
+    
   }
   
   contrast_table <- read.csv(contrasts_file, stringsAsFactors = FALSE, header = FALSE)
+  
+  if (ncol(contrast_table) < 1) {
+    
+    cli::cli_abort("The file {.file {contrasts_file}} must contain at least one column of contrast names.")
+    
+  }
+  
   contrast_full <- contrast_table[[1]]
+  
   contrasts <- trimws(sub("=.*$", "", contrast_full))
+  
+  if (length(contrasts) == 0) {
+    
+    cli::cli_abort("No contrast names found in {.file {contrasts_file}}")
+    
+  }
   
   cli::cli_inform("Applying filtering to {.val {length(contrasts)}} contrast{?s} listed in {.file {contrasts_file}}")
   
-  filtered_list <- list()
-  data_per_contrast <- list()
-  annotation_per_contrast <- list()
-  
-  for (contrast in contrasts) {
+  filtered_list <- lapply(contrasts, function(contrast) {
+    
     contrast_groups <- unlist(strsplit(contrast, "_vs_"))
+    
+    if (length(contrast_groups) != 2) {
+      
+      cli::cli_abort("Contrast {.val {contrast}} must be of the form 'GroupA_vs_GroupB'")
+      
+    }
+    
     meta <- DAList$metadata
+    
     group_membership <- meta[[grouping_column]]
+    
     selected_samples <- rownames(meta)[group_membership %in% contrast_groups]
+    
+    if (length(selected_samples) == 0) {
+      
+      cli::cli_abort("No samples found for contrast groups: {.val {contrast_groups}}")
+      
+    }
+    
     tmp_data <- DAList$data[, selected_samples, drop = FALSE]
+    
     tmp_meta <- meta[selected_samples, , drop = FALSE]
     
     nonmissing_counts <- sapply(contrast_groups, function(grp) {
+      
       samples_in_grp <- rownames(tmp_meta)[tmp_meta[[grouping_column]] == grp]
+      
       rowSums(!is.na(tmp_data[, samples_in_grp, drop = FALSE]))
+      
     })
     
-    keep_protein <- if (require_both_groups) {
-      rowSums(nonmissing_counts >= min_reps) == 2
+    if (require_both_groups) {
+      
+      keep_protein <- rowSums(nonmissing_counts >= min_reps) == 2
+      
+      logic_text <- "both"
+      
     } else {
-      rowSums(nonmissing_counts >= min_reps) >= 1
+      
+      keep_protein <- rowSums(nonmissing_counts >= min_reps) >= 1
+      
+      logic_text <- "either"
+      
     }
+    
+    cli::cli_inform("Filtering proteins for contrast {.val {contrast}} using {.val {logic_text}} group rule with ≥ {.val {min_reps}} replicates")
+    
+    cli::cli_inform("{.val {sum(!keep_protein)}} entr{?y/ies} removed, {.val {sum(keep_protein)}} retained")
     
     if (sum(keep_protein) == 0) {
-      cli::cli_warn("No proteins retained for contrast {.val {contrast}} — skipping.")
-      next
+      
+      cli::cli_warn("No proteins retained for contrast {.val {contrast}} — skipping this entry.")
+      
+      return(NULL)
+      
     }
     
-    filtered_ids <- rownames(DAList$data)[keep_protein]
-    filtered_list[[contrast]] <- filtered_ids
+    filtered <- DAList
     
-    # Store contrast-specific data and annotation
-    data_per_contrast[[contrast]] <- DAList$data[filtered_ids, , drop = FALSE]
-    annotation_per_contrast[[contrast]] <- DAList$annotation[filtered_ids, , drop = FALSE]
-  }
+    filtered$data <- DAList$data[keep_protein, , drop = FALSE]
+    
+    filtered$annotation <- DAList$annotation[rownames(filtered$data), , drop = FALSE]
+    
+    filtered$tags$filter_proteins_per_contrast <- list(
+      
+      contrast = contrast,
+      
+      groups = contrast_groups,
+      
+      min_reps = min_reps,
+      
+      require_both_groups = require_both_groups,
+      
+      grouping_column = grouping_column
+      
+    )
+    
+    validate_DAList(filtered)
+    
+  })
   
-  # Add to DAList
-  DAList$filtered_proteins_per_contrast <- filtered_list
-  DAList$data_per_contrast <- data_per_contrast
-  DAList$annotation_per_contrast <- annotation_per_contrast
+  # Remove NULLs and update names
   
-  # Add summary table
+  retained <- !sapply(filtered_list, is.null)
+  
+  filtered_list <- filtered_list[retained]
+  
+  contrast_names <- contrasts[retained]
+  
+  names(filtered_list) <- contrast_names
+  
+  # Build summary log
+  
   retention_table <- data.frame(
-    Contrast = names(filtered_list),
-    Proteins_Retained = sapply(filtered_list, length),
+    
+    Contrast = contrast_names,
+    
+    Proteins_Retained = sapply(filtered_list, function(x) nrow(x$data)),
+    
     stringsAsFactors = FALSE
+    
   )
-  DAList$tags$retention_summary <- retention_table
   
-  cli::cli_inform("Added filtered protein lists and per-contrast data/annotation to DAList")
-  return(new_DAList(DAList))
+  cli::cli_inform("Summary of protein retention per contrast:")
+  
+  print(retention_table, row.names = FALSE)
+  
+  # Attach summary
+  
+  attr(filtered_list, "retention_summary") <- retention_table
+  
+  return(filtered_list)
+  
 }
 

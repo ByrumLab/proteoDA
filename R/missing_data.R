@@ -39,17 +39,19 @@
 #' @rdname missing_data
 #' @export
 #'
-missing_to_zero <- function(DAList, missing_values = c(NA)) {
+#'
 
-  if (!(class(DAList) %in% c("DAList"))) {
+missing_to_zero <- function(DAList, missing_values = c(NA)) {
+  if (!inherits(DAList, "DAList")) {
     cli::cli_abort("{.arg DAList} must be a DAList object")
   }
-
-  # Set up new data
+  
+  optional_slots <- c("filtered_proteins_per_contrast")
+  optional_preserved <- DAList[intersect(names(DAList), optional_slots)]
+  
   DAList <- validate_DAList(DAList)
   new_data <- DAList$data
-
-  # Convert
+  
   for (missing_value in missing_values) {
     if (is.na(missing_value)) {
       new_data[is.na(new_data)] <- 0
@@ -57,11 +59,13 @@ missing_to_zero <- function(DAList, missing_values = c(NA)) {
       new_data[new_data == missing_value] <- 0
     }
   }
-
-  # Add new data back
+  
   DAList$data <- new_data
-
-  validate_DAList(DAList)
+  DAList <- validate_DAList(DAList)
+  DAList[names(optional_preserved)] <- optional_preserved
+  class(DAList) <- "DAList"
+  
+  return(DAList)
 }
 
 
@@ -69,22 +73,22 @@ missing_to_zero <- function(DAList, missing_values = c(NA)) {
 #' @export
 #'
 zero_to_missing <- function(DAList) {
-
-  if (!(class(DAList) %in% c("DAList"))) {
+  if (!inherits(DAList, "DAList")) {
     cli::cli_abort("{.arg DAList} must be a DAList object")
   }
-
-  # Set up new data
+  
+  optional_slots <- c("filtered_proteins_per_contrast")
+  optional_preserved <- DAList[intersect(names(DAList), optional_slots)]
+  
   DAList <- validate_DAList(DAList)
   new_data <- DAList$data
-
-  # Convert
   new_data[new_data == 0] <- NA
-
-  # Add new data back
   DAList$data <- new_data
-
-  validate_DAList(DAList)
+  
+  DAList <- validate_DAList(DAList)
+  DAList[names(optional_preserved)] <- optional_preserved
+  class(DAList) <- "DAList"
+  
+  return(DAList)
 }
-
 

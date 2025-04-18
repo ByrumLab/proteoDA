@@ -16,14 +16,14 @@ organism = "Homo sapien"
 ### input files and subset quan and protein annotation 
 input_quan = "data/uni_prot_quan_rmNA_norm_proteoDA.csv"
 ## metadata requires column names "sample" and "group" 
-metadata = "data/Sample_metadata.csv"
+metadata = "data/Demontisgrp_032525_Sample_metadata.csv"
 sample_start = 10
 anno_start = 1
 anno_end = 9
 
 ### filter proteins with missing values options
-filt_min_reps = 2
-filt_min_groups = 1
+filt_min_reps = 3
+filt_min_groups = 2
 group = "group"
 
 ## report directories

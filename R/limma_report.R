@@ -95,80 +95,45 @@ write_limma_plots <- function(DAList = NULL,
                               height = 1000,
                               width = 1000) {
 
-  # Check input arguments generally
-  input_DAList <- validate_DAList(DAList)
-
-  # Make sure there's a results present already,
-  # tell user to set it first if not
+  # Preserve optional slots
+  optional_slots <- c("filtered_proteins_per_contrast")
+  optional_preserved <- DAList[intersect(names(DAList), optional_slots)]
+  
+  # Validate core DAList structure
+  DAList <- validate_DAList(DAList)
+  
   if (is.null(DAList$results)) {
     cli::cli_abort(c("Input DAList does not have results",
                      "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
   }
-
-  # If provided, check that grouping column exists in the target data frame
-  # And set it
-  if (is.null(grouping_column)) { # If no groups provided, abort
-    cli::cli_abort("{.arg grouping_column} cannot be empty")
-  }
-  if (length(grouping_column) != 1) {
-    cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
-                     "i" = "Only specify one column name for {.arg grouping_column}"))
-  }
+  
+  if (is.null(grouping_column)) cli::cli_abort("{.arg grouping_column} cannot be empty")
+  if (length(grouping_column) != 1) cli::cli_abort("{.arg grouping_column} must have length 1")
   if (grouping_column %notin% colnames(DAList$metadata)) {
-    cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata of {.arg DAList}",
-                     "i" = "Check the column names with {.code colnames(DAList$metadata)}."))
+    cli::cli_abort(c("Grouping column {.val {grouping_column}} not found in metadata"))
   }
-  # And set it
-  groups <- as.character(DAList$metadata[,grouping_column])
-
-
-  # check that the table columns exist in the annotation
+  
   if (!all(table_columns %in% colnames(DAList$annotation))) {
-    problem_columns <- table_columns[which(table_columns %notin% colnames(DAList$annotation))]
-    cli::cli_abort(c("Column{?s} {problem_columns} not found in annotation of {.arg DAList}",
-                     "i" = "Check the column names with {.code colnames(DAList$annotation)}."))
+    missing_cols <- table_columns[!table_columns %in% colnames(DAList$annotation)]
+    cli::cli_abort("Table column(s) {.val {missing_cols}} not found in annotation")
   }
-
-  # If title column is supplied
+  
   if (!is.null(title_column)) {
-    # check that it is of length 1
-    if (length(title_column) != 1) {
-      cli::cli_abort(c("Length of {.arg title_column} does not equal 1",
-                       "i" = "Only specify one column name for {.arg title_column}"))
-
+    if (length(title_column) != 1) cli::cli_abort("{.arg title_column} must have length 1")
+    if (title_column %notin% colnames(DAList$annotation)) {
+      cli::cli_abort("Title column {.val {title_column}} not found in annotation")
     }
-    # Check that it exists in the annotation
-    if (!title_column %in% colnames(DAList$annotation)) {
-      cli::cli_abort(c("Column {.arg {title_column}} not found in annotation of {.arg DAList}",
-                       "i" = "Check the column names with {.code colnames(DAList$annotation)}."))
-    }
-
-    # Grab the possible titles and truncate them
-    title_values <- stringr::str_trunc(DAList$annotation[,title_column], width = 20, side = "right", ellipsis = "...")
-
-    # And add title column to the display table
+    title_values <- stringr::str_trunc(DAList$annotation[[title_column]], width = 20, side = "right", ellipsis = "...")
     table_columns <- unique(c(table_columns, title_column))
   }
-
-  # check height and width
-  if (any(!is.numeric(height),
-          !(height > 0))) {
-    cli::cli_abort(c("{.arg height} must be a numeric value greater > 0."))
-  }
-
-  if (any(!is.numeric(width),
-          !(width > 0))) {
-    cli::cli_abort(c("{.arg width} must be a numeric value greater > 0."))
-  }
-
-  # default output dir if not provided
+  
+  if (!is.numeric(height) || height <= 0) cli::cli_abort("{.arg height} must be numeric > 0")
+  if (!is.numeric(width) || width <= 0) cli::cli_abort("{.arg width} must be numeric > 0")
+  
   if (is.null(output_dir)) {
     output_dir <- getwd()
-    cli::cli_inform("{.arg output_dir} argument is empty.")
-    cli::cli_inform("Setting output directory to current working directory:")
-    cli::cli_inform("{.path {output_dir}}")
+    cli::cli_inform("No {.arg output_dir} provided; using current directory: {.path {output_dir}}")
   }
-
 
   # Set up list of expected files, warn about overwriting if they exist
   # Will also make checking for their existence later easier
@@ -303,21 +268,46 @@ write_limma_plots <- function(DAList = NULL,
 
     cols_to_display <- c(internal_table_columns, "average_intensity", "logFC", "p", "adjusted_p")
 
-    counts <- DAList$data[rownames(data), , drop = F]
-    counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
-    anno <- shared_anno[rownames(data), , drop = F] # double-check/ensure that annotation data are in the right order
+    # counts <- DAList$data[rownames(data), , drop = F]
+    # counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
+    # anno <- shared_anno[rownames(data), , drop = F] # double-check/ensure that annotation data are in the right order
 
+    # Get per-contrast data and annotation from new slots if available
+    if (!is.null(DAList$data_per_contrast) && contrast %in% names(DAList$data_per_contrast)) {
+      counts <- DAList$data_per_contrast[[contrast]]
+    } else {
+      counts <- DAList$data[rownames(data), , drop = FALSE]
+    }
+    
+    if (!is.null(DAList$annotation_per_contrast) && contrast %in% names(DAList$annotation_per_contrast)) {
+      anno <- DAList$annotation_per_contrast[[contrast]]
+    } else {
+      anno <- DAList$annotation[rownames(data), , drop = FALSE]
+    }
+    
+    # Ensure alignment of annotation
+    anno <- anno[rownames(data), , drop = FALSE]
+    
     # Add the non log-10 p values to the annotation data, for use
     # in  the table
     anno$p <- round(data$P.Value, digits = 4)
     anno$`adjusted_p` <- round(data$adj.P.Val, digits = 4)
 
-    # Set up column of titles to be used in the vega abundance plot
+    # Add internal titles, ensuring they match row order
     if (!is.null(title_column)) {
+      title_values <- stringr::str_trunc(anno[[title_column]], width = 20, side = "right", ellipsis = "...")
       data$internal_title_column <- title_values
     } else {
       data$internal_title_column <- rownames(data)
-    }
+    }  
+    
+    # 
+    # # Set up column of titles to be used in the vega abundance plot
+    # if (!is.null(title_column)) {
+    #   data$internal_title_column <- title_values
+    # } else {
+    #   data$internal_title_column <- rownames(data)
+    # }
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
     # make and save static plots
     for (type in c("raw", "adjusted")) {
@@ -377,6 +367,9 @@ write_limma_plots <- function(DAList = NULL,
   }
 
   # If success, return input object
+  # Restore optional slots and return
+  DAList[names(optional_preserved)] <- optional_preserved
+  class(DAList) <- "DAList"
   invisible(input_DAList)
 }
 
@@ -542,20 +535,27 @@ static_MD_plot <- function(data, lfc_thresh, contrast, pval_type) {
 #' @keywords internal
 #'
 static_pval_histogram <- function(data, contrast) {
-  output <- ggplot(data) +
-    geom_histogram(aes(x = .data$P.Value), binwidth = 0.025, color = "black", na.rm = T) +
-    xlim(c(-0.05,1.05)) +
+  p1 <- ggplot(data) +
+    geom_histogram(aes(x = .data$P.Value), binwidth = 0.025, color = "black", na.rm = TRUE) +
+    xlim(c(-0.05, 1.05)) +
     theme_bw() +
     xlab("raw P value") +
-    theme(panel.border = element_rect(fill = NA, color = "grey30")) +
-    ggplot(data) +
-    geom_histogram(aes(x = .data$adj.P.Val), binwidth = 0.025, color = "black", na.rm = T) +
-    xlim(c(-0.05,1.05)) +
+    theme(panel.border = element_rect(fill = NA, color = "grey30"))
+  
+  p2 <- ggplot(data) +
+    geom_histogram(aes(x = .data$adj.P.Val), binwidth = 0.025, color = "black", na.rm = TRUE) +
+    xlim(c(-0.05, 1.05)) +
     theme_bw() +
     xlab("adjusted P value") +
-    theme(panel.border = element_rect(fill = NA, color = "grey30")) +
-    patchwork::plot_annotation(
-      title = stringr::str_replace(contrast, "_vs_", " vs ")
-    )
-  output
+    theme(panel.border = element_rect(fill = NA, color = "grey30"))
+  
+  # Combine with patchwork
+ # combined <- p1 + p2 + patchwork::plot_annotation(
+#    title = stringr::str_replace(contrast, "_vs_", " vs "))
+    
+    combined <- patchwork::wrap_plots(p1, p2) +
+      patchwork::plot_annotation(title = stringr::str_replace(contrast, "_vs_", " vs "))
+    
+  
+  return(combined)
 }

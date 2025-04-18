@@ -271,3 +271,135 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
 
   perc_sig
 }
+
+
+# Run filtered limma analysis per contrast
+#' Run limma analysis per contrast on filtered proteins
+#'
+#' This function subsets the DAList for each contrast according to
+#' `filtered_proteins_per_contrast` and fits the limma model separately.
+#' Useful when proteins are filtered differently per contrast.
+#'
+#' @param DAList A DAList object containing full data and per-contrast filtered proteins.
+#' @param design_formula A formula for the model design, e.g., ~0 + group.
+#' @param pval_thresh P-value threshold used for defining significance. Default = 0.05.
+#' @param lfc_thresh Log2 fold change threshold for significance. Default = 1.
+#' @param adj_method Adjustment method for multiple testing ("BH", "BY", etc). Default = "BH".
+#'
+#' @return The input DAList, updated with filtered contrast-level results, eBayes fits,
+#'   and associated moving SDs and logFC z-scores.
+#' @export
+#'
+#' @examples
+#' filtered_DAList <- run_filtered_limma_analysis(filtered_DAList)
+#' 
+run_filtered_limma_analysis <- function(
+    DAList,
+    design_formula     = ~0 + group,
+    pval_thresh        = 0.05,
+    lfc_thresh         = 1,
+    adj_method         = "BH"
+) {
+  validate_DAList(DAList)
+  
+  # Make sure compute_movingSD_zscores is available
+  if (!exists("compute_movingSD_zscores")) {
+    stop("Function compute_movingSD_zscores() must be sourced before running this.")
+  }
+  
+  
+  # These lists will store the per-contrast results
+  filtered_results <- list()
+  filtered_ebayes  <- list()
+  movingSDs        <- list()
+  z_scores         <- list()
+  
+  # Names of the contrasts as stored in DAList$filtered_proteins_per_contrast
+  contrast_names <- names(DAList$filtered_proteins_per_contrast)
+  
+  for (contrast in contrast_names) {
+    cli::cli_inform(paste("Processing contrast:", contrast))
+    
+    # 1) Subset proteins / samples for the current contrast
+    keep_proteins <- DAList$filtered_proteins_per_contrast[[contrast]]
+    
+    # parse "Ub_6mon_vs_K48ac_6mon" into c("Ub_6mon","K48ac_6mon")
+    contrast_groups <- unlist(strsplit(contrast, "_vs_"))
+    
+    # Only keep the samples in these two groups
+    sample_ids  <- rownames(DAList$metadata)[DAList$metadata$group %in% contrast_groups]
+    
+    # Build a brand-new sub-DAList
+    sub_DAList <- DAList
+    # 🛠 Strip optional slot from the working copy
+    sub_DAList$filtered_proteins_per_contrast <- NULL
+    sub_DAList$data      <- DAList$data[keep_proteins, sample_ids, drop = FALSE]
+    sub_DAList$annotation<- DAList$annotation[keep_proteins, , drop = FALSE]
+    sub_DAList$metadata  <- DAList$metadata[sample_ids, , drop = FALSE]
+    
+    # 2) Add the design to match only these samples
+    sub_DAList <- add_design(
+      DAList          = sub_DAList,
+      design_formula  = design_formula
+    )
+    
+    # 3) Build a single contrast for exactly these two groups
+    #    e.g. "Ub_6mon_vs_K48ac_6mon = Ub_6mon - K48ac_6mon"
+    cont_string <- paste0(
+      contrast, " = ",
+      contrast_groups[1], " - ",
+      contrast_groups[2]
+    )
+    
+    # Add that 1-line contrast to sub_DAList
+    sub_DAList <- add_contrasts(
+      DAList            = sub_DAList,
+      contrasts_vector  = cont_string
+    )
+    
+    # 4) Fit limma model on sub-DAList
+    sub_DAList <- fit_limma_model(sub_DAList)
+    
+    # 5) Extract DA results from sub-DAList
+    sub_DAList <- extract_DA_results(
+      DAList       = sub_DAList,
+      pval_thresh  = pval_thresh,
+      lfc_thresh   = lfc_thresh,
+      adj_method   = adj_method
+    )
+    
+    # 6) Collect results
+    # The new contrast in sub_DAList will typically be named with exactly
+    # whatever you gave to add_contrasts(), which we've made the same as 'contrast'
+    filtered_results[[contrast]] <- sub_DAList$results[[contrast]]
+    filtered_ebayes[[contrast]]  <- sub_DAList$eBayes_fit
+    
+    # Optionally store any additional stats
+    movingSDs[[contrast]] <- apply(sub_DAList$data, 1, stats::sd, na.rm = TRUE)
+    z_scores[[contrast]]  <- scale(sub_DAList$results[[contrast]]$logFC)
+  }
+  
+  # 7) Return a new DAList with all per-contrast outputs
+  DAList$results         <- filtered_results
+  DAList$eBayes_fit      <- filtered_ebayes
+  DAList$tags$movingSDs  <- movingSDs
+  DAList$tags$logFC_z_scores <- z_scores
+  
+  # Add these lines to store DA criteria:
+  DAList$tags$DA_criteria <- list(
+    pval_thresh = pval_thresh,
+    lfc_thresh  = lfc_thresh,
+    adj_method  = adj_method
+  )
+  # Compute moving SDs and z-scores on filtered results
+  DAList <- compute_movingSD_zscores(
+    DAList = DAList,
+    binsize = "auto",
+    binsize_range = c(50, 100, 200, 400, 500),
+    plot = TRUE
+  )
+  
+  return(new_DAList(DAList))
+  
+}
+

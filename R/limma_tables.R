@@ -39,7 +39,7 @@ write_per_contrast_csvs <- function(annotation_df,
                                     annotation_cols = NULL,
                                     metadata = NULL,
                                     group_col = "group",
-                                    stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores", "sig.PVal","sig.FDR")) {
+                                    stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")) {
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
   }
@@ -163,39 +163,36 @@ make_excel_hyperlinks <- function(data, url.col, url) {
 #'
 #' @return A named list of filtered data frames per contrast.
 #' @export
-build_statlist <- function(results, movingSDs, z_scores,
-                           stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")) {
-  contrasts <- names(results)
-  statlist <- list()
+# Updated helper to build statlist with full protein coverage
+build_statlist <- function(DAList,
+                           stat_cols = c("logFC", "P.Value", "adj.P.Val",
+                                         "sig.PVal", "sig.FDR", "movingSDs", "logFC_z_scores")) {
+  all_proteins <- rownames(DAList$data)
+  final_statlist <- list()
   
-  for (contrast in contrasts) {
-    res <- results[[contrast]]
-    msd <- movingSDs[[contrast]]
-    z   <- z_scores[[contrast]]
-    
-    # Ensure rownames are preserved
-    row_ids <- rownames(res)
-    df <- data.frame(row.names = row_ids)
+  for (contrast in names(DAList$results)) {
+    stats_df <- data.frame(row.names = all_proteins)
+    contrast_res <- DAList$results[[contrast]]
+    msd <- DAList$tags$movingSDs[[contrast]]
+    zs <- DAList$tags$logFC_z_scores[[contrast]]
     
     for (col in stat_cols) {
-      if (col %in% colnames(res)) {
-        df[[col]] <- res[[col]]
-      } else if (col == "movingSDs") {
-        df[[col]] <- msd
-      } else if (col == "logFC_z_scores") {
-        df[[col]] <- z
-      } else {
-        warning(sprintf("Column '%s' not found in results or tags for contrast '%s'", col, contrast))
-        df[[col]] <- NA  # fill missing with NAs to maintain column structure
+      vec <- rep(NA_real_, length(all_proteins))
+      names(vec) <- all_proteins
+      if (col %in% colnames(contrast_res)) {
+        vec[names(vec) %in% rownames(contrast_res)] <- contrast_res[rownames(contrast_res), col]
+      } else if (col == "movingSDs" && !is.null(msd)) {
+        vec[names(vec) %in% names(msd)] <- msd[names(msd)]
+      } else if (col == "logFC_z_scores" && !is.null(zs)) {
+        vec[names(vec) %in% names(zs)] <- zs[names(zs)]
       }
+      stats_df[[col]] <- vec
     }
     
-    statlist[[contrast]] <- df
+    final_statlist[[contrast]] <- stats_df
   }
-  
-  return(statlist)
+  return(final_statlist)
 }
-
 
 
 #' Write an .xlsx file of limma results
@@ -614,13 +611,19 @@ write_limma_tables <- function(DAList,
                                spreadsheet_xlsx = NULL,
                                add_filter = TRUE,
                                color_palette = NULL,
-                               add_contrast_sheets = TRUE) {
+                               add_contrast_sheets = TRUE,
+                               statlist = NULL) {
   
   if (is.null(color_palette)) {
     color_palette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
   }
   
-  input_DAList <- validate_DAList(DAList)
+  if (is.null(statlist)) {
+    input_DAList <- validate_DAList(DAList)
+  } else {
+    input_DAList <- DAList  # Use as-is
+  }
+  
   
   if (is.null(DAList$results)) {
     cli::cli_abort(c("Input DAList does not have results",
@@ -687,7 +690,7 @@ write_limma_tables <- function(DAList,
                                                   annotation_cols = c("uniprot_id","Genes","Accession.Number","Identified.Peptides","Protein.Description"),
                                                   metadata = DAList$metadata,
                                                   group_col = "group",
-                                                  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores","sig.PVal","sig.FDR")) 
+                                                  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores","sig.PVal", "sig.FDR")) 
   if (!all(contrast_csv_success)) {
     failed <- names(contrast_csv_success)[!contrast_csv_success]
     cli::cli_abort(c("Failed to write {.path .csv} results for contrast(s):",
