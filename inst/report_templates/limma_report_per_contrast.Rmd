@@ -35,7 +35,8 @@ library(proteoDAstjude)
 knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_apps/proteomics_apps/proteoDA/inst/report_templates/CPM_Hz.png", rel_path = F)
 ```
 
-### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
+### Contrast
+**Current contrast:** `r params$contrast`
 
 ```{r chunk1, results = "asis", fig.keep='none'}
 # Extract required params
