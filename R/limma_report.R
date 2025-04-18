@@ -370,7 +370,7 @@ write_limma_plots <- function(DAList = NULL,
   # Restore optional slots and return
   DAList[names(optional_preserved)] <- optional_preserved
   class(DAList) <- "DAList"
-  invisible(input_DAList)
+  invisible(DAList)
 }
 
 
