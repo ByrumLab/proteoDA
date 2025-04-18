@@ -27,13 +27,13 @@ knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_app
 
 ```{r chunk1, results = "asis", fig.keep='none'}
 uams_glimmaXY(
-  model_data = data, 
-  counts = counts,
-  groups = groups,
-  sample.cols = unname(colorGroup(groups)),
+  DAList = results, 
+  model_data = model_data,
+  contrast = contrast,
+  grouping_column = "group",
+  sample.cols = NULL,
   status.cols = c("#00bfff", "#858585", "#ff3030"),
-  anno = anno,
-  display.columns = cols_to_display,
+  display.columns = internal_table_columns,
   width = width,
   height = height
 )
