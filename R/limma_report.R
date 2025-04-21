@@ -217,16 +217,17 @@ write_limma_plots <- function(DAList = NULL,
   # Sneak a little flag in here to use the proteoDAuams package
   # when this function is being called for internal UAMS use
   # Internal UAMS use includes a flag
-  if (!is.null(DAList$tags$uams_internal)) {
-    template_package <- "proteoDAuams" #nocov
-  } else {
-    template_package <- "proteoDAstjude"
-  }
+  # if (!is.null(DAList$tags$uams_internal)) {
+  #   template_package <- "proteoDAuams" #nocov
+  # } else {
+  #   template_package <- "proteoDAstjude"
+  # }
 
-  file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
-                               package = template_package),
-            to = "report_template.Rmd", overwrite = T)
+  #file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
+  #                             package = template_package),
+  #          to = "report_template.Rmd", overwrite = T)
 
+  report_template.Rmd <- "/Users/sbyrum/Documents/github/proteoDAstjude/inst/report_templates/limma_report_per_contrast.Rmd"
   # once we create the files, ensure they're deleted if there's an error below
   on.exit(
     expr = {
@@ -347,12 +348,26 @@ write_limma_plots <- function(DAList = NULL,
     x <- knitr::rand_seed
     rm(x)
 
-    # make and save report
-    rmarkdown::render("report_template.Rmd",
+    # # make and save report
+    # rmarkdown::render("report_template.Rmd",
+    #                   knit_root_dir = getwd(),
+    #                   intermediates_dir = tmp_subdir,
+    #                   output_file = paste0(contrast, "_DA_report.html"),
+    #                   quiet = T)
+    
+    rmarkdown::render(report_template.Rmd,
+                      params = list(
+                        contrast = contrast,
+                        DAList = results,
+                        width = 1000,
+                        height = 1000,
+                        display.columns = c("uniprot_id", "description"),
+                        grouping_column = "group"
+                      ),
                       knit_root_dir = getwd(),
                       intermediates_dir = tmp_subdir,
                       output_file = paste0(contrast, "_DA_report.html"),
-                      quiet = T)
+                      quiet = TRUE)
     contrast_count <- contrast_count + 1
   }
 

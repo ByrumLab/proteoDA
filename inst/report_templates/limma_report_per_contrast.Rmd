@@ -5,6 +5,15 @@ output:
   html_document:
     mathjax: null
     self_contained: true
+params:
+  contrast: NULL
+  DAList: NULL
+  width: 1000
+  height: 1000
+  display.columns: ["uniprot_id"]
+  grouping_column: NULL
+  status.cols: ["#00bfff", "#858585", "#ff3030"]
+  sample.cols: NULL
 ---
 
 ```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
@@ -25,18 +34,43 @@ knitr::include_graphics(path = "/Users/sbyrum/Documents/github/proteoDAstjude/in
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
 
-```{r chunk1, results = "asis", fig.keep='none'}
+```{r glimma, results = "asis", fig.keep='none', echo=FALSE}
+
+model_data <- params$DAList$results[[params$contrast]]
+# cat("model_data rows:", nrow(model_data), "\n")
+# cat("model_data columns:", paste(colnames(model_data), collapse = ", "), "\n")
+# 
+# if (!is.null(params$DAList$data_per_contrast)) {
+#   counts <- params$DAList$data_per_contrast[[params$contrast]]
+# } else {
+#   counts <- params$DAList$data
+# }
+# cat("counts dimensions:", paste(dim(counts), collapse = " x "), "\n")
+# 
+# if (!is.null(params$DAList$annotation_per_contrast)) {
+#   anno <- params$DAList$annotation_per_contrast[[params$contrast]]
+# } else {
+#   anno <- params$DAList$annotation
+# }
+# cat("anno dimensions:", paste(dim(anno), collapse = " x "), "\n")
+# cat("anno columns:", paste(colnames(anno), collapse = ", "), "\n")
+
+# Check expected columns
+# required_cols <- c("logFC", "P.Value", "adj.P.Val", "uniprot_id")
+# cat("Missing from model_data:", paste(setdiff(required_cols[1:3], colnames(model_data)), collapse = ", "), "\n")
+# cat("Missing from anno:", if ("uniprot_id" %in% colnames(anno)) "none" else "uniprot_id", "\n")
+
 uams_glimmaXY(
-  DAList = results, 
-  #model_data = model_data,
-  contrast = contrast,
-  grouping_column = "group",
-  sample.cols = NULL,
-  status.cols = c("#00bfff", "#858585", "#ff3030"),
-  display.columns = c("uniprot_id", "description"),
-  width = width,
-  height = height
+  DAList = params$DAList, 
+  contrast = params$contrast,
+  grouping_column = params$grouping_column,
+  sample.cols = params$sample.cols,
+  status.cols = params$status.cols,
+  display.columns = params$display.columns,
+  width = params$width,
+  height = params$height
 )
+
 ```
 
 
@@ -53,11 +87,15 @@ to_html_table <- function(dataframe) {
 ```{r}
 # Get contrast matrix,
 # ignoring when no contrast matrix
-if (is.null(DAList$design$contrast_matrix)) {
-  this_contrast_matrix <- as.data.frame(list(" " = "Not applicable"), optional = T, row.names = c(" "))
+#
+# Get contrast matrix from correct location based on per-contrast filtering
+# Decide contrast matrix source based on presence of per-contrast filtering
+if (!is.null(params$DAList$filtered_proteins_per_contrast)) {
+  this_contrast_matrix <- as.data.frame(params$DAList$eBayes_fit[[params$contrast]]$contrasts)
 } else {
-  this_contrast_matrix <- as.data.frame(DAList$design$contrast_matrix)[contrast]
+  this_contrast_matrix <- as.data.frame(params$DAList$design$contrast_matrix)[params$contrast, , drop = FALSE]
 }
+
 ```
 
 
@@ -73,7 +111,7 @@ htmltools::tags$details(
   htmltools::tags$br(), 
   htmltools::tags$strong("Design matrix:"),
   htmltools::tags$br(),
-  to_html_table(DAList$eBayes_fit[[contrast]]$design),
+  to_html_table(params$DAList$eBayes_fit[[contrast]]$design),
   htmltools::tags$br(),
   htmltools::tags$strong("Contrast for this report:"),
   htmltools::tags$br(),
