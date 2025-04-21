@@ -112,11 +112,12 @@ norm$tags$norm_method <- "diann_quan"
 # Run filtered limma model for each contrast, computes SDs and z-scores
 source("R/add_design.R")
 source("R/add_contrasts.R")
+
 results <- run_filtered_limma_analysis(
   DAList = norm,
   design_formula = design,
   pval_thresh = 0.05,
-  lfc_thresh = 1,
+  lfc_thresh = 0,
   adj_method = "BH"
 )
 
@@ -206,7 +207,7 @@ results <- missing_to_zero(results)
 ### for testing
 ### limma report is in relation to proteoDA and not proteoDAstjude due to extra flag: line 255 in limma_report.R
 
-source("R/s3_class_v2.R")
+source("R/s3_class.R")
 source("R/utils.R")
 source("R/limma_report.R")
 source("R/glimma_fxns.R")

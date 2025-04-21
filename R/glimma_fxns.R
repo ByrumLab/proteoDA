@@ -54,6 +54,7 @@ uams_glimmaXY <- function(DAList,
   }
   
   groups_in_contrast <- unlist(strsplit(contrast, split = "_vs_"))
+  
   sample_groups <- DAList$metadata[[grouping_column]]
   names(sample_groups) <- rownames(DAList$metadata)
   included_samples <- names(sample_groups)[sample_groups %in% groups_in_contrast]
