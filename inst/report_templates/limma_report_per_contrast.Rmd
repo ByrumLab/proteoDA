@@ -44,7 +44,7 @@ uams_glimmaXY(
   grouping_column = params$grouping_column,
   sample.cols = params$sample.cols,
   status.cols = params$status.cols,
-  display.columns = params$display.columns,
+  display.columns = cols_to_display,
   width = params$width,
   height = params$height
 )
