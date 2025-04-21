@@ -286,6 +286,12 @@ write_limma_plots <- function(DAList = NULL,
       anno <- DAList$annotation[rownames(data), , drop = FALSE]
     }
     
+    # Sanitize colnames in per-contrast annotation for JS compatibility
+    if (any(stringr::str_detect(colnames(anno), "\\."))) {
+      colnames(anno) <- stringr::str_replace_all(colnames(anno), "\\.", "_")
+    }
+    
+    
     # Ensure alignment of annotation
     anno <- anno[rownames(data), , drop = FALSE]
     
@@ -361,7 +367,7 @@ write_limma_plots <- function(DAList = NULL,
                         DAList = DAList,
                         width = 1000,
                         height = 1000,
-                        display.columns = c("uniprot_id", "Protein.Description"),
+                        display.columns = cols_to_display,
                         grouping_column = "group"
                       ),
                       knit_root_dir = getwd(),

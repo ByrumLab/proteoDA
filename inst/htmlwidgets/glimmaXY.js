@@ -358,8 +358,14 @@ function updateExpressionPlot(countsRow, data, geneName) {
 
   // for title of abundance plot, find selected gene in the xytable
   // and then pass on the internal_title_column
-  let selected_gene_row = data.xyTable.find(x => x.internal_id_for_brushing === geneName);
-  data.expressionView.signal("title_signal", selected_gene_row.internal_title_column.toString());
+ // let selected_gene_row = data.xyTable.find(x => x.internal_id_for_brushing === geneName);
+//  data.expressionView.signal("title_signal", selected_gene_row.internal_title_column.toString());
+   let selected_gene_row = data.xyTable.find(x => x.internal_id_for_brushing === geneName);
+   let title_str = selected_gene_row && selected_gene_row.internal_title_column
+              ? selected_gene_row.internal_title_column.toString()
+              : geneName.toString();
+  data.expressionView.signal("title_signal", title_str);
+
   let max_value = Math.max(...result.map(x => x["normalized intensity"]));
   let min_value = Math.min(...result.map(x => x["normalized intensity"]));
   data.expressionView.signal("max_count", Math.round(max_value*100)/100 );

@@ -36,15 +36,13 @@ knitr::include_graphics(path = "/Users/sbyrum/Documents/github/proteoDAstjude/in
 
 ```{r glimma, results = "asis", fig.keep='none', echo=FALSE}
 
-model_data <- params$DAList$results[[params$contrast]]
-
 uams_glimmaXY(
   DAList = params$DAList, 
   contrast = params$contrast,
   grouping_column = params$grouping_column,
   sample.cols = params$sample.cols,
   status.cols = params$status.cols,
-  display.columns = params$display.columns,
+  display.columns = cols_to_display,
   width = params$width,
   height = params$height
 )
