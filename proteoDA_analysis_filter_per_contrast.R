@@ -210,8 +210,13 @@ results <- missing_to_zero(results)
 source("R/s3_class.R")
 source("R/utils.R")
 source("R/limma_report.R")
-source("R/glimma_fxns.R")
+source("R/glimma_fxns_v2.R")
 library(ggplot2)
+
+library(proteoDAstjude)
+
+cols_to_display <- c(internal_table_columns, "average_intensity", "logFC", "p", "adjusted_p",
+                     "movingSDs", "logFC_z_scores", "sig.PVal", "sig.FDR")
 
 write_limma_plots(results,
                   grouping_column = group,

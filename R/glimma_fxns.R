@@ -79,6 +79,23 @@ uams_glimmaXY <- function(DAList,
   table_for_widget$internal_id_for_brushing <- rownames(model_data)
   display.columns <- c("internal_id_for_brushing", display.columns)
   
+  # Add more columns from model_data if present
+  extra_stats <- c("movingSDs", "logFC_z_scores", "sig.PVal", "sig.FDR")
+  for (stat_col in extra_stats) {
+    if (!stat_col %in% colnames(model_data) && !is.null(DAList$tags[[stat_col]][[contrast]])) {
+      model_data[[stat_col]] <- NA_real_
+      stat_vec <- DAList$tags[[stat_col]][[contrast]]
+      model_data[names(stat_vec), stat_col] <- stat_vec
+    }
+  }
+  
+  # Add these columns to annotation so they appear in table
+  anno$movingSDs <- model_data$movingSDs
+  anno$logFC_z_scores <- model_data$logFC_z_scores
+  anno$sig.PVal <- model_data$sig.PVal
+  anno$sig.FDR <- model_data$sig.FDR
+  
+  
   table_for_widget <- data.frame(lapply(table_for_widget, function(col) {
     if (is.numeric(col)) round(col, 4) else col
   }))
@@ -88,13 +105,28 @@ uams_glimmaXY <- function(DAList,
                 "sig.pval.fct", "sig.FDR.fct",
                 "negLog10rawP", "negLog10adjP",
                 "logFC", "average_intensity",
+                "movingSDs", "logFC_z_scores", "sig.PVal", "sig.FDR",
                 "internal_id_for_brushing", "internal_title_column", "index")
+  
   output_cols <- unique(c(req_cols, display.columns))
   
   table_for_widget <- table_for_widget[, colnames(table_for_widget) %in% output_cols, drop = FALSE]
   counts <- data.frame(round(counts, 4))
   
   groups_df <- data.frame(group = grouping_vector, sample = colnames(counts))
+  
+  # Print debug info
+  cat("\nDEBUG INFO:\n")
+  print(str(list(
+    counts_dim = dim(counts),
+    values_dim = dim(values),
+    table_rows = nrow(table_for_widget),
+    table_cols = colnames(table_for_widget),
+    display_columns = display.columns,
+    num_samples = length(grouping_vector),
+    title_preview = head(model_data$internal_title_column)
+  )))
+  
   
   xData <- list(
     data = list(
@@ -110,7 +142,7 @@ uams_glimmaXY <- function(DAList,
       title = model_data$internal_title_column
     )
   )
-  
+
   htmlwidgets::createWidget(
     name = "glimmaXY",
     xData,
