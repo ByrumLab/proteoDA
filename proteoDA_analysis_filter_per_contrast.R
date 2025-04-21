@@ -10,6 +10,7 @@ library(yaml)
 #library(tidyverse)
 
 source("proteoDA_params.R")
+
 source("R/compute_movingSD_zscores.R")
 source("R/filter_proteins.R")
 source("R/limma_analysis.R")
@@ -204,8 +205,13 @@ results <- missing_to_zero(results)
 
 ### for testing
 ### limma report is in relation to proteoDA and not proteoDAstjude due to extra flag: line 255 in limma_report.R
+
+source("R/s3_class_v2.R")
+source("R/utils.R")
 source("R/limma_report.R")
-#library(ggplot2)
+source("R/glimma_fxns.R")
+library(ggplot2)
+
 write_limma_plots(results,
                   grouping_column = group,
                   table_columns = DA_table_cols,
