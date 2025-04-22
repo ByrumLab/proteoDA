@@ -146,6 +146,31 @@ results <- extract_DA_results(fit,
 
 results <- compute_movingSD_zscores(results, binsize = 1000)
 
+##############
+# added check to limma analysis to use the appropriate data slots 
+#norm2 <- missing_to_zero(results)
+
+source("R/s3_class.R")
+source("R/utils.R")
+source("R/limma_analysis_v4.R")
+source("R/compute_movingSD_zscores_v3.R")
+
+# limma model setup
+# no_intercept <- add_design(norm,
+#                            design_formula = design)
+# 
+# no_intercept <- add_contrasts(no_intercept,
+#                               contrasts_file = contrasts)
+
+library(ggplot2)
+results <- run_filtered_limma_analysis(
+  DAList = norm,
+  design_formula = design,
+  pval_thresh = 0.05,
+  lfc_thresh = 0,
+  adj_method = "BH",
+  contrasts_file  = contrasts 
+)
 
 ##############
 # WRITE DATA TABLES TO FILE
@@ -153,12 +178,24 @@ results <- compute_movingSD_zscores(results, binsize = 1000)
 ####
 
 # Build a customized statlist
+source("R/limma_tables_per_contrast.R")
+# statlist <- build_statlist(
+#   results = results$results,
+#   movingSDs = results$tags$movingSDs,
+#   z_scores = results$tags$logFC_z_scores,
+#   stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")
+# )
+
+# Build statlist with full protein list across all contrasts
 statlist <- build_statlist(
-  results = results$results,
-  movingSDs = results$tags$movingSDs,
-  z_scores = results$tags$logFC_z_scores,
-  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")
-)
+  DAList = results,
+  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores", "sig.PVal", "sig.FDR"))
+# annotation_cols = c("uniprot_id", "Genes", "Accession.Number", "Identified.Peptides", "Protein.Description")
+#)
+
+source("R/s3_class.R")
+source("R/utils.R")
+source("R/limma_tables_per_contrast.R")
 
 write_limma_tables(results,
                    output_dir = DA_dir,
@@ -167,9 +204,11 @@ write_limma_tables(results,
                    summary_csv=NULL,
                    combined_file_csv = NULL,
                    spreadsheet_xlsx = NULL,
-                   add_filter = T, 
+                   add_filter = T,
                    color_palette = NULL,
-                   add_contrasts_sheets = TRUE)
+                   add_contrast_sheets = TRUE,
+                   statlist = statlist)
+
 
 
 
