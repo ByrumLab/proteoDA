@@ -5,15 +5,6 @@ output:
   html_document:
     mathjax: null
     self_contained: true
-params:
-  contrast: NULL
-  DAList: NULL
-  width: 1000
-  height: 1000
-  display.columns: ["uniprot_id", "Protein.Description"]
-  grouping_column: NULL
-  status.cols: ["#00bfff", "#858585", "#ff3030"]
-  sample.cols: NULL
 ---
 
 ```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
@@ -35,17 +26,15 @@ knitr::include_graphics(path = "/Users/sbyrum/Documents/github/proteoDAstjude/in
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
 
 ```{r glimma, results = "asis", fig.keep='none', echo=FALSE}
-
-uams_glimmaXY(
-  DAList = params$DAList, 
-  contrast = params$contrast,
-  grouping_column = params$grouping_column,
-  sample.cols = params$sample.cols,
-  status.cols = params$status.cols,
-  display.columns = cols_to_display,
-  width = params$width,
-  height = params$height
-)
+uams_glimmaXY(model_data = data,
+              counts = counts,
+              groups = groups,
+              anno = anno,
+              display.columns = cols_to_display,
+              status.cols = c("#00bfff","#858585","#ff3030"),
+              sample.cols= unname(colorGroup(groups)),
+              width = width,
+              height = height )
 
 ```
 
@@ -62,18 +51,25 @@ to_html_table <- function(dataframe) {
 
 ```{r}
 # Get contrast matrix,
-# ignoring when no contrast matrix
 #
-# Get contrast matrix from correct location based on per-contrast filtering
-# Decide contrast matrix source based on presence of per-contrast filtering
-if (!is.null(params$DAList$filtered_proteins_per_contrast)) {
-  this_contrast_matrix <- as.data.frame(params$DAList$eBayes_fit[[params$contrast]]$contrasts)
+if (!is.null(DAList$design$contrast_matrix)) {
+  this_contrast_matrix <- as.data.frame(DAList$eBayes_fit[[contrast]]$contrasts)
 } else {
-  this_contrast_matrix <- as.data.frame(params$DAList$design$contrast_matrix)[params$contrast, , drop = FALSE]
+  this_contrast_matrix <- as.data.frame(DAList$design$contrast_matrix)[contrast]
 }
 
 ```
 
+```{r}
+# Get design,
+#
+if (!is.null(DAList$design$design_matrix)) {
+  this_design <- as.data.frame(DAList$eBayes_fit[[contrast]]$design)
+} else {
+  this_design <- as.data.frame(DAList$design$design_matrix)
+}
+
+```
 
 ```{r, results='hold'}
 htmltools::tags$br()
@@ -87,7 +83,7 @@ htmltools::tags$details(
   htmltools::tags$br(), 
   htmltools::tags$strong("Design matrix:"),
   htmltools::tags$br(),
-  to_html_table(params$DAList$eBayes_fit[[contrast]]$design),
+  to_html_table(this_design),  # need an if statement
   htmltools::tags$br(),
   htmltools::tags$strong("Contrast for this report:"),
   htmltools::tags$br(),

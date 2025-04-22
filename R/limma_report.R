@@ -242,8 +242,12 @@ write_limma_plots <- function(DAList = NULL,
   contrast_count <- 1
   num_contrasts <- length(names(DAList$results))
 
+  ##########
+  # fix anno to match annotation_per_contrast
+  
   # Prep annotation data, which is the same across contrasts
   shared_anno <- DAList$annotation
+  
   # deal with issue of colnames that may be incompatible with
   # our Javascript
   if (any(stringr::str_detect(table_columns, "\\."))) {
@@ -310,11 +314,12 @@ write_limma_plots <- function(DAList = NULL,
     
     # 
     # # Set up column of titles to be used in the vega abundance plot
-    # if (!is.null(title_column)) {
-    #   data$internal_title_column <- title_values
-    # } else {
-    #   data$internal_title_column <- rownames(data)
-    # }
+     # if (!is.null(title_column)) {
+     #   data$internal_title_column <- title_values
+     # } else {
+     #   data$internal_title_column <- rownames(data)
+     # }
+    
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
     # make and save static plots
     for (type in c("raw", "adjusted")) {
@@ -362,18 +367,9 @@ write_limma_plots <- function(DAList = NULL,
     #                   quiet = T)
     
     rmarkdown::render("report_template.Rmd",
-                      params = list(
-                        contrast = contrast,
-                        DAList = DAList,
-                        width = 1000,
-                        height = 1000,
-                        display.columns = cols_to_display,
-                        grouping_column = "group"
-                      ),
                       knit_root_dir = getwd(),
                       intermediates_dir = tmp_subdir,
                       output_file = paste0(contrast, "_DA_report.html"),
-                     # output_dir = output_dir,
                       quiet = TRUE)
     contrast_count <- contrast_count + 1
   }
