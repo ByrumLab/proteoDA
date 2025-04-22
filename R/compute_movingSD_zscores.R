@@ -30,65 +30,63 @@
 #'
 #' @export
 compute_movingSD_zscores <- function(DAList,
-                                        binsize = "auto",
-                                        binsize_range = c(50, 100, 200, 400),
-                                        plot = FALSE) {
-  library(ggplot2)
-  library(dplyr)
+                                     binsize = "auto",
+                                     binsize_range = c(50, 100, 200, 400),
+                                     plot = FALSE,
+                                     contrasts_file = NULL) {
   
-  # Helper function: rolling standard deviation over a window (window_size)
   rolling_sd <- function(x, window_size) {
     n_x <- length(x)
     end_idx <- n_x - window_size + 1
-    if (end_idx < 1) {
-      # If the window is too large, just return a vector of NAs
-      return(rep(NA_real_, n_x))
-    }
-    sds <- sapply(seq_len(end_idx), function(i) {
-      sd(x[i:(i + window_size - 1)], na.rm = TRUE)
-    })
-    # Extend the last computed value to the trailing elements
-    sds_full <- c(sds, rep(tail(sds, 1), n_x - end_idx))
-    return(sds_full)
+    if (end_idx < 1) return(rep(NA_real_, n_x))
+    sds <- sapply(seq_len(end_idx), function(i) sd(x[i:(i + window_size - 1)], na.rm = TRUE))
+    c(sds, rep(tail(sds, 1), n_x - end_idx))
   }
   
-  #------------------------
-  # 1) Determine optimal binsize if binsize="auto"
-  #------------------------
+  if (!is.null(DAList$filtered_proteins_per_contrast)) {
+    contrast_names <- names(DAList$filtered_proteins_per_contrast)
+  } else if (!is.null(DAList$design$contrast_vector)) {
+    contrast_names <- stringr::str_trim(stringr::str_split_fixed(DAList$design$contrast_vector, "=", 2)[,1])
+    cli::cli_alert_info("No filtered_proteins_per_contrast found. Using all proteins for each contrast.")
+  } else if (!is.null(contrasts_file)) {
+    contrast_table <- utils::read.csv(contrasts_file, header = FALSE, stringsAsFactors = FALSE)
+    contrast_vector <- contrast_table[[1]]
+    contrast_names <- stringr::str_trim(stringr::str_split_fixed(contrast_vector, "=", 2)[,1])
+    cli::cli_alert_info("Loaded contrasts from file: {.file {contrasts_file}}")
+  } else {
+    stop("Cannot determine contrast names: no filtered_proteins_per_contrast, contrast_vector, or contrasts_file provided.")
+  }
+  
   if (binsize == "auto") {
     message("Evaluating candidate bin sizes: ", paste(binsize_range, collapse = ", "))
     
     evaluate_binsize <- function(b_size) {
       cv_list <- c()
-      for (contrast in names(DAList$results)) {
-        
-        # Pull the data for that contrast
+      for (contrast in contrast_names) {
         df_contrast <- DAList$results[[contrast]]
-        if (!"logFC" %in% names(df_contrast)) {
-          next
-        }
+        if (!"logFC" %in% names(df_contrast)) next
         
-        # Get filtered protein IDs and their logFC
-        logFC_filtered <- df_contrast$logFC
         prot_ids <- rownames(df_contrast)
-        
-        # Calculate mean intensity for these filtered proteins only
         mean_intens <- rowMeans(DAList$data[prot_ids, , drop = FALSE], na.rm = TRUE)
+        ord_idx <- order(mean_intens)
+        logFC_sorted <- df_contrast$logFC[ord_idx]
+        sds <- rolling_sd(logFC_sorted, b_size)
         
-        # Sort by ascending mean intensity
-        ord_idx <- order(mean_intens, decreasing = FALSE)
-        logFC_sorted <- logFC_filtered[ord_idx]
-        
-        # Compute rolling SD
-        sds <- rolling_sd(logFC_sorted, window_size = b_size)
-        
-        # Compute coefficient of variation (CV)
         sds_mean <- mean(sds, na.rm = TRUE)
         sds_sd   <- sd(sds, na.rm = TRUE)
-        cv       <- sds_sd / sds_mean
-        cv_list  <- c(cv_list, cv)
+        
+        if (is.finite(sds_mean) && sds_mean != 0) {
+          cv <- sds_sd / sds_mean
+          cv_list <- c(cv_list, cv)
+        }
       }
-      mean(cv_list, na.rm = TRUE)
+      
+      cv_list <- as.numeric(cv_list)
+      cv_list <- cv_list[!is.na(cv_list) & is.finite(cv_list)]
+      if (length(cv_list) == 0) {
+        return(Inf)
+      }
+      mean(cv_list)
     }
     
     cv_values <- sapply(binsize_range, evaluate_binsize)
@@ -96,23 +94,12 @@ compute_movingSD_zscores <- function(DAList,
     message("Auto-selected binsize: ", binsize)
   }
   
-  #------------------------
-  # 2) Compute rollingSD and logFC_z_scores for each contrast (filtered proteins only)
-  #------------------------
-  for (contrast in names(DAList$results)) {
-    
+  for (contrast in contrast_names) {
     df_contrast <- DAList$results[[contrast]]
+    if (!"logFC" %in% names(df_contrast)) next
     
-    if (!"logFC" %in% names(df_contrast)) {
-      warning("Contrast ", contrast, " has no 'logFC' column; skipping.")
-      next
-    }
-    
-    # Filtered protein IDs and their logFC
     prot_ids <- rownames(df_contrast)
-    logFC_filtered <- df_contrast$logFC
     
-    # Nothing to compute if no proteins
     if (length(prot_ids) == 0) {
       df_contrast$movingSD <- numeric(0)
       df_contrast$logFC_z_scores <- numeric(0)
@@ -120,40 +107,27 @@ compute_movingSD_zscores <- function(DAList,
       next
     }
     
-    # Sort subset by mean intensity
     mean_intens <- rowMeans(DAList$data[prot_ids, , drop = FALSE], na.rm = TRUE)
-    ord_idx <- order(mean_intens, decreasing = FALSE)
-    logFC_sorted <- logFC_filtered[ord_idx]
+    ord_idx <- order(mean_intens)
+    logFC_sorted <- df_contrast$logFC[ord_idx]
     
-    # Rolling SD in sorted order
     moving_sds_subset <- rolling_sd(logFC_sorted, binsize)
-    
-    # Map it back to the original (filtered) order in df_contrast
     reorder_back <- order(ord_idx)
     moving_sds_original <- moving_sds_subset[reorder_back]
     
-    # Compute Z-scores
-    z_scores_subset <- logFC_filtered / moving_sds_original
+    z_scores_subset <- df_contrast$logFC / moving_sds_original
     
-    # Add these columns (filtered proteins only) to the existing df
-    df_contrast$movingSD       <- moving_sds_original
+    df_contrast$movingSD <- moving_sds_original
     df_contrast$logFC_z_scores <- z_scores_subset
-    
-    # Replace DAList$results[[contrast]] with the updated df
     DAList$results[[contrast]] <- df_contrast
     
-    # (Optional) Plot if requested
     if (plot) {
-      df_plot <- data.frame(
-        Index = seq_along(moving_sds_subset),
-        movingSD = moving_sds_subset
-      )
+      df_plot <- data.frame(Index = seq_along(moving_sds_subset), movingSD = moving_sds_subset)
       p <- ggplot(df_plot, aes(x = Index, y = movingSD)) +
         geom_line() +
         theme_minimal() +
         ggtitle(paste("Moving SD:", contrast, "(binsize =", binsize, ")"))
       print(p)
-      # Optionally, ggsave(...) if you want to save the plot
     }
   }
   

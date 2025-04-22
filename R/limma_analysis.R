@@ -298,44 +298,58 @@ run_filtered_limma_analysis <- function(
     design_formula     = ~0 + group,
     pval_thresh        = 0.05,
     lfc_thresh         = 1,
-    adj_method         = "BH"
+    adj_method         = "BH",
+    contrasts_file     = NULL
 ) {
   validate_DAList(DAList)
   
-  # Make sure compute_movingSD_zscores is available
   if (!exists("compute_movingSD_zscores")) {
     stop("Function compute_movingSD_zscores() must be sourced before running this.")
   }
   
-  
-  # These lists will store the per-contrast results
   filtered_results <- list()
   filtered_ebayes  <- list()
   movingSDs        <- list()
   z_scores         <- list()
   
-  # Names of the contrasts as stored in DAList$filtered_proteins_per_contrast
-  contrast_names <- names(DAList$filtered_proteins_per_contrast)
+  if (!is.null(DAList$filtered_proteins_per_contrast)) {
+    contrast_names <- names(DAList$filtered_proteins_per_contrast)
+  } else if (!is.null(DAList$design$contrast_vector)) {
+    contrast_names <- stringr::str_trim(stringr::str_split_fixed(DAList$design$contrast_vector, "=", 2)[,1])
+    cli::cli_alert_info("No filtered_proteins_per_contrast found. Using all proteins for each contrast.")
+  } else if (!is.null(contrasts_file)) {
+    contrast_table <- utils::read.csv(contrasts_file, header = FALSE, stringsAsFactors = FALSE)
+    contrast_vector <- contrast_table[[1]]
+    contrast_names <- stringr::str_trim(stringr::str_split_fixed(contrast_vector, "=", 2)[,1])
+    cli::cli_alert_info("Loaded contrasts from file: {.file {contrasts_file}}")
+  } else {
+    stop("Could not determine contrast names: no filtered_proteins_per_contrast, contrast_vector, or contrasts_file provided.")
+  }
   
   for (contrast in contrast_names) {
     cli::cli_inform(paste("Processing contrast:", contrast))
     
-    # 1) Subset proteins / samples for the current contrast
-    keep_proteins <- DAList$filtered_proteins_per_contrast[[contrast]]
+    if (!is.null(DAList$filtered_proteins_per_contrast)) {
+      keep_proteins <- DAList$filtered_proteins_per_contrast[[contrast]]
+    } else {
+      keep_proteins <- rownames(DAList$data)
+    }
     
-    # parse "Ub_6mon_vs_K48ac_6mon" into c("Ub_6mon","K48ac_6mon")
     contrast_groups <- unlist(strsplit(contrast, "_vs_"))
+    if (length(contrast_groups) != 2) {
+      cli::cli_alert_warning("Could not parse contrast '{contrast}' into two groups using '_vs_'. Skipping.")
+      next
+    }
     
-    # Only keep the samples in these two groups
-    sample_ids  <- rownames(DAList$metadata)[DAList$metadata$group %in% contrast_groups]
+    sample_ids <- rownames(DAList$metadata)[DAList$metadata$group %in% contrast_groups]
+    valid_sample_ids <- intersect(sample_ids, colnames(DAList$data))
     
-    # Build a brand-new sub-DAList
     sub_DAList <- DAList
-    # 🛠 Strip optional slot from the working copy
     sub_DAList$filtered_proteins_per_contrast <- NULL
-    sub_DAList$data      <- DAList$data[keep_proteins, sample_ids, drop = FALSE]
-    sub_DAList$annotation<- DAList$annotation[keep_proteins, , drop = FALSE]
-    sub_DAList$metadata  <- DAList$metadata[sample_ids, , drop = FALSE]
+    sub_DAList$data       <- DAList$data[keep_proteins, valid_sample_ids, drop = FALSE]
+    sub_DAList$annotation <- DAList$annotation[keep_proteins, , drop = FALSE]
+    sub_DAList$metadata   <- DAList$metadata[valid_sample_ids, , drop = FALSE]
+    rownames(sub_DAList$metadata) <- valid_sample_ids
     
     # 2) Add the design to match only these samples
     sub_DAList <- add_design(
@@ -343,24 +357,14 @@ run_filtered_limma_analysis <- function(
       design_formula  = design_formula
     )
     
-    # 3) Build a single contrast for exactly these two groups
-    #    e.g. "Ub_6mon_vs_K48ac_6mon = Ub_6mon - K48ac_6mon"
     cont_string <- paste0(
       contrast, " = ",
       contrast_groups[1], " - ",
       contrast_groups[2]
     )
     
-    # Add that 1-line contrast to sub_DAList
-    sub_DAList <- add_contrasts(
-      DAList            = sub_DAList,
-      contrasts_vector  = cont_string
-    )
-    
-    # 4) Fit limma model on sub-DAList
+    sub_DAList <- add_contrasts(sub_DAList, contrasts_vector = cont_string)
     sub_DAList <- fit_limma_model(sub_DAList)
-    
-    # 5) Extract DA results from sub-DAList
     sub_DAList <- extract_DA_results(
       DAList       = sub_DAList,
       pval_thresh  = pval_thresh,
@@ -368,38 +372,34 @@ run_filtered_limma_analysis <- function(
       adj_method   = adj_method
     )
     
-    # 6) Collect results
-    # The new contrast in sub_DAList will typically be named with exactly
-    # whatever you gave to add_contrasts(), which we've made the same as 'contrast'
-    filtered_results[[contrast]] <- sub_DAList$results[[contrast]]
-    filtered_ebayes[[contrast]]  <- sub_DAList$eBayes_fit
-    
-    # Optionally store any additional stats
-    movingSDs[[contrast]] <- apply(sub_DAList$data, 1, stats::sd, na.rm = TRUE)
-    z_scores[[contrast]]  <- scale(sub_DAList$results[[contrast]]$logFC)
+    if (!is.null(sub_DAList$results[[contrast]])) {
+      filtered_results[[contrast]] <- sub_DAList$results[[contrast]]
+      filtered_ebayes[[contrast]]  <- sub_DAList$eBayes_fit
+      movingSDs[[contrast]]        <- apply(sub_DAList$data, 1, stats::sd, na.rm = TRUE)
+      z_scores[[contrast]]         <- scale(sub_DAList$results[[contrast]]$logFC)
+    } else {
+      cli::cli_alert_warning("No results found for contrast '{contrast}' — skipping.")
+    }
   }
   
-  # 7) Return a new DAList with all per-contrast outputs
   DAList$results         <- filtered_results
   DAList$eBayes_fit      <- filtered_ebayes
   DAList$tags$movingSDs  <- movingSDs
   DAList$tags$logFC_z_scores <- z_scores
   
-  # Add these lines to store DA criteria:
   DAList$tags$DA_criteria <- list(
     pval_thresh = pval_thresh,
     lfc_thresh  = lfc_thresh,
     adj_method  = adj_method
   )
-  # Compute moving SDs and z-scores on filtered results
+  
   DAList <- compute_movingSD_zscores(
     DAList = DAList,
     binsize = "auto",
     binsize_range = c(50, 100, 200, 400, 500),
-    plot = TRUE
+    plot = TRUE,
+    contrasts_file = contrasts_file
   )
   
   return(new_DAList(DAList))
-  
 }
-
