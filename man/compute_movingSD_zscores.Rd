@@ -8,7 +8,8 @@ compute_movingSD_zscores(
   DAList,
   binsize = "auto",
   binsize_range = c(50, 100, 200, 400),
-  plot = FALSE
+  plot = FALSE,
+  contrasts_file = NULL
 )
 }
 \arguments{

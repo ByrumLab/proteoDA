@@ -25,7 +25,9 @@ knitr::include_graphics(path = "/Users/sbyrum/Documents/github/proteoDAstjude/in
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
 
+
 ```{r glimma, results = "asis", fig.keep='none', echo=FALSE}
+
 uams_glimmaXY(model_data = data,
               counts = counts,
               groups = groups,
@@ -52,22 +54,22 @@ to_html_table <- function(dataframe) {
 ```{r}
 # Get contrast matrix,
 #
-if (!is.null(DAList$design$contrast_matrix)) {
+#if (!is.null(DAList$design$contrast_matrix)) {
   this_contrast_matrix <- as.data.frame(DAList$eBayes_fit[[contrast]]$contrasts)
-} else {
-  this_contrast_matrix <- as.data.frame(DAList$design$contrast_matrix)[contrast]
-}
+#} else {
+#  this_contrast_matrix <- as.data.frame(DAList$design$contrast_matrix)[contrast]
+#}
 
 ```
 
 ```{r}
 # Get design,
 #
-if (!is.null(DAList$design$design_matrix)) {
+#if (!is.null(DAList$design$design_matrix)) {
   this_design <- as.data.frame(DAList$eBayes_fit[[contrast]]$design)
-} else {
-  this_design <- as.data.frame(DAList$design$design_matrix)
-}
+#} else {
+#  this_design <- as.data.frame(DAList$design$design_matrix)
+#}
 
 ```
 
@@ -92,3 +94,4 @@ htmltools::tags$br()
 htmltools::tags$br()
 htmltools::tags$br()
 ```
+

@@ -84,6 +84,15 @@ uams_glimmaXY <- function(model_data,
   groups_df <- data.frame(group = groups,
                           sample = colnames(counts))
 
+  # cat("model_data rownames:\n")
+  # print(rownames(model_data)[1:5])
+  # 
+  # cat("counts rownames:\n")
+  # print(rownames(counts)[1:5])
+  # 
+  # cat("counts colnames:\n")
+  # print(colnames(counts)[1:5])
+  
   # Build the data to pass to the htmlwidget
   xData <- list(
     data = list(
@@ -97,7 +106,7 @@ uams_glimmaXY <- function(model_data,
       sampleColours = if (is.null(sample.cols)) {-1} else {sample.cols}
     )
   )
-
+  
   # make the widget
   widget <- htmlwidgets::createWidget(
     name = "glimmaXY",

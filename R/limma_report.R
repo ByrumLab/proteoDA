@@ -270,6 +270,8 @@ write_limma_plots <- function(DAList = NULL,
 
     # Prep data
     data <- prep_plot_model_data(DAList$results, contrast)
+    rownames(data) <- rownames(DAList$results[[contrast]])
+    
 
     cols_to_display <- c(internal_table_columns, "average_intensity", "logFC", "p", "adjusted_p")
 
@@ -283,6 +285,14 @@ write_limma_plots <- function(DAList = NULL,
     } else {
       counts <- DAList$data[rownames(data), , drop = FALSE]
     }
+    
+    # Ensure counts and data have matching and aligned rownames
+    counts <- counts[rownames(data), , drop = FALSE]
+   # counts[which(is.na(counts))] <- -9
+    counts[is.na(counts)] <- -9
+    
+  #  stopifnot(all(rownames(counts) == rownames(data)))
+    
     
     if (!is.null(DAList$annotation_per_contrast) && contrast %in% names(DAList$annotation_per_contrast)) {
       anno <- DAList$annotation_per_contrast[[contrast]]
@@ -303,22 +313,29 @@ write_limma_plots <- function(DAList = NULL,
     # in  the table
     anno$p <- round(data$P.Value, digits = 4)
     anno$`adjusted_p` <- round(data$adj.P.Val, digits = 4)
+    anno$logFC <- data$logFC
+    anno$movingSD <- data$movingSD
+    anno$`logFC_zscore` <- data$logFC_z_scores
+    anno$`average_intensity` <- data$average_intensity
 
-    # Add internal titles, ensuring they match row order
-    if (!is.null(title_column)) {
-      title_values <- stringr::str_trunc(anno[[title_column]], width = 20, side = "right", ellipsis = "...")
-      data$internal_title_column <- title_values
-    } else {
-      data$internal_title_column <- rownames(data)
-    }  
-    
     # 
     # # Set up column of titles to be used in the vega abundance plot
-     # if (!is.null(title_column)) {
-     #   data$internal_title_column <- title_values
-     # } else {
-     #   data$internal_title_column <- rownames(data)
-     # }
+      # if (!is.null(title_column)) {
+      #   data$internal_title_column <- title_values
+      # } else {
+      #   data$internal_title_column <- rownames(data)
+      # }
+    if (!is.null(title_column)) {
+      # pull titles from the per-contrast annotation and align
+      if (title_column %in% colnames(anno)) {
+        aligned_titles <- anno[rownames(data), title_column, drop = TRUE]
+        data$internal_title_column <- stringr::str_trunc(aligned_titles, width = 20, side = "right", ellipsis = "...")
+      } else {
+        stop(glue::glue("title_column '{title_column}' not found in annotation for contrast '{contrast}'"))
+      }
+    } else {
+      data$internal_title_column <- rownames(data)
+    }
     
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
     # make and save static plots
@@ -366,11 +383,15 @@ write_limma_plots <- function(DAList = NULL,
     #                   output_file = paste0(contrast, "_DA_report.html"),
     #                   quiet = T)
     
+    groups <- DAList$metadata[[grouping_column]]
+    
+   # rmarkdown::render("/Users/sbyrum/Documents/github/proteoDAstjude/inst/report_templates/limma_report_per_contrast.Rmd",
     rmarkdown::render("report_template.Rmd",
                       knit_root_dir = getwd(),
                       intermediates_dir = tmp_subdir,
                       output_file = paste0(contrast, "_DA_report.html"),
                       quiet = TRUE)
+    
     contrast_count <- contrast_count + 1
   }
 

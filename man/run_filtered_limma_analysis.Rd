@@ -9,7 +9,8 @@ run_filtered_limma_analysis(
   design_formula = ~0 + group,
   pval_thresh = 0.05,
   lfc_thresh = 1,
-  adj_method = "BH"
+  adj_method = "BH",
+  contrasts_file = NULL
 )
 }
 \arguments{
