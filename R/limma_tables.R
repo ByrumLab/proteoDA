@@ -268,7 +268,23 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
       Downregulated = sig_down,
       Not_Significant = nonsig
     )
+    
   }))
+  
+  overview_unadj_summary <- do.call("rbind", lapply(names(statlist), function(contrast_name) {
+    tmp <- statlist[[contrast_name]][, c("logFC", "P.Value"), drop = FALSE]
+    sig_up <- sum(tmp$logFC >= lfc_thresh & tmp$P.Value <= pval_thresh, na.rm = TRUE)
+    sig_down <- sum(tmp$logFC <= -lfc_thresh & tmp$P.Value <= pval_thresh, na.rm = TRUE)
+    nonsig <- sum(!(tmp$logFC >= lfc_thresh & tmp$P.Value <= pval_thresh |
+                      tmp$logFC <= -lfc_thresh & tmp$P.Value <= pval_thresh), na.rm = TRUE)
+    data.frame(
+      Contrast = contrast_name,
+      Upregulated_UnadjP = sig_up,
+      Downregulated_UnadjP = sig_down,
+      Not_Significant_UnadjP = nonsig
+    )
+  }))
+  
   
   # Write everything to the Overview sheet
   openxlsx::writeData(wb, sheet = "Overview", x = "Dataset Summary", startRow = 1, startCol = 1)
@@ -284,12 +300,19 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   openxlsx::writeData(wb, sheet = "Overview", x = "Contrast Summary", startRow = contrast_start_row, startCol = 1)
   openxlsx::writeData(wb, sheet = "Overview", x = overview_summary, startRow = contrast_start_row + 1, startCol = 1, withFilter = TRUE)
   
+  unadj_summary_start_row <- contrast_start_row + nrow(overview_summary) + 4
+  openxlsx::writeData(wb, sheet = "Overview", x = "Unadjusted P-Value Contrast Summary", startRow = unadj_summary_start_row, startCol = 1)
+  openxlsx::writeData(wb, sheet = "Overview", x = overview_unadj_summary, startRow = unadj_summary_start_row + 1, startCol = 1, withFilter = TRUE)
+  
   # Styling
   header_style <- openxlsx::createStyle(textDecoration = "bold", fontSize = 12, halign = "left")
   openxlsx::addStyle(wb, "Overview", header_style, rows = c(1, 6, 10, contrast_start_row), cols = 1, gridExpand = TRUE)
   
   table_header_style <- openxlsx::createStyle(textDecoration = "bold", fgFill = "#D9EAD3")
   openxlsx::addStyle(wb, "Overview", table_header_style, rows = c(2, 7, 11, contrast_start_row + 1), cols = 1:3, gridExpand = TRUE)
+  
+  openxlsx::addStyle(wb, "Overview", header_style, rows = unadj_summary_start_row, cols = 1, gridExpand = TRUE)
+  openxlsx::addStyle(wb, "Overview", table_header_style, rows = unadj_summary_start_row + 1, cols = 1:4, gridExpand = TRUE)
   
   # Optional: freeze pane below contrast summary headers
   openxlsx::freezePane(wb, sheet = "Overview", firstActiveRow = contrast_start_row + 2)
