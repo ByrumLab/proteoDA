@@ -1,22 +1,22 @@
 ### proteoDA parameters
-## March 4, 2025
+## February 25, 2025
 
-working_dir ="/research/rgs01/home/clusterHome/sbyrum/projects/proteoda_test/proteoDA"
+working_dir ="/home/sbyrum/projects/Demongrp_032525/proteoda"
 
 #### Variables for METHODS REPORT
 author = "Vishwajeeth R. Pagala"
-author2 = "Zuo-Fei Yuan"
-project_name = "PI_DATE"
+author2 = "Stephanie Byrum"
+project_name = "Demontisgrp_032525"
 instrument = "Bruker timsTOF HT"
-search_engine = "DIA-NN (version 1.8.2)"
-database = "Proteome ID: UP000005640, 81,791 proteins"
-db_version = "version 2023/04/28"
-organism = "Homo sapien"
+search_engine = "DIA-NN (version 2.1.0)"
+database = "UniprotKB (sp_tr), 57352 proteins"
+db_version = "version 2024/11/27"
+organism = "Mus musculus"
 
-### input files and subset quan and protein annotation 
-input_quan = "data/uni_prot_quan_rmNA_norm_proteoDA.csv"
-## metadata requires column names "sample" and "group" 
-metadata = "data/Demontisgrp_032525_Sample_metadata.csv"
+### input files and subset quan and protein annotation
+input_quan = "data/uni_prot_quan_rmNA_norm_proteoda.csv"
+## metadata requires column names "sample" and "group"
+metadata = "data/Demontisgrp_032525_Sample_Metadata.csv"
 sample_start = 10
 anno_start = 1
 anno_end = 9
@@ -24,14 +24,17 @@ anno_end = 9
 ### filter proteins with missing values options
 filt_min_reps = 3
 filt_min_groups = 2
+require_both_groups = TRUE
 group = "group"
 
 ## report directories
-QC_dir = "01_QC"
-DA_dir = "02_DA"
+QC_dir = "figures"
+DA_dir = "interactive_results"
 
-### limma design and group comparisons 
-design = ~0 + group
+### limma design and group comparisons
+# design = ~0 + group # no intercept model
+design = ~0 + group # animal is fixed
+#design = ~0 + group + (1 |animal)  # Mixed model (group is fix and animal random factor)
 contrasts = "data/contrasts.csv"
 
 # significance thresholds for plotting and tables
@@ -45,5 +48,5 @@ tmp_subdir <- "tmp"
 #### QC plot options - Must match sample Metadata columns!!!!!!!!!
 plot_labels = "sample"
 barplot_grouping_columns <- c("group")
-pca_grouping_columns <- c("group","sample")
-den_grouping_columns <- c("group", "sample")
+pca_grouping_columns <- c("group", "antibody","age")
+den_grouping_columns <- c("group", "antibody", "age")

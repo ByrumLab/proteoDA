@@ -13,6 +13,8 @@ source("proteoDA_params.R")
 setwd(working_dir)
 
 input_data <- read.csv(input_quan)
+# test Gtest function using subset of Demontis_032525 
+#input_data <- read.csv("data/Demontis_032525_Gtest_test_proteins.csv")
 sample_metadata <- read.csv(metadata)
 
 head(input_data)
@@ -47,11 +49,11 @@ filtered_samples <- zero_to_missing(raw)
 ########
 ## USE THIS TO FILTER PROTEINS GLOBALLY ACROSS ALL GROUPS
 ### in general require 2/3 of biological replicates to have a value in 1 sample group
-filtered_proteins <- filter_proteins_by_group(filtered_samples,
-                                              min_reps = filt_min_reps,
-                                              min_groups = filt_min_groups,
-                                              grouping_column = group)
-
+# filtered_proteins <- filter_proteins_by_group(filtered_samples,
+#                                               min_reps = filt_min_reps,
+#                                               min_groups = filt_min_groups,
+#                                               grouping_column = group)
+# 
 ########
 ## USE THIS TO FILTER PROTEINS PER CONTRAST SEPARATELY
 # creates multiple DAList objects for analysis.
@@ -67,6 +69,13 @@ summary_df <- attr(filtered_DALists, "retention_summary")
 write.csv(summary_df, "filtered_protein_counts.csv", row.names = FALSE)
 
 
+source("R/Gtest_impute_v9.R")
+
+filtered_DAList_Gtest <- impute_missing_by_gtest(filtered_DALists, 
+                                                 contrast = NULL, 
+                                                 grouping_column = "group",
+                                                 p_threshold = 0.05)
+
 # if using the raw norm values from DiaNN and proteoDAs normalization function
 #normlog2 <- normalize_data(filtered_proteins,
 #                           norm_method = "log2")
@@ -75,7 +84,7 @@ write.csv(summary_df, "filtered_protein_counts.csv", row.names = FALSE)
 
 ### set the DAList to the filter proteins per contrast
 norm <- filtered_DALists
-
+norm <- filtered_DAList_Gtest
 ### set the DAList to the filter proteins globally
 #norm <- filtered_proteins
 ## set the DAList to remove samples 
