@@ -1,7 +1,7 @@
 ---
 #title: "QC_report"
 #pagetitle: "PI_DATE"
-#author: "Center For Proteomics and Metabolomics"
+author: "Center For Proteomics and Metabolomics"
 date: "`r format(Sys.time(), '%Y %b %d')`"
 output: 
   html_document:
@@ -14,7 +14,7 @@ output:
     toc_depth: 3
     number_sections: true
     fig_caption: true
-    df_print: paged
+    df_print: tibble # switch from paged to default or tibble
     chunk_output_type: inline
     self_contained: true
     css: style.css
@@ -27,7 +27,7 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 
 
 ```{r logo, fig.align="left", out.width="50%"}
-knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_apps/proteomics_apps/proteoDA/inst/report_templates/CPM_Hz.png", rel_path = F)
+knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_apps/proteomics_apps/proteoDA2/CPM_Hz.png", rel_path = F)
 ```
 
 
@@ -40,6 +40,7 @@ setwd(working_dir)
 library(proteoDAstjude)
 library(ggplot2)
 library(gridExtra)
+
 
 # DiaNN quan output
 results <- readRDS("results.rds")
@@ -57,30 +58,42 @@ colnames(project_info) <- "Parameters"
 
 Quality control plots for the evaluation of sample quality include total intensity for each sample, missing value heatmap indicating the overall percentage of proteins with missing values in each sample, PCA of sample similarity in the first two principle components, and a clustered dendrogram indicating sample similarity by sample group. 
 
-### **Sample Information** 
-
-```{r Sample_metadata}
-
-knitr::kable(results$metadata)
-
-```
-
 ### **Project Information** 
 
 Software used in the proteomics analysis 
 
-```{r project_info}
+```{r project_info, results = 'asis'}
+library(kableExtra)
 
-knitr::kable(project_info)
+knitr::kable(project_info, format = "html") %>%
+  kable_styling(
+    full_width = FALSE, 
+    bootstrap_options = c("striped", "hover", "condensed", "responsive")
+  )
 
 ```
 
+### **Sample Information** 
+
+```{r Sample_metadata}
+
+knitr::kable(results$metadata, format = "html", row.names = FALSE) %>%
+  kable_styling(
+    full_width = FALSE, 
+    bootstrap_options = c("striped", "hover", "condensed", "responsive")
+  )
+
+```
 
 ### **Differential Abundance Summary** 
 
 ```{r DAsummary}
 
-knitr::kable(DA_sum)
+knitr::kable(DA_sum, format = "html") %>%
+  kable_styling(
+    full_width = FALSE, 
+    bootstrap_options = c("striped", "hover", "condensed", "responsive")
+  )
 
 ```
 
@@ -187,11 +200,11 @@ ggsave(file = file.path(QC_dir,"Barplot_allsamples.png"), # use .extension such 
 The barplot indicates the sum of intensities of proteins in each sample.The sample groups are separated and colored uniquely. The number on top of each sample is the total number of proteins quantified within the sample. Inversely, you can identify samples with larger missing values. 
 
 
-```{r barplotsplit, message=FALSE, warning=FALSE, results='hide', echo = F, fig.align='center', fig.cap='Figure 2. Total Intensities of samples split by group', include = T}
+```{r barplotsplit, message=FALSE, warning=FALSE, echo = F, fig.align='center', fig.width=10, fig.height=10, fig.cap='Figure 2. Total Intensities of samples split by group', include = T}
 
 ## TOTAL INTENSITY BAR PLOT BY GROUP
 my_grouping_columns <- barplot_grouping_columns
-source("R/ggplot_barplot_TotInt_by_Group.R")
+
 bar2 <- lapply(my_grouping_columns, function(x){
      bar2_group <- qc_totInt_by_group(
                   DAList = results_NA,
@@ -200,7 +213,8 @@ bar2 <- lapply(my_grouping_columns, function(x){
                   percentile = 0,
                   colors = NULL,   
                   legend.position = "bottom",
-                  plot_size = c(12,6)
+                  plot_size = c(10,10),
+                  save_path = file.path(QC_dir, "Barplot2_Intensity_byGroup.png")
 )
 })
 names(bar2) <- "group"
@@ -212,10 +226,10 @@ bar2$group$plot
 ggsave(file = file.path(QC_dir,"Barplot_split_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
        plot = bar2$group$plot, 
        path = NULL, 
-       width = 10,  # make this a variable in the params.R file 
-       height = 6, 
+       width = 25, 
+       height = 15, 
        units = c("in"), 
-       dpi = 300)
+       dpi = 600)
 
 ```
 
@@ -223,7 +237,7 @@ ggsave(file = file.path(QC_dir,"Barplot_split_allsamples.png"), # use .extension
 
 **Missing Values** are proteins with a zero abundance indicating the protein was not identified in the sample. It does not mean the protein is not present in the sample but only that it was not identified. The proteins with missing values are highlighted in black and the percentage of missing proteins is reported for each sample.  
 
-Missing values are trimmed by 15 percent using ????? Remaining missing values are handled by limma as follows: 
+Missing values are trimmed by 15 percent using trimmed mean. Remaining missing values are handled by limma as follows: 
 
 When fitting protein-wise linear models in limma using lmFit(), missing values are removed from the response vector of the log-ratios, and the corresponding row/s of the design matrix are removed before the linear model is fitted to each protein. Missing values in limma are treated the same as the lm() function with "na.action = na.omit". The model can handle NAs, but corrects the degrees of freedom depending on the number of missing values for each protein.  
 
@@ -260,6 +274,11 @@ for(i in 1:length(h3)){
     theme(plot.title = element_text(size=16))
 }
 h3
+
+pdf(file=file.path(QC_dir, "missing_value_heatmaps_by_group.pdf"),#height=10, width=8,
+     paper="USr")
+h3
+dev.off()
 ```
 
 ```{r missingAll, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 3. Heatmap of proteins with missing values in each sample', include = T}
@@ -301,30 +320,30 @@ The PCA plot visualizes the distribution of selected groups. This plot helps in 
 
 ## PCA PLOTS (COLORED BY OUTLIERS)
 
-tmp <- results
-#tmp <- missing_to_zero(tmp)
+ tmp <- results
+ #tmp <- missing_to_zero(tmp)
+# top = min(500, sum(apply(tmp$data, 1, function(row) var(row, na.rm = TRUE) > 0)))
 
-pc5 <- lapply(list(c(1,2),c(3,4),c(5,6)), function(x){
-  
-  qc_pca_plot7(data          = tmp$data,
-               groups        = tmp$metadata$group,
-               sample_labels = tmp$metadata$sample,
-               text.sizes    = c(14,14,14,11),
-               point.size    = 3,
-               label.size    = 2.5,
-               max.labels    = 1000,
-               top           = nrow(tmp$data),
-               standardize   = TRUE,
-               pca_axes      = x,
-               colors        = all_colors2$group,
-               title         = "",
-               max_pc        = 20,
-               legend.position = "right",
-               show.plot     = FALSE)
-  
-})
-names(pc5) <- c("pc12","pc34","pc56")
+ pc5 <- lapply(list(c(1,2),c(3,4),c(5,6)), function(x){
 
+   qc_pca_plot7(data          = tmp$data,
+                groups        = tmp$metadata$group,
+                sample_labels = tmp$metadata$sample,
+                text.sizes    = c(14,14,14,11),
+                point.size    = 3,
+                label.size    = 2.5,
+                max.labels    = 1000,
+                top           = 500,
+                standardize   = TRUE,
+                pca_axes      = x,
+                colors        = all_colors2$group,
+                title         = "",
+                max_pc        = 20,
+                legend.position = "right",
+                show.plot     = FALSE)
+
+ })
+ names(pc5) <- c("pc12","pc34","pc56")
 pc5
 ```
 
@@ -337,27 +356,27 @@ ggsave(file = file.path(QC_dir,"PCA_PC12.png"), # use .extension such as .png, .
        units = c("in"), 
        dpi = 600)
 
-ggsave(file = file.path(QC_dir,"PCA_PC34.png"), # use .extension such as .png, .pdf, .jpeg
-       plot = pc5$pc34$p, 
-       path = NULL, 
-       width = 10, 
-       height = 6, 
-       units = c("in"), 
-       dpi = 600)
-
-ggsave(file = file.path(QC_dir,"PCA_PC56.png"), # use .extension such as .png, .pdf, .jpeg
-       plot = pc5$pc56$p, 
-       path = NULL, 
-       width = 10, 
-       height = 6, 
-       units = c("in"), 
-       dpi = 600)
+ ggsave(file = file.path(QC_dir,"PCA_PC34.png"), # use .extension such as .png, .pdf, .jpeg
+        plot = pc5$pc34$p, 
+        path = NULL, 
+        width = 10, 
+        height = 6, 
+        units = c("in"), 
+        dpi = 600)
+ 
+ ggsave(file = file.path(QC_dir,"PCA_PC56.png"), # use .extension such as .png, .pdf, .jpeg
+        plot = pc5$pc56$p, 
+        path = NULL, 
+        width = 10, 
+        height = 6, 
+        units = c("in"), 
+        dpi = 600)
 
 ```
 
 ```{r pcaPC12_groups, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', include = T}
 
-# my_grouping_columns <- c("plate", "group_survive", "group_survive_time_cor", "time_cor")
+#  my_grouping_columns <- c("plate", "group_survive", "group_survive_time_cor", "time_cor")
 my_grouping_columns <- pca_grouping_columns
 
 pc7 <- lapply(my_grouping_columns, function(x){
@@ -369,7 +388,7 @@ pc7 <- lapply(my_grouping_columns, function(x){
                     point.size    = 3,
                     label.size    = 2.5,
                     max.labels    = 1000,
-                    top           = nrow(tmp$data),
+                    top           = 500, # nrow(tmp$data)
                     standardize   = TRUE,
                     pca_axes      = c(1,2),
                     colors        = all_colors2[[x]],
@@ -382,6 +401,9 @@ pc7 <- lapply(my_grouping_columns, function(x){
 names(pc7) <- my_grouping_columns
 pc7
 
+pdf(file=file.path(QC_dir, "PCA_groups.pdf"), height=10,width=10)
+pc7
+dev.off()
 ```
 
 ```{r}
@@ -424,6 +446,10 @@ den1 <- lapply(my_grouping_columns, function(x) {
 
 names(den1) <- my_grouping_columns
 den1
+
+pdf(file=file.path(QC_dir, "Dendrogram_groups.pdf"), height=10,width=10)
+den1
+dev.off()
 
 ```
 
