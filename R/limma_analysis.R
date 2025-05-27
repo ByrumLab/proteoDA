@@ -278,28 +278,43 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
 #'
 #' This function subsets the DAList for each contrast according to
 #' `filtered_proteins_per_contrast` and fits the limma model separately.
-#' Useful when proteins are filtered differently per contrast.
+#' It is useful when proteins are filtered differently per contrast.
+#' After model fitting, the function computes rolling standard deviations (moving SDs)
+#' of log fold changes based on intensity-sorted proteins, and computes z-scores.
 #'
 #' @param DAList A DAList object containing full data and per-contrast filtered proteins.
 #' @param design_formula A formula for the model design, e.g., ~0 + group.
 #' @param pval_thresh P-value threshold used for defining significance. Default = 0.05.
 #' @param lfc_thresh Log2 fold change threshold for significance. Default = 1.
 #' @param adj_method Adjustment method for multiple testing ("BH", "BY", etc). Default = "BH".
+#' @param contrasts_file Optional CSV file with contrast definitions if not present in the DAList.
+#' @param binsize Either an integer for the moving window size, or "auto" (default) to select automatically.
+#' @param binsize_range A numeric vector of candidate bin sizes to evaluate when `binsize = "auto"`.
+#' @param plot_movingSD Logical. If TRUE (default), plot moving SD curves for each contrast.
 #'
-#' @return The input DAList, updated with filtered contrast-level results, eBayes fits,
-#'   and associated moving SDs and logFC z-scores.
+#' @return The input DAList, updated with filtered contrast-level results, model fits,
+#'   moving SDs, and logFC z-scores.
+#'
 #' @export
 #'
 #' @examples
+#' # Using default binsize auto-selection
 #' filtered_DAList <- run_filtered_limma_analysis(filtered_DAList)
-#' 
+#'
+#' # With specified bin size and no plots
+#' filtered_DAList <- run_filtered_limma_analysis(filtered_DAList, binsize = 200, plot_movingSD = FALSE)
+
+
 run_filtered_limma_analysis <- function(
     DAList,
     design_formula     = ~0 + group,
     pval_thresh        = 0.05,
     lfc_thresh         = 1,
     adj_method         = "BH",
-    contrasts_file     = NULL
+    contrasts_file     = NULL,
+    binsize            = "auto",                # <- NEW PARAMETER
+    binsize_range      = c(50, 100, 200, 400),  # <- passed only if binsize = "auto"
+    plot_movingSD      = TRUE                   # <- optional: control plotting
 ) {
   validate_DAList(DAList)
   
@@ -309,8 +324,6 @@ run_filtered_limma_analysis <- function(
   
   filtered_results <- list()
   filtered_ebayes  <- list()
-  movingSDs        <- list()
-  z_scores         <- list()
   
   if (!is.null(DAList$filtered_proteins_per_contrast)) {
     contrast_names <- names(DAList$filtered_proteins_per_contrast)
@@ -351,7 +364,6 @@ run_filtered_limma_analysis <- function(
     sub_DAList$metadata   <- DAList$metadata[valid_sample_ids, , drop = FALSE]
     rownames(sub_DAList$metadata) <- valid_sample_ids
     
-    # 2) Add the design to match only these samples
     sub_DAList <- add_design(
       DAList          = sub_DAList,
       design_formula  = design_formula
@@ -375,17 +387,22 @@ run_filtered_limma_analysis <- function(
     if (!is.null(sub_DAList$results[[contrast]])) {
       filtered_results[[contrast]] <- sub_DAList$results[[contrast]]
       filtered_ebayes[[contrast]]  <- sub_DAList$eBayes_fit
-      movingSDs[[contrast]]        <- apply(sub_DAList$data, 1, stats::sd, na.rm = TRUE)
-      z_scores[[contrast]]         <- scale(sub_DAList$results[[contrast]]$logFC)
     } else {
       cli::cli_alert_warning("No results found for contrast '{contrast}' — skipping.")
     }
   }
   
-  DAList$results         <- filtered_results
-  DAList$eBayes_fit      <- filtered_ebayes
-  DAList$tags$movingSDs  <- movingSDs
-  DAList$tags$logFC_z_scores <- z_scores
+  DAList$results    <- filtered_results
+  DAList$eBayes_fit <- filtered_ebayes
+  
+  # Call updated compute_movingSD_zscores with selected binsize
+  DAList <- compute_movingSD_zscores(
+    DAList = DAList,
+    binsize = binsize,
+    binsize_range = binsize_range,
+    plot = plot_movingSD,
+    contrasts_file = contrasts_file
+  )
   
   DAList$tags$DA_criteria <- list(
     pval_thresh = pval_thresh,
@@ -393,13 +410,6 @@ run_filtered_limma_analysis <- function(
     adj_method  = adj_method
   )
   
-  DAList <- compute_movingSD_zscores(
-    DAList = DAList,
-    binsize = "auto",
-    binsize_range = c(50, 100, 200, 400, 500),
-    plot = TRUE,
-    contrasts_file = contrasts_file
-  )
-  
   return(new_DAList(DAList))
 }
+
