@@ -10,7 +10,10 @@ run_filtered_limma_analysis(
   pval_thresh = 0.05,
   lfc_thresh = 1,
   adj_method = "BH",
-  contrasts_file = NULL
+  contrasts_file = NULL,
+  binsize = "auto",
+  binsize_range = c(50, 100, 200, 400),
+  plot_movingSD = TRUE
 )
 }
 \arguments{
@@ -23,17 +26,30 @@ run_filtered_limma_analysis(
 \item{lfc_thresh}{Log2 fold change threshold for significance. Default = 1.}
 
 \item{adj_method}{Adjustment method for multiple testing ("BH", "BY", etc). Default = "BH".}
+
+\item{contrasts_file}{Optional CSV file with contrast definitions if not present in the DAList.}
+
+\item{binsize}{Either an integer for the moving window size, or "auto" (default) to select automatically.}
+
+\item{binsize_range}{A numeric vector of candidate bin sizes to evaluate when \code{binsize = "auto"}.}
+
+\item{plot_movingSD}{Logical. If TRUE (default), plot moving SD curves for each contrast.}
 }
 \value{
-The input DAList, updated with filtered contrast-level results, eBayes fits,
-and associated moving SDs and logFC z-scores.
+The input DAList, updated with filtered contrast-level results, model fits,
+moving SDs, and logFC z-scores.
 }
 \description{
 This function subsets the DAList for each contrast according to
 \code{filtered_proteins_per_contrast} and fits the limma model separately.
-Useful when proteins are filtered differently per contrast.
+It is useful when proteins are filtered differently per contrast.
+After model fitting, the function computes rolling standard deviations (moving SDs)
+of log fold changes based on intensity-sorted proteins, and computes z-scores.
 }
 \examples{
+# Using default binsize auto-selection
 filtered_DAList <- run_filtered_limma_analysis(filtered_DAList)
 
+# With specified bin size and no plots
+filtered_DAList <- run_filtered_limma_analysis(filtered_DAList, binsize = 200, plot_movingSD = FALSE)
 }

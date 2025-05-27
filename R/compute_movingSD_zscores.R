@@ -46,20 +46,20 @@ compute_movingSD_zscores <- function(DAList,
   if (!is.null(DAList$filtered_proteins_per_contrast)) {
     contrast_names <- names(DAList$filtered_proteins_per_contrast)
   } else if (!is.null(DAList$design$contrast_vector)) {
-    contrast_names <- stringr::str_trim(stringr::str_split_fixed(DAList$design$contrast_vector, "=", 2)[,1])
+    contrast_names <- stringr::str_trim(stringr::str_split_fixed(DAList$design$contrast_vector, "=", 2)[, 1])
     cli::cli_alert_info("No filtered_proteins_per_contrast found. Using all proteins for each contrast.")
   } else if (!is.null(contrasts_file)) {
     contrast_table <- utils::read.csv(contrasts_file, header = FALSE, stringsAsFactors = FALSE)
     contrast_vector <- contrast_table[[1]]
-    contrast_names <- stringr::str_trim(stringr::str_split_fixed(contrast_vector, "=", 2)[,1])
+    contrast_names <- stringr::str_trim(stringr::str_split_fixed(contrast_vector, "=", 2)[, 1])
     cli::cli_alert_info("Loaded contrasts from file: {.file {contrasts_file}}")
   } else {
     stop("Cannot determine contrast names: no filtered_proteins_per_contrast, contrast_vector, or contrasts_file provided.")
   }
   
+  # Auto-select binsize
   if (binsize == "auto") {
     message("Evaluating candidate bin sizes: ", paste(binsize_range, collapse = ", "))
-    
     evaluate_binsize <- function(b_size) {
       cv_list <- c()
       for (contrast in contrast_names) {
@@ -73,19 +73,15 @@ compute_movingSD_zscores <- function(DAList,
         sds <- rolling_sd(logFC_sorted, b_size)
         
         sds_mean <- mean(sds, na.rm = TRUE)
-        sds_sd   <- sd(sds, na.rm = TRUE)
+        sds_sd <- sd(sds, na.rm = TRUE)
         
         if (is.finite(sds_mean) && sds_mean != 0) {
-          cv <- sds_sd / sds_mean
-          cv_list <- c(cv_list, cv)
+          cv_list <- c(cv_list, sds_sd / sds_mean)
         }
       }
       
-      cv_list <- as.numeric(cv_list)
-      cv_list <- cv_list[!is.na(cv_list) & is.finite(cv_list)]
-      if (length(cv_list) == 0) {
-        return(Inf)
-      }
+      cv_list <- cv_list[is.finite(cv_list)]
+      if (length(cv_list) == 0) return(Inf)
       mean(cv_list)
     }
     
@@ -104,25 +100,40 @@ compute_movingSD_zscores <- function(DAList,
       df_contrast$movingSD <- numeric(0)
       df_contrast$logFC_z_scores <- numeric(0)
       DAList$results[[contrast]] <- df_contrast
+      DAList$tags$movingSDs[[contrast]] <- setNames(numeric(0), character(0))
+      DAList$tags$logFC_z_scores[[contrast]] <- setNames(numeric(0), character(0))
       next
     }
     
+    # Sort by mean intensity
     mean_intens <- rowMeans(DAList$data[prot_ids, , drop = FALSE], na.rm = TRUE)
     ord_idx <- order(mean_intens)
     logFC_sorted <- df_contrast$logFC[ord_idx]
     
-    moving_sds_subset <- rolling_sd(logFC_sorted, binsize)
+    # Rolling SD on sorted logFC
+    moving_sds_sorted <- rolling_sd(logFC_sorted, binsize)
+    
+    # Reorder back to original order
     reorder_back <- order(ord_idx)
-    moving_sds_original <- moving_sds_subset[reorder_back]
+    moving_sds_original <- moving_sds_sorted[reorder_back]
+    names(moving_sds_original) <- prot_ids
     
-    z_scores_subset <- df_contrast$logFC / moving_sds_original
+    # Compute z-scores AFTER movingSD is final
+    logFC_z_scores <- df_contrast$logFC / moving_sds_original
+    names(logFC_z_scores) <- prot_ids
     
+    # Store in data frame
     df_contrast$movingSD <- moving_sds_original
-    df_contrast$logFC_z_scores <- z_scores_subset
+    df_contrast$logFC_z_scores <- logFC_z_scores
     DAList$results[[contrast]] <- df_contrast
     
+    # Also store in tags (as named vectors)
+    DAList$tags$movingSDs[[contrast]] <- moving_sds_original
+    DAList$tags$logFC_z_scores[[contrast]] <- logFC_z_scores
+    
+    # Optional plot
     if (plot) {
-      df_plot <- data.frame(Index = seq_along(moving_sds_subset), movingSD = moving_sds_subset)
+      df_plot <- data.frame(Index = seq_along(moving_sds_sorted), movingSD = moving_sds_sorted)
       p <- ggplot(df_plot, aes(x = Index, y = movingSD)) +
         geom_line() +
         theme_minimal() +
@@ -133,3 +144,4 @@ compute_movingSD_zscores <- function(DAList,
   
   return(DAList)
 }
+

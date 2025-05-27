@@ -176,16 +176,33 @@ build_statlist <- function(DAList,
     msd <- DAList$tags$movingSDs[[contrast]]
     zs <- DAList$tags$logFC_z_scores[[contrast]]
     
+    # for (col in stat_cols) {
+    #   vec <- rep(NA_real_, length(all_proteins))
+    #   names(vec) <- all_proteins
+    #   if (col %in% colnames(contrast_res)) {
+    #     vec[names(vec) %in% rownames(contrast_res)] <- contrast_res[rownames(contrast_res), col]
+    #   } else if (col == "movingSDs" && !is.null(msd)) {
+    #     vec[names(vec) %in% names(msd)] <- msd[names(msd)]
+    #   } else if (col == "logFC_z_scores" && !is.null(zs)) {
+    #  #   vec[names(vec) %in% names(zs)] <- zs[names(zs)]
+    #     vec[names(zs)] <- zs  # ensure 1-to-1 mapping to proteinIDs from DAList$data
+    #   }
+    #   stats_df[[col]] <- vec
+    # }
     for (col in stat_cols) {
       vec <- rep(NA_real_, length(all_proteins))
       names(vec) <- all_proteins
+      
       if (col %in% colnames(contrast_res)) {
-        vec[names(vec) %in% rownames(contrast_res)] <- contrast_res[rownames(contrast_res), col]
+        vec[rownames(contrast_res)] <- contrast_res[[col]]
+        
       } else if (col == "movingSDs" && !is.null(msd)) {
-        vec[names(vec) %in% names(msd)] <- msd[names(msd)]
+        vec[names(msd)] <- msd
+        
       } else if (col == "logFC_z_scores" && !is.null(zs)) {
-        vec[names(vec) %in% names(zs)] <- zs[names(zs)]
+        vec[names(zs)] <- zs
       }
+      
       stats_df[[col]] <- vec
     }
     
