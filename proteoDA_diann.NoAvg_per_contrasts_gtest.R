@@ -142,38 +142,19 @@ summary_df <- data.frame(
   filtered_proteins = sapply(filtered_DALists$filtered_proteins_per_contrast, length)
 )
 
-filtered_DALists2 <- filter_proteins_per_contrast(
-  DAList = filtered_samples,
-  contrasts_file = contrasts,
-  min_reps = 2,
-  require_both_groups = FALSE,
-  grouping_column = group
-)
-# Create summary_df from filtered_proteins_per_contrast
-summary_df <- data.frame(
-  contrast = names(filtered_DALists$filtered_proteins_per_contrast),
-  filtered_proteins = sapply(filtered_DALists$filtered_proteins_per_contrast, length)
-)
 write.csv(summary_df, "filtered_protein_counts.csv", row.names = FALSE)
 
 # GTest Imputation using min_val
-source("C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/proteoDAstjude/HPC_diann_proteoda2/R/Gtest_impute_v3.R")
-filtered_DAList_Gtest2 <- impute_missing_by_gtest(filtered_DALists, 
+filtered_DAList_Gtest <- impute_missing_by_gtest(filtered_DALists, 
                                                  contrast = NULL, 
                                                  grouping_column = "group",
                                                  p_threshold = p.val)
-
-# test imput function by filtering so 2 reps have a value in 1 group (per contrast)
-filtered_DAList_Gtest3 <- impute_missing_by_gtest(filtered_DALists2, 
-                                                  contrast = NULL, 
-                                                  grouping_column = "group",
-                                                  p_threshold = p.val)
-
-
-filtered_DAList_Gtest4 <- impute_missing_by_gtest(filtered_samples, 
-                                                  contrast = contrasts, 
-                                                  grouping_column = "group",
-                                                  p_threshold = p.val)
+#######
+## if skipping filter proteins per contrasts then use a contrasts.csv file
+# filtered_DAList_Gtest4 <- impute_missing_by_gtest(filtered_samples, 
+#                                                   contrast = contrasts, 
+#                                                   grouping_column = "group",
+#                                                   p_threshold = p.val)
 
 stopifnot(all(sapply(names(filtered_DAList_Gtest2$data_per_contrast), function(ct) {
   identical(rownames(filtered_DAList_Gtest2$data_per_contrast[[ct]]), filtered_DAList_Gtest2$filtered_proteins_per_contrast[[ct]])
@@ -188,7 +169,6 @@ stopifnot(all(sapply(names(filtered_DAList_Gtest2$data_per_contrast), function(c
 # using the log2 norm output from diann_quan
 
 norm <- filtered_DAList_Gtest
-norm <- filtered_DAList_Gtest2 # fixed data in imputation
 #norm <- filtered_proteins
 #norm <- filtered_samples
 norm$tags$norm_method <- "diann_quan"
