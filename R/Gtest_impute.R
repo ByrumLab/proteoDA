@@ -133,17 +133,31 @@ impute_missing_by_gtest <- function(DAList,
       sample_ids <- rownames(DAList$metadata)[DAList$metadata[[grouping_column]] %in% contrast_groups]
       sample_meta <- DAList$metadata[sample_ids, , drop = FALSE]
       
-      full_data_matrix <- DAList$data
-      contrast_data_matrix <- full_data_matrix[, sample_ids, drop = FALSE]
+      use_filtered <- !is.null(DAList$filtered_proteins_per_contrast) && !is.null(DAList$filtered_proteins_per_contrast[[ctr]])
+      if (use_filtered) {
+        filtered_ids <- DAList$filtered_proteins_per_contrast[[ctr]]
+        contrast_data_matrix <- DAList$data[filtered_ids, sample_ids, drop = FALSE]
+      } else {
+        filtered_ids <- rownames(DAList$data)
+        contrast_data_matrix <- DAList$data[, sample_ids, drop = FALSE]
+      }
       group_labels <- as.character(sample_meta[[grouping_column]])
       
-      result <- GTest_impute(contrast_data_matrix, group_labels, p_threshold = p_threshold, return_imputed_flags = TRUE)
+      result <- GTest_impute(
+        data_matrix = contrast_data_matrix,
+        group_labels = group_labels,
+        p_threshold = p_threshold,
+        return_imputed_flags = TRUE
+      )
       
-      imputed_full_matrix <- full_data_matrix
-      imputed_full_matrix[, sample_ids] <- result$imputed_data
-      
+      imputed_data_ordered <- result$imputed_data[match(filtered_ids, rownames(result$imputed_data)), , drop = FALSE]
       if (is.null(DAList$data_per_contrast)) DAList$data_per_contrast <- list()
-      DAList$data_per_contrast[[ctr]] <- imputed_full_matrix
+      DAList$data_per_contrast[[ctr]] <- imputed_data_ordered
+      
+      if (!is.null(DAList$annotation)) {
+        if (is.null(DAList$annotation_per_contrast)) DAList$annotation_per_contrast <- list()
+        DAList$annotation_per_contrast[[ctr]] <- DAList$annotation[filtered_ids, , drop = FALSE]
+      }
       
       imputed_sample_per_protein <- lapply(seq_len(nrow(contrast_data_matrix)), function(i) {
         original_row <- contrast_data_matrix[i, ]
@@ -174,7 +188,9 @@ impute_missing_by_gtest <- function(DAList,
       result_table$imputed_proteins <- sum(result$imputed_flags)
       result_table$imputation_tag <- I(list(summary_tag))
       
-      if (is.null(DAList$tags$gtest_imputation_results)) DAList$tags$gtest_imputation_results <- list()
+      if (is.null(DAList$tags$gtest_imputation_results)) {
+        DAList$tags$gtest_imputation_results <- list()
+      }
       DAList$tags$gtest_imputation_results[[ctr]] <- result_table
       
       export_table <- result_table
@@ -185,3 +201,4 @@ impute_missing_by_gtest <- function(DAList,
   
   return(DAList)
 }
+
