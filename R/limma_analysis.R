@@ -363,6 +363,20 @@ run_filtered_limma_analysis <- function(
     sub_DAList$annotation <- DAList$annotation[keep_proteins, , drop = FALSE]
     sub_DAList$metadata   <- DAList$metadata[valid_sample_ids, , drop = FALSE]
     rownames(sub_DAList$metadata) <- valid_sample_ids
+
+    # Sanity check: skip contrasts with missing groups
+    meta_groups_present <- unique(sub_DAList$metadata$group)
+    if (!all(contrast_groups %in% meta_groups_present)) {
+      cli::cli_alert_warning("Contrast '{contrast}' skipped: not all groups present in metadata after subsetting.")
+      next
+    }
+
+    # Ensure factor levels
+    sub_DAList$metadata$group <- factor(
+    sub_DAList$metadata$group,
+    levels = unique(DAList$metadata$group)
+    )
+
     
     sub_DAList <- add_design(
       DAList          = sub_DAList,
