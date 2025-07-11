@@ -751,6 +751,7 @@ write_limma_tables <- function(DAList,
   utils::write.csv(combined_results, file = combined_output_file, row.names = FALSE, quote = csv_quote_cols)
   
   # Write Excel spreadsheet
+  # add annotation columns from proteoDA_params.R file 
   cli::cli_inform("Writing combined results Excel spreadsheet to {.path {excel_output_file}}")
   write_limma_excel(filename = excel_output_file,
                     statlist = statlist,     # DAList$results
@@ -761,7 +762,8 @@ write_limma_tables <- function(DAList,
                     lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
                     add_filter = add_filter,
                     color_palette = color_palette,
-                    annot_cols = c("uniprot_id", "Genes","Identified.Peptides" ,"Accession.Number", "Protein.Description"))
+                   # annot_cols = c("uniprot_id", "Genes","Identified.Peptides" ,"Accession.Number", "Protein.Description"))
+                    annot_cols = DA_table_cols)
   
   if (add_contrast_sheets) {
     cli::cli_inform("Adding per-contrast CSVs as worksheets to {.path {excel_output_file}}")
