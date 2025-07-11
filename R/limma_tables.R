@@ -722,15 +722,19 @@ write_limma_tables <- function(DAList,
   # Write per-contrast CSVs
   per_contrast_dir <- file.path(output_dir, contrasts_subdir)
   cli::cli_inform("Writing per-contrast results {.path .csv} files to {.path {per_contrast_dir}}")
-  
+
+  # define in the proteoDA_params.R file 
   contrast_csv_success <- write_per_contrast_csvs(annotation_df =DAList$annotation,
                                                   data = DAList$data,
                                                   results_statlist = statlist,
                                                   output_dir = per_contrast_dir,
-                                                  annotation_cols = c("uniprot_id","Genes","Accession.Number","Identified.Peptides","Protein.Description"),
+                                                 # annotation_cols = c("uniprot_id","Genes","Accession.Number","Identified.Peptides","Protein.Description"),
+                                                  annotation_cols = DA_table_cols,
                                                   metadata = DAList$metadata,
-                                                  group_col = "group",
-                                                  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores","sig.PVal", "sig.FDR")) 
+                                                  group_col = group,
+                                                #  group_col = "group",
+                                                  #  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores","sig.PVal", "sig.FDR")
+                                                 stat_cols = stat_cols) 
   if (!all(contrast_csv_success)) {
     failed <- names(contrast_csv_success)[!contrast_csv_success]
     cli::cli_abort(c("Failed to write {.path .csv} results for contrast(s):",
