@@ -313,7 +313,7 @@ run_filtered_limma_analysis <- function(
     adj_method         = "BH",
     contrasts_file     = NULL,
     binsize            = "auto",                # <- NEW PARAMETER
-    binsize_range      = c(50, 100, 200, 400),  # <- passed only if binsize = "auto"
+    binsize_range      = c(50, 100, 200, 400, 500, 1000),  # <- passed only if binsize = "auto"
     plot_movingSD      = TRUE                   # <- optional: control plotting
 ) {
   validate_DAList(DAList)
@@ -342,10 +342,14 @@ run_filtered_limma_analysis <- function(
   for (contrast in contrast_names) {
     cli::cli_inform(paste("Processing contrast:", contrast))
     
-    if (!is.null(DAList$filtered_proteins_per_contrast)) {
+    # Check if DAList$data_per_contrast exists and is used instead of filtered_proteins_per_contrast keep_proteins
+    if (!is.null(DAList$data_per_contrast)) {
+      sub_data <- DAList$data_per_contrast[[contrast]]
+    } else if (!is.null(DAList$filtered_proteins_per_contrast)) {
       keep_proteins <- DAList$filtered_proteins_per_contrast[[contrast]]
+      sub_data <- DAList$data[keep_proteins, , drop = FALSE]
     } else {
-      keep_proteins <- rownames(DAList$data)
+      sub_data <- DAList$data  # Use all data if no filtered data is present
     }
     
     contrast_groups <- unlist(strsplit(contrast, "_vs_"))
@@ -355,28 +359,27 @@ run_filtered_limma_analysis <- function(
     }
     
     sample_ids <- rownames(DAList$metadata)[DAList$metadata$group %in% contrast_groups]
-    valid_sample_ids <- intersect(sample_ids, colnames(DAList$data))
+    valid_sample_ids <- intersect(sample_ids, colnames(sub_data))
     
     sub_DAList <- DAList
     sub_DAList$filtered_proteins_per_contrast <- NULL
-    sub_DAList$data       <- DAList$data[keep_proteins, valid_sample_ids, drop = FALSE]
-    sub_DAList$annotation <- DAList$annotation[keep_proteins, , drop = FALSE]
+    sub_DAList$data       <- sub_data[, valid_sample_ids, drop = FALSE]
+    sub_DAList$annotation <- DAList$annotation[rownames(sub_DAList$data), , drop = FALSE]
     sub_DAList$metadata   <- DAList$metadata[valid_sample_ids, , drop = FALSE]
     rownames(sub_DAList$metadata) <- valid_sample_ids
-
+    
     # Sanity check: skip contrasts with missing groups
     meta_groups_present <- unique(sub_DAList$metadata$group)
     if (!all(contrast_groups %in% meta_groups_present)) {
       cli::cli_alert_warning("Contrast '{contrast}' skipped: not all groups present in metadata after subsetting.")
       next
     }
-
+    
     # Ensure factor levels
     sub_DAList$metadata$group <- factor(
-    sub_DAList$metadata$group,
-    levels = unique(DAList$metadata$group)
+      sub_DAList$metadata$group,
+      levels = unique(DAList$metadata$group)
     )
-
     
     sub_DAList <- add_design(
       DAList          = sub_DAList,
@@ -426,4 +429,3 @@ run_filtered_limma_analysis <- function(
   
   return(new_DAList(DAList))
 }
-
