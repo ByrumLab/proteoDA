@@ -189,6 +189,7 @@ write_limma_plots <- function(DAList = NULL,
       unlink(expected_results)
     }
   }
+  
 
   # Capture original wd, and setup function to return to original wd
   # upon error or function exit if it has changed
@@ -213,6 +214,7 @@ write_limma_plots <- function(DAList = NULL,
     setwd(output_dir)
   }
 
+  
   # Copy templates over
   # Sneak a little flag in here to use the proteoDAuams package
   # when this function is being called for internal UAMS use
@@ -282,8 +284,10 @@ write_limma_plots <- function(DAList = NULL,
     # Get per-contrast data and annotation from new slots if available
     if (!is.null(DAList$data_per_contrast) && contrast %in% names(DAList$data_per_contrast)) {
       counts <- DAList$data_per_contrast[[contrast]]
+      groups <- DAList$metadata[colnames(counts), grouping_column, drop = TRUE]
     } else {
       counts <- DAList$data[rownames(data), , drop = FALSE]
+      groups <- DAList$metadata[[grouping_column]]
     }
     
     # Ensure counts and data have matching and aligned rownames
@@ -383,7 +387,7 @@ write_limma_plots <- function(DAList = NULL,
     #                   output_file = paste0(contrast, "_DA_report.html"),
     #                   quiet = T)
     
-    groups <- DAList$metadata[[grouping_column]]
+   # groups <- DAList$metadata[[grouping_column]]
     
    # rmarkdown::render("/Users/sbyrum/Documents/github/proteoDAstjude/inst/report_templates/limma_report_per_contrast.Rmd",
     rmarkdown::render("report_template.Rmd",
@@ -404,7 +408,14 @@ write_limma_plots <- function(DAList = NULL,
                       "!" = "{.path {failed}}")) #nocov end
    
    }
-
+  # log when data_per_contrast[[contrast]] is being used
+  if (!is.null(DAList$data_per_contrast) && contrast %in% names(DAList$data_per_contrast)) {
+    cli::cli_inform("Using filtered data for contrast {.val {contrast}} from {.code data_per_contrast}")
+    counts <- DAList$data_per_contrast[[contrast]]
+  } else {
+    counts <- DAList$data[rownames(data), , drop = FALSE]
+  }
+  
   # If success, return input object
   # Restore optional slots and return
   DAList[names(optional_preserved)] <- optional_preserved

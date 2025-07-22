@@ -152,7 +152,9 @@ impute_missing_by_gtest <- function(DAList,
       
       imputed_data_ordered <- result$imputed_data[match(filtered_ids, rownames(result$imputed_data)), , drop = FALSE]
       if (is.null(DAList$data_per_contrast)) DAList$data_per_contrast <- list()
-      DAList$data_per_contrast[[ctr]] <- imputed_data_ordered
+     # DAList$data_per_contrast[[ctr]] <- imputed_data_ordered
+  # Double-check that only the intended columns (samples) are present in the stored matrix:
+      DAList$data_per_contrast[[ctr]] <- imputed_data_ordered[, sample_ids, drop = FALSE]
       
       if (!is.null(DAList$annotation)) {
         if (is.null(DAList$annotation_per_contrast)) DAList$annotation_per_contrast <- list()
