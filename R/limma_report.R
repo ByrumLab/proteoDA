@@ -490,18 +490,20 @@ static_volcano_plot <- function(data,
                                 highlight_by = "uniprot_id") {
   
   data$uniprot_id <- rownames(data)
-  
-  if (!is.null(control_proteins)) {
-    if (is.null(anno)) {
-      stop("If control_proteins is provided, anno must also be provided.")
-    }
-    if (!(highlight_by %in% colnames(anno))) {
-      stop(sprintf("The highlight_by column '%s' is not in the annotation data.", highlight_by))
-    }
-    if (!("uniprot_id" %in% colnames(anno))) {
-      stop("Annotation data must contain 'uniprot_id' to align with DE results.")
-    }
     
+    if (!is.null(control_proteins)) {
+      if (is.null(anno)) {
+        stop("If control_proteins is provided, anno must also be provided.")
+      }
+      if (!(highlight_by %in% colnames(anno))) {
+        warning(sprintf("The highlight_by column '%s' is not in the annotation data. Skipping control protein highlighting.", highlight_by))
+        data$highlight <- FALSE
+        data$highlight_label <- NA_character_
+      } else {
+        if (!("uniprot_id" %in% colnames(anno))) {
+          stop("Annotation data must contain 'uniprot_id' to align with DE results.")
+      }
+        
     anno <- anno[rownames(data), , drop = FALSE]  # align
     highlight_vals <- anno[[highlight_by]]
     data$highlight <- highlight_vals %in% control_proteins

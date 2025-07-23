@@ -248,6 +248,7 @@ results <- missing_to_zero(results)
 #                   width = 1000)      # sets the container size in the html file
 
 source("R/limma_report_v2.R")
+source("R/limma_report.R")
 
 write_limma_plots(
     DAList = results,
@@ -258,7 +259,7 @@ write_limma_plots(
     width = 1000,
     output_dir = "DA_plots",
     overwrite = T,
-    control_proteins = c("P58004", "Q12766"),
+    control_proteins = c( "P58004", "Q12766", "MDM2"), #c("P58004", "Q12766", "MDM2")
     highlight_by = "uniprot_id")
 
 ## example usage
