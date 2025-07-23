@@ -93,7 +93,9 @@ write_limma_plots <- function(DAList = NULL,
                               tmp_subdir = "tmp",
                               overwrite = FALSE,
                               height = 1000,
-                              width = 1000) {
+                              width = 1000,
+                              control_proteins = NULL,
+                              highlight_by = "uniprot_id") {
 
   # Preserve optional slots
   optional_slots <- c("filtered_proteins_per_contrast")
@@ -347,7 +349,10 @@ write_limma_plots <- function(DAList = NULL,
       volcano <- static_volcano_plot(data,
                                      lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
                                      pval_thresh = DAList$tags$DA_criteria$pval_thresh,
-                                     contrast = contrast, pval_type = type)
+                                     contrast = contrast, pval_type = type,
+                                     control_proteins = control_proteins,
+                                     anno = anno,
+                                     highlight_by = highlight_by)
       MD <- static_MD_plot(data,
                            lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
                            contrast = contrast, pval_type = type)
@@ -356,6 +361,7 @@ write_limma_plots <- function(DAList = NULL,
              height = 6,
              width = 7,
              units = "in")
+  # save png
       ggsave(filename = file.path("static_plots", paste0(paste(contrast, "MD", type, "pval", sep = "-"), ".pdf")),
              plot = MD,
              height = 6,
@@ -474,15 +480,50 @@ prep_plot_model_data <- function(model_results, contrast) {
 #'
 #' @keywords internal
 #'
-static_volcano_plot <- function(data, lfc_thresh, pval_thresh, contrast, pval_type) {
-
+static_volcano_plot <- function(data,
+                                lfc_thresh,
+                                pval_thresh,
+                                contrast,
+                                pval_type,
+                                control_proteins = NULL,
+                                anno = NULL,
+                                highlight_by = "uniprot_id") {
+  
+  data$uniprot_id <- rownames(data)
+  
+  if (!is.null(control_proteins)) {
+    if (is.null(anno)) {
+      stop("If control_proteins is provided, anno must also be provided.")
+    }
+    if (!(highlight_by %in% colnames(anno))) {
+      stop(sprintf("The highlight_by column '%s' is not in the annotation data.", highlight_by))
+    }
+    if (!("uniprot_id" %in% colnames(anno))) {
+      stop("Annotation data must contain 'uniprot_id' to align with DE results.")
+    }
+    
+    anno <- anno[rownames(data), , drop = FALSE]  # align
+    highlight_vals <- anno[[highlight_by]]
+    data$highlight <- highlight_vals %in% control_proteins
+    data$highlight_label <- highlight_vals  # for labeling later
+  } else {
+    data$highlight <- FALSE
+    data$highlight_label <- NA_character_
+  }
+  
+  if (pval_type == "raw") {
+    data$label_y <- -log10(data$P.Value)
+  } else if (pval_type == "adjusted") {
+    data$label_y <- -log10(data$adj.P.Val)
+  } else {
+    stop("invalid value for pval_type")
+  }
+  
   base <- ggplot(data = data) +
-    geom_vline(xintercept = lfc_thresh*c(-1,1),
-               linetype = "dashed",
-               color = "grey50") +
+    geom_vline(xintercept = lfc_thresh * c(-1, 1),
+               linetype = "dashed", color = "grey50") +
     geom_hline(yintercept = -log10(pval_thresh),
-               linetype = "dashed",
-               color = "grey50") +
+               linetype = "dashed", color = "grey50") +
     xlab("log FC") +
     scale_color_manual(values = c("downReg" = "#00bfff",
                                   "nonDE" = "#858585",
@@ -494,27 +535,37 @@ static_volcano_plot <- function(data, lfc_thresh, pval_thresh, contrast, pval_ty
                        name = "DE status") +
     theme_bw() +
     ggtitle(paste0(stringr::str_replace(contrast, "_vs_", " vs "), ", ", pval_type, " p-value"))
-
+  
   if (pval_type == "raw") {
     final <- base +
-      geom_point(aes(x = .data$logFC,
-                     y = -log10(.data$P.Value),
-                     color = .data$sig.pval.fct,
-                     alpha = .data$sig.pval.fct), na.rm = T) +
-      scale_y_continuous(breaks = seq(from = 0, to = ceiling(max(-log10(data$P.Value), na.rm = T)) + 1, by = 1)) +
+      geom_point(aes(x = logFC,
+                     y = label_y,
+                     color = sig.pval.fct,
+                     alpha = sig.pval.fct), na.rm = TRUE) +
+      scale_y_continuous(breaks = seq(0, ceiling(max(data$label_y, na.rm = TRUE)) + 1, 1)) +
       ylab("-log10(P)")
-  } else if (pval_type == "adjusted") {
+  } else {
     final <- base +
-      geom_point(aes(x = .data$logFC,
-                     y = -log10(.data$adj.P.Val),
-                     color = .data$sig.FDR.fct,
-                     alpha = .data$sig.FDR.fct), na.rm = T) +
-      scale_y_continuous(breaks = seq(from = 0, to = ceiling(max(-log10(data$adj.P.Val), na.rm = T)) + 1, by = 1)) +
+      geom_point(aes(x = logFC,
+                     y = label_y,
+                     color = sig.FDR.fct,
+                     alpha = sig.FDR.fct), na.rm = TRUE) +
+      scale_y_continuous(breaks = seq(0, ceiling(max(data$label_y, na.rm = TRUE)) + 1, 1)) +
       ylab("-log10(adjP)")
-  } else{
-    stop("invalid value for pval_type") #nocov
   }
-  final
+  
+  if (any(data$highlight, na.rm = TRUE)) {
+    highlight_df <- data[data$highlight, , drop = FALSE]
+    final <- final +
+      geom_point(data = highlight_df,
+                 aes(x = logFC, y = label_y),
+                 shape = 21, fill = "yellow", color = "black", size = 2.5, stroke = 0.6) +
+      geom_text(data = highlight_df,
+                aes(x = logFC, y = label_y, label = highlight_label),
+                size = 2.5, vjust = -0.8)
+  }
+  
+  return(final)
 }
 
 #' Make a DE MD plot.
