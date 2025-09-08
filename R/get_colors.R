@@ -39,9 +39,24 @@ get_colors <- function(group) {
   num_groups <- length(groups)
   
   # Define a color-blind friendly palette (12 colors)
-  cb_palette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", 
-                  "#D55E00", "#CC79A7", "#999999", "#E69F00", "#56B4E9", 
-                  "#009E73", "#F0E442")
+ # cb_palette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", 
+ #                 "#D55E00", "#CC79A7", "#999999", "#E69F00", "#56B4E9", 
+ #                 "#009E73", "#F0E442")
+   # 12-color color-blind–friendly palette (no yellow)
+  cb_palette <- c(
+    "#E69F00", # orange
+    "#56B4E9", # sky blue
+    "#009E73", # bluish green
+    "#CC79A7", # reddish purple
+    "#0072B2", # blue
+    "#D55E00", # vermillion
+    "#999999", # gray
+    "#8DA0CB", # light purple
+    "#66A61E", # green
+    "#E6AB02", # goldenrod (darker than yellow)
+    "#A6761D", # brown
+    "#E7298A"  # pink
+  )
   
   if (num_groups <= 12L) {
     colors <- cb_palette[1:num_groups]
@@ -58,3 +73,4 @@ get_colors <- function(group) {
   
   return(colors)
 }
+
