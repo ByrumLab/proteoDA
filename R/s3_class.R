@@ -190,112 +190,156 @@ DAList <- function(data,
 
 #' DAList validator
 #'
-#' Internal function for validating a DAList object
-#'
-#' @param x An object to be tested if it is a valid DAList.
-#'
-#' @return If x was a valid DAList, returns x
+#' Internal function for validating a DAList object.
+#' Tolerant of arbitrary result labels (custom contrast names).
 #'
 #' @keywords internal
-#'
 validate_DAList <- function(x) {
+  `%||%` <- function(a, b) if (is.null(a)) b else a
+  
   required_slots <- c("data", "annotation", "metadata", "design", "eBayes_fit", "results", "tags")
-  optional_slots <- c("filtered_proteins_per_contrast",  "data_per_contrast", "annotation_per_contrast")
-  allowed_slots <- c(required_slots, optional_slots)
+  optional_slots <- c("filtered_proteins_per_contrast", "data_per_contrast", "annotation_per_contrast")
+  allowed_slots  <- c(required_slots, optional_slots)
   
   missing_required <- setdiff(required_slots, names(x))
   if (length(missing_required) > 0) {
     cli::cli_abort("The DAList is missing the following required slot{?s}: {missing_required}")
   }
-  # extra_slots <- setdiff(names(x), allowed_slots)
-  # if (length(extra_slots) > 0) {
-  #   cli::cli_inform("The DAList contains the following extra slot{?s}: {.val extra_slots}")
-  # }
   
-  # NOTE: Silently allow extra slots (for extension compatibility)
-  extra_slots <- setdiff(names(x), allowed_slots)
-  
+  # keep canonical order; allow extra slots
   final_order <- c(required_slots, intersect(optional_slots, names(x)))
   x <- x[final_order]
   class(x) <- "DAList"
   
-  if (any(c("tbl_df", "tbl") %in% class(x$data))) cli::cli_abort("Data slot is a tibble, must be a matrix or data frame")
-  if (any(c("tbl_df", "tbl") %in% class(x$annotation))) cli::cli_abort("Annotation slot is a tibble, must be a matrix or data frame")
-  if (any(c("tbl_df", "tbl") %in% class(x$metadata))) cli::cli_abort("Metadata slot is a tibble, must be a matrix or data frame")
+  # ---- Basic shape checks ----
+  if (any(c("tbl_df", "tbl") %in% class(x$data)))
+    cli::cli_abort("Data slot is a tibble, must be a matrix or data frame")
+  if (any(c("tbl_df", "tbl") %in% class(x$annotation)))
+    cli::cli_abort("Annotation slot is a tibble, must be a matrix or data frame")
+  if (any(c("tbl_df", "tbl") %in% class(x$metadata)))
+    cli::cli_abort("Metadata slot is a tibble, must be a matrix or data frame")
   
-  if (!any(c(is.data.frame(x$data), is.matrix(x$data)))) cli::cli_abort("The 'data' slot must be a data frame or matrix")
-  if (!all(apply(x$data, 2, is.numeric))) cli::cli_abort("The 'data' slot must contain only numeric data")
+  if (!any(c(is.data.frame(x$data), is.matrix(x$data))))
+    cli::cli_abort("The 'data' slot must be a data frame or matrix")
+  if (!all(apply(x$data, 2, is.numeric)))
+    cli::cli_abort("The 'data' slot must contain only numeric data")
   
-  if ("uniprot_id" %notin% colnames(x$annotation)) cli::cli_abort("The annotation data must contain a column named 'uniprot_id'")
-  if (any(duplicated(x$annotation$uniprot_id))) cli::cli_abort("The 'uniprot_id' values in annotation must be unique")
-  if (nrow(x$data) != nrow(x$annotation)) cli::cli_abort("'data' and 'annotation' must have the same number of rows")
-  if (!all(rownames(x$data) == rownames(x$annotation))) cli::cli_abort("Rownames for 'data' and 'annotation' must match")
-  if (!all(rownames(x$data) == x$annotation$uniprot_id)) cli::cli_abort("Rownames for 'data'/'annotation' must equal the 'uniprot_id' column")
+  if (!"uniprot_id" %in% colnames(x$annotation))
+    cli::cli_abort("The annotation data must contain a column named 'uniprot_id'")
+  if (any(duplicated(x$annotation$uniprot_id)))
+    cli::cli_abort("The 'uniprot_id' values in annotation must be unique")
+  if (nrow(x$data) != nrow(x$annotation))
+    cli::cli_abort("'data' and 'annotation' must have the same number of rows")
+  if (!all(rownames(x$data) == rownames(x$annotation)))
+    cli::cli_abort("Rownames for 'data' and 'annotation' must match")
+  if (!all(rownames(x$data) == x$annotation$uniprot_id))
+    cli::cli_abort("Rownames for 'data'/'annotation' must equal the 'uniprot_id' column")
   
-  if (nrow(x$metadata) != ncol(x$data)) cli::cli_abort("The number of samples in 'metadata' must match columns in 'data'")
-  if (any(colnames(x$data) != rownames(x$metadata))) cli::cli_abort("Row names of 'metadata' must match column names of 'data'")
+  if (nrow(x$metadata) != ncol(x$data))
+    cli::cli_abort("The number of samples in 'metadata' must match columns in 'data'")
+  if (any(colnames(x$data) != rownames(x$metadata)))
+    cli::cli_abort("Row names of 'metadata' must match column names of 'data'")
   
+  # ---- Design checks ----
   if (!is.null(x$design)) {
-    if (length(x$design) < 2) cli::cli_abort("'design' must be a list of at least 2 items: design_formula and design_matrix")
-    if (!all(c("design_matrix", "design_formula") %in% names(x$design))) cli::cli_abort("'design' must include 'design_matrix' and 'design_formula'")
-    if ("assign" %notin% names(attributes(x$design$design_matrix))) cli::cli_abort("'design_matrix' must have an 'assign' attribute")
+    need <- c("design_matrix", "design_formula")
+    if (length(x$design) < 2)
+      cli::cli_abort("'design' must be a list of at least 2 items: design_formula and design_matrix")
+    if (!all(need %in% names(x$design)))
+      cli::cli_abort("'design' must include 'design_matrix' and 'design_formula'")
     
-    if (nrow(x$design$design_matrix) != nrow(x$metadata)) cli::cli_abort("Rows in design_matrix must match metadata")
-    if (any(rownames(x$design$design_matrix) != rownames(x$metadata))) cli::cli_abort("Row names of design_matrix must match row names of metadata")
+    if (!"assign" %in% names(attributes(x$design$design_matrix)))
+      cli::cli_abort("'design_matrix' must have an 'assign' attribute")
+    
+    if (nrow(x$design$design_matrix) != nrow(x$metadata))
+      cli::cli_abort("Rows in design_matrix must match metadata")
+    if (any(rownames(x$design$design_matrix) != rownames(x$metadata)))
+      cli::cli_abort("Row names of design_matrix must match row names of metadata")
     
     if (!is.null(x$design$random_factor)) {
-      if (x$design$random_factor %notin% colnames(x$metadata)) cli::cli_abort("Random factor not found in metadata")
+      if (!x$design$random_factor %in% colnames(x$metadata))
+        cli::cli_abort("Random factor not found in metadata")
     }
     if (sum(c("contrast_matrix", "contrast_vector") %in% names(x$design)) == 1) {
       cli::cli_abort("If contrast information is included, both 'contrast_matrix' and 'contrast_vector' must be present")
     }
     if ("contrast_matrix" %in% names(x$design)) {
-      if (!all(rownames(x$design$contrast_matrix) == colnames(x$design$design_matrix))) cli::cli_abort("Rows in contrast_matrix must match columns in design_matrix")
+      if (!all(rownames(x$design$contrast_matrix) == colnames(x$design$design_matrix)))
+        cli::cli_abort("Rows in contrast_matrix must match columns in design_matrix")
     }
   }
   
+  # ---- eBayes fit checks ----
   if (!is.null(x$eBayes_fit)) {
-    if (is.list(x$eBayes_fit) && !inherits(x$eBayes_fit, "MArrayLM")) {
+    if (is.list(x$eBayes_fit) && !"MArrayLM" %in% class(x$eBayes_fit)) {
       all_marrays <- all(vapply(x$eBayes_fit, function(obj) "MArrayLM" %in% class(obj), logical(1)))
       if (!all_marrays) cli::cli_abort("All elements of eBayes_fit list must be of class 'MArrayLM'")
-    } else if ("MArrayLM" %notin% class(x$eBayes_fit)) {
+    } else if (!is.null(x$eBayes_fit) && !"MArrayLM" %in% class(x$eBayes_fit)) {
       cli::cli_abort("eBayes_fit must be of class 'MArrayLM' or a list of them")
     }
   }
   
+  # ---- Results checks (lenient on labels) ----
   if (!is.null(x$results)) {
-    term_names <- if (!is.null(x$design$contrast_matrix)) colnames(x$design$contrast_matrix) else colnames(x$design$design_matrix)
-    if (!is.null(x$tags$extract_intercept) && isTRUE(x$tags$extract_intercept)) {
-      if (!all(names(x$results) == term_names)) cli::cli_abort("Mismatch between results and design term names")
+    term_names <- if (!is.null(x$design$contrast_matrix)) {
+      colnames(x$design$contrast_matrix)
     } else {
-      non_intercept <- term_names[!grepl("ntercept", term_names)]
-      if (!all(names(x$results) == non_intercept)) cli::cli_abort("Mismatch between results and non-intercept terms")
+      colnames(x$design$design_matrix)
     }
     
-    for (term in names(x$results)) {
+    expected <- if (!is.null(x$tags$extract_intercept) && isTRUE(x$tags$extract_intercept)) {
+      term_names
+    } else {
+      term_names[!grepl("ntercept", term_names, ignore.case = TRUE)]
+    }
+    
+    res_names <- names(x$results)
+    
+    if (!identical(res_names, expected)) {
+      unmapped <- setdiff(res_names, expected)
+      if (length(unmapped) > 0) {
+        dcols <- colnames(x$design$design_matrix)
+        still_bad <- character(0)
+        for (lab in unmapped) {
+          ci <- tryCatch(x$tags$per_contrast[[lab]]$contrast_info, error = function(e) NULL)
+          ok <- FALSE
+          if (!is.null(ci) && !is.null(ci$contrast_expression)) {
+            expr <- as.character(ci$contrast_expression)[1]
+            tokens <- unique(unlist(regmatches(expr, gregexpr("[A-Za-z0-9_.:]+", expr))))
+            if (length(intersect(tokens, dcols)) > 0) ok <- TRUE
+          }
+          if (!ok) still_bad <- c(still_bad, lab)
+        }
+        if (length(still_bad) > 0) {
+          cli::cli_warn("Results names do not match design/contrast terms and lack usable tags: {still_bad}. Proceeding.")
+        }
+      } else {
+        cli::cli_warn("Results names differ from expected design/contrast terms; proceeding with arbitrary labels.")
+      }
+    }
+    
+    # Per-contrast row checks: must be subset of data rows (order may differ)
+    for (term in res_names) {
       result_rows <- rownames(x$results[[term]])
-      data_rows <- rownames(x$data)
+      data_rows   <- rownames(x$data)
       
-      if ("filtered_proteins_per_contrast" %in% names(x)) {
+      if (!all(result_rows %in% data_rows)) {
+        cli::cli_abort("Some rows in results for contrast '{term}' are not present in 'data'")
+      }
+      
+      if ("filtered_proteins_per_contrast" %in% names(x) && !is.null(x$filtered_proteins_per_contrast[[term]])) {
         expected_subset <- x$filtered_proteins_per_contrast[[term]]
-        if (!all(result_rows %in% data_rows)) cli::cli_abort("Some result rows are not present in 'data'")
         if (!all(result_rows %in% expected_subset)) {
           cli::cli_warn("Some rows in results for contrast '{term}' do not match the filtered protein list")
         }
-      } else {
-        if (!all(result_rows == data_rows)) cli::cli_abort("Rownames in results for '{term}' do not match those in data")
       }
     }
   }
   
   if ("filtered_proteins_per_contrast" %in% names(x)) {
-    if (!is.list(x$filtered_proteins_per_contrast)) cli::cli_abort("'filtered_proteins_per_contrast' must be a list")
+    if (!is.list(x$filtered_proteins_per_contrast))
+      cli::cli_abort("'filtered_proteins_per_contrast' must be a list")
   }
   
-  return(x)
+  x
 }
-
-
-
-
-

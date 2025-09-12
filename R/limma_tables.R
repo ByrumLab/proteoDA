@@ -17,6 +17,8 @@ summarize_contrast_DA <- function(contrast_name, contrast_res_list) {
                          colSums(tmp == 1, na.rm = TRUE))))
 }
 
+# now aware of contrast names in the design matrix
+
 #' Write per-contrast results csvs
 #'
 #' Internal function used to write per-contrast statistical results to .csv files.
@@ -26,9 +28,11 @@ summarize_contrast_DA <- function(contrast_name, contrast_res_list) {
 #' @param results_statlist A list of per-contrast DE results.
 #' @param output_dir The directory in which to save the per-contrast csv files.
 #' @param annotation_cols Optional character vector of annotation column names to include.
-#' @param metadata Optional list of metadata (e.g. DAList$metadata) for filtering data columns by sample group.
+#' @param metadata Optional data.frame of sample metadata (e.g. DAList$metadata).
 #' @param group_col Character. Name of the grouping column within metadata to match contrast samples.
-#' @param stat_cols Optional character vector of statistical columns to include from the results_statlist. If NULL, include all.
+#' @param stat_cols Optional character vector of statistical columns to include from the results_statlist.
+#' @param per_contrast_tags Optional list like DAList$tags$per_contrast; if present, will
+#'   be used to determine which sample groups/levels are involved in each contrast.
 #'
 #' @return A logical vector indicating whether each contrast file was successfully written.
 #' @keywords internal
@@ -39,40 +43,71 @@ write_per_contrast_csvs <- function(annotation_df,
                                     annotation_cols = NULL,
                                     metadata = NULL,
                                     group_col = "group",
-                                    stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")) {
-  if (!dir.exists(output_dir)) {
-    dir.create(output_dir, recursive = TRUE)
-  }
+                                    stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores"),
+                                    per_contrast_tags = NULL) {
+  `%||%` <- function(x, y) if (is.null(x)) y else x
   
+  if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+  
+  # Keep only requested annotation columns (if provided)
   if (!is.null(annotation_cols)) {
-    annotation_df <- annotation_df[, annotation_cols, drop = FALSE]
+    keep_annot <- intersect(annotation_cols, colnames(annotation_df))
+    annotation_df <- annotation_df[, keep_annot, drop = FALSE]
   }
   
+  # Excel-friendly gene_symbol trick (leave as-is if you already rely on it)
   if ("gene_symbol" %in% colnames(annotation_df)) {
     annotation_df$gene_symbol <- paste0('"=""', annotation_df$gene_symbol, '"""')
   }
-  
   csv_quote_cols <- which(colnames(annotation_df) != "gene_symbol")
   
+  # Build a lookup of sample -> group
   sample_groups <- rep("all", ncol(data))
   names(sample_groups) <- colnames(data)
-  
-  if (!is.null(metadata) && !is.null(metadata[[group_col]])) {
+  if (!is.null(metadata) && !is.null(group_col) && group_col %in% colnames(metadata)) {
     sample_groups <- metadata[[group_col]]
     names(sample_groups) <- rownames(metadata)
   }
   
+  # One contrast at a time
   per_contrast_results <- lapply(names(results_statlist), function(contrast) {
-    groups_in_contrast <- unlist(strsplit(contrast, split = "_vs_"))
+    # Default: include all samples
+    included_samples <- colnames(data)
     
-    included_samples <- names(sample_groups)[sample_groups %in% groups_in_contrast]
-    
-    subset_data <- if (length(included_samples) > 0) {
-      data[rownames(data), included_samples, drop = FALSE]
-    } else {
-      warning(paste("No matching sample groups found for contrast:", contrast))
-      data[rownames(data), , drop = FALSE]
+    # 1) Try tags first (preferred)
+    ci <- NULL
+    if (!is.null(per_contrast_tags) &&
+        !is.null(per_contrast_tags[[contrast]]) &&
+        !is.null(per_contrast_tags[[contrast]]$contrast_info)) {
+      ci <- per_contrast_tags[[contrast]]$contrast_info
     }
+    
+    if (!is.null(ci) &&
+        !is.null(ci$group_col) &&
+        length(ci$involved_levels %||% character(0)) > 0 &&
+        !is.null(metadata) &&
+        ci$group_col %in% colnames(metadata)) {
+      gcol <- ci$group_col
+      cand <- rownames(metadata)[metadata[[gcol]] %in% ci$involved_levels]
+      if (length(cand) > 0) {
+        included_samples <- cand
+      } else {
+        warning(sprintf("Tag metadata present but no matching samples for contrast: %s", contrast))
+      }
+    } else {
+      # 2) Fallback to legacy A_vs_B parsing
+      groups_in_contrast <- unlist(strsplit(contrast, split = "_vs_"))
+      if (!is.null(metadata) && !is.null(group_col) && group_col %in% colnames(metadata)) {
+        cand <- rownames(metadata)[metadata[[group_col]] %in% groups_in_contrast]
+        if (length(cand) > 0) {
+          included_samples <- cand
+        } else if (length(groups_in_contrast) > 1) {
+          warning(paste("No matching sample groups found for contrast:", contrast))
+        }
+      }
+    }
+    
+    subset_data <- data[rownames(data), included_samples, drop = FALSE]
     
     # Subset stat results to selected columns
     contrast_stats <- results_statlist[[contrast]]
@@ -95,14 +130,18 @@ write_per_contrast_csvs <- function(annotation_df,
   
   names(per_contrast_results) <- names(results_statlist)
   
+  # Write files
   filenames <- file.path(output_dir, paste0(names(per_contrast_results), ".csv"))
-  lapply(seq_along(per_contrast_results), function(x) {
-    utils::write.csv(per_contrast_results[[x]], file = filenames[x], row.names = FALSE, quote = csv_quote_cols)
+  lapply(seq_along(per_contrast_results), function(i) {
+    utils::write.csv(per_contrast_results[[i]],
+                     file = filenames[i],
+                     row.names = FALSE,
+                     quote = csv_quote_cols)
   })
   
-  write_success <- file.exists(filenames)
-  names(write_success) <- names(per_contrast_results)
-  write_success
+  ok <- file.exists(filenames)
+  names(ok) <- names(per_contrast_results)
+  ok
 }
 
 
@@ -625,9 +664,15 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
                  wb = wb))
   }
 
+# 
+
 #' Write tables of limma results
 #'
 #' Generates CSV and Excel summary tables from a limma differential analysis list.
+#' If DAList$tags$per_contrast[[label]]$contrast_info contains a usable group_col and non-empty involved_levels,
+#' those samples are selected for the per-contrast CSV; otherwise the old _vs_ parser is used. 
+#' If that also fails, all samples are included with a warning (same as before). write_limma_tables() 
+#' now passes the sidecar tags automatically and falls back to DAList$results when statlist is NULL.
 #'
 #' @param DAList A DAList object with statistical results.
 #' @param output_dir Directory to output tables. Defaults to working directory.
@@ -639,6 +684,7 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
 #' @param add_filter Logical. Add filters to Excel columns?
 #' @param color_palette Optional color palette for Excel output.
 #' @param add_contrast_sheets Logical. Whether to add each per-contrast CSV as a worksheet in the Excel file.
+#' @param statlist Optional list of per-contrast result tables to use instead of \code{DAList$results}.
 #'
 #' @return Invisibly returns the input DAList.
 #' @export
@@ -653,22 +699,22 @@ write_limma_tables <- function(DAList,
                                color_palette = NULL,
                                add_contrast_sheets = TRUE,
                                statlist = NULL) {
+  `%||%` <- function(x, y) if (is.null(x)) y else x
   
   if (is.null(color_palette)) {
     color_palette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
   }
   
-  if (is.null(statlist)) {
-    input_DAList <- validate_DAList(DAList)
-  } else {
-    input_DAList <- DAList  # Use as-is
-  }
+  # validate DAList unless statlist overrides
+  input_DAList <- if (is.null(statlist)) validate_DAList(DAList) else DAList
   
-  
-  if (is.null(DAList$results)) {
+  if (is.null(DAList$results) && is.null(statlist)) {
     cli::cli_abort(c("Input DAList does not have results",
                      "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
   }
+  
+  # results to use
+  results_statlist <- statlist %||% DAList$results
   
   if (is.null(output_dir)) {
     output_dir <- getwd()
@@ -686,10 +732,10 @@ write_limma_tables <- function(DAList,
   validate_filename(spreadsheet_xlsx, allowed_exts = "xlsx")
   
   expected_per_contrast_tables <- file.path(output_dir, contrasts_subdir,
-                                            paste0(names(DAList$results), ".csv"))
-  summary_output_file <- file.path(output_dir, summary_csv)
+                                            paste0(names(results_statlist), ".csv"))
+  summary_output_file  <- file.path(output_dir, summary_csv)
   combined_output_file <- file.path(output_dir, combined_file_csv)
-  excel_output_file <- file.path(output_dir, spreadsheet_xlsx)
+  excel_output_file    <- file.path(output_dir, spreadsheet_xlsx)
   
   expected_files <- c(expected_per_contrast_tables, summary_output_file,
                       combined_output_file, excel_output_file)
@@ -707,63 +753,66 @@ write_limma_tables <- function(DAList,
   
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
   
-  # Write summary
+  # Summary
   cli::cli_inform("Writing DA summary table to {.path {summary_output_file}}")
-  summary <- do.call("rbind", lapply(names(DAList$results), summarize_contrast_DA, DAList$results))
-  summary$pval_thresh <- DAList$tags$DA_criteria$pval_thresh
-  summary$lfc_thresh <- DAList$tags$DA_criteria$lfc_thresh
-  summary$p_adj_method <- DAList$tags$DA_criteria$adj_method
+  summary <- do.call("rbind", lapply(names(results_statlist), summarize_contrast_DA, results_statlist))
+  if (!is.null(DAList$tags$DA_criteria)) {
+    summary$pval_thresh  <- DAList$tags$DA_criteria$pval_thresh
+    summary$lfc_thresh   <- DAList$tags$DA_criteria$lfc_thresh
+    summary$p_adj_method <- DAList$tags$DA_criteria$adj_method
+  }
   utils::write.csv(summary, file = summary_output_file, row.names = FALSE)
-  
   if (!file.exists(summary_output_file)) {
     cli::cli_abort(c("Failed to write summary {.path .csv} to {.path {summary_output_file}}"))
   }
   
-  # Write per-contrast CSVs
+  # Per-contrast CSVs
   per_contrast_dir <- file.path(output_dir, contrasts_subdir)
+  if (!dir.exists(per_contrast_dir)) dir.create(per_contrast_dir, recursive = TRUE)
+  
   cli::cli_inform("Writing per-contrast results {.path .csv} files to {.path {per_contrast_dir}}")
-
-  # define in the proteoDA_params.R file 
-  contrast_csv_success <- write_per_contrast_csvs(annotation_df =DAList$annotation,
-                                                  data = DAList$data,
-                                                  results_statlist = statlist,
-                                                  output_dir = per_contrast_dir,
-                                                 # annotation_cols = c("uniprot_id","Genes","Accession.Number","Identified.Peptides","Protein.Description"),
-                                                  annotation_cols = DA_table_cols,
-                                                  metadata = DAList$metadata,
-                                                  group_col = group,
-                                                #  group_col = "group",
-                                                  #  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores","sig.PVal", "sig.FDR")
-                                                 stat_cols = stat_cols) 
+  
+  contrast_csv_success <- write_per_contrast_csvs(
+    annotation_df = DAList$annotation,
+    data = DAList$data,
+    results_statlist = results_statlist,
+    output_dir = per_contrast_dir,
+    annotation_cols = DA_table_cols,      # from your params file
+    metadata = DAList$metadata,
+    group_col = "group",                  # <-- FIXED: pass as string
+    stat_cols = stat_cols,                # from your params file
+    per_contrast_tags = DAList$tags$per_contrast %||% NULL
+  )
+  
   if (!all(contrast_csv_success)) {
     failed <- names(contrast_csv_success)[!contrast_csv_success]
     cli::cli_abort(c("Failed to write {.path .csv} results for contrast(s):",
                      "!" = "{.val {failed}}"))
   }
   
-  # Write combined CSV
+  # Combined CSV
   cli::cli_inform("Writing combined results table to {.path {combined_output_file}}")
-  combined_results <- create_combined_results(DAList$annotation, DAList$data, DAList$results)
+  combined_results <- create_combined_results(DAList$annotation, DAList$data, results_statlist)
   if ("gene_symbol" %in% colnames(combined_results)) {
     combined_results$gene_symbol <- paste0('"=""', combined_results$gene_symbol, '"""')
   }
   csv_quote_cols <- which(colnames(combined_results) != "gene_symbol")
   utils::write.csv(combined_results, file = combined_output_file, row.names = FALSE, quote = csv_quote_cols)
   
-  # Write Excel spreadsheet
-  # add annotation columns from proteoDA_params.R file 
+  # Excel workbook
   cli::cli_inform("Writing combined results Excel spreadsheet to {.path {excel_output_file}}")
-  write_limma_excel(filename = excel_output_file,
-                    statlist = statlist,     # DAList$results
-                    annotation = DAList$annotation,
-                    data = DAList$data,
-                    norm.method = DAList$tags$norm_method,
-                    pval_thresh = DAList$tags$DA_criteria$pval_thresh,
-                    lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
-                    add_filter = add_filter,
-                    color_palette = color_palette,
-                   # annot_cols = c("uniprot_id", "Genes","Identified.Peptides" ,"Accession.Number", "Protein.Description"))
-                    annot_cols = DA_table_cols)
+  write_limma_excel(
+    filename = excel_output_file,
+    statlist = results_statlist,
+    annotation = DAList$annotation,
+    data = DAList$data,
+    norm.method = DAList$tags$norm_method,
+    pval_thresh = DAList$tags$DA_criteria$pval_thresh,
+    lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
+    add_filter = add_filter,
+    color_palette = color_palette,
+    annot_cols = DA_table_cols
+  )
   
   if (add_contrast_sheets) {
     cli::cli_inform("Adding per-contrast CSVs as worksheets to {.path {excel_output_file}}")
@@ -775,7 +824,6 @@ write_limma_tables <- function(DAList,
       openxlsx::addWorksheet(wb, sheet_name)
       openxlsx::writeData(wb, sheet = sheet_name, x = df, withFilter = TRUE)
     }
-    
     openxlsx::saveWorkbook(wb, file = excel_output_file, overwrite = TRUE)
   }
   

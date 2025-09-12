@@ -274,6 +274,15 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
 
 
 # Run filtered limma analysis per contrast
+# What changed (and why)
+# No _vs_ splitting or sample subsetting. We no longer assume the label encodes two groups. This lets you use labels like Diff_in_effect_CHLA_SKNF1 freely.
+# Contrast expressions drive everything. Each loop pulls the full "Label = ..." expression and passes it to add_contrasts(). As long as the RHS uses valid design column names (e.g., group-level columns from your ~ 0 + group design, or whatever your design_formula yields), the label on the LHS can be any descriptive string.
+# Per-contrast rows (proteins) still supported. If you’ve precomputed DAList$data_per_contrast[[label]] or DAList$filtered_proteins_per_contrast[[label]], the function uses them. It does not drop samples based on label guesses.
+# This should resolve the error you hit and let you define interaction contrasts like:
+#  contrast_info$involved_levels is conservative: it only includes values from metadata[[group_col]] whose exact strings also appear as design columns and in the RHS expression. This avoids false positives and works for both simple contrasts and interaction-type expressions whose terms are design columns.
+#  If your add_design() stores the design matrix under a different field than $design$X or tracks group_col elsewhere, adjust the two lookups accordingly.
+#  With this in place, write_per_contrast_csvs() (called by write_limma_tables()) can read results[[c]]$tags$contrast_info and stop guessing from labels.  
+
 #' Run limma analysis per contrast on filtered proteins
 #'
 #' This function subsets the DAList for each contrast according to
@@ -283,19 +292,35 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
 #' of log fold changes based on intensity-sorted proteins, and computes z-scores.
 #'
 #' @param DAList A DAList object containing full data and per-contrast filtered proteins.
-#' @param design_formula A formula for the model design, e.g., ~0 + group.
+#' @param design_formula A formula for the model design (e.g., `~0 + group`, or `~0 + cell:treatment`).
 #' @param pval_thresh P-value threshold used for defining significance. Default = 0.05.
 #' @param lfc_thresh Log2 fold change threshold for significance. Default = 1.
-#' @param adj_method Adjustment method for multiple testing ("BH", "BY", etc). Default = "BH".
+#' @param adj_method Adjustment method for multiple testing ("BH", "BY", "none", etc). Default = "BH".
 #' @param contrasts_file Optional CSV file with contrast definitions if not present in the DAList.
+#'   Each row should contain a full contrast statement of the form `Label = expression`.
+#'   The label (left-hand side) may be any string; it does not need to encode group names.
 #' @param binsize Either an integer for the moving window size, or "auto" (default) to select automatically.
 #' @param binsize_range A numeric vector of candidate bin sizes to evaluate when `binsize = "auto"`.
 #' @param plot_movingSD Logical. If TRUE (default), plot moving SD curves for each contrast.
 #'
-#' @return The input DAList, updated with filtered contrast-level results, model fits,
+#' @return The input DAList, updated with per-contrast model fits and results,
 #'   moving SDs, and logFC z-scores.
 #'
-#' @export
+#' @section Contrast metadata (for downstream writers):
+#' For each contrast, a sidecar list is saved at
+#' \code{DAList$tags$per_contrast[[label]]$contrast_info} so downstream
+#' functions (e.g., \code{write_limma_tables()}) do not need to parse labels.
+#' \code{contrast_info} contains:
+#' \itemize{
+#'   \item \code{label}: contrast label (left-hand side)
+#'   \item \code{contrast_expression_raw}: the RHS as written in the file
+#'   \item \code{contrast_expression}: the RHS actually passed to limma (after translation)
+#'   \item \code{design_formula}: the design formula as a character string
+#'   \item \code{group_col}: grouping column if applicable (or \code{NULL} for pure interaction designs)
+#'   \item \code{factors}: factor names participating in a simple two-factor interaction (e.g., \code{c("cell","treatment")})
+#'   \item \code{design_columns_involved}: model-matrix columns referenced by the translated expression
+#'   \item \code{involved_levels}: levels from \code{group_col} appearing in the expression (if applicable)
+#' }
 #'
 #' @examples
 #' # Using default binsize auto-selection
@@ -303,116 +328,227 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
 #'
 #' # With specified bin size and no plots
 #' filtered_DAList <- run_filtered_limma_analysis(filtered_DAList, binsize = 200, plot_movingSD = FALSE)
-
-
+#'
+#' @export
 run_filtered_limma_analysis <- function(
     DAList,
-    design_formula     = ~0 + group,
-    pval_thresh        = 0.05,
-    lfc_thresh         = 1,
-    adj_method         = "BH",
-    contrasts_file     = NULL,
-    binsize            = "auto",                # <- NEW PARAMETER
-    binsize_range      = c(50, 100, 200, 400, 500, 1000),  # <- passed only if binsize = "auto"
-    plot_movingSD      = TRUE                   # <- optional: control plotting
+    design_formula = ~ 0 + group,
+    pval_thresh = 0.05,
+    lfc_thresh = 1,
+    adj_method = "BH",
+    contrasts_file = NULL,
+    binsize = "auto",
+    binsize_range = c(50, 100, 200, 400, 500, 1000),
+    plot_movingSD = TRUE
 ) {
   validate_DAList(DAList)
-  
   if (!exists("compute_movingSD_zscores")) {
     stop("Function compute_movingSD_zscores() must be sourced before running this.")
   }
   
-  filtered_results <- list()
-  filtered_ebayes  <- list()
+  # helpers -------------------------------------------------------------
+  .re_escape <- function(x) gsub("([][{}()+*^$.|\\\\?])", "\\\\\\1", x)
   
-  if (!is.null(DAList$filtered_proteins_per_contrast)) {
-    contrast_names <- names(DAList$filtered_proteins_per_contrast)
-  } else if (!is.null(DAList$design$contrast_vector)) {
-    contrast_names <- stringr::str_trim(stringr::str_split_fixed(DAList$design$contrast_vector, "=", 2)[,1])
-    cli::cli_alert_info("No filtered_proteins_per_contrast found. Using all proteins for each contrast.")
-  } else if (!is.null(contrasts_file)) {
-    contrast_table <- utils::read.csv(contrasts_file, header = FALSE, stringsAsFactors = FALSE)
-    contrast_vector <- contrast_table[[1]]
-    contrast_names <- stringr::str_trim(stringr::str_split_fixed(contrast_vector, "=", 2)[,1])
-    cli::cli_alert_info("Loaded contrasts from file: {.file {contrasts_file}}")
-  } else {
-    stop("Could not determine contrast names: no filtered_proteins_per_contrast, contrast_vector, or contrasts_file provided.")
+  .replace_tokens <- function(expr, map) {
+    if (is.null(map) || length(map) == 0) return(expr)
+    keys <- names(map)[order(nchar(names(map)), decreasing = TRUE)]
+    out <- expr
+    for (k in keys) {
+      patt <- paste0("(?<![A-Za-z0-9_.])", .re_escape(k), "(?![A-Za-z0-9_.])")
+      out <- gsub(patt, map[[k]], out, perl = TRUE)
+    }
+    out
   }
   
-  for (contrast in contrast_names) {
-    cli::cli_inform(paste("Processing contrast:", contrast))
+  # 1) ensure a design exists ------------------------------------------
+  DAList <- add_design(DAList = DAList, design_formula = design_formula)
+  
+  # 2) build contrast map (names = labels; values = "Label = expr") ----
+  contrast_map <- NULL
+  if (!is.null(DAList$design$contrast_vector)) {
+    cv  <- DAList$design$contrast_vector
+    lhs <- stringr::str_trim(stringr::str_split_fixed(cv, "=", 2)[, 1])
+    contrast_map <- stats::setNames(cv, lhs)
+  } else if (!is.null(contrasts_file)) {
+    contrast_table <- utils::read.csv(contrasts_file, header = FALSE, stringsAsFactors = FALSE)
+    cv  <- as.character(contrast_table[[1]])
+    lhs <- stringr::str_trim(stringr::str_split_fixed(cv, "=", 2)[, 1])
+    contrast_map <- stats::setNames(cv, lhs)
+    cli::cli_alert_info("Loaded contrasts from file: {.file {contrasts_file}}")
+  } else if (!is.null(DAList$filtered_proteins_per_contrast)) {
+    cli::cli_abort(c(
+      "Could not determine contrast expressions for the provided contrast names",
+      "i" = "Provide {.arg contrasts_file} or set {.code DAList$design$contrast_vector} first."
+    ))
+  } else {
+    cli::cli_abort(c(
+      "Could not determine contrasts",
+      "i" = "Provide {.arg contrasts_file} or set {.code DAList$design$contrast_vector} in DAList."
+    ))
+  }
+  
+  # containers ----------------------------------------------------------
+  labels <- names(contrast_map)
+  filtered_results <- list()
+  filtered_ebayes  <- list()
+  if (is.null(DAList$tags)) DAList$tags <- list()
+  if (is.null(DAList$tags$per_contrast)) DAList$tags$per_contrast <- list()
+  
+  # main loop -----------------------------------------------------------
+  for (label in labels) {
+    cli::cli_inform(paste("Processing contrast:", label))
     
-    # Check if DAList$data_per_contrast exists and is used instead of filtered_proteins_per_contrast keep_proteins
-    if (!is.null(DAList$data_per_contrast)) {
-      sub_data <- DAList$data_per_contrast[[contrast]]
-    } else if (!is.null(DAList$filtered_proteins_per_contrast)) {
-      keep_proteins <- DAList$filtered_proteins_per_contrast[[contrast]]
+    # extract RHS expr from "Label = expr"
+    cont_string <- contrast_map[[label]]
+    split2 <- stringr::str_split_fixed(cont_string, "=", 2)
+    rhs_expr <- if (ncol(split2) == 2) stringr::str_trim(split2[, 2]) else cont_string
+    orig_rhs <- rhs_expr
+    
+    # subset rows (proteins) for this contrast if provided
+    if (!is.null(DAList$data_per_contrast) && !is.null(DAList$data_per_contrast[[label]])) {
+      sub_data <- DAList$data_per_contrast[[label]]
+    } else if (!is.null(DAList$filtered_proteins_per_contrast) && !is.null(DAList$filtered_proteins_per_contrast[[label]])) {
+      keep_proteins <- DAList$filtered_proteins_per_contrast[[label]]
       sub_data <- DAList$data[keep_proteins, , drop = FALSE]
     } else {
-      sub_data <- DAList$data  # Use all data if no filtered data is present
+      sub_data <- DAList$data
     }
     
-    contrast_groups <- unlist(strsplit(contrast, "_vs_"))
-    if (length(contrast_groups) != 2) {
-      cli::cli_alert_warning("Could not parse contrast '{contrast}' into two groups using '_vs_'. Skipping.")
-      next
-    }
-    
-    sample_ids <- rownames(DAList$metadata)[DAList$metadata$group %in% contrast_groups]
-    valid_sample_ids <- intersect(sample_ids, colnames(sub_data))
-    
+    # per-contrast view: same samples/metadata; only rows change
     sub_DAList <- DAList
     sub_DAList$filtered_proteins_per_contrast <- NULL
-    sub_DAList$data       <- sub_data[, valid_sample_ids, drop = FALSE]
+    sub_DAList$data <- sub_data
     sub_DAList$annotation <- DAList$annotation[rownames(sub_DAList$data), , drop = FALSE]
-    sub_DAList$metadata   <- DAList$metadata[valid_sample_ids, , drop = FALSE]
-    rownames(sub_DAList$metadata) <- valid_sample_ids
+    sub_DAList$metadata <- DAList$metadata[colnames(sub_DAList$data), , drop = FALSE]
+    rownames(sub_DAList$metadata) <- colnames(sub_DAList$data)
     
-    # Sanity check: skip contrasts with missing groups
-    meta_groups_present <- unique(sub_DAList$metadata$group)
-    if (!all(contrast_groups %in% meta_groups_present)) {
-      cli::cli_alert_warning("Contrast '{contrast}' skipped: not all groups present in metadata after subsetting.")
-      next
+    # rebuild design for the current sample set
+    sub_DAList <- add_design(DAList = sub_DAList, design_formula = design_formula)
+    
+    # robust token → design-column translation for 2-factor interactions
+    X <- tryCatch(sub_DAList$design$X, error = function(e) NULL)
+    if (!is.null(X)) sub_DAList$design$design_matrix <- X  # ensure slot for add_contrasts()
+    dcols <- if (!is.null(sub_DAList$design$design_matrix)) colnames(sub_DAList$design$design_matrix) else character(0)
+    
+    rhs_tokens <- unique(stringr::str_extract_all(rhs_expr, "[A-Za-z0-9_.]+")[[1]])
+    rhs_tokens <- rhs_tokens[!is.na(rhs_tokens) & nzchar(rhs_tokens)]
+    term_labels <- tryCatch(attr(terms(design_formula), "term.labels"), error = function(e) character(0))
+    has_two_factor_interaction_only <- length(term_labels) == 1 && grepl(":", term_labels)
+    
+    token_map <- list()
+    factors <- NULL
+    
+    if (has_two_factor_interaction_only && length(dcols) > 0) {
+      fvars <- strsplit(term_labels, ":", fixed = TRUE)[[1]]
+      fvars <- trimws(fvars)
+      f1 <- fvars[1]; f2 <- fvars[2]
+      factors <- c(f1, f2)
+      
+      f1_lvls <- if (f1 %in% colnames(sub_DAList$metadata)) levels(droplevels(factor(sub_DAList$metadata[[f1]]))) else character(0)
+      f2_lvls <- if (f2 %in% colnames(sub_DAList$metadata)) levels(droplevels(factor(sub_DAList$metadata[[f2]]))) else character(0)
+      
+      find_interaction_col_variants <- function(lv1, lv2) {
+        variants <- c(
+          paste0(f1, lv1, ":", f2, lv2),
+          paste0(       lv1, ":", f2, lv2),
+          paste0(f1, lv1, ".", f2, lv2),
+          paste0(       lv1, ".", f2, lv2)
+        )
+        hit <- dcols[dcols %in% variants]
+        if (length(hit)) return(hit[1])
+        # last resort fuzzy
+        hit <- dcols[
+          grepl(paste0("(^|[:.])", .re_escape(lv1), "([:.]|$)"), dcols) &
+            grepl(paste0("(^|[:.])", .re_escape(lv2), "([:.]|$)"), dcols) &
+            grepl(.re_escape(f2), dcols)
+        ]
+        if (length(hit)) return(hit[1])
+        character(0)
+      }
+      
+      for (tok in rhs_tokens) {
+        if (tok %in% dcols) next
+        if (!grepl("_", tok, fixed = TRUE)) next
+        parts <- strsplit(tok, "_", fixed = TRUE)[[1]]
+        if (length(parts) != 2) next
+        
+        cand <- character(0)
+        if (parts[1] %in% f1_lvls && parts[2] %in% f2_lvls) {
+          cand <- find_interaction_col_variants(parts[1], parts[2])
+        } else if (parts[1] %in% f2_lvls && parts[2] %in% f1_lvls) {
+          cand <- find_interaction_col_variants(parts[2], parts[1])
+        }
+        if (length(cand)) token_map[[tok]] <- cand
+      }
+      
+      if (length(token_map)) {
+        rhs_expr <- .replace_tokens(rhs_expr, token_map)
+      }
     }
     
-    # Ensure factor levels
-    sub_DAList$metadata$group <- factor(
-      sub_DAList$metadata$group,
-      levels = unique(DAList$metadata$group)
-    )
+    # optional: print translated RHS & design columns
+    cli::cli_inform(c(
+      "i" = "Contrast '{label}' RHS (post-translation): {rhs_expr}",
+      "i" = "Design columns: {paste(dcols, collapse = ', ')}"
+    ))
     
-    sub_DAList <- add_design(
-      DAList          = sub_DAList,
-      design_formula  = design_formula
-    )
+    # add this (possibly translated) contrast
+    cont_string_translated <- paste(label, "=", rhs_expr)
+    sub_DAList <- add_contrasts(sub_DAList, contrasts_vector = cont_string_translated)
     
-    cont_string <- paste0(
-      contrast, " = ",
-      contrast_groups[1], " - ",
-      contrast_groups[2]
-    )
-    
-    sub_DAList <- add_contrasts(sub_DAList, contrasts_vector = cont_string)
+    # fit & extract
     sub_DAList <- fit_limma_model(sub_DAList)
     sub_DAList <- extract_DA_results(
-      DAList       = sub_DAList,
-      pval_thresh  = pval_thresh,
-      lfc_thresh   = lfc_thresh,
-      adj_method   = adj_method
+      DAList = sub_DAList,
+      pval_thresh = pval_thresh,
+      lfc_thresh  = lfc_thresh,
+      adj_method  = adj_method
     )
     
-    if (!is.null(sub_DAList$results[[contrast]])) {
-      filtered_results[[contrast]] <- sub_DAList$results[[contrast]]
-      filtered_ebayes[[contrast]]  <- sub_DAList$eBayes_fit
+    if (!is.null(sub_DAList$results[[label]])) {
+      filtered_results[[label]] <- sub_DAList$results[[label]]
+      filtered_ebayes[[label]]  <- sub_DAList$eBayes_fit
+      
+      # contrast metadata sidecar --------------------------------------
+      design_cols <- colnames(sub_DAList$design$design_matrix)
+      tokens_for_cols <- unique(stringr::str_extract_all(rhs_expr, "[A-Za-z0-9_.:]+")[[1]])
+      cols_in_expr <- intersect(tokens_for_cols, design_cols)
+      
+      # group_col if available (mainly for ~0 + group models)
+      group_col <- NULL
+      if (!is.null(sub_DAList$design$group_col) && is.character(sub_DAList$design$group_col)) {
+        group_col <- sub_DAList$design$group_col
+      } else if ("group" %in% colnames(sub_DAList$metadata)) {
+        group_col <- "group"
+      }
+      
+      involved_levels <- character(0)
+      if (!is.null(group_col) && group_col %in% colnames(sub_DAList$metadata)) {
+        grp_lvls <- levels(droplevels(factor(sub_DAList$metadata[[group_col]])))
+        involved_levels <- intersect(rhs_tokens, grp_lvls)
+      }
+      
+      DAList$tags$per_contrast[[label]] <- list(
+        contrast_info = list(
+          label = label,
+          contrast_expression_raw = orig_rhs,
+          contrast_expression = rhs_expr,
+          design_formula = paste(deparse(design_formula), collapse = ""),
+          group_col = group_col,
+          factors = factors,
+          design_columns_involved = cols_in_expr,
+          involved_levels = involved_levels
+        )
+      )
     } else {
-      cli::cli_alert_warning("No results found for contrast '{contrast}' — skipping.")
+      cli::cli_alert_warning("No results found for contrast '{label}' — skipping.")
     }
   }
   
   DAList$results    <- filtered_results
   DAList$eBayes_fit <- filtered_ebayes
   
-  # Call updated compute_movingSD_zscores with selected binsize
+  # moving SD z-scores --------------------------------------------------
   DAList <- compute_movingSD_zscores(
     DAList = DAList,
     binsize = binsize,
@@ -427,5 +563,6 @@ run_filtered_limma_analysis <- function(
     adj_method  = adj_method
   )
   
-  return(new_DAList(DAList))
+  new_DAList(DAList)
 }
+

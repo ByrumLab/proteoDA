@@ -139,59 +139,99 @@ write_limma_plots <- function(DAList = NULL,
 
   # Set up list of expected files, warn about overwriting if they exist
   # Will also make checking for their existence later easier
+  # --- Expected output files (ALWAYS define these before checking) ---
+  stopifnot(!is.null(DAList$results), length(DAList$results) > 0)
+  
+  contrast_names <- names(DAList$results)
+  
   expected_xy_plots <- file.path(
-    output_dir,
-    "static_plots",
+    output_dir, "static_plots",
     apply(
-      X = expand.grid(names(DAList$results),
-                      c("volcano", "MD"),
-                      c("raw", "adjusted"),
-                      "pval.pdf"),
-      MARGIN = 1,
-      FUN = paste,
-      collapse = "-"
+      X = expand.grid(contrast_names, c("volcano", "MD"), c("raw", "adjusted"), "pval.pdf"),
+      MARGIN = 1, FUN = paste, collapse = "-"
     )
   )
+  
   expected_histograms_plots <- file.path(
-    output_dir,
-    "static_plots",
-    apply(
-      X = expand.grid(names(DAList$results),
-                      "pval-hist.pdf"),
-      MARGIN = 1,
-      FUN = paste,
-      collapse = "-"
-    )
+    output_dir, "static_plots",
+    paste0(contrast_names, "-pval-hist.pdf")
   )
-
-  expected_reports <-  file.path(
+  
+  expected_reports <- file.path(
     output_dir,
-    apply(
-      X = expand.grid(names(DAList$results),
-                      "DA_report.html"),
-      MARGIN = 1,
-      FUN = paste,
-      collapse = "_"
-    )
+    paste0(contrast_names, "_DA_report.html")
   )
-  expected_results <- c(expected_histograms_plots,
-                        expected_xy_plots,
-                        expected_reports)
-
-  # If any files already exist
-  if (any(file.exists(expected_results))) {
+  
+  expected_results <- unique(c(expected_histograms_plots, expected_xy_plots, expected_reports))
+  
+  # --- Overwrite check ---
+  existing <- file.exists(expected_results)
+  if (any(existing, na.rm = TRUE)) {
     if (!overwrite) {
-      cli::cli_abort(c("Results files already exist",
-                       "!" = "and {.arg overwrite} == {.val {overwrite}}",
-                       "i" = "Change {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"))
-
+      cli::cli_abort(c(
+        "Results files already exist",
+        "!" = "and {.arg overwrite} == {.val {overwrite}}",
+        "i" = "Change {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"
+      ))
     } else {
       cli::cli_inform("Results files already exist, and {.arg overwrite} == {.val {overwrite}}. Overwriting results files.")
-      # Delete old results files so results don't become unsynced if there are any issues
-      unlink(expected_results)
+      unlink(expected_results[existing], recursive = FALSE, expand = FALSE)
     }
   }
   
+  # expected_xy_plots <- file.path(
+  #   output_dir,
+  #   "static_plots",
+  #   apply(
+  #     X = expand.grid(names(DAList$results),
+  #                     c("volcano", "MD"),
+  #                     c("raw", "adjusted"),
+  #                     "pval.pdf"),
+  #     MARGIN = 1,
+  #     FUN = paste,
+  #     collapse = "-"
+  #   )
+  # )
+  # expected_histograms_plots <- file.path(
+  #   output_dir,
+  #   "static_plots",
+  #   apply(
+  #     X = expand.grid(names(DAList$results),
+  #                     "pval-hist.pdf"),
+  #     MARGIN = 1,
+  #     FUN = paste,
+  #     collapse = "-"
+  #   )
+  # )
+  # 
+  # expected_reports <-  file.path(
+  #   output_dir,
+  #   apply(
+  #     X = expand.grid(names(DAList$results),
+  #                     "DA_report.html"),
+  #     MARGIN = 1,
+  #     FUN = paste,
+  #     collapse = "_"
+  #   )
+  # )
+  # expected_results <- c(expected_histograms_plots,
+  #                       expected_xy_plots,
+  #                       expected_reports)
+  # 
+  # # If any files already exist
+  # if (any(file.exists(expected_results))) {
+  #   if (!overwrite) {
+  #     cli::cli_abort(c("Results files already exist",
+  #                      "!" = "and {.arg overwrite} == {.val {overwrite}}",
+  #                      "i" = "Change {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"))
+  # 
+  #   } else {
+  #     cli::cli_inform("Results files already exist, and {.arg overwrite} == {.val {overwrite}}. Overwriting results files.")
+  #     # Delete old results files so results don't become unsynced if there are any issues
+  #     unlink(expected_results)
+  #   }
+  # }
+  # 
 
   # Capture original wd, and setup function to return to original wd
   # upon error or function exit if it has changed

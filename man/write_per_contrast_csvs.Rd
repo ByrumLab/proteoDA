@@ -12,7 +12,8 @@ write_per_contrast_csvs(
   annotation_cols = NULL,
   metadata = NULL,
   group_col = "group",
-  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores")
+  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores"),
+  per_contrast_tags = NULL
 )
 }
 \arguments{
@@ -26,11 +27,14 @@ write_per_contrast_csvs(
 
 \item{annotation_cols}{Optional character vector of annotation column names to include.}
 
-\item{metadata}{Optional list of metadata (e.g. DAList$metadata) for filtering data columns by sample group.}
+\item{metadata}{Optional data.frame of sample metadata (e.g. DAList$metadata).}
 
 \item{group_col}{Character. Name of the grouping column within metadata to match contrast samples.}
 
-\item{stat_cols}{Optional character vector of statistical columns to include from the results_statlist. If NULL, include all.}
+\item{stat_cols}{Optional character vector of statistical columns to include from the results_statlist.}
+
+\item{per_contrast_tags}{Optional list like DAList$tags$per_contrast; if present, will
+be used to determine which sample groups/levels are involved in each contrast.}
 }
 \value{
 A logical vector indicating whether each contrast file was successfully written.

@@ -6,13 +6,8 @@
 \usage{
 validate_DAList(x)
 }
-\arguments{
-\item{x}{An object to be tested if it is a valid DAList.}
-}
-\value{
-If x was a valid DAList, returns x
-}
 \description{
-Internal function for validating a DAList object
+Internal function for validating a DAList object.
+Tolerant of arbitrary result labels (custom contrast names).
 }
 \keyword{internal}
