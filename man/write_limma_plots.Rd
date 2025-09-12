@@ -13,7 +13,9 @@ write_limma_plots(
   tmp_subdir = "tmp",
   overwrite = FALSE,
   height = 1000,
-  width = 1000
+  width = 1000,
+  control_proteins = NULL,
+  highlight_by = "uniprot_id"
 )
 }
 \arguments{

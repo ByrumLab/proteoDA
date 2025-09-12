@@ -12,22 +12,24 @@ run_filtered_limma_analysis(
   adj_method = "BH",
   contrasts_file = NULL,
   binsize = "auto",
-  binsize_range = c(50, 100, 200, 400),
+  binsize_range = c(50, 100, 200, 400, 500, 1000),
   plot_movingSD = TRUE
 )
 }
 \arguments{
 \item{DAList}{A DAList object containing full data and per-contrast filtered proteins.}
 
-\item{design_formula}{A formula for the model design, e.g., ~0 + group.}
+\item{design_formula}{A formula for the model design (e.g., \code{~0 + group}, or \code{~0 + cell:treatment}).}
 
 \item{pval_thresh}{P-value threshold used for defining significance. Default = 0.05.}
 
 \item{lfc_thresh}{Log2 fold change threshold for significance. Default = 1.}
 
-\item{adj_method}{Adjustment method for multiple testing ("BH", "BY", etc). Default = "BH".}
+\item{adj_method}{Adjustment method for multiple testing ("BH", "BY", "none", etc). Default = "BH".}
 
-\item{contrasts_file}{Optional CSV file with contrast definitions if not present in the DAList.}
+\item{contrasts_file}{Optional CSV file with contrast definitions if not present in the DAList.
+Each row should contain a full contrast statement of the form \code{Label = expression}.
+The label (left-hand side) may be any string; it does not need to encode group names.}
 
 \item{binsize}{Either an integer for the moving window size, or "auto" (default) to select automatically.}
 
@@ -36,7 +38,7 @@ run_filtered_limma_analysis(
 \item{plot_movingSD}{Logical. If TRUE (default), plot moving SD curves for each contrast.}
 }
 \value{
-The input DAList, updated with filtered contrast-level results, model fits,
+The input DAList, updated with per-contrast model fits and results,
 moving SDs, and logFC z-scores.
 }
 \description{
@@ -46,10 +48,29 @@ It is useful when proteins are filtered differently per contrast.
 After model fitting, the function computes rolling standard deviations (moving SDs)
 of log fold changes based on intensity-sorted proteins, and computes z-scores.
 }
+\section{Contrast metadata (for downstream writers)}{
+
+For each contrast, a sidecar list is saved at
+\code{DAList$tags$per_contrast[[label]]$contrast_info} so downstream
+functions (e.g., \code{write_limma_tables()}) do not need to parse labels.
+\code{contrast_info} contains:
+\itemize{
+\item \code{label}: contrast label (left-hand side)
+\item \code{contrast_expression_raw}: the RHS as written in the file
+\item \code{contrast_expression}: the RHS actually passed to limma (after translation)
+\item \code{design_formula}: the design formula as a character string
+\item \code{group_col}: grouping column if applicable (or \code{NULL} for pure interaction designs)
+\item \code{factors}: factor names participating in a simple two-factor interaction (e.g., \code{c("cell","treatment")})
+\item \code{design_columns_involved}: model-matrix columns referenced by the translated expression
+\item \code{involved_levels}: levels from \code{group_col} appearing in the expression (if applicable)
+}
+}
+
 \examples{
 # Using default binsize auto-selection
 filtered_DAList <- run_filtered_limma_analysis(filtered_DAList)
 
 # With specified bin size and no plots
 filtered_DAList <- run_filtered_limma_analysis(filtered_DAList, binsize = 200, plot_movingSD = FALSE)
+
 }

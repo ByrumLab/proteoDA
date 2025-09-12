@@ -38,10 +38,16 @@ write_limma_tables(
 \item{color_palette}{Optional color palette for Excel output.}
 
 \item{add_contrast_sheets}{Logical. Whether to add each per-contrast CSV as a worksheet in the Excel file.}
+
+\item{statlist}{Optional list of per-contrast result tables to use instead of \code{DAList$results}.}
 }
 \value{
 Invisibly returns the input DAList.
 }
 \description{
 Generates CSV and Excel summary tables from a limma differential analysis list.
+If DAList$tags$per_contrast[\link{label}]$contrast_info contains a usable group_col and non-empty involved_levels,
+those samples are selected for the per-contrast CSV; otherwise the old \emph{vs} parser is used.
+If that also fails, all samples are included with a warning (same as before). write_limma_tables()
+now passes the sidecar tags automatically and falls back to DAList$results when statlist is NULL.
 }
