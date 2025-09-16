@@ -22,7 +22,7 @@ vsnNorm(dat)
 
 quantileNorm(logDat)
 
-cycloessNorm(logDat)
+cycloessNorm(logDat, groups = NULL, method = "fast", ...)
 
 rlrNorm(logDat)
 
@@ -64,4 +64,21 @@ total intensity for each sample, then multiplies all samples by the median of pe
 intensities.
 }
 }
+\keyword{(optionally}
+\keyword{Cyclic}
+\keyword{Expects}
+\keyword{If}
+\keyword{`groups`}
+\keyword{data.}
+\keyword{each}
+\keyword{given,}
+\keyword{group}
+\keyword{groups)}
+\keyword{independently.}
 \keyword{internal}
+\keyword{is}
+\keyword{loess}
+\keyword{log2}
+\keyword{normalization}
+\keyword{normalizes}
+\keyword{within}

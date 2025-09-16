@@ -23,7 +23,7 @@ anno_start = 1
 anno_end = 13
 
 ## contrasts_cell adds the interaction effect
-contrasts = "data/contrasts_cell.csv"   # file with sample group comparisons, order of groups determines fold change
+contrasts = "data/contrasts_groupmeans.csv"   # file with sample group comparisons, order of groups determines fold change
 
 
 ### filter proteins with missing values options
@@ -47,16 +47,16 @@ DA_dir = "interactive_results"
 
 ### limma design and group comparisons
 # limma no intercept model, comparisons based on contrasts correcting for cell line batch
-#design = ~0 + group + cell 
+design = ~0 + group 
 
 # interaction model to answer "what is treatment effect in A after removing its DMSO baseline,
 # compared to treatment effect in B after removing its DMSO baseline? 
-design = ~0 + cell:treatment   
+#design = ~0 + cell:treatment   
 
 ### other examples ---------------
 # Random batch, while still modeling the 4 groups explicitly
 # design = ~ 0 + cell_line:treatment + (1 | batch)
-#design = ~ group   # limma intercept model, everything will be compared to a reference
+# design = ~ group   # limma intercept model, everything will be compared to a reference
 #design = ~0 + group + (1 |animal)  # Mixed model (group is fix and animal pair factor treated as random factor)
 
 # significance thresholds for plotting and tables
