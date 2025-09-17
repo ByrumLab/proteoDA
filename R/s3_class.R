@@ -197,6 +197,7 @@ DAList <- function(data,
 validate_DAList <- function(x) {
   `%||%` <- function(a, b) if (is.null(a)) b else a
   
+  # ---- Slot presence (no mutation / no reordering here) ----
   required_slots <- c("data", "annotation", "metadata", "design", "eBayes_fit", "results", "tags")
   optional_slots <- c("filtered_proteins_per_contrast", "data_per_contrast", "annotation_per_contrast")
   allowed_slots  <- c(required_slots, optional_slots)
@@ -205,11 +206,6 @@ validate_DAList <- function(x) {
   if (length(missing_required) > 0) {
     cli::cli_abort("The DAList is missing the following required slot{?s}: {missing_required}")
   }
-  
-  # keep canonical order; allow extra slots
-  final_order <- c(required_slots, intersect(optional_slots, names(x)))
-  x <- x[final_order]
-  class(x) <- "DAList"
   
   # ---- Basic shape checks ----
   if (any(c("tbl_df", "tbl") %in% class(x$data)))
@@ -230,15 +226,29 @@ validate_DAList <- function(x) {
     cli::cli_abort("The 'uniprot_id' values in annotation must be unique")
   if (nrow(x$data) != nrow(x$annotation))
     cli::cli_abort("'data' and 'annotation' must have the same number of rows")
-  if (!all(rownames(x$data) == rownames(x$annotation)))
+  if (!identical(rownames(x$data), rownames(x$annotation)))
     cli::cli_abort("Rownames for 'data' and 'annotation' must match")
-  if (!all(rownames(x$data) == x$annotation$uniprot_id))
+  if (!identical(rownames(x$data), x$annotation$uniprot_id))
     cli::cli_abort("Rownames for 'data'/'annotation' must equal the 'uniprot_id' column")
   
-  if (nrow(x$metadata) != ncol(x$data))
-    cli::cli_abort("The number of samples in 'metadata' must match columns in 'data'")
-  if (any(colnames(x$data) != rownames(x$metadata)))
-    cli::cli_abort("Row names of 'metadata' must match column names of 'data'")
+  # metadata ↔ data samples
+  if (nrow(x$metadata) != ncol(x$data)) {
+    cli::cli_abort("Sample count mismatch: metadata rows = {nrow(x$metadata)}, data columns = {ncol(x$data)}")
+  }
+  if (!identical(colnames(x$data), rownames(x$metadata))) {
+    miss_in_md  <- setdiff(colnames(x$data), rownames(x$metadata))
+    miss_in_dat <- setdiff(rownames(x$metadata), colnames(x$data))
+    same_set    <- setequal(colnames(x$data), rownames(x$metadata))
+    hint <- if (same_set) " (same samples, different order — reorder metadata to match data columns)" else ""
+    det <- c(
+      if (length(miss_in_md))  paste0("Missing in metadata: ", paste(miss_in_md, collapse = ", ")),
+      if (length(miss_in_dat)) paste0("Missing in data: ",     paste(miss_in_dat, collapse = ", "))
+    )
+    cli::cli_abort(c(
+      "Row/column name mismatch between data and metadata{hint}",
+      if (length(det)) setNames(det, rep("x", length(det)))
+    ))
+  }
   
   # ---- Design checks ----
   if (!is.null(x$design)) {
@@ -248,24 +258,60 @@ validate_DAList <- function(x) {
     if (!all(need %in% names(x$design)))
       cli::cli_abort("'design' must include 'design_matrix' and 'design_formula'")
     
-    if (!"assign" %in% names(attributes(x$design$design_matrix)))
-      cli::cli_abort("'design_matrix' must have an 'assign' attribute")
+    # assign: warn (not hard error) to allow custom matrices
+    if (!"assign" %in% names(attributes(x$design$design_matrix))) {
+      cli::cli_warn("'design_matrix' has no 'assign' attribute; recommended to build via model.matrix.")
+    }
     
-    if (nrow(x$design$design_matrix) != nrow(x$metadata))
-      cli::cli_abort("Rows in design_matrix must match metadata")
-    if (any(rownames(x$design$design_matrix) != rownames(x$metadata)))
-      cli::cli_abort("Row names of design_matrix must match row names of metadata")
+    # design_matrix ↔ metadata alignment
+    X  <- x$design$design_matrix
+    md <- x$metadata
+    if (nrow(X) != nrow(md)) {
+      cli::cli_abort("Row count mismatch: design_matrix rows = {nrow(X)}, metadata rows = {nrow(md)}")
+    }
+    if (!identical(rownames(X), rownames(md))) {
+      miss_in_X  <- setdiff(rownames(md), rownames(X))
+      miss_in_md <- setdiff(rownames(X), rownames(md))
+      same_set   <- setequal(rownames(X), rownames(md))
+      hint <- if (same_set) " (same samples, different order — reorder design_matrix to match metadata)" else ""
+      det <- c(
+        if (length(miss_in_X))  paste0("Missing in design_matrix: ", paste(miss_in_X,  collapse = ", ")),
+        if (length(miss_in_md)) paste0("Missing in metadata: ",      paste(miss_in_md, collapse = ", "))
+      )
+      cli::cli_abort(c(
+        "Row names of design_matrix must match row names of metadata{hint}",
+        if (length(det)) setNames(det, rep("x", length(det)))
+      ))
+    }
     
+    # random factor present in metadata
     if (!is.null(x$design$random_factor)) {
       if (!x$design$random_factor %in% colnames(x$metadata))
-        cli::cli_abort("Random factor not found in metadata")
+        cli::cli_abort("Random factor '{x$design$random_factor}' not found in metadata")
     }
+    
+    # contrast info: require both or neither
     if (sum(c("contrast_matrix", "contrast_vector") %in% names(x$design)) == 1) {
       cli::cli_abort("If contrast information is included, both 'contrast_matrix' and 'contrast_vector' must be present")
     }
+    
+    # contrast_matrix ↔ design_matrix columns
     if ("contrast_matrix" %in% names(x$design)) {
-      if (!all(rownames(x$design$contrast_matrix) == colnames(x$design$design_matrix)))
-        cli::cli_abort("Rows in contrast_matrix must match columns in design_matrix")
+      cm <- x$design$contrast_matrix
+      if (!identical(rownames(cm), colnames(X))) {
+        miss_in_cm <- setdiff(colnames(X), rownames(cm))
+        miss_in_X  <- setdiff(rownames(cm), colnames(X))
+        same_set   <- setequal(rownames(cm), colnames(X))
+        hint <- if (same_set) " (same terms, different order — reorder contrast_matrix rows to match design_matrix columns)" else ""
+        det <- c(
+          if (length(miss_in_cm)) paste0("Missing in contrast_matrix rows: ", paste(miss_in_cm, collapse = ", ")),
+          if (length(miss_in_X))  paste0("Missing in design_matrix cols: ",  paste(miss_in_X,  collapse = ", "))
+        )
+        cli::cli_abort(c(
+          "contrast_matrix rows must match design_matrix columns{hint}",
+          if (length(det)) setNames(det, rep("x", length(det)))
+        ))
+      }
     }
   }
   
@@ -324,22 +370,23 @@ validate_DAList <- function(x) {
       data_rows   <- rownames(x$data)
       
       if (!all(result_rows %in% data_rows)) {
-        cli::cli_abort("Some rows in results for contrast '{term}' are not present in 'data'")
+        cli::cli_abort("Some rows in results for contrast '{term}' are not present in 'data'", term = term)
       }
       
       if ("filtered_proteins_per_contrast" %in% names(x) && !is.null(x$filtered_proteins_per_contrast[[term]])) {
         expected_subset <- x$filtered_proteins_per_contrast[[term]]
         if (!all(result_rows %in% expected_subset)) {
-          cli::cli_warn("Some rows in results for contrast '{term}' do not match the filtered protein list")
+          cli::cli_warn("Some rows in results for contrast '{term}' do not match the filtered protein list", term = term)
         }
       }
     }
   }
   
+  # ---- Other optional structure checks ----
   if ("filtered_proteins_per_contrast" %in% names(x)) {
     if (!is.list(x$filtered_proteins_per_contrast))
       cli::cli_abort("'filtered_proteins_per_contrast' must be a list")
   }
   
-  x
+  invisible(TRUE)
 }
