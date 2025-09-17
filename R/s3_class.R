@@ -187,20 +187,19 @@ DAList <- function(data,
 }
 
 
-
 #' DAList validator
 #'
-#' Internal function for validating a DAList object.
+#' Internal function for validating and normalizing a DAList-like object.
 #' Tolerant of arbitrary result labels (custom contrast names).
+#' Returns the (possibly re-ordered) object and ensures class "DAList".
 #'
 #' @keywords internal
 validate_DAList <- function(x) {
   `%||%` <- function(a, b) if (is.null(a)) b else a
   
-  # ---- Slot presence (no mutation / no reordering here) ----
+  # ---- Required / optional slots ----
   required_slots <- c("data", "annotation", "metadata", "design", "eBayes_fit", "results", "tags")
   optional_slots <- c("filtered_proteins_per_contrast", "data_per_contrast", "annotation_per_contrast")
-  allowed_slots  <- c(required_slots, optional_slots)
   
   missing_required <- setdiff(required_slots, names(x))
   if (length(missing_required) > 0) {
@@ -258,7 +257,7 @@ validate_DAList <- function(x) {
     if (!all(need %in% names(x$design)))
       cli::cli_abort("'design' must include 'design_matrix' and 'design_formula'")
     
-    # assign: warn (not hard error) to allow custom matrices
+    # assign: warn (allow custom matrices)
     if (!"assign" %in% names(attributes(x$design$design_matrix))) {
       cli::cli_warn("'design_matrix' has no 'assign' attribute; recommended to build via model.matrix.")
     }
@@ -382,11 +381,13 @@ validate_DAList <- function(x) {
     }
   }
   
-  # ---- Other optional structure checks ----
-  if ("filtered_proteins_per_contrast" %in% names(x)) {
-    if (!is.list(x$filtered_proteins_per_contrast))
-      cli::cli_abort("'filtered_proteins_per_contrast' must be a list")
-  }
+  # ---- Normalize order & class (back-compat for callers expecting an object) ----
+  ordered_names <- c(required_slots, intersect(optional_slots, names(x)))
+  ordered <- x[ordered_names]
+  extras  <- setdiff(names(x), ordered_names)
+  if (length(extras)) ordered <- c(ordered, x[extras])  # preserve extra/custom slots
   
-  invisible(TRUE)
+  class(ordered) <- unique(c("DAList", class(ordered)))
+  ordered
 }
+
