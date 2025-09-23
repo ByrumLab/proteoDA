@@ -337,18 +337,18 @@ write_qc_report(norm_cyc,
 ## RUN LIMMA
 ########
 # Run limma model for each contrast, computes SDs and z-scores
-# results_ind <- run_filtered_limma_analysis(
-#   DAList = norm_ind,
-#   design_formula = design,
-#   contrasts_file = contrasts,
-#   pval_thresh = p.val,
-#   lfc_thresh = logFC,
-#   adj_method = "BH",
-#   binsize = bin_size,
-#   plot_movingSD = TRUE
-#   # binsize = "auto",
-#   # binsize_range = c(100, 250, 500, 1000, 1500)
-# )
+results <- run_filtered_limma_analysis(
+  DAList = norm,
+  design_formula = design,
+  contrasts_file = contrasts,
+  pval_thresh = p.val,
+  lfc_thresh = logFC,
+  adj_method = "BH",
+  binsize = bin_size,
+  plot_movingSD = TRUE
+  # binsize = "auto",
+  # binsize_range = c(100, 250, 500, 1000, 1500)
+)
 
 results_cyc <- run_filtered_limma_analysis(
   DAList = norm_cyc,

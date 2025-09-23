@@ -187,7 +187,8 @@ results <- run_filtered_limma_analysis(
   lfc_thresh = logFC,
   adj_method = "BH",
   binsize = bin_size,
-  plot_movingSD = TRUE
+  plot_movingSD = TRUE,
+  contrasts_file = contrasts
   # binsize = "auto",
   # binsize_range = c(100, 250, 500, 1000, 1500)
 )
