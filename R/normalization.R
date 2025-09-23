@@ -269,19 +269,25 @@ giNorm <- function(dat) {
   normLog2Matrix
 }
 
+
+#Add @export
+#Document that if you passed a DAList to perseus_impute(..., save_before_after=TRUE), you can supply logDat_before / logDat_after from the stored slots.
+
 #' Plot histograms highlighting imputed values (Perseus-style imputation)
 #'
+#' If you ran \code{perseus_impute(DAList, save_before_after=TRUE)}, you can pass:
+#'   \code{logDat_before = DAList$data_per_contrast[[contrast]]$imputation$before_log2}
+#'   \code{logDat_after  = DAList$data_per_contrast[[contrast]]$imputation$after_log2}
+#' or use the global \code{DAList$imputation$before_log2/after_log2} when no per-contrast data exists.
+#'
 #' @param logDat_before  matrix/data.frame of log2 intensities with NAs (pre-imputation)
-#' @param logDat_after   matrix/data.frame of log2 intensities after perseus_impute()
+#' @param logDat_after   matrix/data.frame of log2 intensities after \code{perseus_impute()}
 #' @param samples        character/integer vector of columns to plot (default: all)
 #' @param bins           number of histogram bins
 #' @param facet_ncol     number of columns in facet wrap
-#' @param overlay        if TRUE, overlays observed + imputed in the same panel per sample;
-#'                      if FALSE, uses position = "identity" stacked fills
+#' @param overlay        if TRUE, overlay observed+imputed per sample panel; else stacked
 #' @return ggplot object (faceted histograms across selected samples)
-#' @details
-#'   Values that were NA in `logDat_before` and non-NA in `logDat_after`
-#'   are labeled as "Imputed". All others are "Observed".
+#' @export
 plot_perseus_imputation <- function(logDat_before,
                                     logDat_after,
                                     samples = NULL,
@@ -297,7 +303,6 @@ plot_perseus_imputation <- function(logDat_before,
   X0 <- as.matrix(logDat_before)
   X1 <- as.matrix(logDat_after)
   
-  # determine which columns to plot
   if (is.null(samples)) {
     cols <- seq_len(ncol(X0))
   } else if (is.character(samples)) {
@@ -309,14 +314,11 @@ plot_perseus_imputation <- function(logDat_before,
     stop("'samples' must be NULL, character, or numeric indices.")
   }
   
-  # build long data frame with "Observed" vs "Imputed" labels
   make_df <- function(j) {
-    # imputed where before is NA but after is not NA
     was_na <- is.na(X0[, j])
     now_ok <- !is.na(X1[, j])
     imputed_flag <- was_na & now_ok
     
-    # keep non-NA after-imputation values for plotting
     vals <- X1[!is.na(X1[, j]), j]
     status <- ifelse(imputed_flag[!is.na(X1[, j])], "Imputed", "Observed")
     data.frame(
@@ -326,110 +328,344 @@ plot_perseus_imputation <- function(logDat_before,
       stringsAsFactors = FALSE
     )
   }
-  dflist <- lapply(cols, make_df)
-  DF <- do.call(rbind, dflist)
+  DF <- do.call(rbind, lapply(cols, make_df))
   
-  library(ggplot2)
-  p <- ggplot(DF, aes(x = value, fill = status)) +
+  ggplot2::ggplot(DF, ggplot2::aes(x = value, fill = status)) +
     { if (overlay)
-      geom_histogram(aes(y = after_stat(count)),
-                     bins = bins, position = "identity", alpha = 0.6)
+      ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::after_stat(count)),
+                              bins = bins, position = "identity", alpha = 0.6)
       else
-        geom_histogram(bins = bins, position = "stack")
+        ggplot2::geom_histogram(bins = bins, position = "stack")
     } +
-    facet_wrap(~ sample, scales = "free_y", ncol = facet_ncol) +
-    labs(x = "log2 intensity", y = "Count",
-         title = "Perseus-style imputation: observed vs imputed") +
-    scale_fill_manual(values = c("Observed" = "#4C78A8", "Imputed" = "#E45756")) +
-    theme_bw(base_size = 12) +
-    theme(legend.position = "top")
-  
-  p
+    ggplot2::facet_wrap(~ sample, scales = "free_y", ncol = facet_ncol) +
+    ggplot2::labs(x = "log2 intensity", y = "Count",
+                  title = "Perseus-style imputation: observed vs imputed") +
+    ggplot2::scale_fill_manual(values = c("Observed" = "#4C78A8", "Imputed" = "#E45756")) +
+    ggplot2::theme_bw(base_size = 12) +
+    ggplot2::theme(legend.position = "top")
 }
+
+# Where it writes imputed data (per contrast): DAList$data_per_contrast[[contrast]]$log2
+# This matches your updated plotting/limma flow that prefers per-contrast data when present.
+# Fallback: If data_per_contrast is missing/empty, it imputes DAList$data.
+# Matrix behavior unchanged: You can still call perseus_impute(X, ...) and get an imputed matrix back.
+# Exported: The @export tag ensures the function is available after installation.
+
+# Updated perseus_impute() (adds saving + mask)
+# New args: save_before_after = FALSE and store_mask = TRUE
+# Matrix input: returns the imputed matrix; if store_mask=TRUE, adds attr(result, "imputed_mask") (logical matrix of imputed positions).
+# DAList input:
+#   If data_per_contrast present, imputes per-contrast and writes to DAList$data_per_contrast[[contrast]]$log2.
+#  If save_before_after=TRUE, also stores:
+#   DAList$data_per_contrast[[contrast]]$imputation$before_log2
+#   DAList$data_per_contrast[[contrast]]$imputation$after_log2
+#   DAList$data_per_contrast[[contrast]]$imputation$imputed_mask
+# If no data_per_contrast, imputes DAList$data and, if save_before_after=TRUE, saves:
+#   DAList$imputation$before_log2
+#   DAList$imputation$after_log2
+#   DAList$imputation$imputed_mask
+# Also adds @export for both functions.
 
 #' Perseus-style MNAR imputation (left-censoring) on log2 data
 #'
-#' @param logDat   numeric matrix/data.frame (rows = features, cols = samples), on log2 scale
-#' @param shift    numeric, how far to shift down the mean in SD units (default 1.8)
-#' @param width    numeric, fraction of SD used as imputation SD (default 0.3)
-#' @param robust   logical, use median/MAD (TRUE) or mean/SD (FALSE) per sample
-#' @param min_obs_per_sample integer, minimum non-missing values needed in a sample to estimate stats (default 5).
-#'                           If fewer, falls back to pooled stats across all samples.
-#' @param seed     integer or NULL, set for reproducible draws
-#' @return numeric matrix of same dimensions with NAs imputed
-#' @details
-#'   This implements the common Perseus approach:
-#'   For each sample j, let μ_j and σ_j be location and scale of its observed (log2) values.
-#'   Missing entries in sample j are drawn from Normal( μ_j - shift*σ_j, (width*σ_j)^2 ).
-#'   Proteins missing in *all* samples remain NA (uninformative).
+#' Applies the common Perseus imputation where, per sample, missing values
+#' are drawn from a narrow normal distribution shifted down from the observed
+#' distribution. Works on a plain log2 matrix/data.frame *or* on a DAList:
+#' - If `DAList$data_per_contrast` exists and is non-empty, imputes each
+#'   contrast's matrix and stores the result in
+#'   `DAList$data_per_contrast[[contrast]]$log2`.
+#' - Otherwise, imputes the global `DAList$data` matrix in-place.
 #'
-#'   Typical defaults are shift ≈ 1.8 and width ≈ 0.3 on log2 data.
+#' Optionally stores before/after matrices and an imputed mask for diagnostics.
+#'
+#' @param x       A numeric log2 matrix/data.frame (rows=features, cols=samples),
+#'                or a DAList with `$data` and optionally `$data_per_contrast`.
+#' @param shift   numeric, how far to shift down the mean in SD units (default 1.8)
+#' @param width   numeric, fraction of SD used as imputation SD (default 0.3)
+#' @param robust  logical, use median/MAD (TRUE) or mean/SD (FALSE) per sample
+#' @param min_obs_per_sample integer, minimum non-missing values per sample for
+#'                per-sample stats (default 5). Else fallback to pooled stats.
+#' @param seed    integer or NULL, set for reproducible draws
+#' @param save_before_after logical, store full before/after matrices and mask
+#'                into the DAList (or return attrs for matrix mode). Default FALSE.
+#' @param store_mask logical, store/log an imputed logical mask. Default TRUE.
+#'
+#' @return If `x` is a matrix/data.frame, returns the imputed matrix (same dims);
+#'         when `store_mask=TRUE`, attaches `attr(result, "imputed_mask")`.
+#'         If `x` is a DAList, returns the updated DAList with imputed matrices
+#'         written to the appropriate slots; when `save_before_after=TRUE`,
+#'         persists `before_log2`, `after_log2`, and `imputed_mask`.
+#'
+#' @details
+#' For each sample j, let μ_j and σ_j be location and scale of its observed (log2) values.
+#' Missing entries in sample j are drawn from Normal( μ_j - shift*σ_j, (width*σ_j)^2 ).
+#' Features missing in *all* samples remain NA (uninformative).
 #'
 #' @examples
-#'   # X is log2-intensity matrix with NAs
-#'   X_imp <- perseus_impute(X, shift=1.8, width=0.3, robust=TRUE, seed=123)
-perseus_impute <- function(logDat,
+#' # Matrix use
+#' # X_imp <- perseus_impute(X, seed=123)
+#' # mask  <- attr(X_imp, "imputed_mask")
+#'
+#' # DAList use (per-contrast if present)
+#' # results <- perseus_impute(results, save_before_after = TRUE, seed=1)
+#'
+#' @export
+perseus_impute <- function(x,
                            shift = 1.8,
                            width = 0.3,
                            robust = TRUE,
                            min_obs_per_sample = 5,
-                           seed = NULL) {
-  # basic checks
-  if (!is.matrix(logDat) && !is.data.frame(logDat)) {
-    stop("logDat must be a matrix or data.frame of log2 intensities.")
-  }
-  X <- as.matrix(logDat)
-  storage.mode(X) <- "double"
-  
-  if (!is.null(seed)) set.seed(seed)
-  
-  # helper functions
-  est_loc <- function(x, robust) {
-    if (robust) stats::median(x, na.rm = TRUE) else base::mean(x, na.rm = TRUE)
-  }
-  est_scale <- function(x, robust) {
-    if (robust) stats::mad(x, center = stats::median(x, na.rm = TRUE), na.rm = TRUE) * 1.4826
-    else stats::sd(x, na.rm = TRUE)
-  }
-  
-  # pooled stats as fallback
-  x_obs_all <- as.numeric(X[!is.na(X)])
-  pooled_mu  <- est_loc(x_obs_all, robust)
-  pooled_sd  <- est_scale(x_obs_all, robust)
-  if (is.na(pooled_sd) || pooled_sd <= 0) pooled_sd <- 1.0  # guard
-  
-  n_col <- ncol(X)
-  for (j in seq_len(n_col)) {
-    xj <- X[, j]
-    miss_idx <- which(is.na(xj))
-    if (length(miss_idx) == 0) next
+                           seed = NULL,
+                           save_before_after = FALSE,
+                           store_mask = TRUE) {
+  .perseus_impute_matrix <- function(logDat,
+                                     shift, width, robust,
+                                     min_obs_per_sample, seed,
+                                     store_mask) {
+    if (!is.matrix(logDat) && !is.data.frame(logDat)) {
+      stop("logDat must be a matrix or data.frame of log2 intensities.")
+    }
+    X0 <- as.matrix(logDat)
+    storage.mode(X0) <- "double"
+    if (!is.null(seed)) set.seed(seed)
     
-    obs_j <- xj[!is.na(xj)]
-    if (length(obs_j) >= min_obs_per_sample) {
-      mu_j <- est_loc(obs_j, robust)
-      sd_j <- est_scale(obs_j, robust)
-      if (is.na(sd_j) || sd_j <= 0) {
-        mu_j <- pooled_mu; sd_j <- pooled_sd
-      }
-    } else {
-      mu_j <- pooled_mu; sd_j <- pooled_sd
+    est_loc <- function(v, robust) if (robust) stats::median(v, na.rm=TRUE) else base::mean(v, na.rm=TRUE)
+    est_scale <- function(v, robust) {
+      if (robust) stats::mad(v, center = stats::median(v, na.rm=TRUE), na.rm=TRUE) * 1.4826
+      else stats::sd(v, na.rm=TRUE)
     }
     
-    mu_imp <- mu_j - shift * sd_j
-    sd_imp <- width * sd_j
-    if (!is.finite(sd_imp) || sd_imp <= 0) sd_imp <- width * pooled_sd
+    x_obs_all <- as.numeric(X0[!is.na(X0)])
+    pooled_mu <- est_loc(x_obs_all, robust)
+    pooled_sd <- est_scale(x_obs_all, robust)
+    if (is.na(pooled_sd) || pooled_sd <= 0) pooled_sd <- 1.0
     
-    draws <- stats::rnorm(length(miss_idx), mean = mu_imp, sd = sd_imp)
-    xj[miss_idx] <- draws
-    X[, j] <- xj
+    X1 <- X0
+    imputed_mask <- matrix(FALSE, nrow = nrow(X0), ncol = ncol(X0),
+                           dimnames = dimnames(X0))
+    
+    for (j in seq_len(ncol(X0))) {
+      xj <- X1[, j]
+      miss_idx <- which(is.na(xj))
+      if (length(miss_idx) == 0) next
+      
+      obs_j <- X0[!is.na(X0[, j]), j]
+      if (length(obs_j) >= min_obs_per_sample) {
+        mu_j <- est_loc(obs_j, robust)
+        sd_j <- est_scale(obs_j, robust)
+        if (is.na(sd_j) || sd_j <= 0) {
+          mu_j <- pooled_mu; sd_j <- pooled_sd
+        }
+      } else {
+        mu_j <- pooled_mu; sd_j <- pooled_sd
+      }
+      
+      mu_imp <- mu_j - shift * sd_j
+      sd_imp <- width * sd_j
+      if (!is.finite(sd_imp) || sd_imp <= 0) sd_imp <- width * pooled_sd
+      
+      draws <- stats::rnorm(length(miss_idx), mean = mu_imp, sd = sd_imp)
+      xj[miss_idx] <- draws
+      X1[, j] <- xj
+      imputed_mask[miss_idx, j] <- TRUE
+    }
+    
+    # rows entirely missing in input remain NA
+    all_missing_rows <- which(rowSums(is.na(X0)) == ncol(X0))
+    if (length(all_missing_rows) > 0) {
+      X1[all_missing_rows, ] <- NA_real_
+      imputed_mask[all_missing_rows, ] <- FALSE
+    }
+    
+    dimnames(X1) <- dimnames(logDat)
+    
+    if (store_mask) attr(X1, "imputed_mask") <- imputed_mask
+    X1
   }
   
-  # keep rows entirely missing as NA (uninformative across all samples)
-  all_missing_rows <- which(rowSums(is.na(logDat)) == ncol(logDat))
-  if (length(all_missing_rows) > 0) {
-    X[all_missing_rows, ] <- NA_real_
+  `%||%` <- function(a, b) if (is.null(a)) b else a
+  
+  # Matrix path
+  if (is.matrix(x) || is.data.frame(x)) {
+    X1 <- .perseus_impute_matrix(x, shift, width, robust, min_obs_per_sample, seed, store_mask)
+    # If save_before_after in matrix mode, attach "before" too (as attribute) for convenience
+    if (save_before_after) {
+      attr(X1, "before_log2") <- as.matrix(x)
+    }
+    return(X1)
   }
   
-  dimnames(X) <- dimnames(logDat)
-  X
+  # DAList path
+  if (is.list(x) && ("data" %in% names(x) || "data_per_contrast" %in% names(x))) {
+    has_dpc <- !is.null(x$data_per_contrast) && length(x$data_per_contrast) > 0
+    
+    if (has_dpc) {
+      # ensure a parallel diagnostics container that won't coerce data types
+      if (is.null(x$imputation_per_contrast)) x$imputation_per_contrast <- list()
+      
+      for (contrast in names(x$data_per_contrast)) {
+        dpc <- x$data_per_contrast[[contrast]]
+        
+        # Source is the data.frame/matrix already on log2 scale
+        if (is.matrix(dpc) || is.data.frame(dpc)) {
+          source_mat <- dpc
+          orig_was_df <- is.data.frame(dpc)
+        } else if (is.list(dpc) && "log2" %in% names(dpc) &&
+                   (is.matrix(dpc$log2) || is.data.frame(dpc$log2))) {
+          # (Support the alternative layout too, just in case)
+          source_mat <- dpc$log2
+          orig_was_df <- is.data.frame(dpc$log2)
+        } else if (!is.null(x$data)) {
+          source_mat <- x$data
+          orig_was_df <- is.data.frame(x$data)
+        } else {
+          stop(sprintf("No usable matrix found for contrast '%s'.", contrast))
+        }
+        
+        before <- as.matrix(source_mat)
+        after  <- .perseus_impute_matrix(
+          before, shift, width, robust, min_obs_per_sample, seed, store_mask
+        )
+        mask   <- attr(after, "imputed_mask"); attr(after, "imputed_mask") <- NULL
+        
+        # Write back in-place, preserving data.frame/matrix type
+        x$data_per_contrast[[contrast]] <-
+          if (orig_was_df) as.data.frame(after, check.names = FALSE) else after
+        
+        # Save diagnostics in a separate parallel list (does NOT change the data type)
+        if (save_before_after) {
+          x$imputation_per_contrast[[contrast]] <- list(
+            before_log2  = before,
+            after_log2   = as.matrix(x$data_per_contrast[[contrast]]),
+            imputed_mask = if (store_mask) mask else NULL
+          )
+        }
+      }
+      
+      x$imputation <- modifyList(
+        x$imputation %||% list(),
+        list(
+          method = "Perseus",
+          shift = shift, width = width, robust = robust,
+          min_obs_per_sample = min_obs_per_sample, seed = seed,
+          scope = "per-contrast"
+        )
+      )
+      return(x)
+    }
+    
+    
+    # Global fallback
+    if (is.null(x$data)) stop("DAList$data not found. Cannot impute.")
+    before <- x$data
+    after  <- .perseus_impute_matrix(x$data, shift, width, robust, min_obs_per_sample, seed, store_mask)
+    mask   <- attr(after, "imputed_mask"); attr(after, "imputed_mask") <- NULL
+    x$data <- after
+    
+    x$imputation <- modifyList(
+      x$imputation %||% list(),
+      list(
+        method = "Perseus",
+        shift = shift, width = width, robust = robust,
+        min_obs_per_sample = min_obs_per_sample, seed = seed,
+        scope = "global"
+      )
+    )
+    if (save_before_after) {
+      x$imputation$before_log2 <- before
+      x$imputation$after_log2  <- after
+      if (store_mask) x$imputation$imputed_mask <- mask
+    }
+    return(x)
+  }
+  
+  stop("x must be a log2 matrix/data.frame or a DAList with $data and/or $data_per_contrast.")
 }
+
+#' Write Perseus imputation histograms for each contrast
+#'
+#' Uses DAList$imputation_per_contrast[[contrast]]$before_log2 / after_log2
+#' (created by perseus_impute(..., save_before_after=TRUE)) to generate plots.
+#'
+#' @param DAList       a DAList with imputation_per_contrast diagnostics
+#' @param out_dir      directory to save plots (created if missing). If NULL, don't save.
+#' @param contrasts    character vector of contrast names to plot; default = all available
+#' @param samples      subset of sample columns to plot (names or indices); default all
+#' @param bins         number of histogram bins
+#' @param facet_ncol   number of columns in facet layout
+#' @param overlay      TRUE = overlay observed+imputed; FALSE = stacked
+#' @param width,height plot size (inches) for saving
+#' @param dpi          dpi for saving
+#' @param device       "png", "pdf", etc. Passed to ggsave
+#'
+#' @return named list of ggplot objects (invisible if saving only)
+#' @export
+write_perseus_imputation_plots <- function(
+    DAList,
+    out_dir      = "Imputation_Plots",
+    contrasts    = NULL,
+    samples      = NULL,
+    bins         = 50,
+    facet_ncol   = 4,
+    overlay      = TRUE,
+    width        = 7,
+    height       = 5,
+    dpi          = 300,
+    device       = "png"
+) {
+  if (is.null(DAList$imputation_per_contrast) || length(DAList$imputation_per_contrast) == 0) {
+    stop("No per-contrast diagnostics found in DAList$imputation_per_contrast. ",
+         "Run perseus_impute(..., save_before_after=TRUE) first.")
+  }
+  
+  available <- names(DAList$imputation_per_contrast)
+  if (is.null(available) || length(available) == 0) {
+    stop("DAList$imputation_per_contrast has no named contrasts.")
+  }
+  
+  if (is.null(contrasts)) {
+    contrasts <- available
+  } else {
+    missing <- setdiff(contrasts, available)
+    if (length(missing)) {
+      warning("Skipping missing contrasts: ", paste(missing, collapse = ", "))
+      contrasts <- intersect(contrasts, available)
+    }
+    if (!length(contrasts)) stop("No valid contrasts left after filtering.")
+  }
+  
+  # create out_dir if saving
+  if (!is.null(out_dir)) {
+    dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+  }
+  
+  plots <- list()
+  
+  for (ct in contrasts) {
+    diag <- DAList$imputation_per_contrast[[ct]]
+    if (is.null(diag$before_log2) || is.null(diag$after_log2)) {
+      warning("Contrast '", ct, "' lacks before/after matrices; skipping.")
+      next
+    }
+    p <- plot_perseus_imputation(
+      logDat_before = diag$before_log2,
+      logDat_after  = diag$after_log2,
+      samples       = samples,
+      bins          = bins,
+      facet_ncol    = facet_ncol,
+      overlay       = overlay
+    ) + ggplot2::ggtitle(sprintf("Perseus imputation: %s", ct))
+    
+    plots[[ct]] <- p
+    
+    # save if requested
+    if (!is.null(out_dir)) {
+      safe <- gsub("[^A-Za-z0-9._-]+", "_", ct)
+      fn <- file.path(out_dir, sprintf("perseus_imputation_%s.%s", safe, device))
+      ggplot2::ggsave(filename = fn, plot = p, width = width, height = height, dpi = dpi, device = device)
+    }
+  }
+  
+  return(plots)
+}
+

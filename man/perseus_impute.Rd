@@ -5,16 +5,19 @@
 \title{Perseus-style MNAR imputation (left-censoring) on log2 data}
 \usage{
 perseus_impute(
-  logDat,
+  x,
   shift = 1.8,
   width = 0.3,
   robust = TRUE,
   min_obs_per_sample = 5,
-  seed = NULL
+  seed = NULL,
+  save_before_after = FALSE,
+  store_mask = TRUE
 )
 }
 \arguments{
-\item{logDat}{numeric matrix/data.frame (rows = features, cols = samples), on log2 scale}
+\item{x}{A numeric log2 matrix/data.frame (rows=features, cols=samples),
+or a DAList with \verb{$data} and optionally \verb{$data_per_contrast}.}
 
 \item{shift}{numeric, how far to shift down the mean in SD units (default 1.8)}
 
@@ -22,26 +25,47 @@ perseus_impute(
 
 \item{robust}{logical, use median/MAD (TRUE) or mean/SD (FALSE) per sample}
 
-\item{min_obs_per_sample}{integer, minimum non-missing values needed in a sample to estimate stats (default 5).
-If fewer, falls back to pooled stats across all samples.}
+\item{min_obs_per_sample}{integer, minimum non-missing values per sample for
+per-sample stats (default 5). Else fallback to pooled stats.}
 
 \item{seed}{integer or NULL, set for reproducible draws}
+
+\item{save_before_after}{logical, store full before/after matrices and mask
+into the DAList (or return attrs for matrix mode). Default FALSE.}
+
+\item{store_mask}{logical, store/log an imputed logical mask. Default TRUE.}
 }
 \value{
-numeric matrix of same dimensions with NAs imputed
+If \code{x} is a matrix/data.frame, returns the imputed matrix (same dims);
+when \code{store_mask=TRUE}, attaches \code{attr(result, "imputed_mask")}.
+If \code{x} is a DAList, returns the updated DAList with imputed matrices
+written to the appropriate slots; when \code{save_before_after=TRUE},
+persists \code{before_log2}, \code{after_log2}, and \code{imputed_mask}.
 }
 \description{
-Perseus-style MNAR imputation (left-censoring) on log2 data
+Applies the common Perseus imputation where, per sample, missing values
+are drawn from a narrow normal distribution shifted down from the observed
+distribution. Works on a plain log2 matrix/data.frame \emph{or} on a DAList:
+\itemize{
+\item If \code{DAList$data_per_contrast} exists and is non-empty, imputes each
+contrast's matrix and stores the result in
+\code{DAList$data_per_contrast[[contrast]]$log2}.
+\item Otherwise, imputes the global \code{DAList$data} matrix in-place.
+}
 }
 \details{
-This implements the common Perseus approach:
+Optionally stores before/after matrices and an imputed mask for diagnostics.
+
 For each sample j, let μ_j and σ_j be location and scale of its observed (log2) values.
 Missing entries in sample j are drawn from Normal( μ_j - shift\emph{σ_j, (width}σ_j)^2 ).
-Proteins missing in \emph{all} samples remain NA (uninformative).
-
-Typical defaults are shift ≈ 1.8 and width ≈ 0.3 on log2 data.
+Features missing in \emph{all} samples remain NA (uninformative).
 }
 \examples{
-  # X is log2-intensity matrix with NAs
-  X_imp <- perseus_impute(X, shift=1.8, width=0.3, robust=TRUE, seed=123)
+# Matrix use
+# X_imp <- perseus_impute(X, seed=123)
+# mask  <- attr(X_imp, "imputed_mask")
+
+# DAList use (per-contrast if present)
+# results <- perseus_impute(results, save_before_after = TRUE, seed=1)
+
 }

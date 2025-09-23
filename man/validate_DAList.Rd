@@ -7,7 +7,8 @@
 validate_DAList(x)
 }
 \description{
-Internal function for validating a DAList object.
+Internal function for validating and normalizing a DAList-like object.
 Tolerant of arbitrary result labels (custom contrast names).
+Returns the (possibly re-ordered) object and ensures class "DAList".
 }
 \keyword{internal}
