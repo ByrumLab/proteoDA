@@ -46,10 +46,13 @@
 
 filter_samples <- function(DAList, condition) {
 
-  if (!(class(DAList) %in% c("DAList"))) {
+  # if (!(class(DAList) %in% c("DAList"))) {
+  #   cli::cli_abort("{.arg DAList} must be a DAList object")
+  # }
+  if (!inherits(DAList, "DAList")) {
     cli::cli_abort("{.arg DAList} must be a DAList object")
   }
-
+  
   if (is.null(DAList$metadata)) {
     cli::cli_abort("{.arg DAList} does not contain metadata for filtering samples")
   }

@@ -16,7 +16,7 @@ plot_perseus_imputation(
 \arguments{
 \item{logDat_before}{matrix/data.frame of log2 intensities with NAs (pre-imputation)}
 
-\item{logDat_after}{matrix/data.frame of log2 intensities after perseus_impute()}
+\item{logDat_after}{matrix/data.frame of log2 intensities after \code{perseus_impute()}}
 
 \item{samples}{character/integer vector of columns to plot (default: all)}
 
@@ -24,16 +24,14 @@ plot_perseus_imputation(
 
 \item{facet_ncol}{number of columns in facet wrap}
 
-\item{overlay}{if TRUE, overlays observed + imputed in the same panel per sample;
-if FALSE, uses position = "identity" stacked fills}
+\item{overlay}{if TRUE, overlay observed+imputed per sample panel; else stacked}
 }
 \value{
 ggplot object (faceted histograms across selected samples)
 }
 \description{
-Plot histograms highlighting imputed values (Perseus-style imputation)
-}
-\details{
-Values that were NA in \code{logDat_before} and non-NA in \code{logDat_after}
-are labeled as "Imputed". All others are "Observed".
+If you ran \code{perseus_impute(DAList, save_before_after=TRUE)}, you can pass:
+\code{logDat_before = DAList$data_per_contrast[[contrast]]$imputation$before_log2}
+\code{logDat_after  = DAList$data_per_contrast[[contrast]]$imputation$after_log2}
+or use the global \code{DAList$imputation$before_log2/after_log2} when no per-contrast data exists.
 }
