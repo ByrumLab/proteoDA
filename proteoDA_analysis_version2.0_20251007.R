@@ -13,7 +13,9 @@ devtools::load_all()
 source("proteoDA_params.R")
 
 ############
-## File format conversion - DIANN quan to proteoDA
+## INPUT DATA from bash or parameter file
+## fix uniprot_id required column
+## replace blanks or Na or NaN with 0
 ###########
 
 # Read the CSV files for testing
@@ -25,16 +27,13 @@ input_data <- read.csv(input_quan)
  diann_quan <- args[1]
  input_data <- read.csv(diann_quan)
 
-sample_metadata <- read.csv(metadata)
-
-
-# Step 1: Create 'uniprot_id' by extracting the first ID from 'Protein.Group'
+# ----Step 1: Create 'uniprot_id' by extracting the first ID from 'Protein.Group'------
 # Create 'uniprot_id' as the first column
 uniprot_split <- strsplit(input_data$Protein.Group, ";")
 uniprot_id <- sapply(uniprot_split, `[`, 1)
 input_data <- cbind(uniprot_id = uniprot_id, input_data)
 
-# Step 2: Replace NA and blank entries safely, preserving numeric types
+# ----Step 2: Replace NA and blank entries safely, preserving numeric types-------
 for (col in names(input_data)) {
   if (is.numeric(input_data[[col]])) {
     input_data[[col]][is.na(input_data[[col]])] <- 0
@@ -43,63 +42,80 @@ for (col in names(input_data)) {
   }
 }
 
-
 ###########################
-# Step 0: create anno before removing for the intensity data. 
+## Load Sample metadata
+## Subset annotation from input file
+###########################
+
+# ----Step 3: Load sample metadata sheet  
+sample_metadata <- read.csv(metadata)
+
+# Step 4: create anno from input data. 
 annotation_data <- input_data[,anno_start:anno_end] # select protein annotation 
 
-# Step 1: Create mapping from file name to sample name
-col_rename_map <- setNames(sample_metadata$sample, sample_metadata$file)
-
-# Step 2: Subset the map to only those files present in input_data
-matching_files <- intersect(names(col_rename_map), colnames(input_data))
-
-# Step 3: Rename the columns in input_data
-colnames(input_data)[match(matching_files, colnames(input_data))] <- col_rename_map[matching_files]
-
-# Step 4: Reorder columns to match the sample_metadata$sample order
-ordered_samples <- sample_metadata$sample
-# Keep only those sample names that are now in input_data
-ordered_samples <- ordered_samples[ordered_samples %in% colnames(input_data)]
-intensity_data <- input_data[, ordered_samples]
-
-head(intensity_data)
-head(sample_metadata)
-
-rownames(sample_metadata)
-rownames(sample_metadata) <- sample_metadata$sample
-#rownames of metadata must match column names of intensity data
-rownames(sample_metadata)
-colnames(intensity_data)
-
 #########
-## check the sample metadata and data have the same samples in the same order
+## --------check the sample metadata and data have the same samples in the same order
+##
 ## If your columns are currently misassigned because of lexicographic ordering (1, 10, 11, 2…), 
-## the function uses name matching, not position, to realign—so group labels will no longer be misapplied.
+##       the function uses name matching, not position, to realign—so group labels will no longer be misapplied.
 ## If any sample IDs are missing/duplicated in either table, 
 ##           it aborts with a clean diagnostic list of the offenders.
-## If you’d rather not change the current column order, set prefer_group_blocks = FALSE 
-##           (it will only reorder metadata to match data’s existing order).
+## 
+#### WATCH ----------
+# If some files in metadata$file don’t appear as columns in input_data,
+##        the renamer silently ignores them (we subset with intersect). You’ll still get a hard error later if the sets don’t match (from the helper).
+
+## If you prefer metadata order over grouping, set prefer_group_blocks = FALSE 
+##            (the helper will then only reorder metadata to match data columns).
+
 ## You can optionally call check_data_metadata_match() inside validate_DAList() for light-weight runtime checks without reordering.
 ############
 
 source("R/align_checks.R")
-# Align and fix (keeps replicates together by group, natural-sorts 1..10..11)
+# --- Rename data columns: file -> sample (keep this) -------------------------
+# Requires metadata columns: 'file' and 'sample'
+rename_map <- setNames(sample_metadata$sample, sample_metadata$file)
+
+present_files <- intersect(names(rename_map), colnames(input_data))
+colnames(input_data)[match(present_files, colnames(input_data))] <- rename_map[present_files]
+
+# Build intensity matrix after renaming; keep your existing sample subset if needed
+# (Optional) If you only want samples listed in metadata:
+# after renaming file -> sample
+dat_ids <- colnames(input_data)
+
+keep_samples <- dat_ids[dat_ids %in% sample_metadata$sample]   # preserves current order
+intensity_data <- input_data[, keep_samples, drop = FALSE]
+
+# optional: trim metadata to those samples but do NOT reorder yet
+sample_metadata <- subset(sample_metadata, sample %in% keep_samples)
+
+# Row names for metadata should be sample IDs
+rownames(sample_metadata) <- sample_metadata$sample
+
+head(intensity_data)
+head(sample_metadata)
+
+# --- Auto-align data & metadata (replaces Step 4) ----------------------------
 aligned <- align_data_and_metadata(
-  data              = intensity_data,
-  metadata          = sample_metadata,
-  sample_col        = "sample",      # your metadata column with sample IDs
-  group_col         = "group",       # optional but recommended
-  prefer_group_blocks = TRUE,        # keep group replicates together
-  strict            = FALSE          # auto-fix instead of aborting
+  data                = intensity_data,
+  metadata            = sample_metadata,
+  sample_col          = "sample",   # your metadata column with sample IDs
+  group_col           = "group",    # optional but recommended
+  prefer_group_blocks = TRUE,       # keep replicates together + natural sort
+  strict              = FALSE
 )
 
 intensity_data  <- aligned$data
 sample_metadata <- aligned$metadata
+# aligned$changes  # optional: inspect what moved
+
+head(intensity_data)
+head(sample_metadata)
 
 # (Optional) peek at what changed
-# head(aligned$changes)
-
+#  head(aligned$changes)
+aligned$changes
 ##########
 ### Create DAList object
 ##########
