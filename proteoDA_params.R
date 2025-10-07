@@ -15,7 +15,7 @@ db_version = "March 2023"
 organism = "Homo sapiens"
 
 ### input files: subset quan and protein annotation
-#input_quan = "data/uni_prot_quan_rmNA_norm.csv"
+input_quan = "data/20250910_Durbigrp_071825_Protein_proteoDA_input_test2.csv"
 ## metadata requires column names "sample" and "group"
 metadata = "data/Durbigrp_071825_MMDIA_SampleMetadata.csv"
 sample_start = 14  # first column where the samples start, currently 10 for diann, different for spectronaut
