@@ -71,7 +71,7 @@ annotation_data <- input_data[,anno_start:anno_end] # select protein annotation
 ## You can optionally call check_data_metadata_match() inside validate_DAList() for light-weight runtime checks without reordering.
 ############
 
-source("R/align_checks.R")
+#source("R/align_checks.R")
 # --- Rename data columns: file -> sample (keep this) -------------------------
 # Requires metadata columns: 'file' and 'sample'
 rename_map <- setNames(sample_metadata$sample, sample_metadata$file)
@@ -200,8 +200,8 @@ norm$tags$norm_method <- "diann_quan"
 #### Version normalization_v3 ----------------------
 # 1) Start with log2 data (with NAs)
 
-source("R/normalization_v2.R")
-source("s3_class.R")
+#source("R/normalization_v2.R")
+#source("s3_class.R")
 
 # use DAList
 imputed <- perseus_impute(norm,
@@ -320,7 +320,8 @@ write_limma_plots(
     output_dir = DA_dir,
     overwrite = T,
     control_proteins = ctrl_proteins, #c("P58004", "Q12766", "MDM2")
-    highlight_by = "uniprot_id")
+    highlight_by = "uniprot_id",
+    image_formats = c("pdf","png"))
 
 write_limma_plots(
   DAList = results2,
@@ -332,7 +333,8 @@ write_limma_plots(
   output_dir = "impute_out",
   overwrite = T,
   control_proteins = ctrl_proteins, #c("P58004", "Q12766", "MDM2")
-  highlight_by = "uniprot_id")
+  highlight_by = "uniprot_id",
+  image_formats = c("pdf","png"))
 
 # ##### FINAL DAList()
 # save for QC plots
