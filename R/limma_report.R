@@ -95,7 +95,8 @@ write_limma_plots <- function(DAList = NULL,
                               height = 1000,
                               width = 1000,
                               control_proteins = NULL,
-                              highlight_by = "uniprot_id") {
+                              highlight_by = "uniprot_id",
+                              image_formats = c("pdf","png")) {
 
   # Preserve optional slots
   optional_slots <- c("filtered_proteins_per_contrast")
@@ -144,18 +145,24 @@ write_limma_plots <- function(DAList = NULL,
   
   contrast_names <- names(DAList$results)
   
-  expected_xy_plots <- file.path(
-    output_dir, "static_plots",
-    apply(
-      X = expand.grid(contrast_names, c("volcano", "MD"), c("raw", "adjusted"), "pval.pdf"),
-      MARGIN = 1, FUN = paste, collapse = "-"
+  # Cartesian build for volcano + MD, raw/adjusted, and both formats
+  expected_xy_plots <- unlist(lapply(image_formats, function(ext) {
+    file.path(
+      output_dir, "static_plots",
+      apply(
+        X = expand.grid(contrast_names, c("volcano", "MD"), c("raw", "adjusted"), paste0("pval.", ext)),
+        MARGIN = 1, FUN = paste, collapse = "-"
+      )
     )
-  )
+  }))
   
-  expected_histograms_plots <- file.path(
-    output_dir, "static_plots",
-    paste0(contrast_names, "-pval-hist.pdf")
-  )
+  # p-value histograms (one per contrast) in both formats
+  expected_histograms_plots <- unlist(lapply(image_formats, function(ext) {
+    file.path(
+      output_dir, "static_plots",
+      paste0(contrast_names, "-pval-hist.", ext)
+    )
+  }))
   
   expected_reports <- file.path(
     output_dir,
@@ -179,60 +186,7 @@ write_limma_plots <- function(DAList = NULL,
     }
   }
   
-  # expected_xy_plots <- file.path(
-  #   output_dir,
-  #   "static_plots",
-  #   apply(
-  #     X = expand.grid(names(DAList$results),
-  #                     c("volcano", "MD"),
-  #                     c("raw", "adjusted"),
-  #                     "pval.pdf"),
-  #     MARGIN = 1,
-  #     FUN = paste,
-  #     collapse = "-"
-  #   )
-  # )
-  # expected_histograms_plots <- file.path(
-  #   output_dir,
-  #   "static_plots",
-  #   apply(
-  #     X = expand.grid(names(DAList$results),
-  #                     "pval-hist.pdf"),
-  #     MARGIN = 1,
-  #     FUN = paste,
-  #     collapse = "-"
-  #   )
-  # )
-  # 
-  # expected_reports <-  file.path(
-  #   output_dir,
-  #   apply(
-  #     X = expand.grid(names(DAList$results),
-  #                     "DA_report.html"),
-  #     MARGIN = 1,
-  #     FUN = paste,
-  #     collapse = "_"
-  #   )
-  # )
-  # expected_results <- c(expected_histograms_plots,
-  #                       expected_xy_plots,
-  #                       expected_reports)
-  # 
-  # # If any files already exist
-  # if (any(file.exists(expected_results))) {
-  #   if (!overwrite) {
-  #     cli::cli_abort(c("Results files already exist",
-  #                      "!" = "and {.arg overwrite} == {.val {overwrite}}",
-  #                      "i" = "Change {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"))
-  # 
-  #   } else {
-  #     cli::cli_inform("Results files already exist, and {.arg overwrite} == {.val {overwrite}}. Overwriting results files.")
-  #     # Delete old results files so results don't become unsynced if there are any issues
-  #     unlink(expected_results)
-  #   }
-  # }
-  # 
-
+  
   # Capture original wd, and setup function to return to original wd
   # upon error or function exit if it has changed
   old_wd <- getwd()
@@ -385,39 +339,69 @@ write_limma_plots <- function(DAList = NULL,
     
     cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
     # make and save static plots
+  
+    # make and save static plots
+    # dpi = 300 only for PNG; ignored for PDF.
+    # bg = "white" ensures non-transparent PNGs for consistent rendering (useful if these go into PowerPoint/Docs).
     for (type in c("raw", "adjusted")) {
-      volcano <- static_volcano_plot(data,
-                                     lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
-                                     pval_thresh = DAList$tags$DA_criteria$pval_thresh,
-                                     contrast = contrast, pval_type = type,
-                                     control_proteins = control_proteins,
-                                     anno = anno,
-                                     highlight_by = highlight_by)
-      MD <- static_MD_plot(data,
-                           lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
-                           contrast = contrast, pval_type = type)
-      ggsave(filename = file.path("static_plots", paste0(paste(contrast, "volcano", type, "pval", sep = "-"), ".pdf")),
-             plot = volcano,
-             height = 6,
-             width = 7,
-             units = "in")
-  # save png
-      ggsave(filename = file.path("static_plots", paste0(paste(contrast, "MD", type, "pval", sep = "-"), ".pdf")),
-             plot = MD,
-             height = 6,
-             width = 7,
-             units = "in")
+      volcano <- static_volcano_plot(
+        data,
+        lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
+        pval_thresh = DAList$tags$DA_criteria$pval_thresh,
+        contrast = contrast, pval_type = type,
+        control_proteins = control_proteins,
+        anno = anno,
+        highlight_by = highlight_by
+      )
+      
+      MD <- static_MD_plot(
+        data,
+        lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
+        contrast = contrast, pval_type = type
+      )
+      
+      # Save both formats side-by-side
+      for (ext in image_formats) {
+        out_volcano <- file.path("static_plots", paste0(paste(contrast, "volcano", type, "pval", sep = "-"), ".", ext))
+        out_md      <- file.path("static_plots", paste0(paste(contrast, "MD",      type, "pval", sep = "-"), ".", ext))
+        
+        if (ext == "png") {
+          ggplot2::ggsave(filename = out_volcano, plot = volcano,
+                          height = 6, width = 7, units = "in",
+                          dpi = 300, bg = "white")
+          ggplot2::ggsave(filename = out_md, plot = MD,
+                          height = 6, width = 7, units = "in",
+                          dpi = 300, bg = "white")
+        } else {
+          ggplot2::ggsave(filename = out_volcano, plot = volcano,
+                          height = 6, width = 7, units = "in",
+                          bg = "white")
+          ggplot2::ggsave(filename = out_md, plot = MD,
+                          height = 6, width = 7, units = "in",
+                          bg = "white")
+        }
+      }
+      
       rm(volcano, MD)
     }
-
-    pval_hist <- static_pval_histogram(data = data, contrast = contrast)
-    ggsave(filename = file.path("static_plots", paste0(contrast, "-pval-hist.pdf")),
-           plot = pval_hist,
-           height = 6,
-           width = 11,
-           units = "in")
-    rm(pval_hist)
-
+    
+pval_hist <- static_pval_histogram(data = data, contrast = contrast)
+    for (ext in image_formats) {
+      out_hist <- file.path("static_plots", paste0(contrast, "-pval-hist.", ext))
+      if (ext == "png") {
+        ggplot2::ggsave(filename = out_hist, plot = pval_hist,
+                        height = 6, width = 11, units = "in",
+                        dpi = 300, bg = "white")
+      } else {
+        ggplot2::ggsave(filename = out_hist, plot = pval_hist,
+                        height = 6, width = 11, units = "in",
+                        bg = "white")
+      }
+    }
+  
+rm(pval_hist)
+    
+    
 
     # Appease R CMD check
     # Right now, all the knitr function calls are in my .Rmd templates
