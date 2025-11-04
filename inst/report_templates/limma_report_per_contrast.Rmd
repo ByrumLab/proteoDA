@@ -20,8 +20,9 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 ```
 
 ```{r logo, fig.align="left", out.width="40%"}
-logo <- system.file("report_templates", "CPM_Hz.png", package = "proteoDAstjude")
-knitr::include_graphics(knitr::image_uri(logo))
+logo_path <- system.file("report_templates", "CPM_Hz.png", package = "proteoDAstjude")
+uri <- knitr::image_uri(logo_path)
+cat(sprintf('<img src="%s" style="width:40%%; float:left;" />', uri))
 ```
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 
