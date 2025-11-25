@@ -1,67 +1,150 @@
-#' Normalize data in a DAList
+#' Normalize data in a DAList (contrast-aware)
 #'
-#' Normalizes data in a DAList using one of several methods (see Details).
+#' Normalizes data using one of several methods. If `DAList$data_per_contrast`
+#' exists and is non-empty, normalization is applied **per-contrast** and the
+#' results are written back to `DAList$data_per_contrast[[contrast]]`, leaving
+#' `DAList$data` unchanged. Otherwise, it falls back to normalizing
+#' `DAList$data` (legacy global behavior).
 #'
 #' **Available methods**
-#' \itemize{
-#'   \item \code{"log2"} — Binary (base-2) log transformation of raw intensities.
-#'   \item \code{"median"} — Divide each sample by its median; rescale by the mean of sample medians.
-#'   \item \code{"mean"} — Divide each sample by its mean; rescale by the mean of sample means.
-#'   \item \code{"vsn"} — Variance-stabilizing normalization via \code{\link[vsn:justvsn]{vsn::justvsn}} (expects raw scale).
-#'   \item \code{"quantile"} — Quantile normalization via \code{\link[preprocessCore:normalize.quantiles]{preprocessCore::normalize.quantiles}}.
-#'   \item \code{"cycloess"} — Cyclic loess via \code{\link[limma:normalizeCyclicLoess]{limma::normalizeCyclicLoess}} (can be applied within groups).
-#'   \item \code{"rlr"} — Robust linear regression (global) normalization.
-#'   \item \code{"gi"} — Global intensity normalization (expects raw scale; returns log2).
-#' }
+#' - "log2"       — Binary (base-2) log transformation of raw intensities.
+#' - "median"     — Divide each sample by its median; rescale by the mean of sample medians.
+#' - "mean"       — Divide each sample by its mean; rescale by the mean of sample means.
+#' - "vsn"        — Variance-stabilizing normalization via `vsn::justvsn` (expects raw scale).
+#' - "quantile"   — Quantile normalization via `preprocessCore::normalize.quantiles`.
+#' - "cycloess"   — Cyclic loess via `limma::normalizeCyclicLoess` (can be applied within groups).
+#' - "rlr"        — Robust linear regression (global) normalization.
+#' - "gi"         — Global intensity normalization (expects raw scale; returns log2).
 #'
 #' **Log scale behavior**
-#' Methods \code{"median"}, \code{"mean"}, \code{"quantile"}, \code{"cycloess"}, and \code{"rlr"}
-#' operate on log2 data. By default, this function will apply \code{log2} internally before those
-#' methods. If your \code{DAList$data} are \emph{already} log2-transformed (e.g., after Perseus-style
-#' imputation), set \code{input_is_log2 = TRUE} to avoid double logging.
+#' Methods "median", "mean", "quantile", "cycloess", and "rlr" operate on log2 data.
+#' By default, this function will apply `log2` internally before those methods.
+#' If your inputs are already log2-transformed,
+#' set `input_is_log2 = TRUE` to avoid double logging.
 #'
-#' @param DAList A \code{DAList} containing non-normalized data (matrix/data frame in \code{DAList$data}).
-#' @param norm_method Normalization method. One of \code{"log2"}, \code{"median"}, \code{"mean"},
-#'   \code{"vsn"}, \code{"quantile"}, \code{"cycloess"}, \code{"rlr"}, or \code{"gi"}.
-#' @param input_is_log2 Logical. If \code{TRUE}, indicates that \code{DAList$data} are already on the
-#'   log2 scale for methods that expect log2 input (\code{"median"}, \code{"mean"}, \code{"quantile"},
-#'   \code{"cycloess"}, \code{"rlr"}). Default \code{FALSE}.
-#' @param ... Additional arguments forwarded to the underlying normalization function. For example,
-#'   pass \code{groups=} to \code{cycloessNorm()} to normalize independently within groups.
+#' @param DAList A `DAList` object.
+#' @param norm_method One of: "log2","median","mean","vsn","quantile","cycloess","rlr","gi".
+#' @param input_is_log2 Logical. If TRUE, indicates inputs are already on the log2 scale
+#'   for methods that expect log2 input. Default FALSE.
+#' @param contrasts Optional character vector to restrict which contrasts in
+#'   `DAList$data_per_contrast` are normalized. Default = all available.
+#' @param use_per_contrast_if_available Logical. Default TRUE. When TRUE and
+#'   `DAList$data_per_contrast` is present/non-empty, normalize per-contrast and
+#'   leave `DAList$data` unchanged.
+#' @param ... Additional arguments forwarded to the underlying normalization function.
+#'   For example, pass `groups=` to `cycloessNorm()` to normalize within groups;
+#'   if supplied, `groups` will be subset/reordered to the columns present in each
+#'   per-contrast matrix.
 #'
-#' @return A \code{DAList} with \code{data} replaced by normalized values and tags updated.
-#'
-#' @examples
-#' \dontrun{
-#' # Example: log2 -> impute -> within-group cyclic loess (avoid double log)
-#' DAList$data <- log2Norm(DAList$data)
-#' DAList$data <- perseus_impute(DAList$data, seed = 1)
-#' DAList <- normalize_data(
-#'   DAList,
-#'   norm_method   = "cycloess",
-#'   input_is_log2 = TRUE,                 # <-- prevents double log2
-#'   groups        = DAList$sample_metadata$group
-#' )
-#'
-#' # Global cyclic loess on raw data (function will log2 internally)
-#' DAList <- normalize_data(DAList, norm_method = "cycloess")
-#'
-#' # VSN works on raw (non-log) data
-#' DAList <- normalize_data(DAList, norm_method = "vsn")
-#' }
+#' @return The updated `DAList`. Tags are updated as follows:
+#'   - Per-contrast path: `DAList$tags$per_contrast_normalized = TRUE`,
+#'     `DAList$tags$norm_method_per_contrast` (named list), and
+#'     `DAList$normalization_per_contrast[[contrast]]$diagnostics` (before/after
+#'     per-sample summaries) are recorded. `DAList$data` is unchanged.
+#'   - Global path: `DAList$tags$normalized = TRUE`, `DAList$tags$norm_method = norm_method`.
 #'
 #' @export
 normalize_data <- function(DAList,
                            norm_method = c("log2","median","mean","vsn","quantile","cycloess","rlr","gi"),
-                           input_is_log2 = FALSE,   # <— NEW
+                           input_is_log2 = FALSE,
+                           contrasts = NULL,
+                           use_per_contrast_if_available = TRUE,
                            ...) {
-  
   norm_method <- rlang::arg_match(norm_method)
   validate_DAList(DAList)
   
-  if (!is.null(DAList$tags$normalized) && DAList$tags$normalized) {
-    cli::cli_abort("Data in DAList are already normalized.")
+  has_dpc <- use_per_contrast_if_available && !is.null(DAList$data_per_contrast) && length(DAList$data_per_contrast) > 0
+  
+  if (has_dpc) {
+    # ---- Per-contrast normalization ----
+    if (is.null(names(DAList$data_per_contrast))) {
+      stop("DAList$data_per_contrast must be a *named* list of contrast matrices.")
+    }
+    target_contrasts <- if (is.null(contrasts)) names(DAList$data_per_contrast) else intersect(contrasts, names(DAList$data_per_contrast))
+    if (!length(target_contrasts)) stop("No matching contrasts in DAList$data_per_contrast.")
+    
+    # Prepare containers for tags/diagnostics
+    if (is.null(DAList$tags)) DAList$tags <- list()
+    DAList$tags$per_contrast_normalized <- TRUE
+    if (is.null(DAList$tags$norm_method_per_contrast)) DAList$tags$norm_method_per_contrast <- list()
+    if (is.null(DAList$normalization_per_contrast)) DAList$normalization_per_contrast <- list()
+    
+    # Allow groups= to be supplied and subset per contrast
+    dots <- list(...)
+    has_groups_arg <- "groups" %in% names(dots)
+    
+    for (ct in target_contrasts) {
+      dpc <- DAList$data_per_contrast[[ct]]
+      
+      # Extract a matrix to normalize and remember how to write it back
+      extract_mat <- function(x) {
+        if (is.matrix(x) || is.data.frame(x)) return(list(mat = as.matrix(x), write_back = function(m) { if (is.data.frame(x)) return(as.data.frame(m, check.names = FALSE)); m }))
+        if (is.list(x) && "log2" %in% names(x) && (is.matrix(x$log2) || is.data.frame(x$log2))) {
+          return(list(mat = as.matrix(x$log2), write_back = function(m) { x$log2 <- m; x }))
+        }
+        stop(sprintf("Unsupported structure for DAList$data_per_contrast[['%s']]. Expected matrix/data.frame or list with $log2.", ct))
+      }
+      wb <- extract_mat(dpc)
+      X  <- wb$mat
+      
+      # Build method call arguments
+      do_log_methods <- c("median","mean","quantile","cycloess","rlr")
+      if (norm_method %in% c("log2","vsn","gi")) {
+        call_args <- c(list(dat = X), dots)
+        normalized <- do.call(paste0(norm_method, "Norm"), call_args)
+      } else if (norm_method %in% do_log_methods) {
+        # Optional groups subsetting
+        local_dots <- dots
+        if (has_groups_arg) {
+          g <- dots$groups
+          if (!is.null(colnames(X)) && !is.null(names(g))) {
+            # Reorder by column names if named
+            g <- g[colnames(X)]
+          } else if (length(g) != ncol(X)) {
+            stop(sprintf("Length of 'groups' (%d) must match ncol(X) (%d) for contrast '%s'.", length(g), ncol(X), ct))
+          }
+          local_dots$groups <- g
+        }
+        log2_X <- if (input_is_log2) X else log2Norm(dat = X)
+        call_args <- c(list(logDat = log2_X), local_dots)
+        normalized <- do.call(paste0(norm_method, "Norm"), call_args)
+      } else {
+        stop(sprintf("%s is not a valid normalization method", norm_method))
+      }
+      
+      # Diagnostics (before/after per-sample summaries)
+      diag <- list(
+        before = list(
+          sample_median = apply(if (exists("log2_X")) log2_X else (if (norm_method == "log2") log2Norm(dat = X) else X), 2, stats::median, na.rm = TRUE),
+          sample_mean   = apply(if (exists("log2_X")) log2_X else (if (norm_method == "log2") log2Norm(dat = X) else X), 2, mean, na.rm = TRUE)
+        ),
+        after = list(
+          sample_median = apply(as.matrix(normalized), 2, stats::median, na.rm = TRUE),
+          sample_mean   = apply(as.matrix(normalized), 2, mean, na.rm = TRUE)
+        ),
+        method = norm_method,
+        input_is_log2 = input_is_log2
+      )
+      
+      # Write back preserving structure
+      out_obj <- wb$write_back(normalized)
+      DAList$data_per_contrast[[ct]] <- out_obj
+      
+      # Record tags/diagnostics
+      DAList$tags$norm_method_per_contrast[[ct]] <- norm_method
+      DAList$normalization_per_contrast[[ct]] <- list(diagnostics = diag)
+    }
+    
+    validate_DAList(DAList)
+    return(DAList)
   }
+  
+  # ---- Global (legacy) normalization ----
+  if (!is.null(DAList$tags$normalized) && isTRUE(DAList$tags$normalized)) {
+    cli::cli_abort("Global data in DAList$data are already normalized. To normalize per-contrast, set use_per_contrast_if_available = TRUE and populate $data_per_contrast.")
+  }
+  
+  if (is.null(DAList$data)) cli::cli_abort("DAList$data is NULL; nothing to normalize.")
   
   if (norm_method %in% c("log2","vsn","gi")) {
     normalized_data <- do.call(
@@ -75,61 +158,23 @@ normalize_data <- function(DAList,
       args = c(list(logDat = log2_dat), list(...))
     )
   } else {
-    cli::cli_abort("{.arg {norm_method}} is not a valid normalization method")
+    cli::cli_abort(sprintf("%s is not a valid normalization method", norm_method))
   }
   
   DAList$data <- normalized_data
   DAList$tags$normalized <- TRUE
   DAList$tags$norm_method <- norm_method
   validate_DAList(DAList)
+  DAList
 }
 
 
-
-#' Normalization functions
-#'
-#' A set of functions that normalize data (in columns of a data frame
-#' or matrix), according to various methods: \itemize{
-#'   \item log2Norm- Binary (base2) log transformation.
-#'   \item medianNorm- Divides each sample by the per-sample median, then multiplies all samples
-#'     by the average of the per-sample medians.
-#'   \item meanNorm- Divides each sample by the per-sample mean, then multiplies all samples
-#'     by the average of the per-sample means.
-#'   \item vsnNorm- Variance-stabilizing normalization (vsn),
-#'     using the \code{\link[vsn:justvsn]{vsn::justvsn}} function.
-#'   \item quantileNorm- Quantile normalization, using the
-#'     \code{\link[preprocessCore:normalize.quantiles]{preprocessCore::normalize.quantiles}}
-#'      function.
-#'   \item cycloessNorm- Cyclic Loess normalization, using the
-#'     \code{\link[limma:normalizeCyclicLoess]{limma::normalizeCyclicLoess}}
-#'     function.
-#'   \item rlrNorm- Global linear regression normalization, inspired by the
-#'     \code{NormalyzerDE::performGlobalRLRNormalization}
-#'     function, but with a slightly different implementation.
-#'   \item giNorm- Global intensity normalization, inspired by the
-#'     \code{NormalyzerDE::globalIntensityNormalization}
-#'     function, but with a slightly different implementation. Divides each sample by the
-#'     total intensity for each sample, then multiplies all samples by the median of per-sample
-#'     intensities.
-#'  }
-#'
-#'
-#' @param dat A numeric data frame, where each row is a protein and columns
-#'   are the raw intensities
-#' @param logDat A numeric data frame, where each row is a protein and columns
-#'   are log2-transformed intensities.
-#'
-#' @return A matrix of normalized sample intensities
-#'
-#' @name norm_functions
-#'
-NULL
-
-
+# ---------------------------
+# Normalization *kernels*
+# ---------------------------
 
 #' @rdname norm_functions
 #' @keywords internal
-#'
 log2Norm <- function(dat) {
   logInt <- log2(as.matrix(dat))
   logInt[is.infinite(as.matrix(logInt))] <- NA
@@ -138,11 +183,7 @@ log2Norm <- function(dat) {
 
 #' @rdname norm_functions
 #' @keywords internal
-#'
 medianNorm <- function(logDat) {
-  # Find medians of each sample
-  # Divide by median
-  # Multiply by mean of medians
   sampleMed <- apply(logDat, 2, stats::median, na.rm = TRUE)
   meanMed <- mean(sampleMed, na.rm = TRUE)
   out <- t(t(logDat) / sampleMed)
@@ -152,11 +193,7 @@ medianNorm <- function(logDat) {
 
 #' @rdname norm_functions
 #' @keywords internal
-#'
 meanNorm <- function(logDat) {
-  # Find means of each sample
-  # Divide by mean
-  # Multiply by mean of means
   sampleMean <- apply(logDat, 2, mean, na.rm = TRUE)
   meanMean <- mean(sampleMean, na.rm = TRUE)
   out <- t(t(logDat) / sampleMean)
@@ -166,7 +203,6 @@ meanNorm <- function(logDat) {
 
 #' @rdname norm_functions
 #' @keywords internal
-#'
 vsnNorm <- function(dat) {
   vsnNormed <- suppressMessages(vsn::justvsn(as.matrix(dat)))
   colnames(vsnNormed) <- colnames(dat)
@@ -176,7 +212,6 @@ vsnNorm <- function(dat) {
 
 #' @rdname norm_functions
 #' @keywords internal
-#'
 quantileNorm <- function(logDat) {
   quantNormed <- preprocessCore::normalize.quantiles(as.matrix(logDat), copy = TRUE)
   colnames(quantNormed) <- colnames(logDat)
@@ -184,24 +219,13 @@ quantileNorm <- function(logDat) {
   return(as.matrix(quantNormed))
 }
 
-##' @rdname norm_functions
-##' @keywords internal
-# cycloessNorm <- function(logDat) {
-#   cycLoessNormed <- limma::normalizeCyclicLoess(as.matrix(logDat), method = "fast")
-#   colnames(cycLoessNormed) <- colnames(logDat)
-#   row.names(cycLoessNormed) <- rownames(logDat)
-#   return(as.matrix(cycLoessNormed))
-# }
-
 #' Cyclic loess normalization (optionally within groups)
 #' Expects log2 data. If `groups` is given, normalizes each group independently.
 #' @rdname norm_functions
 #' @keywords internal
-#'
 cycloessNorm <- function(logDat, groups = NULL, method = "fast", ...) {
   logDat <- as.matrix(logDat)
   
-  # Global (original behavior)
   if (is.null(groups)) {
     out <- limma::normalizeCyclicLoess(logDat, method = method, ...)
     colnames(out) <- colnames(logDat)
@@ -209,7 +233,6 @@ cycloessNorm <- function(logDat, groups = NULL, method = "fast", ...) {
     return(out)
   }
   
-  # Within-group normalization (independent)
   stopifnot(length(groups) == ncol(logDat))
   if (!is.factor(groups)) groups <- factor(groups, levels = unique(groups))
   
@@ -224,50 +247,35 @@ cycloessNorm <- function(logDat, groups = NULL, method = "fast", ...) {
   out
 }
 
-
 #' @rdname norm_functions
 #' @keywords internal
-#'
 rlrNorm <- function(logDat) {
-  # First, an internal function to do get the coefficients from rlm regression
-  # for one column
   get_rlm_coeffs_and_slopes <- function(unnormalized_col, predictors) {
     MASS::rlm(unnormalized_col ~ predictors,
               na.action = stats::na.exclude)$coefficients
   }
-
-  # Median intensities across samples are the predictors for the rlm
   row_medians <- rowMedians(logDat, na.rm = TRUE)
-
-  # Apply the one-col function across the input matrix cols
   coefficients <- t(apply(X = logDat,
-                        MARGIN = 2,
-                        FUN = get_rlm_coeffs_and_slopes,
-                        predictors = row_medians))
+                          MARGIN = 2,
+                          FUN = get_rlm_coeffs_and_slopes,
+                          predictors = row_medians))
   stopifnot(nrow(t(logDat)) == nrow(coefficients))
-  # Do the normalization: subtract the intercept from each point, then divide
-  # by slope
-  normalized_mat <- t((t(logDat) - coefficients[,1])/coefficients[,2])
+  normalized_mat <- t((t(logDat) - coefficients[,1]) / coefficients[,2])
   normalized_mat
 }
 
 #' @rdname norm_functions
 #' @keywords internal
-#'
 giNorm <- function(dat) {
-  # Make sure input data is matrix
   dat_mat <- as.matrix(dat)
-  # Follow same pattern as mean and median, but with
-  # sums
   col_sums <- colSums(dat_mat, na.rm = TRUE)
   median_col_sum <- stats::median(col_sums)
-
-  normMatrix <- t(t(dat_mat)/col_sums) * median_col_sum
-  # extra step to return log2 values, as with previous implementation
+  normMatrix <- t(t(dat_mat) / col_sums) * median_col_sum
   normLog2Matrix <- log2(normMatrix)
   normLog2Matrix[is.infinite(normLog2Matrix)] <- NA
   normLog2Matrix
 }
+
 
 
 #Add @export

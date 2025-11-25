@@ -2,7 +2,7 @@
 % Please edit documentation in R/normalization_report.R
 \name{write_norm_report}
 \alias{write_norm_report}
-\title{Create a normalization report}
+\title{Create a normalization report (contrast-aware)}
 \usage{
 write_norm_report(
   DAList,
@@ -11,59 +11,42 @@ write_norm_report(
   filename = NULL,
   overwrite = FALSE,
   suppress_zoom_legend = FALSE,
-  use_ggrastr = FALSE
+  use_ggrastr = FALSE,
+  input_is_log2 = FALSE,
+  contrasts = NULL,
+  sample_id_col = NULL,
+  groups_override = NULL,
+  metrics_csv = NULL
 )
 }
 \arguments{
 \item{DAList}{A DAList.}
 
-\item{grouping_column}{The name of the column in the metadata which
-gives information on how to group samples for normalization. Must be
-supplied: some metrics can't be calculated for only one group.}
+\item{grouping_column}{Name of the metadata column that gives sample groups
+(used by within-group cyclic loess). Must contain at least two groups.}
 
-\item{output_dir}{The directory in which to save the report. If the directory
-does not exist, it will be created. If not provided, will default to
-the current working directory.}
+\item{output_dir}{Directory to save the report (created if missing). Defaults to cwd.}
 
-\item{filename}{The file name of the report to be saved. Must end in .pdf.
-Will default to "normalization_report.pdf" if no file name is provided.}
+\item{filename}{File name of the report (must end with .pdf). Default "normalization_report.pdf".}
 
-\item{overwrite}{Should report file be overwritten if it already exists?
-Default is FALSE.}
+\item{overwrite}{Overwrite if the report already exists? Default FALSE.}
 
-\item{suppress_zoom_legend}{Should the legend be removed from the zoomed
-log2ratio plot? Default is FALSE.}
+\item{suppress_zoom_legend}{Remove the legend from the zoomed log2ratio plot? Default FALSE.}
 
-\item{use_ggrastr}{Should the \code{ggrastr} package be used to decrease
-file size? Default is FALSE. Requires installation of \code{ggrastr}.}
+\item{use_ggrastr}{Use ggrastr in MD plots to reduce size (if installed)? Default FALSE.}
+
+\item{input_is_log2}{Logical. If TRUE, indicates per-contrast (or global) input matrices
+are already on the log2 scale for methods that expect log2 input. Default FALSE.}
+
+\item{contrasts}{Optional character vector: restrict report to these contrasts when
+\code{data_per_contrast} is present. Default = all.}
 }
 \value{
-If report is created successfully, invisibly returns the
-input DAList.
+Invisibly returns the input DAList.
 }
 \description{
-Saves a PDF report containing a variety of qualitative plots which give
-information about the performance of different normalization methods.
-The report is useful for choosing a normalization method to
-use for downstream analysis.
-}
-\examples{
-\dontrun{
-# Group samples according to group identities
-# in the "treatment" column of the metadata
-write_norm_report(DAList,
-                        grouping_column = "treatment")
-
-# Change the default directory and file names
-write_norm_report(DAList,
-                        grouping_column = "treatment",
-                        output_dir = "my/chosen/directory",
-                        filename = "my_report.pdf")
-
-# Overwrite an existing report
-write_norm_report(DAList,
-                        grouping_column = "treatment",
-                        overwrite = T)
-}
-
+Saves a PDF report containing plots/metrics to compare normalization methods.
+If \code{DAList$data_per_contrast} exists, evaluates normalization \strong{for each contrast}
+using the matrices in that slot (leaving \code{DAList$data} untouched). Otherwise,
+evaluates on \code{DAList$data} (legacy behavior).
 }
