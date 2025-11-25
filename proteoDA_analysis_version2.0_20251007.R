@@ -86,8 +86,8 @@ dat_ids <- colnames(input_data)
 
 keep_samples <- dat_ids[dat_ids %in% sample_metadata$sample]   # preserves current order
 intensity_data <- input_data[, keep_samples, drop = FALSE]
-
-# optional: trim metadata to those samples but do NOT reorder yet
+head(intensity_data)
+# trim metadata to those samples but do NOT reorder yet
 sample_metadata <- subset(sample_metadata, sample %in% keep_samples)
 
 # Row names for metadata should be sample IDs
@@ -102,9 +102,13 @@ aligned <- align_data_and_metadata(
   metadata            = sample_metadata,
   sample_col          = "sample",   # your metadata column with sample IDs
   group_col           = "group",    # optional but recommended
-  prefer_group_blocks = TRUE,       # keep replicates together + natural sort
+  prefer_group_blocks = FALSE,       # keep replicates together + natural sort
   strict              = FALSE
 )
+
+# (Optional) peek at what changed
+#  head(aligned$changes)
+aligned$changes
 
 intensity_data  <- aligned$data
 sample_metadata <- aligned$metadata
@@ -113,9 +117,7 @@ sample_metadata <- aligned$metadata
 head(intensity_data)
 head(sample_metadata)
 
-# (Optional) peek at what changed
-#  head(aligned$changes)
-aligned$changes
+
 ##########
 ### Create DAList object
 ##########
@@ -181,8 +183,25 @@ write.csv(summary_df, "filtered_protein_counts.csv", row.names = FALSE)
 # })))
 
 # if using the Rshiny raw norm values from DiaNN
-#normlog2 <- normalize_data(filtered_proteins,
-#                           norm_method = "log2")
+
+##############
+## NORMALIZATION
+## methods = "log2", "median", "mean", "vsn", "quantile", "cycloess", "rlr", "gi"
+###############
+
+# write normalization report to choose the best method
+
+write_norm_report(
+    filtered_DALists,
+    grouping_column = group,
+    output_dir = "QC_report",
+    filename = "normalization.pdf",
+    overwrite = TRUE
+)
+
+
+norm <- normalize_data(filtered_proteins,
+                           norm_method = "log2")
 
 
 
@@ -342,152 +361,152 @@ saveRDS(results0, "results.rds")
 
 ###############
 ## retrieve top hits from BioID project
-source("Top_BioID_Targets.R")
-
-top <- top_targets_from_DAList(
-  DAList= results,
-  primary_contrasts = c("ZR_fus_vs_RELA", "ZR_fus_vs_ZFTA"),
-  background_contrasts = c("ZRfus_vs_ctrl","ZRfus_vs_ZRnoB",
-                           "RELA_vs_ctrl","RELA_vs_ZRnoB",
-                           "ZFTA_vs_ctrl","ZFTA_vs_ZRnoB"),
-  alpha = 0.05,
-  lfc_min = 0.5,          # be stricter if you want
-  require_n_primary = 1,  # set to 2 to demand both primary contrasts
-  out_csv = "Top_BioID_Targets_pval.05_lfc0.5.csv"
-)
-head(top)
-
-top_impute <- top_targets_from_DAList(
-  DAList= results2,
-  primary_contrasts = c("ZR_fus_vs_RELA", "ZR_fus_vs_ZFTA"),
-  background_contrasts = c("ZRfus_vs_ctrl","ZRfus_vs_ZRnoB",
-                           "RELA_vs_ctrl","RELA_vs_ZRnoB",
-                           "ZFTA_vs_ctrl","ZFTA_vs_ZRnoB"),
-  alpha = 0.05,
-  lfc_min = 0.5,          # be stricter if you want
-  require_n_primary = 1,  # set to 2 to demand both primary contrasts
-  out_csv = "Top_PerseusImpute_BioID_Targets_pval.05_lfc0.5.csv"
-)
-
+# source("Top_BioID_Targets.R")
+# 
+# top <- top_targets_from_DAList(
+#   DAList= results,
+#   primary_contrasts = c("ZR_fus_vs_RELA", "ZR_fus_vs_ZFTA"),
+#   background_contrasts = c("ZRfus_vs_ctrl","ZRfus_vs_ZRnoB",
+#                            "RELA_vs_ctrl","RELA_vs_ZRnoB",
+#                            "ZFTA_vs_ctrl","ZFTA_vs_ZRnoB"),
+#   alpha = 0.05,
+#   lfc_min = 0.5,          # be stricter if you want
+#   require_n_primary = 1,  # set to 2 to demand both primary contrasts
+#   out_csv = "Top_BioID_Targets_pval.05_lfc0.5.csv"
+# )
+# head(top)
+# 
+# top_impute <- top_targets_from_DAList(
+#   DAList= results2,
+#   primary_contrasts = c("ZR_fus_vs_RELA", "ZR_fus_vs_ZFTA"),
+#   background_contrasts = c("ZRfus_vs_ctrl","ZRfus_vs_ZRnoB",
+#                            "RELA_vs_ctrl","RELA_vs_ZRnoB",
+#                            "ZFTA_vs_ctrl","ZFTA_vs_ZRnoB"),
+#   alpha = 0.05,
+#   lfc_min = 0.5,          # be stricter if you want
+#   require_n_primary = 1,  # set to 2 to demand both primary contrasts
+#   out_csv = "Top_PerseusImpute_BioID_Targets_pval.05_lfc0.5.csv"
+# )
+# 
 
 ###########
 ## convert 02_DA/static_plots/.pdfs to .pngs
 
 ####
 #dir.create(QC_dir)
-if (!dir.exists(QC_dir)) {dir.create(QC_dir)} 
-
-library(pdftools)
-
-# Define the output directory
-output_dir <- file.path(DA_dir, "static_plots")
-
-# Ensure output directory exists
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir, recursive = TRUE)
-}
-
-# Convert Adjusted p-value Volcano plots from PDF to PNG
-for (i in 1:length(results$results)) {
-
-  # Correctly construct the input PDF file path
-  pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-volcano-adjusted-pval.pdf"))
-
-  # Ensure the PDF file exists before converting
-  if (file.exists(pdf_file)) {
-
-    # Convert to PNG with proper filename pattern
-    pdf_convert(
-      pdf_file,
-      format = "png",
-      pages = NULL,
-      filenames = file.path(output_dir, paste0(names(results$results)[i], "-volcano-adjusted-pval_%d.png")),
-      dpi = 600
-    )
-
-  } else {
-    message("File not found: ", pdf_file)
-  }
-}
-
-
-
-for (i in 1:length(results$results)) {
-
-  # Correctly construct the input PDF file path
-  pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-volcano-raw-pval.pdf"))
-
-  # Ensure the PDF file exists before converting
-  if (file.exists(pdf_file)) {
-
-    # Convert to PNG with proper filename pattern
-    pdf_convert(
-      pdf_file,
-      format = "png",
-      pages = NULL,
-      filenames = file.path(output_dir, paste0(names(results$results)[i], "-volcano-raw-pval_%d.png")),
-      dpi = 600
-    )
-
-  } else {
-    message("File not found: ", pdf_file)
-  }
-}
-
-# Define the output directory
-output_dir <- file.path(DA_dir, "static_plots")
-
-# Ensure output directory exists
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir, recursive = TRUE)
-}
-
-# Convert Adjusted p-value Volcano plots from PDF to PNG
-for (i in 1:length(results$results)) {
-
-  # Correctly construct the input PDF file path
-  pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-MD-adjusted-pval.pdf"))
-
-  # Ensure the PDF file exists before converting
-  if (file.exists(pdf_file)) {
-
-    # Convert to PNG with proper filename pattern
-    pdf_convert(
-      pdf_file,
-      format = "png",
-      pages = NULL,
-      filenames = file.path(output_dir, paste0(names(results$results)[i], "-MD-adjusted-pval_%d.png")),
-      dpi = 600
-    )
-
-  } else {
-    message("File not found: ", pdf_file)
-  }
-}
-
-
-
-for (i in 1:length(results$results)) {
-
-  # Correctly construct the input PDF file path
-  pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-MD-raw-pval.pdf"))
-
-  # Ensure the PDF file exists before converting
-  if (file.exists(pdf_file)) {
-
-    # Convert to PNG with proper filename pattern
-    pdf_convert(
-      pdf_file,
-      format = "png",
-      pages = NULL,
-      filenames = file.path(output_dir, paste0(names(results$results)[i], "-MD-raw-pval_%d.png")),
-      dpi = 600
-    )
-
-  } else {
-    message("File not found: ", pdf_file)
-  }
-}
+# if (!dir.exists(QC_dir)) {dir.create(QC_dir)} 
+# 
+# library(pdftools)
+# 
+# # Define the output directory
+# output_dir <- file.path(DA_dir, "static_plots")
+# 
+# # Ensure output directory exists
+# if (!dir.exists(output_dir)) {
+#   dir.create(output_dir, recursive = TRUE)
+# }
+# 
+# # Convert Adjusted p-value Volcano plots from PDF to PNG
+# for (i in 1:length(results$results)) {
+# 
+#   # Correctly construct the input PDF file path
+#   pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-volcano-adjusted-pval.pdf"))
+# 
+#   # Ensure the PDF file exists before converting
+#   if (file.exists(pdf_file)) {
+# 
+#     # Convert to PNG with proper filename pattern
+#     pdf_convert(
+#       pdf_file,
+#       format = "png",
+#       pages = NULL,
+#       filenames = file.path(output_dir, paste0(names(results$results)[i], "-volcano-adjusted-pval_%d.png")),
+#       dpi = 600
+#     )
+# 
+#   } else {
+#     message("File not found: ", pdf_file)
+#   }
+# }
+# 
+# 
+# 
+# for (i in 1:length(results$results)) {
+# 
+#   # Correctly construct the input PDF file path
+#   pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-volcano-raw-pval.pdf"))
+# 
+#   # Ensure the PDF file exists before converting
+#   if (file.exists(pdf_file)) {
+# 
+#     # Convert to PNG with proper filename pattern
+#     pdf_convert(
+#       pdf_file,
+#       format = "png",
+#       pages = NULL,
+#       filenames = file.path(output_dir, paste0(names(results$results)[i], "-volcano-raw-pval_%d.png")),
+#       dpi = 600
+#     )
+# 
+#   } else {
+#     message("File not found: ", pdf_file)
+#   }
+# }
+# 
+# # Define the output directory
+# output_dir <- file.path(DA_dir, "static_plots")
+# 
+# # Ensure output directory exists
+# if (!dir.exists(output_dir)) {
+#   dir.create(output_dir, recursive = TRUE)
+# }
+# 
+# # Convert Adjusted p-value Volcano plots from PDF to PNG
+# for (i in 1:length(results$results)) {
+# 
+#   # Correctly construct the input PDF file path
+#   pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-MD-adjusted-pval.pdf"))
+# 
+#   # Ensure the PDF file exists before converting
+#   if (file.exists(pdf_file)) {
+# 
+#     # Convert to PNG with proper filename pattern
+#     pdf_convert(
+#       pdf_file,
+#       format = "png",
+#       pages = NULL,
+#       filenames = file.path(output_dir, paste0(names(results$results)[i], "-MD-adjusted-pval_%d.png")),
+#       dpi = 600
+#     )
+# 
+#   } else {
+#     message("File not found: ", pdf_file)
+#   }
+# }
+# 
+# 
+# 
+# for (i in 1:length(results$results)) {
+# 
+#   # Correctly construct the input PDF file path
+#   pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-MD-raw-pval.pdf"))
+# 
+#   # Ensure the PDF file exists before converting
+#   if (file.exists(pdf_file)) {
+# 
+#     # Convert to PNG with proper filename pattern
+#     pdf_convert(
+#       pdf_file,
+#       format = "png",
+#       pages = NULL,
+#       filenames = file.path(output_dir, paste0(names(results$results)[i], "-MD-raw-pval_%d.png")),
+#       dpi = 600
+#     )
+# 
+#   } else {
+#     message("File not found: ", pdf_file)
+#   }
+# }
 
 ### UPDATE _variables.yml with params for Project Name and authors.
 
