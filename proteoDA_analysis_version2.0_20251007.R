@@ -190,21 +190,84 @@ write.csv(summary_df, "filtered_protein_counts.csv", row.names = FALSE)
 ###############
 
 # write normalization report to choose the best method
-
 write_norm_report(
-    filtered_DALists,
-    grouping_column = group,
-    output_dir = "QC_report",
-    filename = "normalization.pdf",
-    overwrite = TRUE
+  filtered_DALists,
+  grouping_column   = group,
+  output_dir        = "QC_report",
+  filename          = "normalization_new.pdf",
+  overwrite         = TRUE,
+  suppress_zoom_legend = FALSE,
+  use_ggrastr       = FALSE,
+  input_is_log2     = FALSE,    # NEW
+  contrasts         = NULL,     # NEW — restrict to selected contrasts
+  sample_id_col     = "sample",  # NEW <— set this to the metadata column that equals colnames()
+  metrics_csv     = file.path("QC_report", "metrics_PRE.csv"))
+
+######
+## Evaluation ----
+# That double-hump pattern fits exactly what you’d expect from a complex mixture 
+# where two proteomes (human + yeast) contribute in different proportions across your samples:
+#   One peak corresponds mostly to yeast-dominant proteins,
+#   the other to human-dominant proteins,
+#   and their relative amplitudes shift according to your mixture ratios.
+#   
+# So here the bimodality isn’t a normalization artifact — it’s a true compositional signature of your biological design.
+# You want to preserve this shape through normalization, not flatten it out.
+# 
+# What to do:
+# 1. Prefer within-group cyclic loess (groups=) or VSN, which stabilize variance but keep global intensity differences.
+# 2. Avoid quantile or global median/mean normalizations 
+#   if your goal is to analyze the relative abundance of human vs yeast proteins,
+#   because those would force identical sample distributions and erase the biological mixture pattern.
+# 3. After normalization, check per-group density plots: each group should remain unimodal with shifted centers,
+#   and the pooled bimodal curve should persist.
+
+# # legacy function
+# write_norm_report(
+#     filtered_DALists,
+#     grouping_column = group,
+#     output_dir = "QC_report",
+#     filename = "normalization.pdf",
+#     overwrite = TRUE
+# )
+
+# Normalize each contrast independently; leave DAList$data untouched
+# Anywhere your report previously pulled from DAList$data, switch to:
+#   If per-contrast path is used: use DAList$data_per_contrast[[contrast]] for the main normalized matrix, 
+#   and pull before/after summaries from DAList$normalization_per_contrast[[contrast]]$diagnostics.
+#   Else: keep using DAList$data and DAList$tags$normalized.
+
+# Double-hump = distinct underlying protein populations (here, human vs yeast mixtures)
+# → keep it! It represents your intended biology, not a normalization issue.
+
+
+# Cyclic loess (limma::normalizeCyclicLoess); if groups supplied, normalize within each group independently; otherwise normalize globally
+norm <- normalize_data(
+  filtered_DALists,
+  norm_method   = "cycloess",
+  input_is_log2 = FALSE,                    # set TRUE if your per-contrast data are already log2
+  groups        = filtered_DALists$metadata$group # for cyclic loess only will perform within groups
 )
 
 
-norm <- normalize_data(filtered_proteins,
-                           norm_method = "log2")
+## evaluate the normalized data 
+write_norm_eval_report(
+  norm,            # already normalized per contrast
+  norm_label       = "cycloess",
+  grouping_column  = group,
+  sample_id_col    = "sample",       # this matched earlier
+  output_dir       = "QC_report",
+  filename         = "cyclic_loess_eval.pdf",
+  overwrite        = TRUE,
+  metrics_csv     = file.path("QC_report", "metrics_POST_cycloess.csv")
+)
 
+# proteoDA version 1.0 legacy code. 
+# norm <- normalize_data(filtered_proteins,
+#                            norm_method = "log2")
+# 
 
-
+##################
 # using the log2 norm output from diann_quan
 
 #norm <- filtered_DAList_Gtest

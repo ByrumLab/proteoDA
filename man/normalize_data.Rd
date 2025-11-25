@@ -2,70 +2,70 @@
 % Please edit documentation in R/normalization.R
 \name{normalize_data}
 \alias{normalize_data}
-\title{Normalize data in a DAList}
+\title{Normalize data in a DAList (contrast-aware)}
 \usage{
 normalize_data(
   DAList,
   norm_method = c("log2", "median", "mean", "vsn", "quantile", "cycloess", "rlr", "gi"),
   input_is_log2 = FALSE,
+  contrasts = NULL,
+  use_per_contrast_if_available = TRUE,
   ...
 )
 }
 \arguments{
-\item{DAList}{A \code{DAList} containing non-normalized data (matrix/data frame in \code{DAList$data}).}
+\item{DAList}{A \code{DAList} object.}
 
-\item{norm_method}{Normalization method. One of \code{"log2"}, \code{"median"}, \code{"mean"},
-\code{"vsn"}, \code{"quantile"}, \code{"cycloess"}, \code{"rlr"}, or \code{"gi"}.}
+\item{norm_method}{One of: "log2","median","mean","vsn","quantile","cycloess","rlr","gi".}
 
-\item{input_is_log2}{Logical. If \code{TRUE}, indicates that \code{DAList$data} are already on the
-log2 scale for methods that expect log2 input (\code{"median"}, \code{"mean"}, \code{"quantile"},
-\code{"cycloess"}, \code{"rlr"}). Default \code{FALSE}.}
+\item{input_is_log2}{Logical. If TRUE, indicates inputs are already on the log2 scale
+for methods that expect log2 input. Default FALSE.}
 
-\item{...}{Additional arguments forwarded to the underlying normalization function. For example,
-pass \code{groups=} to \code{cycloessNorm()} to normalize independently within groups.}
+\item{contrasts}{Optional character vector to restrict which contrasts in
+\code{DAList$data_per_contrast} are normalized. Default = all available.}
+
+\item{use_per_contrast_if_available}{Logical. Default TRUE. When TRUE and
+\code{DAList$data_per_contrast} is present/non-empty, normalize per-contrast and
+leave \code{DAList$data} unchanged.}
+
+\item{...}{Additional arguments forwarded to the underlying normalization function.
+For example, pass \verb{groups=} to \code{cycloessNorm()} to normalize within groups;
+if supplied, \code{groups} will be subset/reordered to the columns present in each
+per-contrast matrix.}
 }
 \value{
-A \code{DAList} with \code{data} replaced by normalized values and tags updated.
+The updated \code{DAList}. Tags are updated as follows:
+\itemize{
+\item Per-contrast path: \code{DAList$tags$per_contrast_normalized = TRUE},
+\code{DAList$tags$norm_method_per_contrast} (named list), and
+\code{DAList$normalization_per_contrast[[contrast]]$diagnostics} (before/after
+per-sample summaries) are recorded. \code{DAList$data} is unchanged.
+\item Global path: \code{DAList$tags$normalized = TRUE}, \code{DAList$tags$norm_method = norm_method}.
+}
 }
 \description{
-Normalizes data in a DAList using one of several methods (see Details).
+Normalizes data using one of several methods. If \code{DAList$data_per_contrast}
+exists and is non-empty, normalization is applied \strong{per-contrast} and the
+results are written back to \code{DAList$data_per_contrast[[contrast]]}, leaving
+\code{DAList$data} unchanged. Otherwise, it falls back to normalizing
+\code{DAList$data} (legacy global behavior).
 }
 \details{
 \strong{Available methods}
 \itemize{
-\item \code{"log2"} — Binary (base-2) log transformation of raw intensities.
-\item \code{"median"} — Divide each sample by its median; rescale by the mean of sample medians.
-\item \code{"mean"} — Divide each sample by its mean; rescale by the mean of sample means.
-\item \code{"vsn"} — Variance-stabilizing normalization via \code{\link[vsn:justvsn]{vsn::justvsn}} (expects raw scale).
-\item \code{"quantile"} — Quantile normalization via \code{\link[preprocessCore:normalize.quantiles]{preprocessCore::normalize.quantiles}}.
-\item \code{"cycloess"} — Cyclic loess via \code{\link[limma:normalizeCyclicLoess]{limma::normalizeCyclicLoess}} (can be applied within groups).
-\item \code{"rlr"} — Robust linear regression (global) normalization.
-\item \code{"gi"} — Global intensity normalization (expects raw scale; returns log2).
+\item "log2"       — Binary (base-2) log transformation of raw intensities.
+\item "median"     — Divide each sample by its median; rescale by the mean of sample medians.
+\item "mean"       — Divide each sample by its mean; rescale by the mean of sample means.
+\item "vsn"        — Variance-stabilizing normalization via \code{vsn::justvsn} (expects raw scale).
+\item "quantile"   — Quantile normalization via \code{preprocessCore::normalize.quantiles}.
+\item "cycloess"   — Cyclic loess via \code{limma::normalizeCyclicLoess} (can be applied within groups).
+\item "rlr"        — Robust linear regression (global) normalization.
+\item "gi"         — Global intensity normalization (expects raw scale; returns log2).
 }
 
 \strong{Log scale behavior}
-Methods \code{"median"}, \code{"mean"}, \code{"quantile"}, \code{"cycloess"}, and \code{"rlr"}
-operate on log2 data. By default, this function will apply \code{log2} internally before those
-methods. If your \code{DAList$data} are \emph{already} log2-transformed (e.g., after Perseus-style
-imputation), set \code{input_is_log2 = TRUE} to avoid double logging.
-}
-\examples{
-\dontrun{
-# Example: log2 -> impute -> within-group cyclic loess (avoid double log)
-DAList$data <- log2Norm(DAList$data)
-DAList$data <- perseus_impute(DAList$data, seed = 1)
-DAList <- normalize_data(
-  DAList,
-  norm_method   = "cycloess",
-  input_is_log2 = TRUE,                 # <-- prevents double log2
-  groups        = DAList$sample_metadata$group
-)
-
-# Global cyclic loess on raw data (function will log2 internally)
-DAList <- normalize_data(DAList, norm_method = "cycloess")
-
-# VSN works on raw (non-log) data
-DAList <- normalize_data(DAList, norm_method = "vsn")
-}
-
+Methods "median", "mean", "quantile", "cycloess", and "rlr" operate on log2 data.
+By default, this function will apply \code{log2} internally before those methods.
+If your inputs are already log2-transformed,
+set \code{input_is_log2 = TRUE} to avoid double logging.
 }

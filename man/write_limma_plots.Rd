@@ -15,7 +15,8 @@ write_limma_plots(
   height = 1000,
   width = 1000,
   control_proteins = NULL,
-  highlight_by = "uniprot_id"
+  highlight_by = "uniprot_id",
+  image_formats = c("pdf", "png")
 )
 }
 \arguments{
