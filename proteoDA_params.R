@@ -60,7 +60,7 @@ design = ~0 + group
 #design = ~0 + group + (1 |animal)  # Mixed model (group is fix and animal pair factor treated as random factor)
 
 # significance thresholds for plotting and tables
-bin_size = 500  # depends on number of proteins in data, default is 1000
+bin_size = 1000  # depends on number of proteins in data, default is 1000
 p.val = 0.05    # significance threshold for plots and tables, default is 0.05
 logFC = 1       # significance threshold for plots and tables, default is 1 (2-fold)
 stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores", "sig.PVal", "sig.FDR") 
