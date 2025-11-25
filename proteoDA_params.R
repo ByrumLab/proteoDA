@@ -15,16 +15,19 @@ db_version = "March 2023"
 organism = "Homo sapiens"
 
 ### input files: subset quan and protein annotation
-input_quan = "data/20250910_Durbigrp_071825_Protein_proteoDA_input_test2.csv"
+#input_quan = "data/20250910_Durbigrp_071825_Protein_proteoDA_input_test2.csv"
+input_quan = "data/Lou_HF_DIANN_uni_prot_quan.csv"  # not normalized, test norm methods 
 ## metadata requires column names "sample" and "group"
-metadata = "data/Durbigrp_071825_MMDIA_SampleMetadata.csv"
-sample_start = 14  # first column where the samples start, currently 10 for diann, different for spectronaut
+#metadata = "data/Durbigrp_071825_MMDIA_SampleMetadata.csv"
+metadata = "data/Lou_HF_sample_metadata.csv"
+
+sample_start = 10  # first column where the samples start, currently 10 for diann, different for spectronaut (14)
 anno_start = 1
-anno_end = 13
+anno_end = 9
 
 ## contrasts_cell adds the interaction effect
-contrasts = "data/contrasts_groupmeans.csv"   # file with sample group comparisons, order of groups determines fold change
-
+#contrasts = "data/contrasts_groupmeans.csv"   # file with sample group comparisons, order of groups determines fold change
+contrasts = "data/Lou_contrasts.csv"
 
 ### filter proteins with missing values options
 ### rule of thumb, require 2/3 of reps to have values 
@@ -70,10 +73,10 @@ stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores", "s
 DA_table_cols <- c("uniprot_id","PG.ProteinLabel","PG.ProteinDescriptions")  # Spectronaut
 DA_title_col <- "uniprot_id" 
 tmp_subdir <- "tmp"
-ctrl_proteins <-  c( "P46100")        # c( "P58004", "Q12766", "MDM2") highlighted in volcano static plots/powerpoint
+ctrl_proteins <-  NULL # c( "P46100")        # c( "P58004", "Q12766", "MDM2") highlighted in volcano static plots/powerpoint
 
 #### QC plot options - Must match sample Metadata columns!!!!!!!!!
 plot_labels = "sample"
 barplot_grouping_columns <- c("group")
-pca_grouping_columns <- c("group", "sample","cell")
-den_grouping_columns <- c("group", "sample","cell")
+pca_grouping_columns <- c("group", "sample","batch")
+den_grouping_columns <- c("group", "sample","batch")
