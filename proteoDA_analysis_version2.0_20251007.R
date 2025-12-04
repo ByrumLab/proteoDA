@@ -262,13 +262,10 @@ write_norm_eval_report(
   metrics_csv     = file.path("QC_report", "metrics_POST_cycloess.csv")
 )
 
-Interpretation:
-  
-  Cyclic loess effectively stabilized within-group intensities (lower PMAD/PEV) without flattening the global intensity shift (the bimodality remains).
-
-COR remains high, so normalization didn’t distort relative rankings.
-
-This confirms cyclic loess normalization worked as intended for your mixed-species ratio design.
+# Interpretation:
+#   Cyclic loess effectively stabilized within-group intensities (lower PMAD/PEV) without flattening the global intensity shift (the bimodality remains).
+# COR remains high, so normalization didn’t distort relative rankings.
+# This confirms cyclic loess normalization worked as intended for your mixed-species ratio design.
 # proteoDA version 1.0 legacy code. 
 # norm <- normalize_data(filtered_proteins,
 #                            norm_method = "log2")

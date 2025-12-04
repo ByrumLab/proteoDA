@@ -1,0 +1,45 @@
+---
+title: "proteoDA_v2.0_preprocessing"
+author: "Byrum Lab"
+date: "2025-11-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# A) Table of filtering options
+
+```{r filtering_table}
+opts <- data.frame(
+Function = c("zero_to_missing", "filter_proteins_by_group", "filter_proteins_per_contrast"),
+
+Purpose  = c(
+"Convert embedded zeros to NA for missing-aware downstream steps",
+"Global filtering across all groups: require presence within groups",
+"Contrast-specific filtering: enforce per-comparison presence criteria"
+),
+
+Key_Args = c(
+"-",
+"min_reps, min_groups, grouping_column",
+"min_reps, require_both_groups, grouping_column, contrasts_file"
+),
+
+When_to_use = c(
+"Almost always, before filtering and modeling",
+"Quick global cleanup when all groups should share rules",
+"Best for heterogeneous designs; preserves proteins relevant to each contrast"
+),
+Output = c(
+"DAList with NAs representing missingness",
+"DAList (globally filtered)",
+"DAList bundle (per-contrast filtering + bookkeeping)"
+),
+stringsAsFactors = FALSE
+)
+
+knitr::kable(opts, caption = "Filtering options in proteoDA v2.0")
+```
+

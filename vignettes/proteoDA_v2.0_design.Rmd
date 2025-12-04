@@ -1,0 +1,45 @@
+---
+title: "proteoDA_v2.0_design"
+author: "Byrum Lab"
+date: "2025-11-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# One-factor design (no intercept)
+
+```{r one_factor}
+design <- ~ 0 + group
+mm <- model.matrix(design, data = metadata)
+colnames(mm)  # e.g., groupA, groupB, groupC
+```
+
+# Factorial design with interaction
+
+```{r factorial_noIntercept}
+design2 <- ~ 0 + cell * treat
+mm2 <- model.matrix(design2, data = metadata)
+colnames(mm2)  # main + interaction terms
+```
+
+# Random block with duplicateCorrelation (v2.0 wrapper may support; otherwise do manual)
+
+# Example sketch (pseudocode):
+```{r block_dupCor}
+ dupcor <- limma::duplicateCorrelation(expr, mm, block = metadata$patient_id)
+ fit <- limma::lmFit(expr, mm, block = metadata$patient_id, correlation = dupcor$consensus)
+ fit2 <- limma::eBayes(limma::contrasts.fit(fit, contrasts))
+
+```
+
+
+# And a contrasts snippet aligned to a factorial:
+## Suppose colnames(mm2) include cellWT, cellHET, treatSham, treatGy, and interactions
+
+- Contrast: (HET vs WT) under Gy only:
+- (cellHET + cellHET:treatGy) - (cellWT + cellWT:treatGy) simplifies to HET:Gy - WT:Gy
+
+## In practice, build explicit contrast matrix matching colnames(mm2).
