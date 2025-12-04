@@ -7,19 +7,19 @@ working_dir = getwd()
 #### Variables for METHODS and PowerPoint REPORT
 author = "Vishwajeeth Pagala"
 author2 = "Stephanie Byrum and Zuo-Fei Yuan"
-project_name = "Durbigrp_071825_MMDIA_SNE"
+project_name = "Lou_HF_diann"
 instrument = "Bruker timsTOF HT"
-search_engine = "Spectronaut (version 19)"
+search_engine = "DIANN 2.0"
 database = "uniprot_human_reviewedProteome_20407_20230306 (20407 proteins)"
 db_version = "March 2023"
 organism = "Homo sapiens"
 
 ### input files: subset quan and protein annotation
 #input_quan = "data/20250910_Durbigrp_071825_Protein_proteoDA_input_test2.csv"
-input_quan = "data/Lou_HF_DIANN_uni_prot_quan.csv"  # not normalized, test norm methods 
+input_quan = "/Users/sbyrum/Documents/github/proteoDAstjude/data/Lou_HF_DIANN_uni_prot_quan.csv"  # not normalized, test norm methods 
 ## metadata requires column names "sample" and "group"
 #metadata = "data/Durbigrp_071825_MMDIA_SampleMetadata.csv"
-metadata = "data/Lou_HF_sample_metadata.csv"
+metadata = "/Users/sbyrum/Documents/github/proteoDAstjude/data/Lou_HF_sample_metadata.csv"
 
 sample_start = 10  # first column where the samples start, currently 10 for diann, different for spectronaut (14)
 anno_start = 1
@@ -27,7 +27,7 @@ anno_end = 9
 
 ## contrasts_cell adds the interaction effect
 #contrasts = "data/contrasts_groupmeans.csv"   # file with sample group comparisons, order of groups determines fold change
-contrasts = "data/Lou_contrasts.csv"
+contrasts = "/Users/sbyrum/Documents/github/proteoDAstjude/data/Lou_contrasts.csv"
 
 ### filter proteins with missing values options
 ### rule of thumb, require 2/3 of reps to have values 

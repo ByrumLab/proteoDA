@@ -84,9 +84,9 @@ Thus, it is preferable to convert zeros to `NA` before modeling.
 ```{r load_raw, message=FALSE}
 
 #inst/extdata/raw.rds
-#raw_file <- system.file("extdata", "raw.rds", package = "proteoDA")
-
-raw_file <- "P:/projects/CPM_publications/03_proteoDA2_Steph/code/inst/extdata/raw.rds"
+#raw_file <- system.file("extdata", "raw.rds", package = "proteoDAstjude")
+raw_file <- "/Users/sbyrum/Documents/github/proteoDAstjude/inst/extdata/raw.rds"
+#raw_file <- "P:/projects/CPM_publications/03_proteoDA2_Steph/code/inst/extdata/raw.rds"
 DAList_raw <- readRDS(raw_file)
 
 str(DAList_raw)

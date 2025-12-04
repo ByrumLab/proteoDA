@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # One-factor design (no intercept)
 
-```{r one_factor}
+```{r one_factor, eval=FALSE}
 design <- ~ 0 + group
 mm <- model.matrix(design, data = metadata)
 colnames(mm)  # e.g., groupA, groupB, groupC
@@ -19,7 +19,7 @@ colnames(mm)  # e.g., groupA, groupB, groupC
 
 # Factorial design with interaction
 
-```{r factorial_noIntercept}
+```{r factorial_noIntercept, , eval=FALSE}
 design2 <- ~ 0 + cell * treat
 mm2 <- model.matrix(design2, data = metadata)
 colnames(mm2)  # main + interaction terms
@@ -28,7 +28,7 @@ colnames(mm2)  # main + interaction terms
 # Random block with duplicateCorrelation (v2.0 wrapper may support; otherwise do manual)
 
 # Example sketch (pseudocode):
-```{r block_dupCor}
+```{r block_dupCor, , eval=FALSE}
  dupcor <- limma::duplicateCorrelation(expr, mm, block = metadata$patient_id)
  fit <- limma::lmFit(expr, mm, block = metadata$patient_id, correlation = dupcor$consensus)
  fit2 <- limma::eBayes(limma::contrasts.fit(fit, contrasts))
