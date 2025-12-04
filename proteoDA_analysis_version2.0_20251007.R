@@ -8,6 +8,8 @@ library(stringr)
 
 # for testing locally 
 devtools::load_all()
+devtools::build_vignettes()
+devtools::check(document = FALSE) # checks vignettes for R CMD check
 #######
 # load project parameters 
 source("proteoDA_params.R")

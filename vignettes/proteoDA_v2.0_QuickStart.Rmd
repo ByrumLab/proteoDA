@@ -10,6 +10,10 @@ output:
     code_folding: show
 editor_options:
   chunk_output_type: inline
+vignette: >
+  %\VignetteIndexEntry{proteoDA v2.0 QuickStart}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, echo=FALSE}

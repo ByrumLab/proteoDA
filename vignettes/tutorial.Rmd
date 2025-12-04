@@ -1,11 +1,11 @@
 ---
-title: "Tutorial: proteomics analysis using proteoDA"
+title: "Tutorial: proteomics analysis using proteoDAv1.0"
 output:
   html_document:
     rmarkdown::html_vignette
 vignette: >
   %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{Tutorial: proteomics analysis using proteoDA}
+  %\VignetteIndexEntry{Tutorial: proteomics analysis using proteoDAv1.0}
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
