@@ -12,6 +12,10 @@ output:
     df_print: paged
 editor_options:
   chunk_output_type: inline
+vignette: >
+  %\VignetteIndexEntry{proteoDA v2.0 Normalization}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}

@@ -3,6 +3,10 @@ title: "proteoDA_v2.0_design"
 author: "Byrum Lab"
 date: "2025-11-24"
 output: html_document
+vignette: >
+  %\VignetteIndexEntry{proteoDA v2.0 design}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
