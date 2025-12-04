@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # A) Table of filtering options
 
-```{r filtering_table}
+```{r filtering_table, echo = FALSE}
 opts <- data.frame(
 Function = c("zero_to_missing", "filter_proteins_by_group", "filter_proteins_per_contrast"),
 

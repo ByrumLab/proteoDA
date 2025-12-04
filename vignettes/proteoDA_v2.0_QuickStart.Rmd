@@ -7,12 +7,12 @@ output:
     toc: true
     toc_float: true
     number_sections: false
-    code_folding: hide
+    code_folding: show
 editor_options:
   chunk_output_type: inline
 ---
 
-```{r setup, include=FALSE}
+```{r setup, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE,message = TRUE, warning = TRUE,fig.width = 7, fig.height = 5)
 ```
 
@@ -24,11 +24,12 @@ Assumes your `proteoDA_params.R` defines:
 input_quan, metadata, contrasts, anno_start, anno_end, design, group, p.val, logFC, bin_size, filt_min_reps, require_both_groups, stat_cols, DA_dir, DA_table_cols, DA_title_col, ctrl_proteins, project_name, author, author2.
 
 # 1. Load packages & parameters
-```{r load_pkg}
+```{r load_pkg, echo=TRUE, eval=FALSE}
 library(proteoDAstjude)
 library(yaml)
 
 #source("P:/projects/CPM_publications/03_proteoDA2_Steph/code/proteoDA_params.R")
+#source("/Users/sbyrum/Documents/github/proteoDAstjude/proteoDA_params.R")
 
 # Common args from proteoDA_params.R
 common_args <- list(
@@ -42,7 +43,7 @@ contrasts_file  = contrasts
 )
 ```
 
-```{r load_pkg, include=FALSE}
+```{r loadsystempkg, include=FALSE, , echo=TRUE, eval=FALSE}
 library(proteoDAstjude)
 library(yaml)
 
@@ -55,7 +56,7 @@ source(param_file, local = knitr::knit_global())  # explicit: put objects in kni
 
 # 2. Read DIANN input and prepare IDS
 
-```{r pressure, echo=FALSE}
+```{r pressure, echo=TRUE, eval=FALSE}
 
 stopifnot(file.exists(input_quan))
 x <- read.csv(input_quan, stringsAsFactors = FALSE, check.names = FALSE)
@@ -82,7 +83,7 @@ if (is.numeric(col)) {
 
 # 3. Metadata & annotation slice
 
-```{r metadata}
+```{r metadata, eval=FALSE, echo=TRUE}
 stopifnot(file.exists(metadata))
 md <- read.csv(metadata, stringsAsFactors = FALSE, check.names = FALSE)
 
@@ -93,7 +94,7 @@ anno <- x[, anno_start:anno_end, drop = FALSE]
 
 # 4. Align data to metadata
 
-```{r check_samples}
+```{r check_samples, eval=FALSE, echo=TRUE}
 # Rename DIANN 'file' columns to 'sample' names where present
 req <- c("file","sample")
 mis <- req[!(req %in% colnames(md))]
@@ -133,7 +134,7 @@ md        <- aln$metadata
 
 # 5. Build DAList and convert zeros → NA
 
-```{r DAList}
+```{r DAList, eval=FALSE, echo=TRUE}
 raw <- DAList(
   data       = intensity,
   annotation = anno,
@@ -151,7 +152,7 @@ table(d0$metadata$group)
 
 # 6. Filter per contrast (recommended)
 
-```{r filter_per_contrast}
+```{r filter_per_contrast, eval=FALSE, echo=TRUE}
 stopifnot(file.exists(contrasts))
 flt <- filter_proteins_per_contrast(
     DAList              = d0,
@@ -176,7 +177,7 @@ write.csv(summary_df, "filtered_protein_counts.csv", row.names = FALSE)
 
 # 7. (Optional) Perseus-style imputation
 
-```{r perseus}
+```{r perseus, eval=FALSE, echo=TRUE}
 set.seed(1)
 imp <- perseus_impute(
     norm,
@@ -206,7 +207,7 @@ invisible(write_perseus_imputation_plots(
 
 # 8. Quick design sanity (full rank)
 
-```{r sanity_check_design}
+```{r sanity_check_design, eval=FALSE, echo=TRUE}
 if (!exists("design")) stop("Define 'design' (e.g., ~0 + group) in params.")
 mf <- model.frame(design, data = norm$metadata, drop.unused.levels = TRUE)
 mm <- model.matrix(attr(mf, "terms"), data = mf)
@@ -217,7 +218,7 @@ cat("Columns:", ncol(mm), " Rank:", qr(mm)$rank, " Full rank?:", qr(mm)$rank == 
 
 # 9. Run limma (no impute vs. Perseus)
 
-```{r run_limma}
+```{r run_limma, eval=FALSE, echo=TRUE}
 common <- list(
   design_formula = design,
   pval_thresh    = p.val,
@@ -235,7 +236,7 @@ res_imp  <- do.call(run_filtered_limma_analysis, c(list(DAList = imp),  common))
 
 # 10. Write tables & interactive plots
 
-```{r tables_plots }
+```{r tables_plots , eval=FALSE, echo=TRUE}
 # Build statlists
 
 sl_noimp <- build_statlist(DAList = res_noimp, stat_cols = stat_cols)
@@ -303,7 +304,7 @@ write_limma_plots(
 
 # 11. Save `DAList` Objects for QC and Analysis Reports
 
-```{r 11_save_rds}
+```{r 11_save_rds, eval=FALSE, echo=TRUE}
 # Without imputation (NAs)
 saveRDS(res_noimp, "results_NA.rds")
 
@@ -323,7 +324,7 @@ saveRDS(results0_imputed, "results_imputed.rds")
 
 ### Update title/authors/project for downstream report generators
 
-```{r 12_powerpoint}
+```{r 12_powerpoint, eval=FALSE, echo=TRUE}
 
 stopifnot(file.exists("_variables.yml"))
 variables <- yaml.load_file("_variables.yml")
