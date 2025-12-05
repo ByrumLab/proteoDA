@@ -252,7 +252,8 @@ norm <- normalize_data(
 )
 
 
-## evaluate the normalized data 
+## evaluate the normalized data - not really necessary since already shows results in first evaluation.
+## maybe change it to show by pair-wise samples instead of overlay? 
 write_norm_eval_report(
   norm,            # already normalized per contrast
   norm_label       = "cycloess",
@@ -274,13 +275,10 @@ write_norm_eval_report(
 # 
 
 ##################
-# using the log2 norm output from diann_quan
-
-#norm <- filtered_DAList_Gtest
-norm <- filtered_DALists
-#norm <- filtered_proteins
-#norm <- filtered_samples
-norm$tags$norm_method <- "diann_quan"
+# ----- If the data is already normalized, just add a tag for the method used
+###########
+#norm <- filtered_DALists
+#norm$tags$norm_method <- "diann_quan"
 
 ###################
 # Perseus IMPUTATION normal distribution
@@ -428,157 +426,9 @@ write_limma_plots(
 # save for QC plots
 saveRDS(results0, "results.rds")
 
-###############
-## retrieve top hits from BioID project
-# source("Top_BioID_Targets.R")
-# 
-# top <- top_targets_from_DAList(
-#   DAList= results,
-#   primary_contrasts = c("ZR_fus_vs_RELA", "ZR_fus_vs_ZFTA"),
-#   background_contrasts = c("ZRfus_vs_ctrl","ZRfus_vs_ZRnoB",
-#                            "RELA_vs_ctrl","RELA_vs_ZRnoB",
-#                            "ZFTA_vs_ctrl","ZFTA_vs_ZRnoB"),
-#   alpha = 0.05,
-#   lfc_min = 0.5,          # be stricter if you want
-#   require_n_primary = 1,  # set to 2 to demand both primary contrasts
-#   out_csv = "Top_BioID_Targets_pval.05_lfc0.5.csv"
-# )
-# head(top)
-# 
-# top_impute <- top_targets_from_DAList(
-#   DAList= results2,
-#   primary_contrasts = c("ZR_fus_vs_RELA", "ZR_fus_vs_ZFTA"),
-#   background_contrasts = c("ZRfus_vs_ctrl","ZRfus_vs_ZRnoB",
-#                            "RELA_vs_ctrl","RELA_vs_ZRnoB",
-#                            "ZFTA_vs_ctrl","ZFTA_vs_ZRnoB"),
-#   alpha = 0.05,
-#   lfc_min = 0.5,          # be stricter if you want
-#   require_n_primary = 1,  # set to 2 to demand both primary contrasts
-#   out_csv = "Top_PerseusImpute_BioID_Targets_pval.05_lfc0.5.csv"
-# )
-# 
-
+##########
+### ---- UPDATE _variables.yml with params for Project Name and authors.
 ###########
-## convert 02_DA/static_plots/.pdfs to .pngs
-
-####
-#dir.create(QC_dir)
-# if (!dir.exists(QC_dir)) {dir.create(QC_dir)} 
-# 
-# library(pdftools)
-# 
-# # Define the output directory
-# output_dir <- file.path(DA_dir, "static_plots")
-# 
-# # Ensure output directory exists
-# if (!dir.exists(output_dir)) {
-#   dir.create(output_dir, recursive = TRUE)
-# }
-# 
-# # Convert Adjusted p-value Volcano plots from PDF to PNG
-# for (i in 1:length(results$results)) {
-# 
-#   # Correctly construct the input PDF file path
-#   pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-volcano-adjusted-pval.pdf"))
-# 
-#   # Ensure the PDF file exists before converting
-#   if (file.exists(pdf_file)) {
-# 
-#     # Convert to PNG with proper filename pattern
-#     pdf_convert(
-#       pdf_file,
-#       format = "png",
-#       pages = NULL,
-#       filenames = file.path(output_dir, paste0(names(results$results)[i], "-volcano-adjusted-pval_%d.png")),
-#       dpi = 600
-#     )
-# 
-#   } else {
-#     message("File not found: ", pdf_file)
-#   }
-# }
-# 
-# 
-# 
-# for (i in 1:length(results$results)) {
-# 
-#   # Correctly construct the input PDF file path
-#   pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-volcano-raw-pval.pdf"))
-# 
-#   # Ensure the PDF file exists before converting
-#   if (file.exists(pdf_file)) {
-# 
-#     # Convert to PNG with proper filename pattern
-#     pdf_convert(
-#       pdf_file,
-#       format = "png",
-#       pages = NULL,
-#       filenames = file.path(output_dir, paste0(names(results$results)[i], "-volcano-raw-pval_%d.png")),
-#       dpi = 600
-#     )
-# 
-#   } else {
-#     message("File not found: ", pdf_file)
-#   }
-# }
-# 
-# # Define the output directory
-# output_dir <- file.path(DA_dir, "static_plots")
-# 
-# # Ensure output directory exists
-# if (!dir.exists(output_dir)) {
-#   dir.create(output_dir, recursive = TRUE)
-# }
-# 
-# # Convert Adjusted p-value Volcano plots from PDF to PNG
-# for (i in 1:length(results$results)) {
-# 
-#   # Correctly construct the input PDF file path
-#   pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-MD-adjusted-pval.pdf"))
-# 
-#   # Ensure the PDF file exists before converting
-#   if (file.exists(pdf_file)) {
-# 
-#     # Convert to PNG with proper filename pattern
-#     pdf_convert(
-#       pdf_file,
-#       format = "png",
-#       pages = NULL,
-#       filenames = file.path(output_dir, paste0(names(results$results)[i], "-MD-adjusted-pval_%d.png")),
-#       dpi = 600
-#     )
-# 
-#   } else {
-#     message("File not found: ", pdf_file)
-#   }
-# }
-# 
-# 
-# 
-# for (i in 1:length(results$results)) {
-# 
-#   # Correctly construct the input PDF file path
-#   pdf_file <- file.path(DA_dir, "static_plots", paste0(names(results$results)[i], "-MD-raw-pval.pdf"))
-# 
-#   # Ensure the PDF file exists before converting
-#   if (file.exists(pdf_file)) {
-# 
-#     # Convert to PNG with proper filename pattern
-#     pdf_convert(
-#       pdf_file,
-#       format = "png",
-#       pages = NULL,
-#       filenames = file.path(output_dir, paste0(names(results$results)[i], "-MD-raw-pval_%d.png")),
-#       dpi = 600
-#     )
-# 
-#   } else {
-#     message("File not found: ", pdf_file)
-#   }
-# }
-
-### UPDATE _variables.yml with params for Project Name and authors.
-
 
 variables <- yaml.load_file("_variables.yml")
 variables$title <- project_name
