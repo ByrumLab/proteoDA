@@ -339,7 +339,7 @@ run_filtered_limma_analysis <- function(
     contrasts_file = NULL,
     binsize = "auto",
   #  binsize_range = c(50, 100, 200, 400, 500, 1000),
-    plot_movingSD = TRUE
+    plot_movingSD = FALSE
 ) {
   validate_DAList(DAList)
   if (!exists("compute_movingSD_zscores")) {
