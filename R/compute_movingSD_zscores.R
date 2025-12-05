@@ -46,6 +46,10 @@
 #' @param contrasts_file Optional CSV file with contrasts (one per row, \code{"name = formula"}
 #'   syntax) used only to determine contrast names if they are not already
 #'   available in the \code{DAList}.
+#'   
+#' @param qc_dir Optional directory path where PNG QC plots will be saved
+#'   (CV vs binsize + per-contrast movingSD plots) when `plot = TRUE`.
+#'
 #'
 #' @return The input \code{DAList} object with updated \code{tags}:
 #'   \itemize{
@@ -59,7 +63,8 @@
 compute_movingSD_zscores <- function(DAList,
                                      binsize = "auto",
                                      plot = FALSE,
-                                     contrasts_file = NULL) {
+                                     contrasts_file = NULL,
+                                     qc_dir = NULL) {
   
   ## --- rolling SD helper -----------------------------------------------------
   rolling_sd <- function(x, window_size) {
@@ -231,10 +236,10 @@ compute_movingSD_zscores <- function(DAList,
       if (plot) {
         print(p_cv)
       }
-      if (!is.null(DAList$QC_dir)) {
-        dir.create(DAList$QC_dir, showWarnings = FALSE, recursive = TRUE)
+      if (!is.null(qc_dir)) {
+        dir.create(qc_dir, showWarnings = FALSE, recursive = TRUE)
         ggplot2::ggsave(
-          filename = file.path(DAList$QC_dir, "movingSD_binsize_CV.png"),
+          filename = file.path(qc_dir, "movingSD_binsize_CV.png"),
           plot = p_cv, width = 7, height = 5, dpi = 300
         )
       }
@@ -338,15 +343,15 @@ compute_movingSD_zscores <- function(DAList,
                                "(binsize =", binsize, ")"))
       print(p_int)
       
-      if (!is.null(DAList$QC_dir)) {
-        dir.create(DAList$QC_dir, showWarnings = FALSE, recursive = TRUE)
+      if (!is.null(qc_dir)) {
+        dir.create(qc_dir, showWarnings = FALSE, recursive = TRUE)
         ggplot2::ggsave(
-          filename = file.path(DAList$QC_dir,
+          filename = file.path(qc_dir,
                                paste0("movingSD_", contrast, "_index.png")),
           plot = p_idx, width = 7, height = 5, dpi = 300
         )
         ggplot2::ggsave(
-          filename = file.path(DAList$QC_dir,
+          filename = file.path(qc_dir,
                                paste0("movingSD_", contrast, "_intensity.png")),
           plot = p_int, width = 7, height = 5, dpi = 300
         )
@@ -355,4 +360,52 @@ compute_movingSD_zscores <- function(DAList,
   }
   
   return(DAList)
+}
+
+#' Write a movingSD QC report (PDF and/or PNGs)
+#'
+#' Runs \code{compute_movingSD_zscores()} with plotting enabled and saves
+#' either a multi-page PDF, per-contrast PNGs, or both.
+#'
+#' @param DAList A DAList object with limma results.
+#' @param out_dir Directory where plots will be stored. Created if needed.
+#' @param filename_base Base name for the PDF report (default: "movingSD_report").
+#'   PNG files are named automatically as in \code{compute_movingSD_zscores()}.
+#' @param binsize Integer or "auto". Passed to \code{compute_movingSD_zscores()}.
+#' @param contrasts_file Optional contrasts file, passed through.
+#' @param device One of "pdf", "png", or "both".
+#' @param width,height PDF device size (in inches).
+#'
+#' @return The updated DAList (invisibly).
+#'
+#' @export
+write_movingSD_report <- function(DAList,
+                                  out_dir = "movingSD_QC",
+                                  filename_base = "movingSD_report",
+                                  binsize = "auto",
+                                  contrasts_file = NULL,
+                                  device = c("pdf", "png", "both"),
+                                  width = 7, height = 5) {
+  device <- match.arg(device)
+  dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+  
+  # PDF device (if requested)
+  if (device %in% c("pdf", "both")) {
+    pdf_file <- file.path(out_dir, paste0(filename_base, ".pdf"))
+    grDevices::pdf(pdf_file, width = width, height = height)
+    on.exit(grDevices::dev.off(), add = TRUE)
+  }
+  
+  # For PNGs, we pass qc_dir; if only PDF is requested, qc_dir = NULL
+  qc_dir <- if (device %in% c("png", "both")) out_dir else NULL
+  
+  DAList <- compute_movingSD_zscores(
+    DAList         = DAList,
+    binsize        = binsize,
+    plot           = TRUE,
+    contrasts_file = contrasts_file,
+    qc_dir         = qc_dir
+  )
+  
+  invisible(DAList)
 }

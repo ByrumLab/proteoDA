@@ -325,11 +325,23 @@ results <- run_filtered_limma_analysis(
   lfc_thresh = logFC,
   adj_method = "BH",
  # binsize = bin_size,
-  plot_movingSD = TRUE,
+  plot_movingSD = FALSE,
   contrasts_file = contrasts,
   binsize = "auto"
  # binsize_range = c(100, 250, 500, 1000, 1500, 5000)  # removed this from parameters since now chooses based on N
 )
+
+#########
+#---- write movingSD bin size report per contrasts
+#########
+results <- write_movingSD_report(
+  DAList         = results,
+  out_dir        = "QC_report/movingSD",
+  binsize        = "auto",    # can use what was selected abover or let it choose it again
+  contrasts_file = contrasts,
+  device         = "both"  # pdf, png, or both
+)
+###########
 
 results2 <- run_filtered_limma_analysis(
   DAList = imputed,
