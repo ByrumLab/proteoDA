@@ -8,7 +8,8 @@ compute_movingSD_zscores(
   DAList,
   binsize = "auto",
   plot = FALSE,
-  contrasts_file = NULL
+  contrasts_file = NULL,
+  qc_dir = NULL
 )
 }
 \arguments{
@@ -36,6 +37,9 @@ contrast and (if \code{DAList$QC_dir} is available) saves them to disk.}
 \item{contrasts_file}{Optional CSV file with contrasts (one per row, \code{"name = formula"}
 syntax) used only to determine contrast names if they are not already
 available in the \code{DAList}.}
+
+\item{qc_dir}{Optional directory path where PNG QC plots will be saved
+(CV vs binsize + per-contrast movingSD plots) when \code{plot = TRUE}.}
 }
 \value{
 The input \code{DAList} object with updated \code{tags}:

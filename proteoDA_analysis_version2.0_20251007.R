@@ -336,10 +336,10 @@ results <- run_filtered_limma_analysis(
 #########
 results <- write_movingSD_report(
   DAList         = results,
-  out_dir        = "QC_report/movingSD",
+  out_dir        = "vignettes/images/movingSD", # "QC_report/movingSD",
   binsize        = "auto",    # can use what was selected abover or let it choose it again
   contrasts_file = contrasts,
-  device         = "both"  # pdf, png, or both
+  device         = "png"  # pdf, png, or both
 )
 ###########
 

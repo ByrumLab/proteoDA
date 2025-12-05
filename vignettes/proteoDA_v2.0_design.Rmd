@@ -2,7 +2,14 @@
 title: "proteoDA_v2.0_design"
 author: "Byrum Lab"
 date: "2025-11-24"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    df_print: paged
 vignette: >
   %\VignetteIndexEntry{proteoDA v2.0 design}
   %\VignetteEngine{knitr::rmarkdown}
@@ -50,22 +57,335 @@ colnames(mm2)  # main + interaction terms
 
 # Statistical Thresholds
 
-## movingSD and log2 zscore
+## Why compute movingSD and logFC Z-scores in proteomics?
 
-### How auto binsize should work
+Mass-spectrometry–based proteomics data have an important characteristic:
 
-For each candidate window size 𝑏∈ binsize_range:
+> **Low-abundance proteins show much larger variability in their measured fold changes than high-abundance proteins.**
 
-1. Compute moving SD for each contrast using window size𝑏
-2. Compute:
-  - mean of the SD curve: 𝜇= mean(SD)
-  - sd of the SD curve:𝜎= sd(SD)
-3. Compute the coefficient of variation: CV =𝜎/𝜇
+This occurs because:
 
-4. The best binsize is the one with the lowest CV, i.e. the most stable curve.
+- Low-intensity peptides are close to the instrument’s detection limit  
+- Ion counts fluctuate more at low abundance  
+- Missing values are more common  
+- Ratio compression and signal centroiding introduce noise  
+- High-abundance peptides are quantified with much higher precision  
 
-In an ideal situation, CV should form a U-shaped curve:
+Because of this, the same biological fold change has different levels of reliability depending on protein abundance. For example:
 
-- Small bins → very noisy SD → high CV
-- Large bins → oversmoothing → high CV
-- Middle value → best CV
+- A **1.5-fold** change for a high-intensity protein is usually consistent and reproducible  
+- A **1.5-fold** change at low intensity may be indistinguishable from measurement noise  
+
+### Why this matters
+
+If we tested significance using a **single global variance estimate**, then:
+
+- High-abundance proteins would be “over-penalized”  
+- Low-abundance proteins would be “under-penalized”  
+- We might miss real biological changes or call noisy proteins significant  
+
+To solve this, proteoDA models **intensity-dependent variance** using:
+
+1. A **moving (rolling) standard deviation** of logFC  
+2. A **logFC Z-score**, which normalizes logFC by its local noise level  
+
+---
+
+## How proteoDA computes movingSD
+
+For each contrast:
+
+1. Compute the **mean log2 intensity** for each protein  
+2. Sort proteins from lowest to highest intensity  
+3. Compute a **rolling window standard deviation** of logFC values  
+   - Using a window size (`binsize`) chosen automatically or provided by the user  
+   - Using `na.rm = TRUE` so missing coefficients do not disrupt the curve  
+4. Assign each protein a **movingSD** value according to its intensity  
+5. Compute a **Z-score**:  
+   \[
+   Z_i = \frac{\text{logFC}_i}{\text{movingSD}_i}
+   \]
+
+This produces a contrast-specific variance model that reflects real mass-spec behavior:  
+**high variance at low intensity, low variance at high intensity.**
+
+---
+
+## Automatic selection of the binsize
+
+Rather than relying on an arbitrary window size, proteoDA v2.0 can automatically choose one:
+
+1. Candidate window sizes are generated as fractions of total proteins  
+   (1%, 2%, 5%, 10%, 15%, 20%), constrained between:
+   - **Minimum = 40 proteins**
+   - **Maximum = 20% of total proteins**
+2. For each candidate, proteoDA computes movingSD curves for all contrasts  
+   and calculates the **coefficient of variation (CV):**  
+   \[
+   \text{CV} = \frac{\sigma_{\text{SD}}}{\mu_{\text{SD}}}
+   \]
+3. The optimal binsize is defined as:  
+   **the smallest binsize whose CV is within 5% of the best (minimum) CV**  
+4. A diagnostic plot (`movingSD_binsize_CV.png`) is included in the QC report  
+
+This ensures the chosen binsize is both **smooth and biologically informative**.
+
+---
+
+## Example: spike-in benchmark dataset (M1Y1/M2Y1/M3Y2 vs Ref)
+
+This dataset includes controlled spike-in mixtures:
+
+| Contrast        | Expected Biology                         |
+|-----------------|------------------------------------------|
+| M1Y1_vs_Ref     | No expected protein changes (same mixture) |
+| M2Y1_vs_Ref     | Expected **2-fold** changes               |
+| M3Y2_vs_Ref     | Expected **3-fold** changes               |
+
+Across ~9300 quantified proteins, proteoDA selected:
+
+- Auto-selecting binsize from candidates: 93, 187, 467, 934, 1401, 1867
+- Auto-selected binsize: 1401 (CV = 0.139, min CV = 0.135)
+
+This means:
+
+- Larger windows provide smoother, more stable variance curves  
+- But the algorithm chooses the *smallest* window that performs nearly as well as the smoothest one
+
+---
+
+## Interpreting the CV vs binsize plot
+
+The plot `CV of moving SD vs binsize (auto-selection)` shows how stable  
+the movingSD curves are across contrasts.
+
+Biological interpretation:
+
+- A **decreasing CV** indicates smoother variance estimation with larger windows  
+- The “elbow” region marks binsizes that are sufficiently stable  
+- proteoDA selects the smallest binsize near that elbow  
+
+In the spike-in dataset, the CV decreases smoothly, consistent with  
+stable quantification across thousands of proteins.
+
+---
+
+## Interpreting the per-contrast movingSD curves
+
+For each contrast, proteoDA provides two diagnostic plots:
+
+### 1. Moving SD vs rank index
+
+- Shows how logFC variability decreases as intensity increases  
+- High movingSD at low intensity = high noise  
+- Low movingSD at high intensity = high measurement precision  
+- Curves should be smooth and monotonic in well-behaved data  
+
+### 2. Moving SD vs mean log2 intensity (MD-style)
+
+- Puts the variance model directly into the biological intensity scale  
+- Helps identify irregularities due to:
+  - sample imbalance  
+  - normalization issues  
+  - missing-value structure  
+  - outlier runs  
+
+In your dataset, all contrasts show similar curves, supporting correct normalization
+and expected noise characteristics.
+
+---
+
+## Interpreting logFC Z-scores
+
+After computing movingSD, proteoDA standardizes logFC values as:
+
+\[
+Z_i = \frac{\text{logFC}_i}{\text{movingSD}_i}
+\]
+
+These Z-scores express **how large** a protein’s fold change is relative to  
+the expected noise at **that protein’s intensity**.
+
+Biological interpretation:
+
+- **Z ≈ 0** → no reliable change relative to noise  
+- **|Z| > 1** → fold change larger than expected variation  
+- **|Z| > 3** → high-confidence differential abundance  
+
+In the spike-in example:
+
+- **M1Y1_vs_Ref**: Z-scores cluster near 0 (no biology, as expected)  
+- **M2Y1_vs_Ref**: Z-scores shift moderately for 2-fold changes  
+- **M3Y2_vs_Ref**: Z-scores are largest, reflecting strong biological effects  
+
+Thus, Z-scores help distinguish **real biology** from **intensity-dependent noise**.
+
+---
+
+## Why biologists should care
+
+MovingSD and Z-scores answer practical questions biologists ask:
+
+- **“Is this protein really changing, or is it just noisy?”**  
+  → Z-scores adjust for intensity-dependent variance.
+
+- **“Why don’t small fold changes at low abundance reach significance?”**  
+  → movingSD reveals noise levels at low intensity.
+
+- **“Does my experiment behave as expected?”**  
+  → movingSD curves expose variance structure issues.
+
+- **“Can I trust the p-values and volcano plots?”**  
+  → Yes — because proteoDA accounts for real MS heteroscedasticity.
+
+Together, movingSD and Z-scores provide a biologically meaningful way to evaluate
+protein-level differential abundance in mass-spectrometry datasets.
+
+
+
+
+
+
+
+
+---
+
+## Example: spike-in benchmark dataset (M1Y1/M2Y1/M3Y2 vs Ref)
+
+This dataset includes three spike-in mixtures:
+
+| Contrast        | Expected Biology                         |
+|-----------------|------------------------------------------|
+| M1Y1_vs_Ref     | **No changes** (same 80:20 composition)  |
+| M2Y1_vs_Ref     | **2-fold changes** for half the proteins |
+| M3Y2_vs_Ref     | **3-fold changes** for half the proteins |
+
+## MovingSD QC diagnostics for spike-in benchmark dataset
+
+Below are the precomputed QC images generated by `write_movingSD_report()`
+using the proteoDA v2.0 movingSD/z-score algorithm.
+
+### CV vs binsize (auto-selection)
+![](images/movingSD/movingSD_binsize_CV.png){width=80%}
+
+### M3Y2_vs_Ref — Moving SD vs rank index
+![](images/movingSD/movingSD_M3Y2_vs_Ref_index.png){width=80%}
+
+### M3Y2_vs_Ref — Moving SD vs mean log2 intensity
+![](images/movingSD/movingSD_M3Y2_vs_Ref_intensity.png){width=80%}
+
+### M2Y1_vs_Ref — Moving SD vs rank index
+![](images/movingSD/movingSD_M2Y1_vs_Ref_index.png){width=80%}
+
+### M2Y1_vs_Ref — Moving SD vs mean log2 intensity
+![](images/movingSD/movingSD_M2Y1_vs_Ref_intensity.png){width=80%}
+
+### M1Y1_vs_Ref — Moving SD vs rank index
+![](images/movingSD/movingSD_M1Y1_vs_Ref_index.png){width=80%}
+
+### M1Y1_vs_Ref — Moving SD vs mean log2 intensity
+![](images/movingSD/movingSD_M1Y1_vs_Ref_intensity.png){width=80%}
+
+
+Across ~9,300 quantified proteins, proteoDA selected:
+
+Auto-selecting binsize from candidates: 93, 187, 467, 934, 1401, 1867
+Auto-selected binsize: 1401 (CV = 0.139, min CV = 0.135)
+
+
+This means:
+- The smoothest possible variance curve occurs at large window sizes  
+- But **1401** is the *smallest* window size that produces a CV within 5% of the best
+
+---
+
+## Interpreting the CV vs binsize plot
+
+The plot:
+
+### CV of moving SD vs binsize (auto-selection)
+
+
+shows how stable the variance curves are for different window sizes.
+
+- A **monotonically decreasing CV** (as in this dataset) indicates
+  progressively smoother variance estimates at larger binsizes.
+- A point near the **elbow** of the curve is typically ideal.
+- proteoDA automatically chose the smallest value near this plateau.
+
+Because this is a spike-in dataset with thousands of proteins,
+large windows give very stable SD estimates.
+
+---
+
+## Interpreting the per-contrast movingSD curves
+
+Each contrast has two plots:
+
+---
+
+### 1. **Moving SD vs rank index**
+
+This shows the rolling SD on the intensity-sorted proteins.
+
+Interpretation:
+
+- **High movingSD at low intensities** reflects high noise.
+- **Gradual decrease** toward higher intensities shows improved precision.
+- Nearly identical curves across spike-in contrasts indicate  
+  the variance structure is dominated by measurement effects, not biology.
+
+For the 3-fold mixture (M3Y2_vs_Ref), the curve is smooth and monotonic,
+reflecting stable variance across ~9,300 proteins.
+
+---
+
+### 2. **Moving SD vs mean log2 intensity** (MD-style)
+
+This positions the moving SD curve in “biological coordinate space”.
+
+Interpretation:
+
+- Useful for diagnosing intensity-dependent logFC variance.
+- In clean benchmark datasets, the variance decreases with intensity
+  and then plateaus at high abundance.
+- In real experiments, irregularities may indicate:
+  - sample-specific noise,
+  - normalization issues,
+  - or missing-value patterns.
+
+---
+
+## Interpreting Z-scores
+
+The Z-scores normalize logFC values by their local noise level.
+
+- In **M1Y1_vs_Ref** (no biological change), Z-scores cluster near 0.  
+  Any extreme outliers may indicate technical artifacts.
+
+- In **M2Y1_vs_Ref**, proteins with true 2-fold changes produce  
+  Z-scores shifted appropriately away from 0.
+
+- In **M3Y2_vs_Ref**, the largest fold changes yield the largest Z-scores.
+
+Z-scores therefore allow:
+
+- improved thresholding,
+- robust outlier detection,
+- more stable downstream enrichment statistics.
+
+---
+
+### Summary
+
+MovingSD and logFC Z-scores in proteoDA:
+
+- capture heteroscedastic variance structure,
+- stabilize contrast-specific noise estimates,
+- improve interpretability of fold-change distributions,
+- and power downstream significance calling and pathway enrichment.
+
+The QC report (PDF + PNGs) provides transparent diagnostics of the
+variance model used for each contrast.
+
+

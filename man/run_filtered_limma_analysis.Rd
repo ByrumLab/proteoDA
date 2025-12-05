@@ -12,7 +12,7 @@ run_filtered_limma_analysis(
   adj_method = "BH",
   contrasts_file = NULL,
   binsize = "auto",
-  plot_movingSD = TRUE
+  plot_movingSD = FALSE
 )
 }
 \arguments{
