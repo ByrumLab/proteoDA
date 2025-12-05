@@ -16,44 +16,337 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, eval=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# One-factor design (no intercept)
+# Introduction
 
-```{r one_factor, eval=FALSE}
+This vignette provides a practical guide to specifying statistical designs and
+contrasts in **proteoDA v2.0**, with a focus on using the limma linear modeling
+framework for differential protein abundance analysis.
+
+Mass-spectrometry–based proteomics experiments vary widely in complexity:
+some involve simple two-group comparisons, while others incorporate batch
+effects, repeated measures, paired samples, or multi-factor biological designs.
+proteoDA builds on limma’s modeling flexibility and provides a streamlined
+interface for constructing design matrices, managing contrasts, and fitting
+models to per-contrast filtered data.
+
+For users who want a deeper background on limma model specification, we refer to  
+the excellent guide by **Law et al. (2020)**:
+
+> **Law CW, Zeglinski K, Dong X, Alhamdoosh M, Smyth GK, Ritchie ME.  
+> *A guide to creating design matrices for gene expression experiments.*  
+> F1000Res. 2020;9:1444. doi:10.12688/f1000research.27893.1**  
+>  
+> This article provides clear illustrations of intercept vs. no-intercept
+> parameterizations, factorial designs, blocking, and interaction models—
+> all concepts directly applicable to proteomics and used throughout this vignette.
+
+
+In this vignette, we illustrate:
+
+- how to specify **one-factor models** with and without an intercept  
+  (e.g., `~ 0 + group` vs. `~ group`);
+- how to incorporate **batch effects** or additional covariates  
+  (e.g., `~ 0 + group + batch`);
+- how to fit **factorial models** and interpret **interaction terms**  
+  (e.g., `~ celltype * treatment`);
+- how to handle **paired samples or repeated measures** using  
+  limma’s `duplicateCorrelation` as an approximate **mixed-effects** approach;
+- how to construct contrasts that match the model matrix and test
+  biologically meaningful hypotheses.
+
+We also present the updated **moving standard deviation (movingSD)** and  
+**logFC Z-score** framework used in `proteoDA v2.0` to account for the
+intensity-dependent variance structure inherent to proteomics data.
+These diagnostics help users understand the reliability of measured fold
+changes across the dynamic range and assess whether contrasts behave as expected.
+
+Overall, this vignette will help you:
+
+- choose an appropriate design formula for your experiment,  
+- construct correct contrasts,  
+- understand how proteoDA manages per-contrast filtering and model fitting,  
+- and interpret the resulting differential abundance statistics with confidence.
+
+# Setting the design formula in proteoDA
+
+In proteoDA v2.0, the statistical design is passed as a **model formula**
+to `add_design()` or to convenience wrappers such as
+`run_filtered_limma_analysis()`. The design is constructed from the
+sample metadata stored in `DAList$metadata`.
+
+The general pattern is:
+
+```{r add_design, eval=FALSE}
+DAList <- add_design(
+  DAList         = DAList,
+  design_formula = ~ 0 + group   # or ~ group, ~ 0 + group + batch, etc.
+)
+```
+
+or 
+
+```{r runLimmaDesign, eval=FALSE}
+results <- run_filtered_limma_analysis(
+  DAList         = norm,
+  design_formula = ~ 0 + group,
+  ...
+)
+```
+
+Below we summarize common model structures and how to specify them in proteoDA.
+
+***
+
+# One-factor design (no intercept: ~ 0 + group)
+
+This is the most common design for simple group comparisons. Each level of
+`group` gets its own column in the design matrix, and there is no
+global intercept.
+
+```{r noIntercept, eval=FALSE}
 design <- ~ 0 + group
-mm <- model.matrix(design, data = metadata)
-colnames(mm)  # e.g., groupA, groupB, groupC
-```
+DAList <- add_design(DAList, design_formula = design)
 
-# Factorial design with interaction
-
-```{r factorial_noIntercept, , eval=FALSE}
-design2 <- ~ 0 + cell * treat
-mm2 <- model.matrix(design2, data = metadata)
-colnames(mm2)  # main + interaction terms
-```
-
-# Random block with duplicateCorrelation (v2.0 wrapper may support; otherwise do manual)
-
-# Example sketch (pseudocode):
-```{r block_dupCor, , eval=FALSE}
- dupcor <- limma::duplicateCorrelation(expr, mm, block = metadata$patient_id)
- fit <- limma::lmFit(expr, mm, block = metadata$patient_id, correlation = dupcor$consensus)
- fit2 <- limma::eBayes(limma::contrasts.fit(fit, contrasts))
+head(DAList$design$design_matrix)
+# columns: groupA, groupB, groupC, ...
 
 ```
 
+## Advantages of no intercept design
 
-# And a contrasts snippet aligned to a factorial:
-## Suppose colnames(mm2) include cellWT, cellHET, treatSham, treatGy, and interactions
+- Coefficients are directly interpretable as group means on the log2 scale
+- Contrasts are simple differences between group columns, e.g.:
 
-- Contrast: (HET vs WT) under Gy only:
-- (cellHET + cellHET:treatGy) - (cellWT + cellWT:treatGy) simplifies to HET:Gy - WT:Gy
+1. groupB - groupA
+2. groupC - groupA
 
-## In practice, build explicit contrast matrix matching colnames(mm2).
+In proteoDA, these contrasts are typically specified in a CSV file, for example:
+
+B_vs_A = groupB - groupA \
+C_vs_A = groupC - groupA
+
+where the `group` listed first will have positive up-regulated proteins in groupB compared to groupA. 
+
+This is the recommended design for most proteomics experiments with
+discrete conditions (control vs treatment, genotype A vs genotype B, etc.).
+
+# One-factor design with intercept (~ group)
+
+An alternative is to include an intercept:
+
+```{r intercept, eval=FALSE}
+design <- ~ group
+DAList <- add_design(DAList, design_formula = design)
+
+colnames(DAList$design$design_matrix)
+# "(Intercept)", "groupB", "groupC", ...
+
+```
+
+The intercept represents the baseline group mean (typically the first
+factor level). Additional columns represent differences relative to that baseline.
+
+For example, if group has levels A, B, C (and A is the reference):
+
+- (Intercept) ≈ mean of group A
+
+- groupB ≈ (mean of B) − (mean of A)
+
+- groupC ≈ (mean of C) − (mean of A)
+
+Contrasts can still be written explicitly, but they must respect this
+parametrization. For instance, a direct B vs C comparison is:
+
+```{r interceptContrast, eval=FALSE}
+B_vs_C = groupB - groupC
+
+```
+
+In practice, `proteoDA` recommends the no-intercept form (design = ~ 0 + group)
+for clarity, unless you are comfortable with intercept-based models.
+
+# Including batch effects or additional covariates
+
+Real proteomics experiments often include nuisance factors such as:
+
+- instrument run / TMT batch
+- sex, age, or other biological covariates
+- site, plate, preparation batch
+
+These can be modeled as additional fixed effects:
+
+```{r covariate_model, eval = FALSE}
+design <- ~ 0 + group + batch
+DAList <- add_design(DAList, design_formula = design)
+
+```
+
+Here:
+
+- `group` captures the biological condition of interest
+- `batch` absorbs systematic differences between batches
+
+**Important notes**
+
+- `Batch` must be a factor in `DAList$metadata$batch`.
+
+- Avoid designs where `group` and `batch` are completely confounded
+(e.g., each group only occurs in one batch); in such cases there is no
+way to distinguish biological effect from batch effect.
+
+- You can include additional continuous covariates (e.g. RIN score, age):
+
+```{r covariateDesign}
+design <- ~ 0 + group + batch + age
+
+```
+
+In `proteoDA`, once this design is added, you can still write `contrasts`
+purely in terms of group columns; batch and covariate effects are implicitly adjusted for in the model.
+
+# Two-factor interaction models (~ celltype * treatment)
+
+For experiments with two factors (e.g., cell type and treatment),
+you often want to know:
+
+- main effect of cell type,
+- main effect of treatment,
+- interaction: does treatment act differently in different cell types?
+
+This can be expressed as:
+
+```{r interaction_model, eval=FALSE}
+design <- ~ celltype * treatment
+DAList <- add_design(DAList, design_formula = design)
+
+colnames(DAList$design$design_matrix)
+# "(Intercept)", "celltypeHET", "treatmentGy", "celltypeHET:treatmentGy", ...
+
+```
+
+The * expands to:
+
+```{r, eval=FALSE}
+~ celltype + treatment + celltype:treatment
+
+```
+
+In proteoDA, for visualization and contrast specification, we often work
+with combined labels like "WT_Sham" or "Mu_Treat". Internally,
+`run_filtered_limma_analysis()` can translate labels such as:
+
+`Mu_Treat_vs_WT_Sham = Mu_Treat - WT_Sham`
+
+into the appropriate linear combination of main and interaction terms in
+the design matrix.
+
+- Biologically, the interaction term tests whether the treatment effect
+differs between cell types. 
+
+For example:
+
+- main effect of treatment (averaged over cell types)
+- cell-type–specific treatment effects, e.g. Mu Treat vs WT Sham
+
+The vignette examples later show how these contrasts map onto the model
+matrix columns.
+
+# Paired or blocked designs and `duplicateCorrelation`
+
+Some experiments have paired samples or repeated measures:
+
+- pre- vs post-treatment from the same patient
+- left vs right tissue from the same subject
+- technical replicates
+
+Ignoring this pairing can inflate the false positive rate, because
+samples from the same individual are more correlated than samples from
+different individuals.
+
+In limma, the recommended approach is to use `duplicateCorrelation` with a blocking factor:
+
+```{r paired, eval=FALSE}
+design <- ~ 0 + group
+DAList <- add_design(DAList, design_formula = design)
+
+# Suppose metadata$patient_id identifies pairs/subjects
+block <- DAList$metadata$patient_id
+```
+
+In a bare limma workflow:
+
+```{r limma_pair, eval=FALSE}
+dupcor <- limma::duplicateCorrelation(expr, design, block = block)
+fit    <- limma::lmFit(expr, design, block = block, correlation = dupcor$consensus)
+fit2   <- limma::eBayes(limma::contrasts.fit(fit, contrasts))
+```
+
+In proteoDA v2.0, the wrapper `fit_limma_model()` supports this pattern
+by storing the blocking factor in the design `metadata`. A typical
+workflow looks like:
+
+```{r proteoDApair, eval=FALSE}
+# Store the blocking factor in the metadata
+DAList$metadata$patient_id <- factor(DAList$metadata$patient_id)
+
+# Add design as usual
+DAList <- add_design(DAList, design_formula = ~ 0 + group)
+
+# Tell proteoDA to use duplicateCorrelation
+DAList$design$random_factor <- "patient_id"
+DAList <- fit_limma_model(DAList)   # internally calls duplicateCorrelation + lmFit
+```
+
+## Key points for paired designs:
+
+- The design formula usually remains `~ 0 + group`
+- The blocking variable (e.g. patient_id) is not added as a fixed
+effect column; it is used via `duplicateCorrelation`
+- Contrasts are written as usual on the `group` column
+
+This yields a model that accounts for within-subject correlation while
+preserving straightforward group contrasts.
+
+# Fixed effects vs (approximate) mixed effects in proteoDA
+
+Most designs in `proteoDA` are fixed-effects models:
+
+- no intercept -> `~ 0 + group`
+- no intercept with covariate -> `~ 0 + group + batch`
+- intercept with covariate -> `~ group + covariates`
+- interaction -> `~ celltype * treatment`
+
+Here, each coefficient represents a specific, interpretable effect
+(group mean, batch offset, interaction, etc.).
+
+When you introduce a **blocking factor** (e.g. subject, patient), limma’s
+`duplicateCorrelation` provides an approximate **mixed-effects** model:
+
+- The block (subject) behaves like a random effect, capturing correlation between repeated measures.
+- The group/treatment factors remain fixed effects.
+
+In `proteoDA v2.0`, this is implemented by:
+
+- specifying a fixed-effects design formula (e.g. ~ 0 + group)
+- tagging a blocking variable as DAList$design$random_factor
+- using `fit_limma_model()` with `duplicateCorrelation` under the hood
+
+**Conceptually:**
+
+- Use **fixed effects** for biological conditions and known covariates
+
+- Use **random effects** (via `duplicateCorrelation`) for repeated measures,
+pairs, or subjects where we are not interested in estimating a specific
+coefficient for each subject but want to account for their correlation.
+
+This strategy balances interpretability (fixed effects for main biology)
+with realistic error modeling (random effects for subjects/blocks),
+which is especially important for longitudinal or paired proteomics
+experiments.
 
 # Statistical Thresholds
 
@@ -388,4 +681,182 @@ MovingSD and logFC Z-scores in proteoDA:
 The QC report (PDF + PNGs) provides transparent diagnostics of the
 variance model used for each contrast.
 
+## Why does a protein have a movingSD value when its logFC is NA?
 
+In mass-spectrometry–based proteomics, it is common for a protein to have **valid
+intensity measurements** but an **NA log fold change (logFC)** for a given contrast.
+This happens because the *intensity data* and the *statistical model* behave differently.
+
+### When logFC becomes NA
+The limma model may return `NA` for a protein’s logFC when:
+
+- one experimental condition has missing values for that protein  
+- there are insufficient replicates to estimate the coefficient  
+- the design matrix is rank-deficient for that contrast  
+- a contrast mathematically eliminates the coefficient  
+- limma identifies the coefficient as non-estimable  
+
+In all these cases:
+
+> **The protein *was quantified*, but the differential abundance (logFC) cannot be estimated.**
+
+This does *not* mean the protein is low quality; it simply means the model
+lacks sufficient information for that contrast.
+
+---
+
+## Why movingSD is still computed
+
+The **moving standard deviation (movingSD)** does *not* use the protein’s own logFC
+value. Instead, it reflects the **local noise level** among *neighboring proteins*
+with similar intensities.
+
+The procedure is:
+
+1. Compute mean log2 intensity for each protein  
+2. Sort proteins from lowest to highest intensity  
+3. Compute a rolling standard deviation of logFC across a window of neighboring proteins  
+4. Assign each protein the noise estimate appropriate for its intensity  
+
+This means:
+
+> A protein with `logFC = NA` can still have a perfectly valid **movingSD**,  
+> as long as *other* proteins at similar intensity have valid logFC values.
+
+The movingSD is therefore an estimate of:
+
+- how noisy the fold changes are **at that abundance level**,  
+- regardless of whether a specific protein’s own logFC is available.
+
+---
+
+## Relationship to Z-scores
+
+Z-scores are computed as:
+
+\[
+Z_i = \frac{\text{logFC}_i}{\text{movingSD}_i}
+\]
+
+Thus:
+
+- if **logFC is NA**, then  
+  → **Z-score is also NA**  
+- if **movingSD is available**, it still provides useful context for variance  
+- the Z-score reporting remains consistent and meaningful  
+
+---
+
+## Biological interpretation
+
+This distinction makes sense for proteomics:
+
+- A protein may be **measured reliably** (good intensity values)
+- But differential abundance may be **non-estimable** for statistical reasons
+- Its local noise environment (movingSD) is still well defined
+
+Biologists can interpret this as:
+
+> **“We can reliably determine how noisy the data *around this protein* are,  
+> even if we cannot compute its fold change in this contrast.”**
+
+Examples include:
+
+- proteins missing in only one condition  
+- proteins filtered out of the model fit in a specific contrast  
+- proteins whose peptides were quantified but whose contrast coefficient is undefined  
+
+The movingSD curve helps identify:
+
+- expected noise at low, medium, and high abundance  
+- whether observed changes are larger than typical variability  
+- whether the dataset behaves as expected (e.g., spike-in experiments)
+
+---
+
+### Summary
+
+- **logFC = NA** → limma cannot estimate the fold change  
+- **movingSD ≠ NA** → proteoDA can still estimate the *local noise level*  
+- **Z-score = NA** → because it depends on logFC  
+
+This behavior is correct and provides additional biological insight rather than signal loss.
+
+### What happens when a protein has a logFC value of `NA`?
+
+For protein A2AU34, several replicate intensity values are `NA` for one entire condition but the other condition has valid intensities. 
+
+This pattern produces a situation where limma cannot estimate a contrast coefficient, and therefore:
+
+logFC = NA
+t-statistic = NA
+p-value = NA
+
+✔ Why does limma give logFC = NA here
+
+Limma requires at least:
+
+1. two groups with valid observations, and
+2. enough non-missing values per group to estimate the group means
+
+If one contrast level (e.g., Ref) has no quantified values for a protein:
+
+1. The model matrix becomes rank-deficient for that row
+2. The contrast cannot be formed
+3. The empirical Bayes shrinkage step cannot operate
+
+limma flags the coefficient as non-estimable → NA
+
+This is normal and expected. When performing the limma analysis, a warning message indicates how many proteins were non-estimable for example this is the message for the three contrasts: 
+
+Warning messages:
+1: Partial NA coefficients for 607 probe(s) 
+2: Partial NA coefficients for 671 probe(s) 
+3: Partial NA coefficients for 496 probe(s) 
+
+### 🔬 Biological interpretation
+
+For A2AU34:
+
+- The protein was detected in one condition
+- It was not detected (or entirely missing) in the other condition
+- So the fold change between conditions is not mathematically estimable using the limma linear model
+
+- This is different from “no change” — it’s simply not enough data
+- This situation reflects missing data rather than biological absence of change.
+
+### 🧠 How proteoDA handles this
+
+Even though logFC is NA:
+
+1. movingSD is still computed because movingSD depends on:
+
+  - the protein’s intensity (mean across observed samples),
+  - the logFC of neighboring proteins in the intensity-sorted list.
+
+Thus, A2AU34 still gets a movingSD value.
+
+2. Z-score becomes `NA` because:
+
+\[
+Z_i = \frac{\text{logFC}_i}{\text{movingSD}_i}
+\]
+
+where:
+
+- \(\text{logFC}_i\) is the estimated log\(_2\) fold change for protein \(i\),
+- \(\text{movingSD}_i\) is the rolling standard deviation of logFC for proteins
+  at similar intensity.
+
+
+If logFC is NA → Z is NA.
+
+This is correct and expected.
+
+ProteoDA still computes a movingSD value for such proteins because movingSD is
+based on the noise level among neighboring proteins with similar intensity.
+However, the Z-score remains `NA` because it depends directly on logFC.
+
+This behavior is correct: a protein may be quantified in one condition but not
+the other, making differential abundance mathematically non-estimable while its
+local noise level is still meaningful.
