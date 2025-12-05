@@ -69,8 +69,8 @@ logFC = 1       # significance threshold for plots and tables, default is 1 (2-f
 stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores", "sig.PVal", "sig.FDR") 
 
 ## column names for interactive tables and plots - must match Protein ANNOTATION!!!!!!!
-#DA_table_cols <- c("uniprot_id","Accession.Number","Protein.Description")  # DIANN
-DA_table_cols <- c("uniprot_id","PG.ProteinLabel","PG.ProteinDescriptions")  # Spectronaut
+DA_table_cols <- c("uniprot_id","Accession.Number","Protein.Description")  # DIANN
+#DA_table_cols <- c("uniprot_id","PG.ProteinLabel","PG.ProteinDescriptions")  # Spectronaut
 DA_title_col <- "uniprot_id" 
 tmp_subdir <- "tmp"
 ctrl_proteins <-  NULL # c( "P46100")        # c( "P58004", "Q12766", "MDM2") highlighted in volcano static plots/powerpoint
