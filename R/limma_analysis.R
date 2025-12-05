@@ -338,7 +338,7 @@ run_filtered_limma_analysis <- function(
     adj_method = "BH",
     contrasts_file = NULL,
     binsize = "auto",
-    binsize_range = c(50, 100, 200, 400, 500, 1000),
+  #  binsize_range = c(50, 100, 200, 400, 500, 1000),
     plot_movingSD = TRUE
 ) {
   validate_DAList(DAList)
@@ -552,7 +552,7 @@ run_filtered_limma_analysis <- function(
   DAList <- compute_movingSD_zscores(
     DAList = DAList,
     binsize = binsize,
-    binsize_range = binsize_range,
+  #  binsize_range = binsize_range,
     plot = plot_movingSD,
     contrasts_file = contrasts_file
   )

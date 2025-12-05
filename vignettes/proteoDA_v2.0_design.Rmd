@@ -47,3 +47,25 @@ colnames(mm2)  # main + interaction terms
 - (cellHET + cellHET:treatGy) - (cellWT + cellWT:treatGy) simplifies to HET:Gy - WT:Gy
 
 ## In practice, build explicit contrast matrix matching colnames(mm2).
+
+# Statistical Thresholds
+
+## movingSD and log2 zscore
+
+### How auto binsize should work
+
+For each candidate window size 𝑏∈ binsize_range:
+
+1. Compute moving SD for each contrast using window size𝑏
+2. Compute:
+  - mean of the SD curve: 𝜇= mean(SD)
+  - sd of the SD curve:𝜎= sd(SD)
+3. Compute the coefficient of variation: CV =𝜎/𝜇
+
+4. The best binsize is the one with the lowest CV, i.e. the most stable curve.
+
+In an ideal situation, CV should form a U-shaped curve:
+
+- Small bins → very noisy SD → high CV
+- Large bins → oversmoothing → high CV
+- Middle value → best CV
