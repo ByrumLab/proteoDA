@@ -7,47 +7,66 @@
 compute_movingSD_zscores(
   DAList,
   binsize = "auto",
-  binsize_range = c(50, 100, 200, 400),
   plot = FALSE,
   contrasts_file = NULL
 )
 }
 \arguments{
-\item{DAList}{A DAList-like object containing \code{data}, \code{results}, and \code{tags} slots. Must contain:
+\item{DAList}{A DAList-like object containing at least:
 \itemize{
-\item \code{DAList$data}: A matrix/data.frame with numeric expression values (log2 intensities).
-\item Optionally: \code{DAList$data_per_contrast}, a list of per-contrast matrices/data.frames.
-\item \code{DAList$results}: A named list of comparisons each containing a \code{logFC} vector.
-\item Optionally: \code{DAList$QC_dir} as a string path for saving QC plots.
+\item \code{data}: A matrix/data frame with numeric expression values
+(log2 intensities; proteins in rows, samples in columns).
+\item \code{results}: A named list of per-contrast data frames, each
+containing a \code{logFC} column and rownames as protein IDs.
+\item Optionally, \code{data_per_contrast}: a named list of per-contrast
+matrices/data frames. When present, \code{data_per_contrast[[contrast]]}
+is used for that contrast instead of the global \code{data}.
+\item Optionally, \code{QC_dir}: a string path for saving QC plots.
+\item Optionally, \code{design$contrast_vector} or
+\code{filtered_proteins_per_contrast} to infer contrast names.
 }}
 
-\item{binsize}{Integer or \code{"auto"}. The number of consecutive proteins (rows) to use in each rolling window,
-or \code{"auto"} to determine the best size automatically.}
+\item{binsize}{Integer or \code{"auto"}. The number of consecutive proteins (rows)
+to use in each rolling window, or \code{"auto"} to determine the best size
+automatically from the actual protein count.}
 
-\item{binsize_range}{Numeric vector. Only used if \code{binsize = "auto"}. A vector of candidate bin sizes to test.}
+\item{plot}{Logical. If \code{TRUE}, plots the final moving SDs for each
+contrast and (if \code{DAList$QC_dir} is available) saves them to disk.}
 
-\item{plot}{Logical. If \code{TRUE}, plots the final moving SDs for each comparison and saves to QC_dir.}
-
-\item{contrasts_file}{Optional CSV file with contrasts (one per row, \code{name = formula} syntax) if
-contrast names are not already available in the DAList.}
+\item{contrasts_file}{Optional CSV file with contrasts (one per row, \code{"name = formula"}
+syntax) used only to determine contrast names if they are not already
+available in the \code{DAList}.}
 }
 \value{
 The input \code{DAList} object with updated \code{tags}:
 \itemize{
-\item \code{DAList$tags$movingSDs}: A list of rolling SD vectors for each comparison.
-\item \code{DAList$tags$logFC_z_scores}: A list of Z-score vectors (logFC divided by rolling SD).
+\item \code{DAList$tags$movingSDs[[contrast]]}: rolling SD vector for each contrast.
+\item \code{DAList$tags$logFC_z_scores[[contrast]]}: Z-score vector for each contrast.
+\item \code{DAList$results[[contrast]]$movingSD}: moving SD per protein.
+\item \code{DAList$results[[contrast]]$logFC_z_scores}: logFC Z-score per protein.
 }
 }
 \description{
 This function computes a rolling (moving) standard deviation of log fold change (logFC)
-values for each comparison in the \code{DAList$results} list. The SD is computed over sorted data
-using mean intensity for sorting (without modifying the data). It also computes logFC
-Z-scores using the rolling SDs and stores all results in \code{DAList$tags}.
+values for each comparison in the \code{DAList$results} list. For each contrast, proteins
+are ordered by mean log2 intensity (without modifying the underlying data matrix).
+A moving standard deviation of logFC is computed along this ordering and used to derive
+logFC Z-scores. Results are stored both in \code{DAList$results[[contrast]]} and
+\code{DAList$tags}.
 }
 \details{
-If \code{binsize = "auto"}, the function evaluates a set of candidate bin sizes and chooses
-the one that minimizes the average coefficient of variation (CV) of the moving SDs.
+If \code{binsize = "auto"}, the function derives candidate bin sizes from the protein
+count, evaluates their stability using the coefficient of variation (CV) of the moving SD
+curves across contrasts, and chooses a binsize as the smallest value whose CV is within
+5\\% of the minimum CV. Candidate binsizes are constrained between a minimum number
+of proteins (40) and a maximum of 20\\% of the total protein count.
 
-If \code{plot = TRUE}, a plot of the final moving SDs for each comparison will be generated
-and saved to \code{QC_dir} if available.
+If \code{plot = TRUE}, two plots are generated per contrast:
+\enumerate{
+\item Moving SD vs rank index (proteins sorted by intensity).
+\item Moving SD vs mean log2 intensity (MD-style).
+}
+Plots are printed to the current device and, if \code{DAList$QC_dir} is set,
+saved as PNG files there. When \code{binsize = "auto"}, a global
+\code{movingSD_binsize_CV.png} (CV vs binsize) is also saved in \code{QC_dir}.
 }

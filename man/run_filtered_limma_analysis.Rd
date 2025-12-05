@@ -12,7 +12,6 @@ run_filtered_limma_analysis(
   adj_method = "BH",
   contrasts_file = NULL,
   binsize = "auto",
-  binsize_range = c(50, 100, 200, 400, 500, 1000),
   plot_movingSD = TRUE
 )
 }
@@ -33,9 +32,9 @@ The label (left-hand side) may be any string; it does not need to encode group n
 
 \item{binsize}{Either an integer for the moving window size, or "auto" (default) to select automatically.}
 
-\item{binsize_range}{A numeric vector of candidate bin sizes to evaluate when \code{binsize = "auto"}.}
-
 \item{plot_movingSD}{Logical. If TRUE (default), plot moving SD curves for each contrast.}
+
+\item{binsize_range}{A numeric vector of candidate bin sizes to evaluate when \code{binsize = "auto"}.}
 }
 \value{
 The input DAList, updated with per-contrast model fits and results,

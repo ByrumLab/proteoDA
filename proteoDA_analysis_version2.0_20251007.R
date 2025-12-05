@@ -324,11 +324,11 @@ results <- run_filtered_limma_analysis(
   pval_thresh = p.val,
   lfc_thresh = logFC,
   adj_method = "BH",
-  binsize = bin_size,
+ # binsize = bin_size,
   plot_movingSD = TRUE,
-  contrasts_file = contrasts
-  # binsize = "auto",
-  # binsize_range = c(100, 250, 500, 1000, 1500)
+  contrasts_file = contrasts,
+  binsize = "auto"
+ # binsize_range = c(100, 250, 500, 1000, 1500, 5000)  # removed this from parameters since now chooses based on N
 )
 
 results2 <- run_filtered_limma_analysis(
