@@ -13,6 +13,14 @@ compute_movingSD_zscores(
 )
 }
 \arguments{
+\item{DAList}{A DAList-like object containing \code{data}, \code{results}, and \code{tags} slots. Must contain:
+\itemize{
+\item \code{DAList$data}: A matrix/data.frame with numeric expression values (log2 intensities).
+\item Optionally: \code{DAList$data_per_contrast}, a list of per-contrast matrices/data.frames.
+\item \code{DAList$results}: A named list of comparisons each containing a \code{logFC} vector.
+\item Optionally: \code{DAList$QC_dir} as a string path for saving QC plots.
+}}
+
 \item{binsize}{Integer or \code{"auto"}. The number of consecutive proteins (rows) to use in each rolling window,
 or \code{"auto"} to determine the best size automatically.}
 
@@ -20,25 +28,21 @@ or \code{"auto"} to determine the best size automatically.}
 
 \item{plot}{Logical. If \code{TRUE}, plots the final moving SDs for each comparison and saves to QC_dir.}
 
-\item{raw}{An S3 object containing \code{data}, \code{results}, and \code{tags} slots. Must contain:
-\itemize{
-\item \code{raw$data}: A data frame with numeric expression values and a \code{Log2Fold} column.
-\item \code{raw$results}: A named list of comparisons (e.g., \code{treat_vs_control}) each containing a \code{logFC} vector.
-\item Optionally: \code{raw$QC_dir} as a string path for saving QC plots.
-}}
+\item{contrasts_file}{Optional CSV file with contrasts (one per row, \code{name = formula} syntax) if
+contrast names are not already available in the DAList.}
 }
 \value{
-The input \code{raw} object with updated \code{tags}:
+The input \code{DAList} object with updated \code{tags}:
 \itemize{
-\item \code{raw$tags$movingSDs}: A list of rolling SD vectors for each comparison.
-\item \code{raw$tags$logFC_z_scores}: A list of Z-score vectors (logFC divided by rolling SD).
+\item \code{DAList$tags$movingSDs}: A list of rolling SD vectors for each comparison.
+\item \code{DAList$tags$logFC_z_scores}: A list of Z-score vectors (logFC divided by rolling SD).
 }
 }
 \description{
 This function computes a rolling (moving) standard deviation of log fold change (logFC)
-values for each comparison in the \code{raw$results} list. The SD is computed over sorted data
+values for each comparison in the \code{DAList$results} list. The SD is computed over sorted data
 using mean intensity for sorting (without modifying the data). It also computes logFC
-Z-scores using the rolling SDs and stores all results in \code{raw$tags}.
+Z-scores using the rolling SDs and stores all results in \code{DAList$tags}.
 }
 \details{
 If \code{binsize = "auto"}, the function evaluates a set of candidate bin sizes and chooses
@@ -46,9 +50,4 @@ the one that minimizes the average coefficient of variation (CV) of the moving S
 
 If \code{plot = TRUE}, a plot of the final moving SDs for each comparison will be generated
 and saved to \code{QC_dir} if available.
-}
-\examples{
-raw <- compute_movingSD_zscores(raw, binsize = "auto", binsize_range = c(50, 100, 200))
-raw <- compute_movingSD_zscores(raw, binsize = 100, plot = FALSE)
-
 }
