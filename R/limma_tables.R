@@ -665,6 +665,81 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   }
 
 # 
+#' Sanitize Excel worksheet names
+#'
+#' Ensures worksheet names are compatible with Excel and \code{openxlsx}.
+#' Names are:
+#' \itemize{
+#'   \item Truncated to \code{max_len} characters (default 31, Excel's limit).
+#'   \item Cleaned of invalid characters (\code{: \\ / ? * [ ]}).
+#'   \item Made unique by appending numeric suffixes (e.g. \code{"name"}, \code{"name_1"}).
+#' }
+#' If any names are modified, a warning is emitted listing the original and
+#' sanitized names.
+#'
+#' @param names Character vector of proposed worksheet names.
+#' @param max_len Integer maximum length for each name (default 31).
+#'
+#' @return A character vector of sanitized, unique worksheet names.
+#' @keywords internal
+sanitize_sheet_names <- function(names, max_len = 31L) {
+  if (!is.character(names)) {
+    names <- as.character(names)
+  }
+  if (length(names) == 0L) {
+    return(names)
+  }
+  if (max_len < 1L) {
+    stop("max_len must be at least 1.", call. = FALSE)
+  }
+  
+  orig <- names
+  
+  # Replace invalid Excel characters: : \ / ? * [ ]
+  names <- gsub("[:\\\\/\\?\\*\\[\\]]", "_", names)
+  
+  # Replace empty or NA names with a default base
+  names[is.na(names) | names == ""] <- "Sheet"
+  
+  # Truncate to max_len
+  names <- substr(names, 1L, max_len)
+  
+  # Ensure uniqueness by adding suffixes as needed
+  seen <- character()
+  out  <- character(length(names))
+  
+  for (i in seq_along(names)) {
+    base_name <- names[i]
+    candidate <- base_name
+    
+    # If already seen, start appending suffixes
+    if (candidate %in% seen) {
+      j <- 1L
+      repeat {
+        suffix <- paste0("_", j)
+        # Leave room for suffix within max_len
+        base_trunc <- substr(base_name, 1L, max_len - nchar(suffix))
+        candidate  <- paste0(base_trunc, suffix)
+        if (!(candidate %in% seen)) break
+        j <- j + 1L
+      }
+    }
+    
+    out[i] <- candidate
+    seen   <- c(seen, candidate)
+  }
+  
+  changed <- orig != out
+  if (any(changed)) {
+    warning(
+      "Some worksheet names were adjusted to be Excel-compatible (length/characters/uniqueness):\n",
+      paste0("  '", orig[changed], "' -> '", out[changed], "'", collapse = "\n"),
+      call. = FALSE
+    )
+  }
+  
+  out
+}
 
 #' Write tables of limma results
 #'
@@ -779,7 +854,7 @@ write_limma_tables <- function(DAList,
     output_dir = per_contrast_dir,
     annotation_cols = DA_table_cols,      # from your params file
     metadata = DAList$metadata,
-    group_col = "group",                  # <-- FIXED: pass as string
+    group_col = "group",
     stat_cols = stat_cols,                # from your params file
     per_contrast_tags = DAList$tags$per_contrast %||% NULL
   )
@@ -818,8 +893,14 @@ write_limma_tables <- function(DAList,
     cli::cli_inform("Adding per-contrast CSVs as worksheets to {.path {excel_output_file}}")
     wb <- openxlsx::loadWorkbook(excel_output_file)
     per_contrast_files <- list.files(per_contrast_dir, pattern = "\\.csv$", full.names = TRUE)
-    for (csv_file in per_contrast_files) {
-      sheet_name <- tools::file_path_sans_ext(basename(csv_file))
+    
+    # --- NEW: sanitize worksheet names for Excel before adding ---
+    raw_sheet_names <- tools::file_path_sans_ext(basename(per_contrast_files))
+    sheet_names     <- sanitize_sheet_names(raw_sheet_names)
+    
+    for (i in seq_along(per_contrast_files)) {
+      csv_file   <- per_contrast_files[i]
+      sheet_name <- sheet_names[i]
       df <- utils::read.csv(csv_file, check.names = FALSE)
       openxlsx::addWorksheet(wb, sheet_name)
       openxlsx::writeData(wb, sheet = sheet_name, x = df, withFilter = TRUE)
@@ -829,4 +910,3 @@ write_limma_tables <- function(DAList,
   
   invisible(input_DAList)
 }
-
