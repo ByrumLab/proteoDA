@@ -1,5 +1,5 @@
 ---
-title: "proteoDA v2.0 Normalization"
+title: "proteoDA v2.0 Normalization and Imputation"
 author: "Byrum Lab"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
@@ -86,10 +86,9 @@ Thus, it is preferable to convert zeros to `NA` before modeling.
 
 
 ```{r load_raw, message=FALSE}
-
 #inst/extdata/raw.rds
 #raw_file <- system.file("extdata", "raw.rds", package = "proteoDAstjude")
-raw_file <- "/Users/sbyrum/Documents/github/proteoDAstjude/inst/extdata/raw.rds"
+raw_file <- "/Users/sbyrum/Documents/github/proteoDAstjude/inst/extdata/lou2023_benchmark/raw.rds"
 #raw_file <- "P:/projects/CPM_publications/03_proteoDA2_Steph/code/inst/extdata/raw.rds"
 DAList_raw <- readRDS(raw_file)
 
@@ -718,4 +717,177 @@ use_per_contrast_if_available = TRUE
 
 ```
 
+***
 
+# Perseus-style MNAR imputation (perseus_impute())
+
+Missing values in label-free proteomics are often missing not at random (MNAR) due to low-abundance peptides that fall below the detection limit.
+proteoDA implements a Perseus-like left-censoring strategy via the `perseus_impute()` function, which operates on log2-transformed intensities.
+
+```{r perseus_impute_example, eval=FALSE}
+# Perseus-style imputation on a normalized DAList
+imputed <- perseus_impute(
+  norm,
+  shift              = 1.8,
+  width              = 0.3,
+  robust             = TRUE,
+  min_obs_per_sample = 5,
+  seed               = 1,
+  save_before_after  = TRUE
+)
+```
+
+## How the method works
+
+For each sample (column) in the log2 intensity matrix:
+
+1. Let \( x_{ij} \) be the observed log2 intensity for feature \( i \) in sample \( j \).
+2. From the **non-missing** values in sample \( j \), estimate:
+   - a location parameter \( \mu_j \) (mean or median),
+   - a scale parameter \( \sigma_j \) (standard deviation or MAD).
+3. For every **missing** entry in that sample, draw a replacement value from a *downshifted Gaussian*:
+   \[
+   x^{\text{imp}}_{ij} \sim \mathcal{N}\left(\mu_j - \texttt{shift} \cdot \sigma_j,\; (\texttt{width} \cdot \sigma_j)^2\right).
+   \]
+4. Rows that are missing in **all** samples remain `NA` (uninformative features).
+
+This produces a small “shoulder” of imputed values at the low-intensity end of the distribution, mimicking undetected low-abundance peptides rather than inventing high-intensity signals.
+
+## Key parameters
+
+The main tuning parameters for `perseus_impute()` are:
+
+- **`shift`** (default `1.8`)  
+  Controls how far the imputed distribution is shifted *down* from the observed mean in units of the sample’s standard deviation.  
+  - Larger values → imputed values further to the left (lower intensity).  
+  - Smaller values → imputed values closer to the main signal region.
+
+- **`width`** (default `0.3`)  
+  Scales the standard deviation of the imputed distribution:  
+  \[
+  \sigma_{\text{imp},j} = \texttt{width} \cdot \sigma_j.
+  \]
+  - Smaller values → a narrow band of imputed values.  
+  - Larger values → imputed values more spread out.
+
+- **`robust`** (default `TRUE`)  
+  Chooses whether to estimate the per-sample distribution using:
+  - `TRUE`: **median** and **MAD** (robust to outliers), or  
+  - `FALSE`: **mean** and **SD** (classic Perseus behaviour).
+
+- **`min_obs_per_sample`** (default `5`)  
+  Minimum number of observed (non-missing) log2 values required in a sample before estimating its own \( \mu_j \) and \( \sigma_j \).  
+  If a sample has fewer than this many observations, `perseus_impute()` falls back to a **pooled distribution**:
+  - \( \mu_{\text{pooled}} \), \( \sigma_{\text{pooled}} \) are computed from all observed values across all samples.
+  - This prevents unstable per-sample estimates when a column is almost entirely missing.
+
+- **`seed`** (default `NULL`)  
+  Optional random seed for reproducible imputation. Set this to a fixed integer (e.g. `seed = 1`) to obtain identical imputed values across runs.
+
+- **`save_before_after`** (default `FALSE`)  
+  When `TRUE` and the input is a `DAList`, the function stores for each contrast:
+  - `before_log2`: matrix of log2 intensities *before* imputation,  
+  - `after_log2`: matrix *after* imputation,  
+  - `imputed_mask`: logical matrix indicating which entries were imputed.  
+  These diagnostics are written to `DAList$imputation_per_contrast[[contrast]]` and are used by the plotting function below.
+
+- **`store_mask`** (default `TRUE`)  
+  Controls whether the logical mask of imputed entries is stored. This is mainly useful for advanced diagnostics or downstream sensitivity analyses.
+
+:::
+**Important:** `perseus_impute()` assumes that the input data are **log2-transformed**.  
+As a safety check, the function issues a warning if the maximum absolute value in a matrix is very large (e.g., `> 1e3`), which typically indicates raw intensities rather than log2 values.
+:::
+
+---
+
+## Per-contrast behavior with `DAList`
+
+When the input is a `DAList`, `perseus_impute()` behaves as follows:
+
+- If `DAList$data_per_contrast` exists and contains matrices for each contrast, imputation is performed **per contrast** and the imputed matrices are written back to `DAList$data_per_contrast[[contrast]]`.
+- If `data_per_contrast` is absent, the function falls back to imputing the global matrix in `DAList$data`.
+
+In both cases, if `save_before_after = TRUE`, the diagnostic matrices are stored in:
+
+```{r, eval=FALSE}
+DAList$imputation_per_contrast[[contrast]]$before_log2
+DAList$imputation_per_contrast[[contrast]]$after_log2
+DAList$imputation_per_contrast[[contrast]]$imputed_mask
+```
+
+These diagnostics are then visualized using the `write_perseus_imputation_plots()` helper.
+
+***
+
+# Visualizing the imputation (write_perseus_imputation_plots())
+
+To verify that Perseus-style imputation behaved as expected, proteoDA provides
+`write_perseus_imputation_plots()`, which creates faceted histograms comparing observed and imputed log2 intensities for each sample.
+
+```{r perseus_plot_example, eval=FALSE}
+plots <- write_perseus_imputation_plots(
+  DAList     = imputed,
+  out_dir    = "PerseusPlots",
+  contrasts  = NULL,   # or a subset of contrast names
+  samples    = NULL,   # or a subset of sample IDs
+  bins       = 30,
+  facet_ncol = 4,
+  overlay    = TRUE
+)
+
+# List available contrasts for which imputation plots were generated
+names(plots)
+
+# Inspect one contrast interactively
+plots[["M1Y1_vs_Ref"]]
+#or
+plots[[1]] # first contrast
+
+```
+
+For each requested contrast, the function:
+
+1. Retrieves `before_log2` and `after_log2` from  
+   `DAList$imputation_per_contrast[[contrast]]`.
+2. Reshapes them into a long format with indicators for:
+   - sample ID,  
+   - intensity value,  
+   - status (Observed vs Imputed).
+3. Draws histograms per sample, faceted across all samples in the contrast.
+
+## Plot parameters
+
+- **`contrasts`**  
+  Character vector of contrast names to plot. Defaults to all contrasts that have imputation diagnostics.
+
+- **`samples`**  
+  Optional subset of sample columns (names or indices). By default, all samples in the contrast are shown.
+
+- **`bins`** (default `50`)  
+  Number of histogram bins. Larger values give finer resolution but noisier counts.
+
+- **`facet_ncol`** (default `4`)  
+  Number of columns in the facet layout (how many samples per row).
+
+- **`overlay`** (default `TRUE`)  
+  - `TRUE`: observed and imputed values are drawn in the same panel with different fill colors.  
+  - `FALSE`: alternative stacking behaviour (if implemented in `plot_perseus_imputation()`).
+
+- **`out_dir`**, **`width`**, **`height`**, **`dpi`**, **`device`**  
+  Control where the plots are saved and in what format (e.g. `"png"` or `"pdf"`).  
+  Even when writing to disk, the function invisibly returns a list of `ggplot` objects for interactive inspection.
+
+## How to read the plots
+
+In well-behaved imputations:
+
+- The **blue** histogram (Observed) represents the main distribution of log2 intensities (e.g., ~15–30).  
+- The **red** histogram (Imputed) appears as a smaller bump at the lower end of the distribution (e.g., ~10–15), reflecting low-abundance, undetected features.
+- The imputed region should be clearly separated from the central bulk of the observed distribution.  
+  If red and blue overlap heavily, the shift/width parameters may be too conservative.
+
+These diagnostics complement the normalization evaluation plots by confirming that:
+
+- Imputation occurs on **normalized log2 intensities**, and  
+- Missing values are replaced by **plausible low-intensity values** rather than unrealistic or overly influential ones.

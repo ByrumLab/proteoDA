@@ -381,7 +381,7 @@ plot_perseus_imputation <- function(logDat_before,
 #' distribution. Works on a plain log2 matrix/data.frame *or* on a DAList:
 #' - If `DAList$data_per_contrast` exists and is non-empty, imputes each
 #'   contrast's matrix and stores the result in
-#'   `DAList$data_per_contrast[[contrast]]$log2`.
+#'   `DAList$data_per_contrast[[contrast]]`.
 #' - Otherwise, imputes the global `DAList$data` matrix in-place.
 #'
 #' Optionally stores before/after matrices and an imputed mask for diagnostics.
@@ -391,8 +391,11 @@ plot_perseus_imputation <- function(logDat_before,
 #' @param shift   numeric, how far to shift down the mean in SD units (default 1.8)
 #' @param width   numeric, fraction of SD used as imputation SD (default 0.3)
 #' @param robust  logical, use median/MAD (TRUE) or mean/SD (FALSE) per sample
-#' @param min_obs_per_sample integer, minimum non-missing values per sample for
-#'                per-sample stats (default 5). Else fallback to pooled stats.
+#' @param min_obs_per_sample Integer. Minimum number of observed (non-missing)
+#'   log2 values required in a sample before estimating its own mean (mu_j) and
+#'   standard deviation (sd_j) for imputation. If a sample has fewer than this
+#'   many observed values, the function falls back to using the pooled
+#'   distribution across all samples. Default = 5.
 #' @param seed    integer or NULL, set for reproducible draws
 #' @param save_before_after logical, store full before/after matrices and mask
 #'                into the DAList (or return attrs for matrix mode). Default FALSE.
@@ -409,13 +412,19 @@ plot_perseus_imputation <- function(logDat_before,
 #' Missing entries in sample j are drawn from Normal( μ_j - shift*σ_j, (width*σ_j)^2 ).
 #' Features missing in *all* samples remain NA (uninformative).
 #'
+#' This function assumes that the input data are on the **log2** scale. As a
+#' safety check, if the maximum absolute value in a matrix exceeds 1e3, a
+#' warning is issued suggesting that the data may not be log2-transformed.
+#'
 #' @examples
+#' \dontrun{
 #' # Matrix use
-#' # X_imp <- perseus_impute(X, seed=123)
-#' # mask  <- attr(X_imp, "imputed_mask")
+#' X_imp <- perseus_impute(X, seed=123)
+#' mask  <- attr(X_imp, "imputed_mask")
 #'
 #' # DAList use (per-contrast if present)
-#' # results <- perseus_impute(results, save_before_after = TRUE, seed=1)
+#' results <- perseus_impute(results, save_before_after = TRUE, seed=1)
+#' }
 #'
 #' @export
 perseus_impute <- function(x,
@@ -426,6 +435,7 @@ perseus_impute <- function(x,
                            seed = NULL,
                            save_before_after = FALSE,
                            store_mask = TRUE) {
+  
   .perseus_impute_matrix <- function(logDat,
                                      shift, width, robust,
                                      min_obs_per_sample, seed,
@@ -435,12 +445,26 @@ perseus_impute <- function(x,
     }
     X0 <- as.matrix(logDat)
     storage.mode(X0) <- "double"
+    
+    ## ---- NEW: scale sanity check -----------------------------------------
+    max_abs <- suppressWarnings(max(abs(X0), na.rm = TRUE))
+    if (is.finite(max_abs) && max_abs > 1e3) {
+      warning("perseus_impute(): values appear very large (max abs > 1e3). ",
+              "Are you sure these are log2 intensities?")
+    }
+    ## ----------------------------------------------------------------------
+    
     if (!is.null(seed)) set.seed(seed)
     
-    est_loc <- function(v, robust) if (robust) stats::median(v, na.rm=TRUE) else base::mean(v, na.rm=TRUE)
+    est_loc <- function(v, robust) {
+      if (robust) stats::median(v, na.rm=TRUE) else base::mean(v, na.rm=TRUE)
+    }
     est_scale <- function(v, robust) {
-      if (robust) stats::mad(v, center = stats::median(v, na.rm=TRUE), na.rm=TRUE) * 1.4826
-      else stats::sd(v, na.rm=TRUE)
+      if (robust) {
+        stats::mad(v, center = stats::median(v, na.rm=TRUE), na.rm=TRUE) * 1.4826
+      } else {
+        stats::sd(v, na.rm=TRUE)
+      }
     }
     
     x_obs_all <- as.numeric(X0[!is.na(X0)])
@@ -449,8 +473,12 @@ perseus_impute <- function(x,
     if (is.na(pooled_sd) || pooled_sd <= 0) pooled_sd <- 1.0
     
     X1 <- X0
-    imputed_mask <- matrix(FALSE, nrow = nrow(X0), ncol = ncol(X0),
-                           dimnames = dimnames(X0))
+    imputed_mask <- matrix(
+      FALSE,
+      nrow = nrow(X0),
+      ncol = ncol(X0),
+      dimnames = dimnames(X0)
+    )
     
     for (j in seq_len(ncol(X0))) {
       xj <- X1[, j]
@@ -462,10 +490,12 @@ perseus_impute <- function(x,
         mu_j <- est_loc(obs_j, robust)
         sd_j <- est_scale(obs_j, robust)
         if (is.na(sd_j) || sd_j <= 0) {
-          mu_j <- pooled_mu; sd_j <- pooled_sd
+          mu_j <- pooled_mu
+          sd_j <- pooled_sd
         }
       } else {
-        mu_j <- pooled_mu; sd_j <- pooled_sd
+        mu_j <- pooled_mu
+        sd_j <- pooled_sd
       }
       
       mu_imp <- mu_j - shift * sd_j
@@ -493,17 +523,18 @@ perseus_impute <- function(x,
   
   `%||%` <- function(a, b) if (is.null(a)) b else a
   
-  # Matrix path
+  # ---- Matrix path --------------------------------------------------------
   if (is.matrix(x) || is.data.frame(x)) {
-    X1 <- .perseus_impute_matrix(x, shift, width, robust, min_obs_per_sample, seed, store_mask)
-    # If save_before_after in matrix mode, attach "before" too (as attribute) for convenience
+    X1 <- .perseus_impute_matrix(
+      x, shift, width, robust, min_obs_per_sample, seed, store_mask
+    )
     if (save_before_after) {
       attr(X1, "before_log2") <- as.matrix(x)
     }
     return(X1)
   }
   
-  # DAList path
+  # ---- DAList path --------------------------------------------------------
   if (is.list(x) && ("data" %in% names(x) || "data_per_contrast" %in% names(x))) {
     has_dpc <- !is.null(x$data_per_contrast) && length(x$data_per_contrast) > 0
     
@@ -514,17 +545,17 @@ perseus_impute <- function(x,
       for (contrast in names(x$data_per_contrast)) {
         dpc <- x$data_per_contrast[[contrast]]
         
-        # Source is the data.frame/matrix already on log2 scale
+        # Source is the matrix already on log2 scale
         if (is.matrix(dpc) || is.data.frame(dpc)) {
-          source_mat <- dpc
+          source_mat  <- dpc
           orig_was_df <- is.data.frame(dpc)
         } else if (is.list(dpc) && "log2" %in% names(dpc) &&
                    (is.matrix(dpc$log2) || is.data.frame(dpc$log2))) {
           # (Support the alternative layout too, just in case)
-          source_mat <- dpc$log2
+          source_mat  <- dpc$log2
           orig_was_df <- is.data.frame(dpc$log2)
         } else if (!is.null(x$data)) {
-          source_mat <- x$data
+          source_mat  <- x$data
           orig_was_df <- is.data.frame(x$data)
         } else {
           stop(sprintf("No usable matrix found for contrast '%s'.", contrast))
@@ -553,30 +584,37 @@ perseus_impute <- function(x,
       x$imputation <- modifyList(
         x$imputation %||% list(),
         list(
-          method = "Perseus",
-          shift = shift, width = width, robust = robust,
-          min_obs_per_sample = min_obs_per_sample, seed = seed,
-          scope = "per-contrast"
+          method             = "Perseus",
+          shift              = shift,
+          width              = width,
+          robust             = robust,
+          min_obs_per_sample = min_obs_per_sample,
+          seed               = seed,
+          scope              = "per-contrast"
         )
       )
       return(x)
     }
     
-    
     # Global fallback
     if (is.null(x$data)) stop("DAList$data not found. Cannot impute.")
     before <- x$data
-    after  <- .perseus_impute_matrix(x$data, shift, width, robust, min_obs_per_sample, seed, store_mask)
+    after  <- .perseus_impute_matrix(
+      x$data, shift, width, robust, min_obs_per_sample, seed, store_mask
+    )
     mask   <- attr(after, "imputed_mask"); attr(after, "imputed_mask") <- NULL
     x$data <- after
     
     x$imputation <- modifyList(
       x$imputation %||% list(),
       list(
-        method = "Perseus",
-        shift = shift, width = width, robust = robust,
-        min_obs_per_sample = min_obs_per_sample, seed = seed,
-        scope = "global"
+        method             = "Perseus",
+        shift              = shift,
+        width              = width,
+        robust             = robust,
+        min_obs_per_sample = min_obs_per_sample,
+        seed               = seed,
+        scope              = "global"
       )
     )
     if (save_before_after) {
@@ -593,20 +631,31 @@ perseus_impute <- function(x,
 #' Write Perseus imputation histograms for each contrast
 #'
 #' Uses DAList$imputation_per_contrast[[contrast]]$before_log2 / after_log2
-#' (created by perseus_impute(..., save_before_after=TRUE)) to generate plots.
+#' (created by \code{perseus_impute(..., save_before_after = TRUE)}) to generate
+#' diagnostic plots for each contrast.
 #'
-#' @param DAList       a DAList with imputation_per_contrast diagnostics
-#' @param out_dir      directory to save plots (created if missing). If NULL, don't save.
-#' @param contrasts    character vector of contrast names to plot; default = all available
-#' @param samples      subset of sample columns to plot (names or indices); default all
-#' @param bins         number of histogram bins
-#' @param facet_ncol   number of columns in facet layout
-#' @param overlay      TRUE = overlay observed+imputed; FALSE = stacked
-#' @param width,height plot size (inches) for saving
-#' @param dpi          dpi for saving
-#' @param device       "png", "pdf", etc. Passed to ggsave
+#' Each plot is a faceted histogram per sample, comparing observed vs imputed
+#' log2 intensities. The helper \code{plot_perseus_imputation()} is used
+#' internally.
 #'
-#' @return named list of ggplot objects (invisible if saving only)
+#' @param DAList       a DAList with \code{imputation_per_contrast} diagnostics.
+#' @param out_dir      directory to save plots (created if missing). If NULL, do
+#'                     not save plots to disk.
+#' @param contrasts    character vector of contrast names to plot; default = all
+#'                     available contrasts in \code{imputation_per_contrast}.
+#' @param samples      subset of sample columns to plot (names or indices);
+#'                     default = all samples.
+#' @param bins         number of histogram bins.
+#' @param facet_ncol   number of columns in facet layout.
+#' @param overlay      logical; TRUE = overlay observed & imputed in same panel,
+#'                     FALSE = stacked.
+#' @param width,height plot size (inches) for saving.
+#' @param dpi          dpi for saving.
+#' @param device       graphics device for \code{ggplot2::ggsave}, e.g. "png".
+#'
+#' @return A named list of \code{ggplot} objects (invisible if you only inspect
+#'         the written files).
+#'
 #' @export
 write_perseus_imputation_plots <- function(
     DAList,
@@ -621,9 +670,10 @@ write_perseus_imputation_plots <- function(
     dpi          = 300,
     device       = "png"
 ) {
-  if (is.null(DAList$imputation_per_contrast) || length(DAList$imputation_per_contrast) == 0) {
+  if (is.null(DAList$imputation_per_contrast) ||
+      length(DAList$imputation_per_contrast) == 0) {
     stop("No per-contrast diagnostics found in DAList$imputation_per_contrast. ",
-         "Run perseus_impute(..., save_before_after=TRUE) first.")
+         "Run perseus_impute(..., save_before_after = TRUE) first.")
   }
   
   available <- names(DAList$imputation_per_contrast)
@@ -655,6 +705,7 @@ write_perseus_imputation_plots <- function(
       warning("Contrast '", ct, "' lacks before/after matrices; skipping.")
       next
     }
+    
     p <- plot_perseus_imputation(
       logDat_before = diag$before_log2,
       logDat_after  = diag$after_log2,
@@ -669,11 +720,18 @@ write_perseus_imputation_plots <- function(
     # save if requested
     if (!is.null(out_dir)) {
       safe <- gsub("[^A-Za-z0-9._-]+", "_", ct)
-      fn <- file.path(out_dir, sprintf("perseus_imputation_%s.%s", safe, device))
-      ggplot2::ggsave(filename = fn, plot = p, width = width, height = height, dpi = dpi, device = device)
+      fn   <- file.path(out_dir,
+                        sprintf("perseus_imputation_%s.%s", safe, device))
+      ggplot2::ggsave(
+        filename = fn,
+        plot     = p,
+        width    = width,
+        height   = height,
+        dpi      = dpi,
+        device   = device
+      )
     }
   }
   
-  return(plots)
+  invisible(plots)
 }
-
