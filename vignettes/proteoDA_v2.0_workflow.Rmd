@@ -85,10 +85,11 @@ devtools::install_github("ByrumLab/proteoDA",
 
 # Load Packages and Parameters
 
-```{r load_package}
+```{r load_package, eval=TRUE}
 library(proteoDAstjude)
-library(yaml) # used to generate the PowerPoint summary
+```
 
+```{r}
 ## Locate the Lou 2023 benchmark directory
 
 # 1) Try the installed-package location (works after install/build_vignettes)
@@ -334,7 +335,7 @@ write_norm_report(
 For the vignette, we include two summary figures saved in
 vignettes/images/:
 
-![](images/Lou_proteiNorm_metrics.png){width=70%}
+![](images/Lou_proteiNorm_metrics.png){width=80%}
 
 The top row compares pooled coefficient of variation (PCV), pooled median absolute deviation (PMAD), and pooled estimate of variance (PEV) across methods. Lower values indicate better within-group precision.
 
@@ -354,7 +355,7 @@ loess (cycloess) tends to:
 We also inspect MA plots (mean–log2FC) to check for intensity-dependent
 bias:
 
-![](images/Lou_proteiNorm_MA.png){width=70%}
+![](images/Lou_proteiNorm_MA.png){width=80%}
 
 Each facet shows log2 fold-change vs mean log2 intensity for one normalization method, with smoothing lines overlaid.
 
@@ -366,12 +367,14 @@ Based on these diagnostics, we proceed with cyclic loess for the Lou et al bench
 
 Note: Cyclic loess (limma::normalizeCyclicLoess); if groups supplied, normalize within each group independently; otherwise normalize globally
 
+## Perform normalization
+
 ```{r cyclicbygroup}
 norm <- normalize_data(
   filtered_DALists,
   norm_method   = "cycloess",
-  input_is_log2 = FALSE,                    # set TRUE if your per-contrast data are already log2
-  groups        = filtered_DALists$metadata$group # for cyclic loess only will perform within groups
+  input_is_log2 = FALSE,     # set TRUE if your per-contrast data are already log2
+  groups     = filtered_DALists$metadata$group # for cyclic loess only will perform within groups
 )
 
 # ONLY IF already normalized - copies the DAList first and then adds the norm method tag
@@ -385,21 +388,20 @@ norm <- normalize_data(
 
 ***
 
-# Optional: Perseus-Style Imputation using the normal distribution
+# Perseus-Style Imputation using the normal distribution
 
 `proteoDA` v2.0 now includes the option to impute missing values using the downshifted Gaussian distribution similar to that of the Perseus software by Cox lab. 
 
 **Reference:** Tyanova, Stefka, and Juergen Cox. 2018. “Perseus: A Bioinformatics Platform for Integrative Analysis of Proteomics Data in Cancer Research.” In, 133–48. Springer New York. https://doi.org/10.1007/978-1-4939-7493-1_7. 
 
 ```{r 7_Perseus_imputation}
-
 # Perseus’s normal distribution imputation (downshifted Gaussian on normalized log2)
 set.seed(1)
 imputed <- perseus_impute(
     norm,
     shift = 1.8,
     width = 0.3,
-    robust = TRUE,             # logical, use median/MAD (TRUE) or mean/SD (FALSE) per sample
+    robust = TRUE,       # logical, use median/MAD (TRUE) or mean/SD (FALSE) per sample
     save_before_after = TRUE,  # used to generate histogram figure
     seed = 1
 )
@@ -419,7 +421,6 @@ plots <- write_perseus_imputation_plots(
 
 # To preview one plot in an interactive R session:
 # print(plots[["YOUR_CONTRAST_NAME"]])
-
 # List available contrasts for which imputation plots were generated
 names(plots)
 ```
@@ -465,7 +466,7 @@ In the diagnostic plot:
 
 - Samples with more missingness show slightly larger red regions, as expected.
 
-Why this diagnostic matters
+Why this diagnostic matters?
 
 This visualization verifies that:
 
@@ -492,7 +493,7 @@ pval_thresh     = p.val,
 lfc_thresh      = logFC,
 adj_method      = "BH",
 binsize         = bin_size,
-plot_movingSD   = TRUE,
+plot_movingSD   = FALSE,
 contrasts_file  = contrasts
 )
 
@@ -534,6 +535,7 @@ summary_imp
 >
 > Comparing `summary_no_imp` and `summary_imp` lets you see how Perseus imputation affects sensitivity and the number of called hits.
 
+***
 
 # Build Statlists, Write Tables, and generate plots
 
@@ -620,27 +622,68 @@ write_limma_plots(
 
 ```
 
+## ✅ Volcano Plot (Base R + ggplot2 only)
 
-```{r example_volcano, eval=TRUE}
-# Example: plot one contrast volcano in the vignette
-example_contrast <- names(results$results)[1]
-example_tab <- results$results[[example_contrast]]
+Red = up-regulated, Blue = down-regulated, Grey = not significant
 
+```{r volcano_colored_no_tidyverse, message=FALSE, warning=FALSE}
 library(ggplot2)
-ggplot(example_tab, aes(x = logFC, y = -log10(P.Value))) +
-  geom_point(alpha = 0.5) +
-  geom_vline(xintercept = c(-logFC, logFC), linetype = "dashed") +
+
+logFC_thresh = 1
+# Pick one contrast for demonstration
+example_contrast <- names(results$results)[1]
+tab <- results$results[[example_contrast]]
+
+# Create a "status" classification using base R
+status <- rep("NS", nrow(tab))
+
+# Up-regulated: significant & log2FC >= threshold
+status[ tab$P.Value < p.val & tab$logFC >=  logFC_thresh ] <- "Up"
+
+# Down-regulated: significant & log2FC <= –threshold
+status[ tab$P.Value < p.val & tab$logFC <= -logFC_thresh ] <- "Down"
+
+# Add status column to table
+tab$status <- factor(status, levels = c("NS", "Up", "Down"))
+
+# Define colors
+volcano_colors <- c(
+  "NS"   = "grey60",
+  "Up"   = "red",
+  "Down" = "blue"
+)
+
+ggplot(tab, aes(x = logFC, y = -log10(P.Value), color = status)) +
+  geom_point(alpha = 0.6, size = 1.5) +
+  scale_color_manual(values = volcano_colors) +
+  geom_vline(xintercept = c(-logFC_thresh, logFC_thresh), linetype = "dashed") +
   geom_hline(yintercept = -log10(p.val), linetype = "dashed") +
-  ggtitle(paste("Volcano plot:", example_contrast))
+  labs(
+    title = paste("Volcano plot:", example_contrast),
+    x     = "log2 fold-change",
+    y     = "-log10(p-value)",
+    color = "Status"
+  ) +
+  theme_bw()
 ```
 
-> This volcano plot shows the raw log2 fold-change vs. –log10 p-value for a single contrast.  
+### 🎨 Interpretation of the colors
+
+| Color | Meaning |
+|-------|---------|
+| **Red** | Up-regulated proteins: log2FC ≥ threshold **and** P.Value < threshold |
+| **Blue** | Down-regulated proteins: log2FC ≤ –threshold **and** P.Value < threshold |
+| **Grey** | Non-significant proteins |
+
+This matches classic volcano-plot conventions and is consistent with DIANN, Perseus, and most differential abundance software.
+
+
+> This volcano plot shows the log2 fold-change vs. –log10 p-value for a single contrast.  
 > The dashed vertical lines indicate the log2FC threshold (`±logFC`), and the dashed horizontal line indicates the p-value threshold (`p.val`).  
 > Significant proteins typically occupy the upper left and upper right quadrants.  
 > For the Lou benchmark, the 2-fold and 3-fold contrasts should show clear shifts of spiked-in proteins into the upper right quadrant.
 
-(You can leave this `eval=FALSE` initially; when debugging locally, turn it on.)
-
+*** 
 
 You’ve completed the **proteoDA v2.0** workflow!
 
