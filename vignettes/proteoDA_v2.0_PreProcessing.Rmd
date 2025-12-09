@@ -36,7 +36,11 @@ This vignette focuses on preprocessing functions that operate on a `DAList`:
 - Filtering proteins using missingness patterns across groups
 - Filtering proteins per contrast using a contrasts file
 
-Normalization, imputation, and limma designs/statistical thresholds are covered in separate vignettes.
+Normalization, imputation, and limma designs/statistical thresholds are covered in separate vignettes:
+
+- **Overall workflow:** `vignette("proteoDA_v2.0_workflow", package = "proteoDAstjude")`
+- **Normalization and imputation:** `vignette("proteoDA_v2.0_Norm_Impute", package = "proteoDAstjude")`
+- **Limma designs and statistical thresholds:** `vignette("proteoDA_v2.0_design", package = "proteoDAstjude")`
 
 Typical `proteoDA` preprocessing flow:
 
@@ -45,7 +49,9 @@ Typical `proteoDA` preprocessing flow:
 3. Optional sample-level and annotation-based filtering (`filter_samples()`, `filter_proteins_by_annotation()`)
 4. Protein-level missingness filtering (`filter_proteins_by_group()` or `filter_proteins_by_proportion()`)
 5. Optional contrast-specific filtering (`filter_proteins_per_contrast()`)
-6. Normalize / impute → fit limma models
+6. Normalize / impute → fit limma models 
+ See the normalization vignette for details on available normalization strategies and diagnostics:
+ `vignette("proteoDA_v2.0_Norm_Impute", package = "proteoDAstjude")`
 7. Write tables and plots → `write_limma_tables()` and `write_limma_plots()`
 
 ***
@@ -653,6 +659,13 @@ A typical (recommended) order:
 5. Normalization (see normalization vignette)
 6. Imputation (if desired, after normalization)
 7. Fit limma models (see design/statistics vignettes)
+
+See the normalization vignette for details on available normalization strategies and diagnostics:
+`vignette("proteoDA_v2.0_Norm_Impute", package = "proteoDAstjude")`
+
+The choice of limma design and contrasts is described in more detail in:
+`vignette("proteoDA_v2.0_design", package = "proteoDAstjude")`
+
 
 Consistency is key: once you decide on a pipeline, keep the same sequence for all datasets and document thresholds in the project reports.
 
