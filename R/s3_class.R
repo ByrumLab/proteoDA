@@ -359,7 +359,8 @@ validate_DAList <- function(x) {
           cli::cli_warn("Results names do not match design/contrast terms and lack usable tags: {still_bad}. Proceeding.")
         }
       } else {
-        cli::cli_warn("Results names differ from expected design/contrast terms; proceeding with arbitrary labels.")
+        #cli::cli_warn("Results names differ from expected design/contrast terms; proceeding with arbitrary labels.")
+        cli::cli_inform("Results names differ from expected design/contrast terms; proceeding with arbitrary labels.")
       }
     }
     

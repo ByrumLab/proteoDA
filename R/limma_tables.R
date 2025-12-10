@@ -1,3 +1,18 @@
+## ------------------------------------------------------------------
+## Default columns and filtering thresholds for limma tables / Excel
+## ------------------------------------------------------------------
+
+# Columns to use in the main DA table sheets (if present in results/annotation)
+DA_table_cols <- c("uniprot_id","Accession.Number","Protein.Description")  # DIANN
+
+# Columns that are purely statistical results (subset of above)
+stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSD", "logFC_z_scores", "sig.PVal", "sig.FDR")
+
+# Default filter thresholds used for the “filter info” summary in Excel
+filt_min_reps   <- NA_integer_
+filt_min_groups <- NA_integer_
+
+
 #' Summarize the number of DA proteins in a contrast
 #'
 #' Internal function to summarize the number of DE genes/proteins for a given
@@ -43,7 +58,7 @@ write_per_contrast_csvs <- function(annotation_df,
                                     annotation_cols = NULL,
                                     metadata = NULL,
                                     group_col = "group",
-                                    stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores"),
+                                    stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSD", "logFC_z_scores"),
                                     per_contrast_tags = NULL) {
   `%||%` <- function(x, y) if (is.null(x)) y else x
   
@@ -111,15 +126,38 @@ write_per_contrast_csvs <- function(annotation_df,
     
     # Subset stat results to selected columns
     contrast_stats <- results_statlist[[contrast]]
+    # if (!is.null(stat_cols)) {
+    #   available <- colnames(contrast_stats)
+    #   keep_cols <- intersect(stat_cols, available)
+    #   missing <- setdiff(stat_cols, available)
+    #   if (length(missing) > 0) {
+    #     warning(paste("Missing columns in contrast", contrast, ":", paste(missing, collapse = ", ")))
+    #   }
+    #   contrast_stats <- contrast_stats[, keep_cols, drop = FALSE]
+    # }
     if (!is.null(stat_cols)) {
       available <- colnames(contrast_stats)
       keep_cols <- intersect(stat_cols, available)
-      missing <- setdiff(stat_cols, available)
+      missing   <- setdiff(stat_cols, available)
+      
       if (length(missing) > 0) {
-        warning(paste("Missing columns in contrast", contrast, ":", paste(missing, collapse = ", ")))
+        # These are optional / tag-derived and may not always be present
+        optional_cols   <- c("movingSD", "movingSDs", "logFC_z_scores")
+        non_optional    <- setdiff(missing, optional_cols)
+        
+        # Only warn if something *other* than the optional columns is missing
+        if (length(non_optional) > 0) {
+          cli::cli_inform(c(
+            "Some requested statistic columns were not found and will be skipped.",
+            "x" = "{.val {non_optional}}",
+            "i" = "Optional columns {.val {intersect(missing, optional_cols)}} were also absent."
+          ))
+        }
       }
+      
       contrast_stats <- contrast_stats[, keep_cols, drop = FALSE]
     }
+    
     
     cbind(
       annotation_df[rownames(data), , drop = FALSE],
@@ -275,7 +313,9 @@ build_statlist <- function(DAList,
 norm.methods <- c("Log2" = "log2", "Median" = "median", "Quantile" = "quantile", "DIANN" = "dian_quan")
 
 write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
-                              pval_thresh, lfc_thresh, add_filter, color_palette,
+                              pval_thresh, lfc_thresh, add_filter, 
+                              color_palette = c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
+                                "#0072B2", "#D55E00", "#CC79A7", "#999999"),
                               annot_cols = NULL) {
   # [Full body remains unchanged — from your original version]
   # See previous uploads for the exact function implementation
@@ -399,15 +439,31 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   # 
   
   # Subset and rename for hyperlinks 
+  # if (!is.null(annot_cols)) {
+  #   missing_cols <- setdiff(annot_cols, colnames(annotation))
+  #   if (length(missing_cols) > 0) {
+  #     stop(paste("The following annotation columns were not found:", paste(missing_cols, collapse = ", ")))
+  #   }
+  #   annot <- annotation[row_order, annot_cols, drop = FALSE]
+  # } else {
+  #   annot <- annotation[row_order, , drop = FALSE]
+  # }
+  
+  # Subset and rename for hyperlinks 
   if (!is.null(annot_cols)) {
     missing_cols <- setdiff(annot_cols, colnames(annotation))
     if (length(missing_cols) > 0) {
-      stop(paste("The following annotation columns were not found:", paste(missing_cols, collapse = ", ")))
+      cli::cli_inform(c(
+        "Some requested annotation columns were not found and will be skipped.",
+        "x" = "{.val {missing_cols}}"
+      ))
     }
-    annot <- annotation[row_order, annot_cols, drop = FALSE]
+    keep_cols <- intersect(annot_cols, colnames(annotation))
+    annot <- annotation[row_order, keep_cols, drop = FALSE]
   } else {
     annot <- annotation[row_order, , drop = FALSE]
   }
+  
   
   # Rename columns
   newNames <- stringr::str_replace_all(colnames(annot), pattern = "uniprot_id", replacement = "UniProt ID") |>
