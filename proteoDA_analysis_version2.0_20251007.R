@@ -9,7 +9,10 @@ library(stringr)
 # for testing locally 
 devtools::load_all()
 devtools::build_vignettes()
+devtools::document()  # rebuild docs
 devtools::check(document = FALSE) # checks vignettes for R CMD check
+# document = FALSE tells devtools::check() to use the exisiting .Rd, NAMESPACE, do not re-run roxygen
+
 #######
 # load project parameters 
 source("proteoDA_params.R")

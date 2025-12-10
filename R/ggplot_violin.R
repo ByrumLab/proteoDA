@@ -6,26 +6,26 @@
 #' @param title A character string specifying the plot title. Defaults to an empty string.
 #' @param text.sizes A numeric vector of length 4 specifying font sizes for title, x-axis, y-axis, and legend text, respectively.
 #' @param legend.position A character string specifying legend position (e.g., "right", "left", "none"). Defaults to "right".
-#' @param color_palette A character vector specifying a colorblind-friendly palette. If NULL, a default base palette is used based on RColorBrewer
+#' @param color_palette A character vector specifying a colorblind-friendly palette. If NULL, a default base palette is used based on RColorBrewer.
+#'
 #' @return A ggplot object representing the violin plot.
+#'
 #' @import ggplot2 testthat utils
-#' 
+#'
 #' @examples
-#' \dontrun {
-#' # example of violin plot colored by groups 
-#' violin1 <- qc_violin(data            = results$data,
-#'                      groups          = results$metadata$group,
-#'                      sample_labels   = results$metadata$sample,
-#'                      title           = "",
-#'                      text.sizes      = c(12, 10, 10, 10),
-#'                      legend.position = "right",
-#'                      color_palette   = c("#66c2A5","#8DA0CB", "#FC8D62")  
-#'                      )
-#' 
-#' 
+#' \dontrun{
+#'   # Example of violin plot colored by groups 
+#'   violin1 <- qc_violin(
+#'     data            = results$data,
+#'     groups          = results$metadata$group,
+#'     sample_labels   = results$metadata$sample,
+#'     title           = "",
+#'     text.sizes      = c(12, 10, 10, 10),
+#'     legend.position = "right",
+#'     color_palette   = c("#66c2A5", "#8DA0CB", "#FC8D62")
+#'   )
 #' }
-#' 
-#' 
+#'
 #' @export
 qc_violin <- function(data,
                       groups = NULL,

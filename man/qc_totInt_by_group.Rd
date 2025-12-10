@@ -46,24 +46,28 @@ This function creates barplots showing total intensity values for samples, group
 It includes an optional percentile threshold to flag potential outliers and uses a color-blind friendly palette.
 }
 \examples{
-# example code
+\dontrun{
+  # Example of barplot colored by group
+  barplot1 <- qc_totInt_by_group(
+    DAList          = results,
+    label_column    = "sample",
+    grouping_column = "group",
+    percentile      = 0,
+    colors          = NULL,  # or c("#E69F00", "#56B4E9", "#009E73")
+    nrow            = NULL,
+    ncol            = NULL,
+    legend.position = "right",
+    plot_size       = c(12, 6),
+    save_path       = "Intensity_barplot.png"
+  )
 
-\dontrun {
-
-# example of barplot colored by group
-barplot1 <- qc_totInt_by_group(DAList = results,
-                            label_column = "sample",
-                            grouping_column = "group",
-                            percentile = 0,
-                            colors = NULL,   # or c("#E69F00", "#56B4E9", "#009E73")
-                            nrow = NULL,
-                            ncol = NULL,
-                            legend.position = "right",
-                            plot_size = c(12, 6),
-                            save_path = "Intensity_barplot.png")
-# save plot 
-ggplot2::ggsave("total_intensity_plot.png", result$plot, width = result@plot_size[1], height= result@plot_size[2])
-
+  # Save plot (example; adjust to match returned object structure)
+  # ggplot2::ggsave(
+  #   "total_intensity_plot.png",
+  #   barplot1$plot,
+  #   width  = barplot1$plot_size[1],
+  #   height = barplot1$plot_size[2]
+  # )
 }
 
 }
