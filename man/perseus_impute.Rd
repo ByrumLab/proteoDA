@@ -25,8 +25,11 @@ or a DAList with \verb{$data} and optionally \verb{$data_per_contrast}.}
 
 \item{robust}{logical, use median/MAD (TRUE) or mean/SD (FALSE) per sample}
 
-\item{min_obs_per_sample}{integer, minimum non-missing values per sample for
-per-sample stats (default 5). Else fallback to pooled stats.}
+\item{min_obs_per_sample}{Integer. Minimum number of observed (non-missing)
+log2 values required in a sample before estimating its own mean (mu_j) and
+standard deviation (sd_j) for imputation. If a sample has fewer than this
+many observed values, the function falls back to using the pooled
+distribution across all samples. Default = 5.}
 
 \item{seed}{integer or NULL, set for reproducible draws}
 
@@ -49,7 +52,7 @@ distribution. Works on a plain log2 matrix/data.frame \emph{or} on a DAList:
 \itemize{
 \item If \code{DAList$data_per_contrast} exists and is non-empty, imputes each
 contrast's matrix and stores the result in
-\code{DAList$data_per_contrast[[contrast]]$log2}.
+\code{DAList$data_per_contrast[[contrast]]}.
 \item Otherwise, imputes the global \code{DAList$data} matrix in-place.
 }
 }
@@ -59,13 +62,19 @@ Optionally stores before/after matrices and an imputed mask for diagnostics.
 For each sample j, let μ_j and σ_j be location and scale of its observed (log2) values.
 Missing entries in sample j are drawn from Normal( μ_j - shift\emph{σ_j, (width}σ_j)^2 ).
 Features missing in \emph{all} samples remain NA (uninformative).
+
+This function assumes that the input data are on the \strong{log2} scale. As a
+safety check, if the maximum absolute value in a matrix exceeds 1e3, a
+warning is issued suggesting that the data may not be log2-transformed.
 }
 \examples{
+\dontrun{
 # Matrix use
-# X_imp <- perseus_impute(X, seed=123)
-# mask  <- attr(X_imp, "imputed_mask")
+X_imp <- perseus_impute(X, seed=123)
+mask  <- attr(X_imp, "imputed_mask")
 
 # DAList use (per-contrast if present)
-# results <- perseus_impute(results, save_before_after = TRUE, seed=1)
+results <- perseus_impute(results, save_before_after = TRUE, seed=1)
+}
 
 }

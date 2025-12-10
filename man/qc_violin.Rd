@@ -27,7 +27,7 @@ qc_violin(
 
 \item{legend.position}{A character string specifying legend position (e.g., "right", "left", "none"). Defaults to "right".}
 
-\item{color_palette}{A character vector specifying a colorblind-friendly palette. If NULL, a default base palette is used based on RColorBrewer}
+\item{color_palette}{A character vector specifying a colorblind-friendly palette. If NULL, a default base palette is used based on RColorBrewer.}
 }
 \value{
 A ggplot object representing the violin plot.
@@ -36,19 +36,17 @@ A ggplot object representing the violin plot.
 Generate a Violin Plot for Intensity Data
 }
 \examples{
-\dontrun {
-# example of violin plot colored by groups 
-violin1 <- qc_violin(data            = results$data,
-                     groups          = results$metadata$group,
-                     sample_labels   = results$metadata$sample,
-                     title           = "",
-                     text.sizes      = c(12, 10, 10, 10),
-                     legend.position = "right",
-                     color_palette   = c("#66c2A5","#8DA0CB", "#FC8D62")  
-                     )
-
-
+\dontrun{
+  # Example of violin plot colored by groups 
+  violin1 <- qc_violin(
+    data            = results$data,
+    groups          = results$metadata$group,
+    sample_labels   = results$metadata$sample,
+    title           = "",
+    text.sizes      = c(12, 10, 10, 10),
+    legend.position = "right",
+    color_palette   = c("#66c2A5", "#8DA0CB", "#FC8D62")
+  )
 }
-
 
 }

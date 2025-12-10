@@ -19,30 +19,41 @@ write_perseus_imputation_plots(
 )
 }
 \arguments{
-\item{DAList}{a DAList with imputation_per_contrast diagnostics}
+\item{DAList}{a DAList with \code{imputation_per_contrast} diagnostics.}
 
-\item{out_dir}{directory to save plots (created if missing). If NULL, don't save.}
+\item{out_dir}{directory to save plots (created if missing). If NULL, do
+not save plots to disk.}
 
-\item{contrasts}{character vector of contrast names to plot; default = all available}
+\item{contrasts}{character vector of contrast names to plot; default = all
+available contrasts in \code{imputation_per_contrast}.}
 
-\item{samples}{subset of sample columns to plot (names or indices); default all}
+\item{samples}{subset of sample columns to plot (names or indices);
+default = all samples.}
 
-\item{bins}{number of histogram bins}
+\item{bins}{number of histogram bins.}
 
-\item{facet_ncol}{number of columns in facet layout}
+\item{facet_ncol}{number of columns in facet layout.}
 
-\item{overlay}{TRUE = overlay observed+imputed; FALSE = stacked}
+\item{overlay}{logical; TRUE = overlay observed & imputed in same panel,
+FALSE = stacked.}
 
-\item{width, height}{plot size (inches) for saving}
+\item{width, height}{plot size (inches) for saving.}
 
-\item{dpi}{dpi for saving}
+\item{dpi}{dpi for saving.}
 
-\item{device}{"png", "pdf", etc. Passed to ggsave}
+\item{device}{graphics device for \code{ggplot2::ggsave}, e.g. "png".}
 }
 \value{
-named list of ggplot objects (invisible if saving only)
+A named list of \code{ggplot} objects (invisible if you only inspect
+the written files).
 }
 \description{
 Uses DAList$imputation_per_contrast[\link{contrast}]$before_log2 / after_log2
-(created by perseus_impute(..., save_before_after=TRUE)) to generate plots.
+(created by \code{perseus_impute(..., save_before_after = TRUE)}) to generate
+diagnostic plots for each contrast.
+}
+\details{
+Each plot is a faceted histogram per sample, comparing observed vs imputed
+log2 intensities. The helper \code{plot_perseus_imputation()} is used
+internally.
 }
