@@ -147,7 +147,7 @@ test_that("align_data_and_metadata errors on duplicate sample IDs (data or metad
     "Duplicate sample IDs in `data`"
   )
   
-  # Duplicate in metadata
+  # Duplicate in metadata (via sample_col, not rownames)
   dat <- data.frame(
     D1 = 1:3,
     D2 = 4:6
@@ -159,7 +159,7 @@ test_that("align_data_and_metadata errors on duplicate sample IDs (data or metad
     group  = c("G",  "G"),
     stringsAsFactors = FALSE
   )
-  rownames(meta_dup) <- meta_dup$sample
+  # NOTE: no custom rownames here; let them be 1, 2
   
   expect_error(
     align_data_and_metadata(
@@ -179,7 +179,7 @@ test_that("sample_col is respected; rownames not required when sample_col provid
   rownames(dat) <- paste0("Prot", 1:3)
   
   meta <- data.frame(
-    sample = c("A2", "A1"),
+    sample = c("A2", "A1"),  # out of order
     group  = c("X",  "X"),
     stringsAsFactors = FALSE
   )
@@ -193,8 +193,12 @@ test_that("sample_col is respected; rownames not required when sample_col provid
     prefer_group_blocks = FALSE
   )
   
+  # Data and metadata aligned to the data column order
   expect_identical(colnames(out$data), c("A1", "A2"))
-  expect_identical(rownames(out$metadata), c("A1", "A2"))
+  expect_identical(out$metadata$sample, c("A1", "A2"))
+  
+  # Optionally: just ensure metadata has correct number of rows
+  expect_equal(nrow(out$metadata), 2L)
 })
 
 test_that("check_data_metadata_match passes when aligned and fails when not", {

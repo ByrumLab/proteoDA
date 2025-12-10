@@ -45,21 +45,29 @@ test_that("write_limma_plots gives error when there are no results", {
 })
 
 test_that("write_limma_plots checks grouping column", {
-
+  
   input <- readRDS(test_path("fixtures", "final_output_input.rds"))
-
-  # must specify grouping col
-  expect_error(write_limma_plots(input), "cannot be empty")
-
+  
+  # must specify grouping col (NULL / missing)
+  expect_error(
+    write_limma_plots(input),
+    "grouping_column.*cannot be empty"
+  )
+  
   # can't specify more than one
-  expect_error(write_limma_plots(input, grouping_column = c("group", "batch")),
-               "Only specify one")
-
-  # must be present in the data
-  expect_error(write_limma_plots(input, grouping_column = "xxx"),
-               "not found")
-
+  expect_error(
+    write_limma_plots(input, grouping_column = c("group", "batch")),
+    "grouping_column.*must have length 1"
+  )
+  
+  # must be present in the data / samples
+  expect_error(
+    write_limma_plots(input, grouping_column = "xxx"),
+    "Grouping column.*not found in metadata"
+  )
+  
 })
+
 
 test_that("write_limma_plots checks table columns", {
 
@@ -74,56 +82,54 @@ test_that("write_limma_plots checks table columns", {
 })
 
 test_that("write_limma_plots checks title column", {
-
+  
   input <- readRDS(test_path("fixtures", "final_output_input.rds"))
-
+  
   # Must be of length 1
   expect_error(
     write_limma_plots(input,
                       grouping_column = "treatment",
                       title_column = c("xxx", "yyy")),
-    "does not equal 1"
+    "title_column.*must have length 1"
   )
-
-
   # must be present
   expect_error(
     write_limma_plots(input,
                       grouping_column = "treatment",
-                      title_column = c("xxx")),
+                      title_column = "xxx"),
     "not found in annotation"
   )
 })
 
-test_that("write_limma_plots check height and width args", {
+test_that("write_limma_plots checks height and width args", {
   input <- readRDS(test_path("fixtures", "final_output_input.rds"))
-
+  
   expect_error(
     write_limma_plots(input,
                       grouping_column = "treatment",
                       height = "xxx"),
-    "numeric value greater"
+    "height.*must be numeric > 0"
   )
-
+  
   expect_error(
     write_limma_plots(input,
                       grouping_column = "treatment",
                       height = -1),
-    "numeric value greater"
+    "height.*must be numeric > 0"
   )
-
+  
   expect_error(
     write_limma_plots(input,
                       grouping_column = "treatment",
                       width = "xxx"),
-    "numeric value greater"
+    "width.*must be numeric > 0"
   )
-
+  
   expect_error(
     write_limma_plots(input,
                       grouping_column = "treatment",
                       width = -1),
-    "numeric value greater"
+    "width.*must be numeric > 0"
   )
 })
 
