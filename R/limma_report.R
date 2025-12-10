@@ -96,9 +96,9 @@ write_limma_plots <- function(DAList = NULL,
                               width = 1000,
                               control_proteins = NULL,
                               highlight_by = "uniprot_id",
-                              image_formats = c("pdf","png")) {
-
-  # Preserve optional slots
+                              image_formats = c("pdf", "png")) {
+  
+  # Preserve optional slots (so we don't drop them on return)
   optional_slots <- c("filtered_proteins_per_contrast")
   optional_preserved <- DAList[intersect(names(DAList), optional_slots)]
   
@@ -106,57 +106,84 @@ write_limma_plots <- function(DAList = NULL,
   DAList <- validate_DAList(DAList)
   
   if (is.null(DAList$results)) {
-    cli::cli_abort(c("Input DAList does not have results",
-                     "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
+    cli::cli_abort(c(
+      "Input DAList does not have results",
+      "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"
+    ))
   }
   
-  if (is.null(grouping_column)) cli::cli_abort("{.arg grouping_column} cannot be empty")
-  if (length(grouping_column) != 1) cli::cli_abort("{.arg grouping_column} must have length 1")
+  ## ---- Argument checks -----------------------------------------------------
+  
+  # grouping_column
+  if (is.null(grouping_column)) {
+    cli::cli_abort("{.arg grouping_column} cannot be empty")
+  }
+  if (length(grouping_column) != 1) {
+    cli::cli_abort("{.arg grouping_column} must have length 1")
+  }
   if (grouping_column %notin% colnames(DAList$metadata)) {
-    cli::cli_abort(c("Grouping column {.val {grouping_column}} not found in metadata"))
+    cli::cli_abort("Grouping column {.val {grouping_column}} not found in metadata")
   }
   
+  # table_columns must exist in annotation
   if (!all(table_columns %in% colnames(DAList$annotation))) {
     missing_cols <- table_columns[!table_columns %in% colnames(DAList$annotation)]
     cli::cli_abort("Table column(s) {.val {missing_cols}} not found in annotation")
   }
   
+  # title_column: only check arguments & ensure it is included in table_columns.
+  # Do NOT touch `data` or `anno` here.
   if (!is.null(title_column)) {
-    if (length(title_column) != 1) cli::cli_abort("{.arg title_column} must have length 1")
+    if (length(title_column) != 1) {
+      cli::cli_abort("{.arg title_column} must have length 1")
+    }
     if (title_column %notin% colnames(DAList$annotation)) {
       cli::cli_abort("Title column {.val {title_column}} not found in annotation")
     }
-    title_values <- stringr::str_trunc(DAList$annotation[[title_column]], width = 20, side = "right", ellipsis = "...")
+    # Guarantee the title column is also in the interactive table
     table_columns <- unique(c(table_columns, title_column))
   }
   
-  if (!is.numeric(height) || height <= 0) cli::cli_abort("{.arg height} must be numeric > 0")
-  if (!is.numeric(width) || width <= 0) cli::cli_abort("{.arg width} must be numeric > 0")
+  # height / width
+  if (!is.numeric(height) || height <= 0) {
+    cli::cli_abort("{.arg height} must be numeric > 0")
+  }
+  if (!is.numeric(width) || width <= 0) {
+    cli::cli_abort("{.arg width} must be numeric > 0")
+  }
   
+  # output_dir
   if (is.null(output_dir)) {
     output_dir <- getwd()
-    cli::cli_inform("No {.arg output_dir} provided; using current directory: {.path {output_dir}}")
+    cli::cli_inform(
+      "No {.arg output_dir} provided; using current working directory: {.path {output_dir}}"
+    )
   }
-
-  # Set up list of expected files, warn about overwriting if they exist
-  # Will also make checking for their existence later easier
-  # --- Expected output files (ALWAYS define these before checking) ---
-  stopifnot(!is.null(DAList$results), length(DAList$results) > 0)
   
+  ## ---- Expected outputs & overwrite check ----------------------------------
+  
+  stopifnot(!is.null(DAList$results), length(DAList$results) > 0)
   contrast_names <- names(DAList$results)
   
-  # Cartesian build for volcano + MD, raw/adjusted, and both formats
+  # Volcano + MD plots (raw/adjusted) in each format
   expected_xy_plots <- unlist(lapply(image_formats, function(ext) {
     file.path(
       output_dir, "static_plots",
       apply(
-        X = expand.grid(contrast_names, c("volcano", "MD"), c("raw", "adjusted"), paste0("pval.", ext)),
-        MARGIN = 1, FUN = paste, collapse = "-"
+        X = expand.grid(
+          contrast_names,
+          c("volcano", "MD"),
+          c("raw", "adjusted"),
+          paste0("pval.", ext)
+        ),
+        MARGIN = 1,
+        FUN = paste,
+        collapse = "-"
       )
     )
   }))
   
-  # p-value histograms (one per contrast) in both formats
+  # p-value histograms
   expected_histograms_plots <- unlist(lapply(image_formats, function(ext) {
     file.path(
       output_dir, "static_plots",
@@ -164,14 +191,18 @@ write_limma_plots <- function(DAList = NULL,
     )
   }))
   
+  # HTML interactive reports
   expected_reports <- file.path(
     output_dir,
     paste0(contrast_names, "_DA_report.html")
   )
   
-  expected_results <- unique(c(expected_histograms_plots, expected_xy_plots, expected_reports))
+  expected_results <- unique(c(
+    expected_histograms_plots,
+    expected_xy_plots,
+    expected_reports
+  ))
   
-  # --- Overwrite check ---
   existing <- file.exists(expected_results)
   if (any(existing, na.rm = TRUE)) {
     if (!overwrite) {
@@ -181,104 +212,100 @@ write_limma_plots <- function(DAList = NULL,
         "i" = "Change {.arg output_dir} or set {.arg overwrite} to {.val TRUE}"
       ))
     } else {
-      cli::cli_inform("Results files already exist, and {.arg overwrite} == {.val {overwrite}}. Overwriting results files.")
+      cli::cli_inform(
+        "Results files already exist, and {.arg overwrite} == {.val {overwrite}}. Overwriting results files."
+      )
       unlink(expected_results[existing], recursive = FALSE, expand = FALSE)
     }
   }
   
+  ## ---- Working directory + template setup ----------------------------------
   
-  # Capture original wd, and setup function to return to original wd
-  # upon error or function exit if it has changed
   old_wd <- getwd()
-  on.exit(expr = {
-    if (getwd() != old_wd) {
-      cli::cli_inform("Returning working directory to {.path {old_wd}}")
-      setwd(old_wd)
-    }
-  }, add = T)
-
-  # create output directories if they don't exist already
+  on.exit(
+    expr = {
+      if (getwd() != old_wd) {
+        cli::cli_inform("Returning working directory to {.path {old_wd}}")
+        setwd(old_wd)
+      }
+    },
+    add = TRUE
+  )
+  
+  # Ensure output/static_plots dirs exist
   if (!dir.exists(file.path(output_dir, "static_plots"))) {
-    dir.create(file.path(output_dir, "static_plots"), recursive = T)
+    dir.create(file.path(output_dir, "static_plots"), recursive = TRUE)
   }
-
-  # If output directory isn't current wd, change wd so we can copy
-  # files into the right spot.
+  
+  # Change wd if output_dir is different
   if (output_dir != old_wd) {
     cli::cli_inform("Setting working directory to output directory:")
     cli::cli_inform("{.path {file.path(old_wd, output_dir)}}")
     setwd(output_dir)
   }
-
   
-  # Copy templates over
-  # Sneak a little flag in here to use the proteoDAuams package
-  # when this function is being called for internal UAMS use
-  # Internal UAMS use includes a flag
-   if (!is.null(DAList$tags$uams_internal)) {
-     template_package <- "proteoDAuams" #nocov
-   } else {
-     template_package <- "proteoDAstjude"
-   }
-
-  file.copy(from = system.file("report_templates/limma_report_per_contrast.Rmd",
-                               package = template_package),
-            to = "report_template.Rmd", overwrite = T)
-
+  # Choose template package (uams_internal flag) and copy Rmd
+  if (!is.null(DAList$tags$uams_internal)) {
+    template_package <- "proteoDAuams" # nocov
+  } else {
+    template_package <- "proteoDAstjude"
+  }
   
-  # once we create the files, ensure they're deleted if there's an error below
+  file.copy(
+    from = system.file("report_templates/limma_report_per_contrast.Rmd",
+                       package = template_package),
+    to   = "report_template.Rmd",
+    overwrite = TRUE
+  )
+  template_file <- "report_template.Rmd"
+  
+  # Clean up temp files on exit
   on.exit(
     expr = {
       cli::cli_inform("Removing temporary files from {.path {output_dir}}")
-      unlink(c("CPM_Hz.png", "report_template.Rmd", tmp_subdir), recursive = T, expand = F)
+      unlink(c("CPM_Hz.png", "report_template.Rmd", tmp_subdir),
+             recursive = TRUE, expand = FALSE)
     },
-    add = T,
-    after = F
+    add = TRUE,
+    after = FALSE
   )
-
-  # Prep to loop over contrasts
-  contrast_count <- 1
-  num_contrasts <- length(names(DAList$results))
-
-  ##########
-  # fix anno to match annotation_per_contrast
   
-  # Prep annotation data, which is the same across contrasts
+  ## ---- Shared annotation prep ----------------------------------------------
+  
   shared_anno <- DAList$annotation
   
-  # deal with issue of colnames that may be incompatible with
-  # our Javascript
+  # Deal with dots in table column names (JS compatibility)
   if (any(stringr::str_detect(table_columns, "\\."))) {
-    # If any of the column names in the table columns have periods
-    # the javascript will be mad. Replace with underscores.
     tbl_cols <- which(colnames(shared_anno) %in% table_columns)
-    colnames(shared_anno)[tbl_cols] <- stringr::str_replace_all(colnames(shared_anno)[tbl_cols],
-                                                                "\\.",
-                                                                "_")
-    internal_table_columns <- stringr::str_replace_all(table_columns,
-                                                       "\\.",
-                                                       "_")
-  } else { # If no periods, can just use the provided table columns internally
+    colnames(shared_anno)[tbl_cols] <- stringr::str_replace_all(
+      colnames(shared_anno)[tbl_cols],
+      "\\.",
+      "_"
+    )
+    internal_table_columns <- stringr::str_replace_all(table_columns, "\\.", "_")
+  } else {
     internal_table_columns <- table_columns
   }
-
-
-  # Loop over contrasts, making static plots and reports for each
-  for (contrast in names(DAList$results)) {
-
-    # Prep data
+  
+  ## ---- Loop over contrasts -------------------------------------------------
+  
+  contrast_count <- 1
+  num_contrasts <- length(contrast_names)
+  
+  for (contrast in contrast_names) {
+    
+    # Per-contrast results
     data <- prep_plot_model_data(DAList$results, contrast)
     rownames(data) <- rownames(DAList$results[[contrast]])
     
-
-    cols_to_display <- c(internal_table_columns, "average_intensity", "logFC", "p", "adjusted_p")
-
-    # counts <- DAList$data[rownames(data), , drop = F]
-    # counts[which(is.na(counts))] <- -9 # reassign missing to -9, so we can filter out later when plotting in Vega
-    # anno <- shared_anno[rownames(data), , drop = F] # double-check/ensure that annotation data are in the right order
-
-    # Get per-contrast data and annotation from new slots if available
-    if (!is.null(DAList$data_per_contrast) && contrast %in% names(DAList$data_per_contrast)) {
+    cols_to_display <- c(
+      internal_table_columns,
+      "average_intensity", "logFC", "p", "adjusted_p"
+    )
+    
+    # Use per-contrast filtered data if available
+    if (!is.null(DAList$data_per_contrast) &&
+        contrast %in% names(DAList$data_per_contrast)) {
       counts <- DAList$data_per_contrast[[contrast]]
       groups <- DAList$metadata[colnames(counts), grouping_column, drop = TRUE]
     } else {
@@ -286,173 +313,190 @@ write_limma_plots <- function(DAList = NULL,
       groups <- DAList$metadata[[grouping_column]]
     }
     
-    # Ensure counts and data have matching and aligned rownames
+    # Align counts rows with data rows
     counts <- counts[rownames(data), , drop = FALSE]
-   # counts[which(is.na(counts))] <- -9
     counts[is.na(counts)] <- -9
     
-  #  stopifnot(all(rownames(counts) == rownames(data)))
-    
-    
-    if (!is.null(DAList$annotation_per_contrast) && contrast %in% names(DAList$annotation_per_contrast)) {
+    # Annotation: per-contrast if present, else shared
+    if (!is.null(DAList$annotation_per_contrast) &&
+        contrast %in% names(DAList$annotation_per_contrast)) {
       anno <- DAList$annotation_per_contrast[[contrast]]
     } else {
       anno <- DAList$annotation[rownames(data), , drop = FALSE]
     }
     
-    # Sanitize colnames in per-contrast annotation for JS compatibility
+    # Sanitize per-contrast annotation colnames (dots -> underscores)
     if (any(stringr::str_detect(colnames(anno), "\\."))) {
       colnames(anno) <- stringr::str_replace_all(colnames(anno), "\\.", "_")
     }
     
-    
-    # Ensure alignment of annotation
+    # Ensure row alignment
     anno <- anno[rownames(data), , drop = FALSE]
     
-    # Add the non log-10 p values to the annotation data, for use
-    # in  the table
-    anno$p <- round(data$P.Value, digits = 4)
-    anno$`adjusted_p` <- round(data$adj.P.Val, digits = 4)
-    anno$logFC <- data$logFC
-    anno$movingSD <- data$movingSD
-    anno$`logFC_zscore` <- data$logFC_z_scores
-    anno$`average_intensity` <- data$average_intensity
-
-    # 
-    # # Set up column of titles to be used in the vega abundance plot
-      # if (!is.null(title_column)) {
-      #   data$internal_title_column <- title_values
-      # } else {
-      #   data$internal_title_column <- rownames(data)
-      # }
+    # Add p, adjusted_p, etc. for table/tooltip use
+    anno$p                 <- round(data$P.Value,    digits = 4)
+    anno$adjusted_p        <- round(data$adj.P.Val,  digits = 4)
+    anno$logFC             <- data$logFC
+    anno$movingSD          <- data$movingSD
+    anno$logFC_zscore      <- data$logFC_z_scores
+    anno$average_intensity <- data$average_intensity
+    
+    # ---- Title column per contrast (now that `anno` & `data` exist) ----
     if (!is.null(title_column)) {
-      # pull titles from the per-contrast annotation and align
-      if (title_column %in% colnames(anno)) {
-        aligned_titles <- anno[rownames(data), title_column, drop = TRUE]
-        data$internal_title_column <- stringr::str_trunc(aligned_titles, width = 20, side = "right", ellipsis = "...")
+      internal_title_col <- stringr::str_replace_all(title_column, "\\.", "_")
+      if (internal_title_col %in% colnames(anno)) {
+        aligned_titles <- anno[rownames(data), internal_title_col, drop = TRUE]
+        data$internal_title_column <- stringr::str_trunc(
+          aligned_titles,
+          width   = 20,
+          side    = "right",
+          ellipsis = "..."
+        )
       } else {
-        stop(glue::glue("title_column '{title_column}' not found in annotation for contrast '{contrast}'"))
+        cli::cli_abort(
+          "title_column {.val {title_column}} not found in annotation for contrast {.val {contrast}}"
+        )
       }
     } else {
       data$internal_title_column <- rownames(data)
     }
     
-    cli::cli_inform("Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}")
-    # make and save static plots
-  
-    # make and save static plots
-    # dpi = 300 only for PNG; ignored for PDF.
-    # bg = "white" ensures non-transparent PNGs for consistent rendering (useful if these go into PowerPoint/Docs).
+    cli::cli_inform(
+      "Writing report for contrast {contrast_count} of {num_contrasts}: {.val {contrast}}"
+    )
+    
+    ## ---- Static plots: volcano + MD ----------------------------------------
+    
     for (type in c("raw", "adjusted")) {
       volcano <- static_volcano_plot(
         data,
-        lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
+        lfc_thresh  = DAList$tags$DA_criteria$lfc_thresh,
         pval_thresh = DAList$tags$DA_criteria$pval_thresh,
-        contrast = contrast, pval_type = type,
+        contrast    = contrast,
+        pval_type   = type,
         control_proteins = control_proteins,
-        anno = anno,
+        anno        = anno,
         highlight_by = highlight_by
       )
       
       MD <- static_MD_plot(
         data,
         lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
-        contrast = contrast, pval_type = type
+        contrast   = contrast,
+        pval_type  = type
       )
       
-      # Save both formats side-by-side
       for (ext in image_formats) {
-        out_volcano <- file.path("static_plots", paste0(paste(contrast, "volcano", type, "pval", sep = "-"), ".", ext))
-        out_md      <- file.path("static_plots", paste0(paste(contrast, "MD",      type, "pval", sep = "-"), ".", ext))
+        out_volcano <- file.path(
+          "static_plots",
+          paste0(paste(contrast, "volcano", type, "pval", sep = "-"), ".", ext)
+        )
+        out_md <- file.path(
+          "static_plots",
+          paste0(paste(contrast, "MD", type, "pval", sep = "-"), ".", ext)
+        )
         
         if (ext == "png") {
-          ggplot2::ggsave(filename = out_volcano, plot = volcano,
-                          height = 6, width = 7, units = "in",
-                          dpi = 300, bg = "white")
-          ggplot2::ggsave(filename = out_md, plot = MD,
-                          height = 6, width = 7, units = "in",
-                          dpi = 300, bg = "white")
+          ggplot2::ggsave(
+            filename = out_volcano, plot = volcano,
+            height = 6, width = 7, units = "in",
+            dpi = 300, bg = "white"
+          )
+          ggplot2::ggsave(
+            filename = out_md, plot = MD,
+            height = 6, width = 7, units = "in",
+            dpi = 300, bg = "white"
+          )
         } else {
-          ggplot2::ggsave(filename = out_volcano, plot = volcano,
-                          height = 6, width = 7, units = "in",
-                          bg = "white")
-          ggplot2::ggsave(filename = out_md, plot = MD,
-                          height = 6, width = 7, units = "in",
-                          bg = "white")
+          ggplot2::ggsave(
+            filename = out_volcano, plot = volcano,
+            height = 6, width = 7, units = "in",
+            bg = "white"
+          )
+          ggplot2::ggsave(
+            filename = out_md, plot = MD,
+            height = 6, width = 7, units = "in",
+            bg = "white"
+          )
         }
       }
       
       rm(volcano, MD)
     }
     
-pval_hist <- static_pval_histogram(data = data, contrast = contrast)
+    ## ---- Static plots: p-value histograms ----------------------------------
+    
+    pval_hist <- static_pval_histogram(data = data, contrast = contrast)
     for (ext in image_formats) {
       out_hist <- file.path("static_plots", paste0(contrast, "-pval-hist.", ext))
       if (ext == "png") {
-        ggplot2::ggsave(filename = out_hist, plot = pval_hist,
-                        height = 6, width = 11, units = "in",
-                        dpi = 300, bg = "white")
+        ggplot2::ggsave(
+          filename = out_hist, plot = pval_hist,
+          height = 6, width = 11, units = "in",
+          dpi = 300, bg = "white"
+        )
       } else {
-        ggplot2::ggsave(filename = out_hist, plot = pval_hist,
-                        height = 6, width = 11, units = "in",
-                        bg = "white")
+        ggplot2::ggsave(
+          filename = out_hist, plot = pval_hist,
+          height = 6, width = 11, units = "in",
+          bg = "white"
+        )
       }
     }
-  
-rm(pval_hist)
+    rm(pval_hist)
     
-    
-
-    # Appease R CMD check
-    # Right now, all the knitr function calls are in my .Rmd templates
-    # so R CMD check thinks I'm importing knitr for no reason.
-    # Making a dummy function call here, might be a better way to get around this
+    # Dummy knitr call to appease R CMD check
     x <- knitr::rand_seed
     rm(x)
-
-    # # make and save report
-    # rmarkdown::render("report_template.Rmd",
-    #                   knit_root_dir = getwd(),
-    #                   intermediates_dir = tmp_subdir,
-    #                   output_file = paste0(contrast, "_DA_report.html"),
-    #                   quiet = T)
     
-   # groups <- DAList$metadata[[grouping_column]]
+    ## ---- Model equation label ----------------------------------------------
     
-   # rmarkdown::render("/Users/sbyrum/Documents/github/proteoDAstjude/inst/report_templates/limma_report_per_contrast.Rmd",
-    rmarkdown::render("report_template.Rmd",
-                      knit_root_dir = getwd(),
-                      intermediates_dir = tmp_subdir,
-                      output_file = paste0(contrast, "_DA_report.html"),
-                      quiet = TRUE)
+    design_label <- NULL
+    if (!is.null(DAList$design_formula)) {
+      design_label <- paste(deparse(DAList$design_formula), collapse = "")
+    } else if (!is.null(DAList$design) && inherits(DAList$design, "formula")) {
+      design_label <- paste(deparse(DAList$design), collapse = "")
+    } else {
+      design_label <- "<design formula not available>"
+    }
+    # Expose to Rmd as `design`
+    design <- design_label
+    
+    ## ---- Render interactive report -----------------------------------------
+    
+    rmarkdown::render(
+      input            = template_file,
+      knit_root_dir    = getwd(),
+      intermediates_dir = tmp_subdir,
+      output_file      = paste0(contrast, "_DA_report.html"),
+      quiet            = TRUE
+    )
     
     contrast_count <- contrast_count + 1
   }
-
-   # Check for all results files
-   if (any(!file.exists(stringr::str_remove(expected_results,
-                                            pattern = paste0("^", output_dir, "/"))))) {
-     failed <- expected_results[!file.exists(stringr::str_remove(expected_results, #nocov start
-                                                                 pattern = paste0("^", output_dir, "/")))]
-     cli::cli_abort(c("Failed to write the following {cli::qty(length(failed))} results file{?s}:",
-                      "!" = "{.path {failed}}")) #nocov end
-   
-   }
-  # log when data_per_contrast[[contrast]] is being used
-  if (!is.null(DAList$data_per_contrast) && contrast %in% names(DAList$data_per_contrast)) {
-    cli::cli_inform("Using filtered data for contrast {.val {contrast}} from {.code data_per_contrast}")
-    counts <- DAList$data_per_contrast[[contrast]]
-  } else {
-    counts <- DAList$data[rownames(data), , drop = FALSE]
+  
+  ## ---- Check all expected files exist --------------------------------------
+  
+  if (any(!file.exists(stringr::str_remove(
+    expected_results,
+    pattern = paste0("^", output_dir, "/")
+  )))) {
+    failed <- expected_results[!file.exists(stringr::str_remove(
+      expected_results,
+      pattern = paste0("^", output_dir, "/")
+    ))]
+    cli::cli_abort(c(
+      "Failed to write the following {cli::qty(length(failed))} results file{?s}:",
+      "!" = "{.path {failed}}"
+    ))
   }
   
-  # If success, return input object
-  # Restore optional slots and return
+  ## ---- Restore optional slots & return -------------------------------------
+  
   DAList[names(optional_preserved)] <- optional_preserved
   class(DAList) <- "DAList"
   invisible(DAList)
 }
-
 
 #' Prepare per-contrast model data for plotting
 #'

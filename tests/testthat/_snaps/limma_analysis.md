@@ -241,7 +241,7 @@
       
       
       attr(,"class")
-      [1] "DAList"
+      [1] "DAList" "list"  
 
 ---
 
@@ -486,7 +486,7 @@
       
       
       attr(,"class")
-      [1] "DAList"
+      [1] "DAList" "list"  
 
 ---
 
@@ -753,7 +753,7 @@
       
       
       attr(,"class")
-      [1] "DAList"
+      [1] "DAList" "list"  
 
 ---
 
@@ -1010,7 +1010,7 @@
       
       
       attr(,"class")
-      [1] "DAList"
+      [1] "DAList" "list"  
 
 # extract_DA_results gives consistent results
 
@@ -1325,7 +1325,7 @@
       
       
       attr(,"class")
-      [1] "DAList"
+      [1] "DAList" "list"  
 
 ---
 
@@ -1607,7 +1607,7 @@
       
       
       attr(,"class")
-      [1] "DAList"
+      [1] "DAList" "list"  
 
 ---
 
@@ -1920,7 +1920,7 @@
       
       
       attr(,"class")
-      [1] "DAList"
+      [1] "DAList" "list"  
 
 ---
 
@@ -2245,5 +2245,5 @@
       
       
       attr(,"class")
-      [1] "DAList"
+      [1] "DAList" "list"  
 

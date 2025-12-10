@@ -7,8 +7,15 @@ output:
     self_contained: true
 ---
 
-```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
-knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, cache = F)
+```{r setup, message=FALSE, warning=FALSE, echo = FALSE, include = FALSE}
+knitr::opts_chunk$set(
+  warning   = FALSE,
+  message   = FALSE,
+  fig.align = "center",
+  echo      = FALSE,
+  cache     = FALSE
+)
+
 ```
 
 ```{css, echo=FALSE}
