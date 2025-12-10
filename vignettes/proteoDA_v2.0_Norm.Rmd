@@ -20,11 +20,6 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-#library(proteoDAstjude)
-#library(limma)
-#library(vsn)
-#library(ggplot2)
-#set.seed(123)
 
 ```
 
@@ -84,7 +79,7 @@ Thus, it is preferable to convert zeros to `NA` before modeling.
 
 `missing_to_zero()` — optional post-analysis conversion. Used if a downstream tool requires a fully numeric matrix, such as PCA. 
 
-```{r}
+```{r load_raw}
 library(proteoDAstjude)
 ## Locate the Lou 2023 benchmark directory
 # 1) Try the installed-package location (works after install/build_vignettes)
@@ -108,18 +103,6 @@ stopifnot(dir.exists(bench_dir))
 raw_file <- file.path(bench_dir,"raw.rds")
 DAList_raw <- readRDS(raw_file)
 str(DAList_raw)
-```
-
-```{r load_raw, message=FALSE, eval=FALSE, echo=FALSE}
-#inst/extdata/raw.rds
-#raw_file <- system.file("extdata", "raw.rds", package = "proteoDAstjude")
-raw_file <- "/Users/sbyrum/Documents/github/proteoDAstjude/inst/extdata/lou2023_benchmark/raw.rds"
-#raw_file <- "P:/projects/CPM_publications/03_proteoDA2_Steph/code/inst/extdata/raw.rds"
-DAList_raw <- readRDS(raw_file)
-
-str(DAList_raw)
-
-
 ```
 
 ```{r zero_to_missing_example}
