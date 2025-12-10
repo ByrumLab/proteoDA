@@ -143,36 +143,47 @@ filter_proteins_by_group <- function(DAList,
                                      min_reps = NULL,
                                      min_groups = NULL,
                                      grouping_column = "group") {
-
-  validate_DAList(DAList)
-
+  
+  # First, make sure metadata exists (so validate_DAList doesn't explode)
   if (is.null(DAList$metadata)) {
-    cli::cli_abort(c("The {.arg DAList} object must include metadata to filter proteins by group"))
+    cli::cli_abort(c(
+      "The {.arg DAList} object must include metadata to filter proteins by group"
+    ))
   }
-
+  
+  # Now run the full structural validation
+  validate_DAList(DAList)
+  
   # Make sure the group column is present in the metadata
   if (grouping_column %notin% colnames(DAList$metadata)) {
-    cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata slot of {.arg DAList}"))
+    cli::cli_abort(c(
+      "Column {.arg {grouping_column}} not found in metadata slot of {.arg DAList}"
+    ))
   }
+  
   # Make sure that min_reps and min_groups are specified, no more default values.
   if (is.null(min_reps)) {
-    cli::cli_abort(c("You must specify a value for {.arg min_reps}",
-                     "i" = "A good rule of thumb is to use 2/3 of the size of the sample group"))
+    cli::cli_abort(c(
+      "You must specify a value for {.arg min_reps}",
+      "i" = "A good rule of thumb is to use 2/3 of the size of the sample group"
+    ))
   }
   if (is.null(min_groups)) {
-    cli::cli_abort(c("You must specify a value for {.arg min_groups}",
-                     "i" = "A good rule of thumb is that this should be at least 1",
-                     "i" = "such that proteins must have the minimum number of replicates in at least one group to be analyzed"))
+    cli::cli_abort(c(
+      "You must specify a value for {.arg min_groups}",
+      "i" = "A good rule of thumb is that this should be at least 1",
+      "i" = "such that proteins must have the minimum number of replicates in at least one group to be analyzed"
+    ))
   }
-
+  
   ## extract group column as character vector
   group_membership <- as.character(DAList$metadata[, grouping_column])
   # And get just the different groups
   groups <- unique(group_membership)
-
+  
   reps_per_group <- table(group_membership)
   n_groups <- length(groups)
-
+  
   ## If the min_reps set by the user exceeds the number of
   ## samples in any group, give an error
   group_meets_cutoff <- reps_per_group >= min_reps
@@ -180,28 +191,34 @@ filter_proteins_by_group <- function(DAList,
     # Prep for error message
     groups_below_cutoff <- names(group_meets_cutoff)[!group_meets_cutoff]
     reps_in_groups_below_cutoff <- reps_per_group[!group_meets_cutoff]
-
-    cli::cli_abort(c("!" = "Some groups do not have the minimum number of replicates {.arg min_reps} = {.val {min_reps}}",
-                     "x" = "Groups below threshold: {.val {groups_below_cutoff}}",
-                     "i" = "Lower the {.arg min_reps} argument so that it is not greater",
-                     "i" = "than the number of replicates in the smallest group, {.val {min(reps_per_group)}}"))
+    
+    cli::cli_abort(c(
+      "!" = "Some groups do not have the minimum number of replicates {.arg min_reps} = {.val {min_reps}}",
+      "x" = "Groups below threshold: {.val {groups_below_cutoff}}",
+      "i" = "Lower the {.arg min_reps} argument so that it is not greater",
+      "i" = "than the number of replicates in the smallest group, {.val {min(reps_per_group)}}"
+    ))
   }
-
+  
   # Check whether enough groups satisfy the min_reps argument to be able
   # to meet the min_groups cutoff
   if (min_groups > sum(group_meets_cutoff)) {
-
-    cli::cli_abort(c("!" = "Not enough groups have sufficient samples",
-                     "x" = "Found {.val {cli::no(sum(group_meets_cutoff))}} group{?s} which meet the {.arg min_reps} = {.val {min_reps}} threshold,",
-                     "x" = "but {.arg min_groups} = {.val {min_groups}}.",
-                     "i" = "Lower either {.arg min_reps} or {.arg min_groups} so that enough groups meet the threshold"))
+    
+    cli::cli_abort(c(
+      "!" = "Not enough groups have sufficient samples",
+      "x" = "Found {.val {cli::no(sum(group_meets_cutoff))}} group{?s} which meet the {.arg min_reps} = {.val {min_reps}} threshold,",
+      "x" = "but {.arg min_groups} = {.val {min_groups}}.",
+      "i" = "Lower either {.arg min_reps} or {.arg min_groups} so that enough groups meet the threshold"
+    ))
   }
-
-  cli::cli_inform("Keeping only protein entries with non-missing intensity in at least {.val {min_reps}} sample{?s} {cli::qty(min_reps)} in at least {.val {min_groups}} group{?s} {cli::qty(min_groups)}")
-
+  
+  cli::cli_inform(
+    "Keeping only protein entries with non-missing intensity in at least {.val {min_reps}} sample{?s} {cli::qty(min_reps)} in at least {.val {min_groups}} group{?s} {cli::qty(min_groups)}"
+  )
+  
   ## FILTERING
   tmpData <- DAList$data
-
+  
   ## calc. no samples in each group with non-missing intensity
   # Build a results data frame in advance, empty for now
   nonmissing_samples_per_group_and_gene <- as.data.frame(
@@ -209,39 +226,50 @@ filter_proteins_by_group <- function(DAList,
       data = NA,
       nrow = nrow(tmpData),
       ncol = length(groups),
-      dimnames = list(rownames(tmpData),
-                      as.character(groups))
+      dimnames = list(
+        rownames(tmpData),
+        as.character(groups)
+      )
     )
   )
-
+  
   for (i in seq_along(groups)) { # For each group
     # Select only the cols from that group
-    one_group_data <- tmpData[, group_membership == groups[i], drop = F]
-
+    one_group_data <- tmpData[, group_membership == groups[i], drop = FALSE]
+    
     # count up the the number of samples in that group with
     # non-missing intensities for each protein/row
     # and add that to the results
     nonmissing_samples_per_group_and_gene[, i] <- rowSums(!is.na(one_group_data))
   }
-
-
+  
   # Then, find out which proteins/rows have the min number of reps in at least enough groups
-  protein_meets_threshold <- apply(nonmissing_samples_per_group_and_gene, 1, FUN = function(x) {sum(x >= min_reps) >= min_groups })
+  protein_meets_threshold <- apply(
+    nonmissing_samples_per_group_and_gene,
+    1,
+    FUN = function(x) sum(x >= min_reps) >= min_groups
+  )
   # And filter
-  kept_proteins <- tmpData[protein_meets_threshold, , drop = F]
-  removed_proteins <- tmpData[!protein_meets_threshold, , drop = F]
-
-  cli::cli_inform("Filtered {.val {nrow(removed_proteins)}} entr{?y/ies} {cli::qty(nrow(removed_proteins))} from the dataset leaving {.val {nrow(kept_proteins)}} entr{?y/ies} {cli::qty(nrow(kept_proteins))} for analysis")
-
+  kept_proteins    <- tmpData[protein_meets_threshold, , drop = FALSE]
+  removed_proteins <- tmpData[!protein_meets_threshold, , drop = FALSE]
+  
+  cli::cli_inform(
+    "Filtered {.val {nrow(removed_proteins)}} entr{?y/ies} {cli::qty(nrow(removed_proteins))} from the dataset leaving {.val {nrow(kept_proteins)}} entr{?y/ies} {cli::qty(nrow(kept_proteins))} for analysis"
+  )
+  
   out <- DAList
   # Update data and annotation
-  out$data <- kept_proteins
-  out$annotation <- out$annotation[rownames(out$data), , drop = F]
+  out$data       <- kept_proteins
+  out$annotation <- out$annotation[rownames(out$data), , drop = FALSE]
   # add tags to track filtering
-  out$tags$filter_proteins_by_group <- c(out$tags$filter_proteins_by_group, list(min_reps = min_reps, min_groups = min_groups, grouping_column = grouping_column))
-
+  out$tags$filter_proteins_by_group <- c(
+    out$tags$filter_proteins_by_group,
+    list(min_reps = min_reps, min_groups = min_groups, grouping_column = grouping_column)
+  )
+  
   validate_DAList(out)
 }
+
 
 
 #' Filter protein data by proportion of quantified samples in group
@@ -301,70 +329,96 @@ filter_proteins_by_group <- function(DAList,
 filter_proteins_by_proportion <- function(DAList,
                                           min_prop = NULL,
                                           grouping_column = "group") {
-  validate_DAList(DAList)
-
+  
+  # First, make sure metadata exists
   if (is.null(DAList$metadata)) {
-    cli::cli_abort(c("The {.arg DAList} object must include metadata to filter proteins by group"))
+    cli::cli_abort(c(
+      "The {.arg DAList} object must include metadata to filter proteins by group"
+    ))
   }
-
+  
+  # Now run the full structural validation
+  validate_DAList(DAList)
+  
   # Make sure the group column is present in the metadata
   if (grouping_column %notin% colnames(DAList$metadata)) {
-    cli::cli_abort(c("Column {.arg {grouping_column}} not found in metadata slot of {.arg DAList}"))
+    cli::cli_abort(c(
+      "Column {.arg {grouping_column}} not found in metadata slot of {.arg DAList}"
+    ))
   }
-  # Make sure that min_reps and min_groups are specified, no more default values.
+  
+  # Make sure that min_prop is specified and reasonable
   if (is.null(min_prop)) {
-    cli::cli_abort(c("You must specify a value for {.arg min_prop}",
-                     "i" = "A good rule of thumb is to use 0.66"))
+    cli::cli_abort(c(
+      "You must specify a value for {.arg min_prop}",
+      "i" = "A good rule of thumb is to use 0.66"
+    ))
   }
-
+  
   if (min_prop < 0 | min_prop > 1) {
-    cli::cli_abort(c("{.arg min_prop} must be from 0 and 1, not {.val {min_prop}}"))
+    cli::cli_abort(c(
+      "{.arg min_prop} must be from 0 and 1, not {.val {min_prop}}"
+    ))
   }
-
-  cli::cli_inform("Keeping only protein entries with non-missing intensity in at least {.val {min_prop*100}}% of samples in each group")
-
+  
+  cli::cli_inform(
+    "Keeping only protein entries with non-missing intensity in at least {.val {min_prop*100}}% of samples in each group"
+  )
+  
   tmpData <- DAList$data
-
+  
   # Prep for filtering by getting a vector of group memberships per sample
   # and calculating the threshold for each group
   group_membership <- as.character(DAList$metadata[, grouping_column])
-  group_thresholds <-  ceiling(table(as.character(DAList$metadata[, grouping_column]))*min_prop)
-
+  group_thresholds <- ceiling(table(as.character(DAList$metadata[, grouping_column])) * min_prop)
+  
   # Build a results data frame in advance, empty for now
   protein_passes_threshold_per_group <- as.data.frame(
     matrix(
       data = NA,
       nrow = nrow(tmpData),
       ncol = length(names(group_thresholds)),
-      dimnames = list(rownames(tmpData),
-                      as.character(names(group_thresholds)))
+      dimnames = list(
+        rownames(tmpData),
+        as.character(names(group_thresholds))
+      )
     )
   )
   # Loop over group thresholds, check if protein passes for that group
   for (group in names(group_thresholds)) {
-    one_group_data <- tmpData[, group_membership == group]
-
+    one_group_data <- tmpData[, group_membership == group, drop = FALSE]
+    
     # count up the the number of samples in that group with
     # non-missing intensities for each protein/row
     # and check whether it is over the threshold
-    protein_passes_threshold_per_group[, group] <- rowSums(!is.na(one_group_data)) >= group_thresholds[group]
+    protein_passes_threshold_per_group[, group] <-
+      rowSums(!is.na(one_group_data)) >= group_thresholds[group]
   }
-
-  # Keep only proteins where all groups are T
-  protein_meets_threshold <- apply(X = protein_passes_threshold_per_group, MARGIN = 1, FUN = all)
+  
+  # Keep only proteins where all groups are TRUE
+  protein_meets_threshold <- apply(
+    X = protein_passes_threshold_per_group,
+    MARGIN = 1,
+    FUN = all
+  )
   # And filter
-  kept_proteins <- tmpData[protein_meets_threshold, ]
-  removed_proteins <- tmpData[!protein_meets_threshold, ]
-
-  cli::cli_inform("Filtered {.val {nrow(removed_proteins)}} entr{?y/ies} {cli::qty(nrow(removed_proteins))} from the dataset leaving {.val {nrow(kept_proteins)}} entr{?y/ies} {cli::qty(nrow(kept_proteins))} for analysis")
-
+  kept_proteins    <- tmpData[protein_meets_threshold, , drop = FALSE]
+  removed_proteins <- tmpData[!protein_meets_threshold, , drop = FALSE]
+  
+  cli::cli_inform(
+    "Filtered {.val {nrow(removed_proteins)}} entr{?y/ies} {cli::qty(nrow(removed_proteins))} from the dataset leaving {.val {nrow(kept_proteins)}} entr{?y/ies} {cli::qty(nrow(kept_proteins))} for analysis"
+  )
+  
   out <- DAList
   # Update data and annotation
-  out$data <- kept_proteins
-  out$annotation <- out$annotation[rownames(out$data),, drop = F]
+  out$data       <- kept_proteins
+  out$annotation <- out$annotation[rownames(out$data), , drop = FALSE]
   # add tags to track filtering
-  out$tags$filter_proteins_by_proportion <- c(out$tags$filter_proteins_by_proportion, list(min_prop = min_prop, grouping_column = grouping_column))
-
+  out$tags$filter_proteins_by_proportion <- c(
+    out$tags$filter_proteins_by_proportion,
+    list(min_prop = min_prop, grouping_column = grouping_column)
+  )
+  
   validate_DAList(out)
 }
 
