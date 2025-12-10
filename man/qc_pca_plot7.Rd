@@ -70,7 +70,6 @@ if(interactive()){
 }
 \seealso{
 \code{\link[rlang]{arg_match}}, \code{\link[cli]{cli_abort}},
-\code{\link[proteoDA]{make_factor}}, \code{\link[proteoDA]{colorGroup}}, \code{\link[proteoDA]{rowVars}},
 \code{\link[stats]{prcomp}}, \code{\link[ggplot2]{ggplot}}, \code{\link[ggplot2]{aes}},
 \code{\link[ggrepel]{geom_label_repel}}, \code{\link[ggplotify]{as.ggplot}}
 }

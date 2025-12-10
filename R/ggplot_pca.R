@@ -22,11 +22,8 @@
 #'  qc_pca_plot7_subgroups(DAList, "group", "sample_label")
 #'  }
 #' }
-#' @seealso
-#'  \code{\link[proteoDA]{validate_DAList}}, \code{\link[proteoDA]{make_factor}}, \code{\link[cli]{cli_abort}}
 #' @rdname qc_pca_plot7_subgroups
 #' @export
-#' @importFrom proteoDA validate_DAList make_factor binfcolors
 #' @importFrom cli cli_abort
 qc_pca_plot7_subgroups <- function(DAList,
                                    grouping_column,
@@ -129,14 +126,12 @@ qc_pca_plot7_subgroups <- function(DAList,
 #' }
 #' @seealso
 #'  \code{\link[rlang]{arg_match}}, \code{\link[cli]{cli_abort}},
-#'  \code{\link[proteoDA]{make_factor}}, \code{\link[proteoDA]{colorGroup}}, \code{\link[proteoDA]{rowVars}},
 #'  \code{\link[stats]{prcomp}}, \code{\link[ggplot2]{ggplot}}, \code{\link[ggplot2]{aes}},
 #'  \code{\link[ggrepel]{geom_label_repel}}, \code{\link[ggplotify]{as.ggplot}}
 #' @rdname qc_pca_plot7
 #' @export
 #' @importFrom rlang arg_match
 #' @importFrom cli cli_abort
-#' @importFrom proteoDA make_factor colorGroup rowVars
 #' @importFrom stats prcomp
 #' @importFrom ggplot2 ggplot aes
 #' @importFrom ggrepel geom_label_repel

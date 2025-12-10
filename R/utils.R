@@ -13,18 +13,6 @@ remove_commas <- function(x) {
 }
 
 
-#' %notin% operator, opposite of %in%
-#'
-#'
-#' @inheritParams base::"%in%"
-#' @return A logical vector, indicating if a match was NOT located for each
-#' element of of the search list.
-#'
-#' @keywords internal
-#'
-#'
-#'
-`%notin%` <- function(x,table) !`%in%`(x,table)
 
 
 
@@ -285,19 +273,15 @@ check_rows_in <- function(obj=list(), ref_rows=c()){
   })))
 }
 
-#' Negation of \code{\%in\%}
+#' Not in operator
 #'
-#' A convenience function that returns the negation of `%in%`, i.e., checks
+#' A convenience operator equivalent to `!(x %in% table)`., i.e., checks
 #' whether elements of `x` are not in `table`.
 #'
 #' @param x A vector of values to be matched.
 #' @param table A vector of values to be matched against.
 #'
 #' @return A logical vector indicating if elements of `x` are not in `table`.
-#' @examples
-#' 1 %notin% c(2, 3, 4)  # TRUE
-#' "a" %notin% c("b", "c")  # TRUE
-#' "a" %notin% c("a", "b")  # FALSE
 #' @export
 `%notin%` <- function(x, table) {
   !(x %in% table)

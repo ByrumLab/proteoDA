@@ -2,10 +2,8 @@
 % Please edit documentation in R/utils.R
 \name{\%notin\%}
 \alias{\%notin\%}
-\title{\%notin\% operator, opposite of \%in\%}
+\title{Not in operator}
 \usage{
-x \%notin\% table
-
 x \%notin\% table
 }
 \arguments{
@@ -14,18 +12,9 @@ x \%notin\% table
 \item{table}{A vector of values to be matched against.}
 }
 \value{
-A logical vector, indicating if a match was NOT located for each
-element of of the search list.
-
 A logical vector indicating if elements of \code{x} are not in \code{table}.
 }
 \description{
-A convenience function that returns the negation of \code{\%in\%}, i.e., checks
+A convenience operator equivalent to \code{!(x \%in\% table)}., i.e., checks
 whether elements of \code{x} are not in \code{table}.
 }
-\examples{
-1 \%notin\% c(2, 3, 4)  # TRUE
-"a" \%notin\% c("b", "c")  # TRUE
-"a" \%notin\% c("a", "b")  # FALSE
-}
-\keyword{internal}

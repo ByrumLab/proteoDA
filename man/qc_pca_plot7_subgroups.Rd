@@ -65,6 +65,3 @@ if(interactive()){
  }
 }
 }
-\seealso{
-\code{\link[proteoDA]{validate_DAList}}, \code{\link[proteoDA]{make_factor}}, \code{\link[cli]{cli_abort}}
-}
