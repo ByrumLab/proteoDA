@@ -12,7 +12,7 @@ devtools::build_vignettes()
 devtools::document()  # rebuild docs
 devtools::check(document = FALSE) # checks vignettes for R CMD check
 # document = FALSE tells devtools::check() to use the exisiting .Rd, NAMESPACE, do not re-run roxygen
-
+devtools::test(filter = "add_design")
 #######
 # load project parameters 
 source("proteoDA_params.R")

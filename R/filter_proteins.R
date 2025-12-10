@@ -392,6 +392,7 @@ filter_proteins_by_proportion <- function(DAList,
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' filtered_DAList <- filter_proteins_per_contrast(
 #'   DAList = raw_DAList,
 #'   contrasts_file = "data/contrasts.csv",
@@ -399,6 +400,7 @@ filter_proteins_by_proportion <- function(DAList,
 #'   require_both_groups = TRUE,
 #'   grouping_column = "group"
 #' )
+#' }
 filter_proteins_per_contrast <- function(DAList,
                                          contrasts_file,
                                          min_reps = 2,
