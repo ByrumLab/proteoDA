@@ -20,11 +20,11 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-library(proteoDA)
-library(limma)
-library(vsn)
-library(ggplot2)
-set.seed(123)
+#library(proteoDAstjude)
+#library(limma)
+#library(vsn)
+#library(ggplot2)
+#set.seed(123)
 
 ```
 
@@ -84,8 +84,33 @@ Thus, it is preferable to convert zeros to `NA` before modeling.
 
 `missing_to_zero()` — optional post-analysis conversion. Used if a downstream tool requires a fully numeric matrix, such as PCA. 
 
+```{r}
+library(proteoDAstjude)
+## Locate the Lou 2023 benchmark directory
+# 1) Try the installed-package location (works after install/build_vignettes)
+bench_dir <- system.file("extdata/lou2023_benchmark", package = "proteoDAstjude")
 
-```{r load_raw, message=FALSE}
+# 2) During development with devtools::load_all(), system.file() may be ""
+#    so fall back to the source tree: ../inst/extdata/lou2023_benchmark
+if (bench_dir == "") {
+  bench_dir <- normalizePath(
+    file.path("..", "inst", "extdata", "lou2023_benchmark"),
+    winslash = "/",
+    mustWork = TRUE
+  )
+  message("Using local development benchmark directory: ", bench_dir)
+}
+
+# Sanity check
+stopifnot(dir.exists(bench_dir))
+
+# Override key input file paths to use the package system files
+raw_file <- file.path(bench_dir,"raw.rds")
+DAList_raw <- readRDS(raw_file)
+str(DAList_raw)
+```
+
+```{r load_raw, message=FALSE, eval=FALSE, echo=FALSE}
 #inst/extdata/raw.rds
 #raw_file <- system.file("extdata", "raw.rds", package = "proteoDAstjude")
 raw_file <- "/Users/sbyrum/Documents/github/proteoDAstjude/inst/extdata/lou2023_benchmark/raw.rds"
@@ -259,7 +284,7 @@ theme_bw()
 ## MA plot of Log2 data with bias
 
 ```{r log2mat}
-
+library(ggplot2)
 ma_plot(log2_mat, 1, 2, main = "Log2 (simulated) — intensity-dependent bias")
 
 ```
