@@ -53,13 +53,14 @@ test_that("perseus_impute writes per-contrast data and saves before/after", {
   out <- perseus_impute(DA, seed = 11, save_before_after = TRUE)
   
   # Per-contrast matrices exist and are imputed
-  expect_true(is.matrix(out$data_per_contrast$ContrastA$log2))
-  expect_true(is.matrix(out$data_per_contrast$ContrastB$log2))
-  expect_false(any(is.na(out$data_per_contrast$ContrastA$log2[-3, ])))  # row 3 not entirely missing here
-  # Before/after + mask saved
-  expect_true(is.matrix(out$data_per_contrast$ContrastA$imputation$before_log2))
-  expect_true(is.matrix(out$data_per_contrast$ContrastA$imputation$after_log2))
-  expect_true(is.matrix(out$data_per_contrast$ContrastA$imputation$imputed_mask))
+  expect_true(is.matrix(out$data_per_contrast$ContrastA))
+  expect_true(is.matrix(out$data_per_contrast$ContrastB))
+  expect_false(any(is.na(out$data_per_contrast$ContrastA[-3, ])))  # row 3 not entirely missing here
+  
+  # Before/after + mask saved in imputation_per_contrast
+  expect_true(is.matrix(out$imputation_per_contrast$ContrastA$before_log2))
+  expect_true(is.matrix(out$imputation_per_contrast$ContrastA$after_log2))
+  expect_true(is.matrix(out$imputation_per_contrast$ContrastA$imputed_mask))
 })
 
 test_that("perseus_impute falls back to global data when no per-contrast slot", {

@@ -22,15 +22,17 @@
 #'
 
 fit_limma_model <- function(DAList) {
-
+  
   # Make sure there's a design matrix present already,
   # tell user to set it first if not
   # put these checks above DAList validation, to try to get better errors for endusers
   if (is.null(DAList$design)) {
-    cli::cli_abort(c("Input DAList does not have a statistical design",
-                     "i" = "Run {.code DAList <- add_design(DAList, ~ formula)} before fitting model"))
+    cli::cli_abort(c(
+      "Input DAList does not have a statistical design",
+      "i" = "Run {.code DAList <- add_design(DAList, ~ formula)} before fitting model"
+    ))
   }
-
+  
   # Warn user if data aren't normalized, unlikely
   # to want to do stats on non-normalized data
   if (is.null(DAList$tags$normalized)) {
@@ -41,73 +43,102 @@ fit_limma_model <- function(DAList) {
       cli::cli_inform("Data in DAList are not normalized. You may wish to normalize before fitting model.")
     }
   }
-
-
+  
   # Check input arguments generally
   validate_DAList(DAList)
-
+  
+  # ------------------------------------------------------------------
+  # Random factor handling
+  # ------------------------------------------------------------------
+  intra_block_cor <- NULL
+  block           <- NULL
+  rf              <- DAList$design$random_factor
+  
   # With a random factor
-  if (!is.null(DAList$design$random_factor)) {
-
+  if (!is.null(rf)) {
+    
     if (!requireNamespace("statmod", quietly = TRUE)) {
-      cli::cli_abort(c("Package \"statmod\" must be installed to model a random effect")) #nocov
+      cli::cli_abort(c(
+        "Package \"statmod\" must be installed to model a random effect"
+      )) # nocov
     }
-
-    block <- DAList$metadata[, DAList$design$random_factor, drop = T]
-    corfit <- limma::duplicateCorrelation(object = DAList$data,
-                                          design = DAList$design$design_matrix,
-                                          block = block)
-
+    
+    block <- DAList$metadata[, rf, drop = TRUE]
+    
+    corfit <- limma::duplicateCorrelation(
+      object = DAList$data,
+      design = DAList$design$design_matrix,
+      block  = block
+    )
+    
     corfit_display <- round(corfit$consensus.correlation, 3)
     cli::cli_inform("Estimated intra-block correlation = {.val {corfit_display}}")
-
+    
     if (corfit$consensus.correlation < 0) {
-      cli::cli_abort(c("Estimated intra-block correlation is negative.",
-                       "Rerun model without the random effect."))
+      cli::cli_abort(c(
+        "Estimated intra-block correlation is negative.",
+        "Rerun model without the random effect."
+      ))
     } else if (corfit$consensus.correlation < 0.05) {
-      cli::cli_inform(cli::col_yellow(c("Estimated intra-block correlation is low.", #nocov
-                                        "Consider using a model with no random effect."))) #nocov
+      cli::cli_inform(cli::col_yellow(c(
+        "Estimated intra-block correlation is low.",         # nocov
+        "Consider using a model with no random effect."      # nocov
+      )))
     } else {
       intra_block_cor <- corfit$consensus.correlation
     }
-  } else { # No random factor
-    intra_block_cor <- NULL
-    block <- NULL
   }
-
+  
+  # ------------------------------------------------------------------
   # Fit the initial model
-  fit <- limma::lmFit(object = DAList$data,
-                      design = DAList$design$design_matrix,
-                      block = block,
-                      correlation = intra_block_cor)
-
+  # ------------------------------------------------------------------
+  fit <- limma::lmFit(
+    object      = DAList$data,
+    design      = DAList$design$design_matrix,
+    block       = block,
+    correlation = intra_block_cor
+  )
+  
   # If contrasts are specified, re-fit
   if (!is.null(DAList$design$contrast_matrix)) {
-    fit <- limma::contrasts.fit(fit = fit, contrasts = DAList$design$contrast_matrix)
+    fit <- limma::contrasts.fit(
+      fit       = fit,
+      contrasts = DAList$design$contrast_matrix
+    )
   }
-
-  # Annoying statmod issue still...
+  
   if (!requireNamespace("statmod", quietly = TRUE)) {
-    cli::cli_abort(c("Package \"statmod\" must be installed to perform empirical Bayes moderation of test statistics")) #nocov
+    cli::cli_abort(c(
+      "Package \"statmod\" must be installed to perform empirical Bayes moderation of test statistics"
+    )) # nocov
   }
-
-  # Fit empirical bayes model
+  
+  # Fit empirical Bayes model
   efit <- limma::eBayes(fit = fit, robust = TRUE)
-
+  
+  # ------------------------------------------------------------------
+  # Tag the fit with random-factor information (for validate_DAList)
+  # ------------------------------------------------------------------
+  if (!is.null(rf)) {
+    attr(efit, "random_factor_name")  <- rf
+    attr(efit, "random_factor_block") <- block
+  }
+  
   # If there are already results, warn about overwriting
   if (!is.null(DAList$eBayes_fit) | !is.null(DAList$results)) {
     cli::cli_inform("DAList already contains statistical results. Overwriting.")
     # Get rid of any old stuff
     DAList["eBayes_fit"] <- list(NULL)
-    DAList["results"] <- list(NULL)
+    DAList["results"]    <- list(NULL)
   }
-
+  
   # Add results
   DAList$eBayes_fit <- efit
-
+  
   # Validate and return
   validate_DAList(DAList)
 }
+
 
 #' Extract differential abundance results from a model fit
 #'
