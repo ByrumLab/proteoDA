@@ -354,12 +354,13 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
 #' }
 #'
 #' @examples
+#' \dontrun{
 #' # Using default binsize auto-selection
 #' filtered_DAList <- run_filtered_limma_analysis(filtered_DAList)
 #'
 #' # With specified bin size and no plots
 #' filtered_DAList <- run_filtered_limma_analysis(filtered_DAList, binsize = 200, plot_movingSD = FALSE)
-#'
+#'}
 #' @export
 run_filtered_limma_analysis <- function(
     DAList,
