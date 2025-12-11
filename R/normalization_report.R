@@ -33,9 +33,9 @@ write_norm_report <- function(DAList,
                               use_ggrastr = FALSE,
                               input_is_log2 = FALSE,
                               contrasts = NULL,
-                              sample_id_col = NULL,          # NEW: explicitly specify the metadata column matching matrix column names
-                              groups_override = NULL,       # NEW: pass a named vector of groups (names = sample IDs)
-                              metrics_csv = NULL        ) {   # <- NEW   
+                              sample_id_col = NULL,
+                              groups_override = NULL,
+                              metrics_csv = NULL) {
   
   #################################
   ## Check args and set defaults ##
@@ -48,8 +48,6 @@ write_norm_report <- function(DAList,
   ggplot2::theme_set(ggplot2::theme_gray())
   
   # If data are already normalized, stop early — this report is meant for raw data.
-  #If DAList$tags$normalized == TRUE, write_norm_report() now throws a dedicated error before ever looking at grouping_column.
-  #That matches the test expecting an “already normalized” error rather than grouping_column cannot be empty.
   if (!is.null(DAList$tags$normalized) && isTRUE(DAList$tags$normalized)) {
     cli::cli_abort(
       "Input data already normalized; {.fn write_norm_report} expects raw (unnormalized) data."
@@ -103,6 +101,9 @@ write_norm_report <- function(DAList,
   ########################################
   has_dpc <- !is.null(DAList$data_per_contrast) && length(DAList$data_per_contrast) > 0
   
+  # ------------------------------------------------
+  # PER-CONTRAST BRANCH (data_per_contrast present)
+  # ------------------------------------------------
   if (has_dpc) {
     all_ct <- names(DAList$data_per_contrast)
     if (is.null(all_ct) || !length(all_ct)) {
@@ -113,8 +114,8 @@ write_norm_report <- function(DAList,
     
     # Build list of per-contrast matrices and aligned group vectors
     mats <- list(); groups_map <- list()
-    # We assume there is a sample id column matching colnames of matrices. Try common ones.
-    # Resolve sample identifier column
+    
+    # Resolve sample identifier column / group mapping
     if (!is.null(groups_override)) {
       if (is.null(names(groups_override))) {
         cli::cli_abort("'groups_override' must be a named vector with names matching sample (column) IDs.")
@@ -125,12 +126,15 @@ write_norm_report <- function(DAList,
       if (is.null(id_col)) {
         # Auto-detect best matching metadata column to matrix colnames
         candidates <- colnames(DAList$metadata)
-        all_cols <- unique(unlist(lapply(DAList$data_per_contrast[names(DAList$data_per_contrast)], function(x){
-          if (is.matrix(x) || is.data.frame(x)) return(colnames(x))
-          if (is.list(x) && "log2" %in% names(x)) return(colnames(x$log2))
-          character(0)
-        })))
-        scores <- vapply(candidates, function(cc){
+        all_cols <- unique(unlist(lapply(
+          DAList$data_per_contrast[names(DAList$data_per_contrast)],
+          function(x) {
+            if (is.matrix(x) || is.data.frame(x)) return(colnames(x))
+            if (is.list(x) && "log2" %in% names(x)) return(colnames(x$log2))
+            character(0)
+          }
+        )))
+        scores <- vapply(candidates, function(cc) {
           vals <- as.character(DAList$metadata[[cc]])
           mean(vals %in% all_cols)
         }, numeric(1))
@@ -146,7 +150,9 @@ write_norm_report <- function(DAList,
     
     extract_mat <- function(x) {
       if (is.matrix(x) || is.data.frame(x)) return(as.matrix(x))
-      if (is.list(x) && "log2" %in% names(x) && (is.matrix(x$log2) || is.data.frame(x$log2))) return(as.matrix(x$log2))
+      if (is.list(x) && "log2" %in% names(x) && (is.matrix(x$log2) || is.data.frame(x$log2))) {
+        return(as.matrix(x$log2))
+      }
       stop("Unsupported per-contrast structure. Expected matrix/data.frame or list with $log2.")
     }
     
@@ -162,7 +168,7 @@ write_norm_report <- function(DAList,
         missing <- colnames(X)[is.na(g)]
         cli::cli_abort(sprintf("Group labels missing for samples in contrast '%s': %s", ct, paste(missing, collapse=", ")))
       }
-      mats[[ct]] <- X
+      mats[[ct]]       <- X
       groups_map[[ct]] <- as.character(g)
     }
     
@@ -172,10 +178,14 @@ write_norm_report <- function(DAList,
     cli::cli_inform("Starting per-contrast normalizations for {length(target_ct)} contrasts…")
     
     plot_pages <- list()
+    .norm_metrics_accum <- NULL
+    
     for (ct in target_ct) {
-      normList <- apply_all_normalizations_contrast(mats[[ct]], 
-                                                    input_is_log2 = input_is_log2, 
-                                                    groups = groups_map[[ct]])
+      normList <- apply_all_normalizations_contrast(
+        mats[[ct]],
+        input_is_log2 = input_is_log2,
+        groups        = groups_map[[ct]]
+      )
       
       a <- pn_plot_PCV(normList, groups_map[[ct]])
       b <- pn_plot_PMAD(normList, groups_map[[ct]])
@@ -183,29 +193,25 @@ write_norm_report <- function(DAList,
       d <- pn_plot_COR(normList, groups_map[[ct]])
       e <- pn_plot_log2ratio(normList, groups_map[[ct]])
       f <- pn_plot_log2ratio(normList, groups_map[[ct]], zoom = TRUE, legend = !suppress_zoom_legend)
-      page_1 <- a + b + c + d + e + f + patchwork::plot_layout(ncol = 3) + patchwork::plot_annotation(title = paste0("Normalization metrics — ", ct))
+      
+      page_1 <- a + b + c + d + e + f +
+        patchwork::plot_layout(ncol = 3) +
+        patchwork::plot_annotation(title = paste0("Normalization metrics — ", ct))
       
       page_2 <- pn_plot_MD(normList, groups_map[[ct]], use_ggrastr)
       plot_pages[[length(plot_pages) + 1]] <- list(page_1 = page_1, page_2 = page_2)
       
       if (!is.null(metrics_csv)) {
         metrics_tbl <- collect_norm_metrics(normList, groups_map[[ct]], contrast = ct)
-        metrics_accum <- if (exists(".norm_metrics_accum", inherits = FALSE)) .norm_metrics_accum else NULL
-        .norm_metrics_accum <- rbind(metrics_accum, metrics_tbl)
+        .norm_metrics_accum <- rbind(.norm_metrics_accum, metrics_tbl)
       }
-      
     }
     
     ###############################
     ## Save plots, check, return ##
     ###############################
-    grobs <- unlist(lapply(seq_along(plot_pages), function(i) {
-      pg <- plot_pages[[i]]
-      list(patchwork::patchworkGrob(pg$page_1), pg$page_2)
-    }), recursive = FALSE)
-    
     if (!is.null(metrics_csv)) {
-      if (exists(".norm_metrics_accum", inherits = FALSE) && !is.null(.norm_metrics_accum)) {
+      if (!is.null(.norm_metrics_accum)) {
         utils::write.csv(.norm_metrics_accum, metrics_csv, row.names = FALSE)
       } else {
         cli::cli_warn("No metrics accumulated; CSV not written.")
@@ -213,11 +219,19 @@ write_norm_report <- function(DAList,
     }
     
     cli::cli_inform("Saving report to: {.path {report_path}}")
-    ggplot2::ggsave(report_path,
-                    plot = gridExtra::marrangeGrob(grobs = grobs, nrow = 1, ncol = 1, top = NA),
-                    height = 8.5, width = 11, units = "in", useDingbats = TRUE)
     
-    if (!file.exists(report_path)) cli::cli_abort(c("Failed to create {.path {report_path}}"))
+    # Multi-page PDF: each contrast has two pages (metrics + MD)
+    grDevices::pdf(report_path, height = 8.5, width = 11, useDingbats = TRUE)
+    for (pg in plot_pages) {
+      if (inherits(pg$page_1, "ggplot")) print(pg$page_1) else grid::grid.draw(pg$page_1)
+      if (inherits(pg$page_2, "ggplot")) print(pg$page_2) else grid::grid.draw(pg$page_2)
+    }
+    grDevices::dev.off()
+    
+    if (!file.exists(report_path)) {
+      cli::cli_abort(c("Failed to create {.path {report_path}}"))
+    }
+    
     return(invisible(input_DAList))
   }
   
@@ -225,7 +239,11 @@ write_norm_report <- function(DAList,
   ## Legacy global behavior ##
   ############################
   cli::cli_inform("Starting normalizations (global)")
-  normList <- apply_all_normalizations_contrast(DAList$data, input_is_log2 = input_is_log2, groups = groups_vec)
+  normList <- apply_all_normalizations_contrast(
+    DAList$data,
+    input_is_log2 = input_is_log2,
+    groups        = groups_vec
+  )
   cli::cli_inform("Normalizations finished")
   
   if (!is.null(metrics_csv)) {
@@ -244,14 +262,19 @@ write_norm_report <- function(DAList,
   page_2 <- pn_plot_MD(normList, groups_vec, use_ggrastr)
   
   cli::cli_inform("Saving report to: {.path {report_path}}")
-  ggplot2::ggsave(report_path,
-                  plot = gridExtra::marrangeGrob(grobs = list(patchwork::patchworkGrob(page_1), page_2), nrow = 1, ncol = 1, top = NA),
-                  height = 8.5, width = 11, units = "in", useDingbats = TRUE)
   
-  if (!file.exists(report_path)) cli::cli_abort(c("Failed to create {.path {report_path}}"))
+  # Two-page PDF: metrics grid + MD plots
+  grDevices::pdf(report_path, height = 8.5, width = 11, useDingbats = TRUE)
+  if (inherits(page_1, "ggplot")) print(page_1) else grid::grid.draw(page_1)
+  if (inherits(page_2, "ggplot")) print(page_2) else grid::grid.draw(page_2)
+  grDevices::dev.off()
+  
+  if (!file.exists(report_path)) {
+    cli::cli_abort(c("Failed to create {.path {report_path}}"))
+  }
+  
   invisible(input_DAList)
 }
-
 
 #' Apply all normalization methods to a matrix (contrast-aware helper)
 #'
