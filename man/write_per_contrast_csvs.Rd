@@ -12,7 +12,7 @@ write_per_contrast_csvs(
   annotation_cols = NULL,
   metadata = NULL,
   group_col = "group",
-  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSDs", "logFC_z_scores"),
+  stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSD", "logFC_z_scores"),
   per_contrast_tags = NULL
 )
 }

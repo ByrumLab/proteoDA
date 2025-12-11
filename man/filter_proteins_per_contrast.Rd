@@ -41,6 +41,7 @@ The function also stores per-contrast versions of the $data and $annotation slot
 into DAList$data_per_contrast and DAList$annotation_per_contrast.
 }
 \examples{
+\dontrun{
 filtered_DAList <- filter_proteins_per_contrast(
   DAList = raw_DAList,
   contrasts_file = "data/contrasts.csv",
@@ -48,4 +49,5 @@ filtered_DAList <- filter_proteins_per_contrast(
   require_both_groups = TRUE,
   grouping_column = "group"
 )
+}
 }
