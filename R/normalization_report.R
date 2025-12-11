@@ -42,8 +42,20 @@ write_norm_report <- function(DAList,
   #################################
   input_DAList <- validate_DAList(DAList)
   
-  # Note: We do NOT abort if DAList is already normalized. The report re-computes
-  # methods from the provided matrices (per-contrast or global) for fair comparison.
+  # Reset ggplot theme to avoid interference from global theme changes in other tests
+  old_theme <- ggplot2::theme_get()
+  on.exit(ggplot2::theme_set(old_theme), add = TRUE)
+  ggplot2::theme_set(ggplot2::theme_gray())
+  
+  # If data are already normalized, stop early — this report is meant for raw data.
+  #If DAList$tags$normalized == TRUE, write_norm_report() now throws a dedicated error before ever looking at grouping_column.
+  #That matches the test expecting an “already normalized” error rather than grouping_column cannot be empty.
+  if (!is.null(DAList$tags$normalized) && isTRUE(DAList$tags$normalized)) {
+    cli::cli_abort(
+      "Input data already normalized; {.fn write_norm_report} expects raw (unnormalized) data."
+    )
+  }
+  
   if (!is.null(grouping_column)) {
     if (length(grouping_column) != 1) {
       cli::cli_abort(c("Length of {.arg grouping_column} does not equal 1",
@@ -272,6 +284,25 @@ apply_all_normalizations_contrast <- function(data, input_is_log2 = FALSE, group
   normList[["gi"]]       <- giNorm(dat = X)
   
   normList
+}
+
+#' Apply all normalization methods (legacy wrapper)
+#'
+#' Thin wrapper around `apply_all_normalizations_contrast()` to preserve
+#' the original function name used in tests and older code.
+#'
+#' @param data Matrix/data.frame of intensities (features x samples).
+#' @param input_is_log2 Logical, whether `data` are already on log2 scale.
+#' @param groups Optional character vector of group labels, used for cycloess.
+#'
+#' @return A named list of matrices as returned by `apply_all_normalizations_contrast()`.
+#' @keywords internal
+apply_all_normalizations <- function(data, input_is_log2 = FALSE, groups = NULL) {
+  apply_all_normalizations_contrast(
+    data,
+    input_is_log2 = input_is_log2,
+    groups        = groups
+  )
 }
 
 #' Write a post-normalization evaluation report for a single method

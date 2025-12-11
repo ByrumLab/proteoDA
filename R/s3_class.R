@@ -283,15 +283,24 @@ validate_DAList <- function(x) {
       ))
     }
     
+    # # random factor present in metadata
+    # if (!is.null(x$design$random_factor)) {
+    #   if (!x$design$random_factor %in% colnames(x$metadata))
+    #     cli::cli_abort("Random factor '{x$design$random_factor}' not found in metadata")
+    # }
     # random factor present in metadata
     if (!is.null(x$design$random_factor)) {
-      if (!x$design$random_factor %in% colnames(x$metadata))
-        cli::cli_abort("Random factor '{x$design$random_factor}' not found in metadata")
+      if (!x$design$random_factor %in% colnames(x$metadata)) {
+        cli::cli_abort(
+          "Design includes random factor term '{x$design$random_factor}', but metadata has no column with that name"
+        )
+      }
     }
+    
     
     # contrast info: require both or neither
     if (sum(c("contrast_matrix", "contrast_vector") %in% names(x$design)) == 1) {
-      cli::cli_abort("If contrast information is included, both 'contrast_matrix' and 'contrast_vector' must be present")
+      cli::cli_abort("If contrast information is included, you must have  both 'contrast_matrix' and 'contrast_vector' slots")
     }
     
     # contrast_matrix ↔ design_matrix columns
@@ -307,7 +316,7 @@ validate_DAList <- function(x) {
           if (length(miss_in_X))  paste0("Missing in design_matrix cols: ",  paste(miss_in_X,  collapse = ", "))
         )
         cli::cli_abort(c(
-          "contrast_matrix rows must match design_matrix columns{hint}",
+          "contrast_matrix rows do not match design_matrix columns{hint}",
           if (length(det)) setNames(det, rep("x", length(det)))
         ))
       }
@@ -316,13 +325,48 @@ validate_DAList <- function(x) {
   
   # ---- eBayes fit checks ----
   if (!is.null(x$eBayes_fit)) {
-    if (is.list(x$eBayes_fit) && !"MArrayLM" %in% class(x$eBayes_fit)) {
-      all_marrays <- all(vapply(x$eBayes_fit, function(obj) "MArrayLM" %in% class(obj), logical(1)))
-      if (!all_marrays) cli::cli_abort("All elements of eBayes_fit list must be of class 'MArrayLM'")
-    } else if (!is.null(x$eBayes_fit) && !"MArrayLM" %in% class(x$eBayes_fit)) {
-      cli::cli_abort("eBayes_fit must be of class 'MArrayLM' or a list of them")
+    
+    # Coerce to a list of fits and do type checks
+    if (inherits(x$eBayes_fit, "MArrayLM")) {
+      fits <- list(x$eBayes_fit)
+    } else if (is.list(x$eBayes_fit)) {
+      ok <- vapply(
+        x$eBayes_fit,
+        function(obj) inherits(obj, "MArrayLM"),
+        FUN.VALUE = logical(1)
+      )
+      if (!all(ok)) {
+        cli::cli_abort("eBayes_fit must be of class 'MArrayLM' or a list of 'MArrayLM' objects")
+      }
+      fits <- x$eBayes_fit
+    } else {
+      cli::cli_abort("eBayes_fit must be of class 'MArrayLM' or a list of 'MArrayLM' objects")
+    }
+    
+    # ---- Random factor consistency checks ----
+    # design-side declaration
+    rf_design <- x$design$random_factor %||% NULL
+    
+    # fit-side declaration (set in fit_limma_model via attr(efit, "random_factor_name"))
+    rf_fit_name <- attr(fits[[1]], "random_factor_name", exact = TRUE)
+    
+    # Case 2: design claims a random factor, but model fit doesn't have one
+    if (!is.null(rf_design) && is.null(rf_fit_name)) {
+      cli::cli_abort(
+        "Design includes a random factor term '{rf_design}', but the model fit does not include a corresponding random-effects structure.",
+        rf_design = rf_design
+      )
+    }
+    
+    # Case 3: model fit has a random factor, but design tag is missing
+    if (is.null(rf_design) && !is.null(rf_fit_name)) {
+      cli::cli_abort(
+        "Model fit includes a random-effects structure (random factor '{rf_fit_name}'), but 'design$random_factor' is not set.",
+        rf_fit_name = rf_fit_name
+      )
     }
   }
+  
   
   # ---- Results checks (lenient on labels) ----
   if (!is.null(x$results)) {

@@ -566,11 +566,11 @@ perseus_impute <- function(x,
           before, shift, width, robust, min_obs_per_sample, seed, store_mask
         )
         mask   <- attr(after, "imputed_mask"); attr(after, "imputed_mask") <- NULL
-        
+
         # Write back in-place, preserving data.frame/matrix type
         x$data_per_contrast[[contrast]] <-
           if (orig_was_df) as.data.frame(after, check.names = FALSE) else after
-        
+
         # Save diagnostics in a separate parallel list (does NOT change the data type)
         if (save_before_after) {
           x$imputation_per_contrast[[contrast]] <- list(

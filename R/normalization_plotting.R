@@ -245,7 +245,7 @@ pn_plot_log2ratio <- function(normList, grouping, zoom = F, legend = T) {
   if (legend) {
     result <- base +
       theme(legend.justification = c(1,1), # sets upper-right corner as locating point
-            legend.position = c(0.99, 0.99), # puts locating point in upper-right corner
+            legend.position.inside = c(0.99, 0.99), # puts locating point in upper-right corner
             legend.title = element_blank(),
             legend.text = element_text(size = 8),
             legend.key.size = unit(0.35, "cm"),
