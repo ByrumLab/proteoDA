@@ -30,6 +30,8 @@ qc_dendrogram(
 
 \item{text.sizes}{A numeric vector specifying text sizes for title, leaf labels, and legend text.}
 
+\item{point.size}{A numeric value specifying the size of the node circles.}
+
 \item{top}{The number of the most variable proteins to use in the analysis.}
 
 \item{standardize}{A logical value indicating whether to standardize data (mean = 0, SD=1).}
@@ -47,8 +49,6 @@ qc_dendrogram(
 \item{subtitle}{A character string specifying the plot subtitle. It can be NULL.}
 
 \item{show.plot}{A logical value indicating whether to display the plot.}
-
-\item{point.sizes}{A numeric value specifying the size of the node circles.}
 }
 \value{
 A ggplot list containing

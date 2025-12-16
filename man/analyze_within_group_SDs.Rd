@@ -45,6 +45,10 @@ generates diagnostic density plots, flags groups with outlier SDs, and exports a
 }
 \examples{
 \dontrun{
-  analyze_within_group_SDs(my_data$data, my_data$metadata, outlier_method = "z-score", z_thresh = 2.5)
+  analyze_within_group_SDs(
+  my_data$data, 
+  my_data$metadata, 
+  outlier_method = "z-score",
+  z_thresh = 2.5)
 }
 }

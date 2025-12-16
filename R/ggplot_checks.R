@@ -845,7 +845,7 @@ check_logical <- function(x) {
 #' The function ensures that `x` has the same or greater length than `ref` and that no duplicates exist in `ref`.
 #' Both `x` and `ref` must follow R's syntax rules for valid variable names (e.g., column names and row names).
 #'
-#' See \code{\link{base::make.names}} for naming rules.
+#' See \code{\link[base]{make.names}} for details on syntactic names.
 #'
 #' @param x A vector of values to be checked. The length of `x` must be equal to or greater than `ref` with no duplicates.
 #'   This is typically a metadata or annotation column.
@@ -1178,40 +1178,44 @@ check_dup <- function(x) {
 #' of characters. This is often used to identify long sample names or group labels that
 #' could cause issues in visualizations or presentations.
 #'
-#' @param x A vector of values. This parameter is typically a vector of column names,
-#'   row names, or values in a particular metadata column.
-#' @param char_thresh A numeric value (greater than or equal to 0). This defines the
-#'   maximum allowed character length for values in `x`. Any value exceeding this length
-#'   will be returned.
-#' @param na.rm A logical value indicating whether to remove `NA` values from `x`. Default is `FALSE`.
+#' @param x A vector of values. Typically column names, row names, or metadata values.
+#' @param char_thresh A non-negative numeric value specifying the maximum allowed
+#'   character length. Values exceeding this length are returned.
+#' @param na.rm Logical; if `TRUE`, `NA` values are removed before checking. If `FALSE`,
+#'   `NA` and `NaN` may appear in the output.
 #'
-#' @return The function returns a vector of values in `x` that exceed the specified
-#'   `char_thresh` character length. If no such values exist, it returns `NULL`. If
-#'   `na.rm = FALSE`, `NA` and `NaN` values in `x` will be included in the output.
+#' @return A vector of values in `x` whose character lengths exceed `char_thresh`.
+#'   Returns `NULL` if no values meet the criterion.
 #'
-#'   ## x(no NAs) + na.rm = TRUE/FALSE + all below ==> NULL
-#'   ## x(NAs) + na.rm = TRUE + all below ==> NULL
-#'   ## x(NAs) + na.rm = FALSE + all below ==> c(NA, NaN)
+#' @details
+#' Behavior under different combinations of `x` contents and `na.rm`:
 #'
-#'   ## x(no NAs) + na.rm = TRUE/FALSE + above == > c(values)
-#'   ## x(NAs) + na.rm = TRUE + above ==> c(values)
-#'   ## x(NAs) + na.rm = FALSE + above ==> c(values, NA, NaN)
+#' * **No NAs in `x`**  
+#'   - `na.rm = TRUE` or `FALSE`, and **all values are below** the threshold → returns `NULL`.  
+#'   - `na.rm = TRUE` or `FALSE`, and **some values exceed** the threshold → returns those values.
+#'
+#' * **NAs present in `x`**  
+#'   - `na.rm = TRUE`: NAs are removed; behavior is based only on non-NA values.  
+#'   - `na.rm = FALSE`:  
+#'     - If all non-NA values are below threshold → returns `c(NA, NaN)` if present.  
+#'     - If some exceed threshold → returns the long values and any `NA`/`NaN` values.
 #'
 #' @examples
 #' \dontrun{
-#' if(interactive()){
-#'   x <- c("Con_01", "Con_02", NA, "TAC_Treatment_01", "", Inf, NaN, "TAC_Treat_02")
-#'   y <- c("Con_01", "Con_02", "Treat_01", "Treat_101")
-#'   z <- c("Con_01", NA, "TAC_Treatment_01", "TAC_Treat_02", "", Inf)
-#'  ## identify values with more than 15 characters
-#'   check_long(x = x, char_thresh = 15, na.rm = FALSE)
-#'  ## identify values with more than 8 characters
-#'   check_long(x = y, char_thresh = 8)
-#'  ## identify values with more than 6 characters
-#'   check_long(x = y, char_thresh = 6)
-#' }
-#' }
+#' x <- c("Con_01", "Con_02", NA, "TAC_Treatment_01", "", Inf, NaN, "TAC_Treat_02")
+#' y <- c("Con_01", "Con_02", "Treat_01", "Treat_101")
+#' z <- c("Con_01", NA, "TAC_Treatment_01", "TAC_Treat_02", "", Inf)
 #'
+#' # identify values with more than 15 characters
+#' check_long(x = x, char_thresh = 15, na.rm = FALSE)
+#'
+#' # identify values with more than 8 characters
+#' check_long(x = y, char_thresh = 8)
+#'
+#' # identify values with more than 6 characters
+#' check_long(x = y, char_thresh = 6)
+#' }
+
 check_long <- function(x, char_thresh = 15, na.rm = FALSE) {
 
  ## check x argument is NULL

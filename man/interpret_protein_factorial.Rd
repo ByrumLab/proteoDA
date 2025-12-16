@@ -58,7 +58,7 @@ it is used directly.
 }
 
 The returned table includes an \code{effect} label indicating direction
-(↑/↓) and significance (\code{"*"} if \code{adj.P.Val < alpha}).
+(up/down) and significance (\code{"*"} if \code{adj.P.Val < alpha}).
 }
 \examples{
 \dontrun{

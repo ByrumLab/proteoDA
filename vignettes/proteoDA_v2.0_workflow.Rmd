@@ -314,7 +314,7 @@ If the data have been normalized using an outside method, then proteoDA normaliz
 
 We first generate a PDF report that evaluates all supported methods on the Lou benchmark data.
 
-```{r 6_normalization}
+```{r 6_normalization, eval=FALSE}
 ##############
 ## NORMALIZATION
 ## methods = "log2", "median", "mean", "vsn", "quantile", "cycloess", "rlr", "gi"

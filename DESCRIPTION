@@ -3,49 +3,47 @@ Title: Streamlined Differential Abundance Analysis of Proteomic Data
 Version: 1.0.1
 Authors@R: 
     c(
-      person(given = "Timothy", family = "Thurman", email = "tthurman@uams.edu", role = c("aut", "cre")),
-      person(given = "Charity", family = "Washam", email = "cwasham@uams.edu", role = c("aut")),
-      person(given = "Jordan", family = "Bird", email = "jtbird@uams.edu", role = c("ctb")),
-      person(given = "Stephanie", family = "Byrum", email = "sbyrum@uams.edu", role = c("aut"))
+      person(given = "Charity", family = "Washam", email = "cwasham@uams.edu", role = "aut"),
+      person(given = "Zuo-Fei", family = "Yuan", email = "zuo-fei.yuan@stjude.org", role = "ctb"),
+      person(given = "Stephanie", family = "Byrum", email = "sbyrum@stjude.org", role = c("aut", "cre"))
     )
 Description: Functions for performing differential abundance analysis of proteomic data.
 License: GPL (>= 3)
-biocViews:
+Encoding: UTF-8
+Depends: 
+    R (>= 4.1.0)
 Imports:
     circlize,
     cli (>= 3.6.0),
     ComplexHeatmap,
     ggplot2 (>= 3.4.0),
     ggrepel,
-    ggtree (>= 3.4.0),
     grid,
     gridExtra,
     htmlwidgets,
-    knitr,
     limma,
     MASS,
     openxlsx,
     patchwork,
     preprocessCore,
     rlang (>= 1.0.0),
-    rmarkdown,
-    statmod (>= 1.2.2), 
     stringr,
     vsn,
     Polychrome,
     ggplotify,
-    testthat
-Depends: 
-    R (>= 4.1.0)
+    statmod (>= 1.2.2),
+    RColorBrewer
 Suggests:
+    ggtree,
     grDevices,
     ggrastr,
     tibble,
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    proteoDA
+VignetteBuilder: knitr
 Config/testthat/edition: 3
-Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-VignetteBuilder: knitr
+LazyData: true

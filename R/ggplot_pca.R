@@ -13,18 +13,11 @@
 #' @param max.labels Maximum number of labels to show in the plot. Default: 100
 #' @param legend.position Position of the legend in the plot. Default: 'right'
 #' @param show.plot Logical indicating whether to display the plot. Default: TRUE
+#' @param max_pc Optional integer giving the maximum principal component
+#'   index to display in accompanying scree plots. Passed to
+#'   \code{qc_pca_plot7()} and \code{qc_pca_scree_plot7()}. Default: NULL
+#'   (shows all PCs).
 #' @return A list containing PCA plots for each subgroup and the PCA analysis results.
-#' @details This function allows users to visualize the PCA results for different subgroups in the dataset, providing insights into the variance and structure of the data.
-#' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  # Example usage
-#'  qc_pca_plot7_subgroups(DAList, "group", "sample_label")
-#'  }
-#' }
-#' @rdname qc_pca_plot7_subgroups
-#' @export
-#' @importFrom cli cli_abort
 qc_pca_plot7_subgroups <- function(DAList,
                                    grouping_column,
                                    label_column = NULL,
@@ -40,14 +33,14 @@ qc_pca_plot7_subgroups <- function(DAList,
                                    show.plot = TRUE,
                                    max_pc = NULL) {
 
-  DAList <- proteoDAstjude:::validate_DAList(x = DAList)
+  DAList <- validate_DAList(x = DAList)
 
   grouping_column <- check_grouping_column(metadata = DAList$metadata,
                                            grouping_column = grouping_column)
   groups <- DAList$metadata[, grouping_column]
 
   if (!is.factor(groups)) {
-    groups <- proteoDAstjude:::make_factor(x = groups)
+    groups <- make_factor(x = groups)
   } else {
     groups <- droplevels(x = groups)
   }
@@ -61,7 +54,7 @@ qc_pca_plot7_subgroups <- function(DAList,
   }
 
   if (is.null(group_color)) {
-    group_color <- proteoDAstjude:::binfcolors[1]
+    group_color <- binfcolors[1]
   }
 
   if (length(group_color) != 1L) {
@@ -113,6 +106,9 @@ qc_pca_plot7_subgroups <- function(DAList,
 #' @param pca_axes A numeric vector of length 2 specifying which PCA axes to plot. Default: c(1, 2)
 #' @param colors A vector of colors corresponding to groups. Default: NULL
 #' @param title Title for the plot. Default: NULL
+#' @param max_pc Optional integer giving the maximum principal component
+#'   index to include in the scree plot produced by
+#'   \code{qc_pca_scree_plot7()}. Default: NULL (shows all PCs).
 #' @param legend.position Position of the legend in the plot. Default: 'right'
 #' @param show.plot Logical indicating whether to display the plot. Default: TRUE
 #' @return A list containing the PCA plot, the PCA analysis results, and additional information.
@@ -185,13 +181,13 @@ qc_pca_plot7 <- function(data,
   }
 
   if (!is.factor(groups)) {
-    groups <- proteoDAstjude:::make_factor(as.character(groups), prefix = NULL)
+    groups <- make_factor(as.character(groups), prefix = NULL)
   }
   groups <- droplevels(x = groups)
 
   # Plot colors
   if (is.null(colors)) {
-    colors <- proteoDAstjude:::colorGroup(levels(groups))
+    colors <- colorGroup(levels(groups))
   }
 
   if (!all(length(colors) == length(levels(groups)))) {
@@ -206,11 +202,11 @@ qc_pca_plot7 <- function(data,
   if (is.null(sample_labels)) {
     sample_labels = colnames(data)
   }
-  sample_labels <- proteoDAstjude:::make_factor(as.character(sample_labels))
+  sample_labels <- make_factor(as.character(sample_labels))
 
   # Top variable proteins
   dat <- data[!apply(is.na(data), 1, any), ]
-  dat <- dat[order(proteoDAstjude:::rowVars(as.matrix(dat)), decreasing = TRUE), ]
+  dat <- dat[order(rowVars(as.matrix(dat)), decreasing = TRUE), ]
 
   if (is.null(top)) { top <- nrow(dat) }
   top2 <- ifelse(nrow(dat) >= top, top, nrow(dat))
@@ -359,7 +355,7 @@ qc_pca_scree_plot7 <- function(pca,
                      check.names = F,
                      fix.empty.names = F,
                      stringsAsFactors = F)
-  data$PC <- proteoDAstjude:::make_factor(as.character(data$PC))
+  data$PC <- make_factor(as.character(data$PC))
 
   scree_data <- data[1:num_pc, ]
 

@@ -9,7 +9,7 @@
 #' @param groups A vector indicating sample groupings for color coding in the dendrogram.
 #' @param sample_labels A vector of sample labels. If NULL, column names of `data` are used.
 #' @param text.sizes A numeric vector specifying text sizes for title, leaf labels, and legend text.
-#' @param point.sizes A numeric value specifying the size of the node circles.
+#' @param point.size A numeric value specifying the size of the node circles.
 #' @param top The number of the most variable proteins to use in the analysis.
 #' @param standardize A logical value indicating whether to standardize data (mean = 0, SD=1).
 #' @param dist_metric A character string specifying the distance metric (e.g., "euclidean", "manhattan").
@@ -31,7 +31,6 @@
 #'   
 #'
 #' @importFrom ggplot2 aes theme element_text margin
-#' @importFrom ggtree %<+% ggtree layout_dendrogram geom_tippoint geom_tiplab theme_dendrogram
 #' @keywords internal
 #' @export
 #'
@@ -54,126 +53,140 @@
 #' }
 
 qc_dendrogram <- function(data,
-                          groups = NULL, ## vector
-                          sample_labels = NULL, ## vector
-                          text.sizes = c(14,3,12), ## title, leaf cex, legend cex
-                          point.size = 3, ## size of node circcle
+                          groups = NULL,           # vector
+                          sample_labels = NULL,    # vector
+                          text.sizes = c(14, 3, 12),  # title, leaf cex, legend cex
+                          point.size = 3,          # size of node circle
                           top = 500,
                           standardize = TRUE,
                           dist_metric = "euclidean",
                           clust_method = "complete",
-                          colors = NULL, ## vector length = levels gorups
+                          colors = NULL,           # vector length = levels(groups)
                           legend.position = "right",
                           title = NULL,
                           subtitle = NULL,
                           show.plot = TRUE) {
-
-  require(ggtree)
+  
+  # Require ggtree only if this function is used (ggtree in Suggests)
+  if (!requireNamespace("ggtree", quietly = TRUE)) {
+    cli::cli_abort(
+      "Package {.pkg ggtree} is required for {.fn qc_dendrogram}. Please install it."
+    )
+  }
+  
   # Check arguments
   dist_metric <- rlang::arg_match(
-    arg = dist_metric,
-    values = c(
-      "euclidean", "maximum", "manhattan",
-      "canberra", "binary", "minkowski"
-    ),
+    arg    = dist_metric,
+    values = c("euclidean", "maximum", "manhattan",
+               "canberra", "binary", "minkowski"),
     multiple = FALSE
   )
-
+  
   clust_method <- rlang::arg_match(
-    arg = clust_method,
-    values = c(
-      "ward.D", "ward.D2", "single",
-      "complete", "average", "mcquitty",
-      "median", "centroid"
-    ), multiple = FALSE
+    arg    = clust_method,
+    values = c("ward.D", "ward.D2", "single",
+               "complete", "average", "mcquitty",
+               "median", "centroid"),
+    multiple = FALSE
   )
-
-
-
-  if (is.null(title)) { title <- "" }
-  if (is.null(subtitle)) { subtitle <- "" }
-
-  if(is.null(groups)) { groups <- rep(1, ncol(data)) }
-  groups <- proteoDAstjude:::make_factor(as.character(groups), prefix=NULL)
-  stopifnot(length(groups)==ncol(data))
-
-  ## get plot colors 1 per group levels i.e. unique groups
-  if(is.null(colors)){ colors <- proteoDA:::colorGroup(levels(groups)) }
-  if(!all.equal(length(colors), length(levels(groups)))){
+  
+  if (is.null(title))    title    <- ""
+  if (is.null(subtitle)) subtitle <- ""
+  
+  if (is.null(groups)) {
+    groups <- rep(1, ncol(data))
+  }
+  groups <- make_factor(as.character(groups), prefix = NULL)
+  stopifnot(length(groups) == ncol(data))
+  
+  # get plot colors 1 per group level
+  if (is.null(colors)) {
+    colors <- colorGroup(levels(groups))
+  }
+  if (!all.equal(length(colors), length(levels(groups)))) {
     stop("length of colors and levels of groups do not match.")
   }
   names(colors) <- levels(groups)
-
-
-
-  # if (is.null(sample_labels)) {
-  #   sample_labels <- colnames(data)
-  # } else {
-  #   colnames(data) <- sample_labels
-  # }
-  #   # Get sample info for colors
-  # sample_group_info <- data.frame(text = sample_labels, group = groups)
-  #
-
-
-  ## labels null set as col names; change col names to labels
-  if(is.null(sample_labels)){
+  
+  # labels: default to column names
+  if (is.null(sample_labels)) {
     sample_labels <- colnames(data)
   }
-  if(!all(length(sample_labels) == ncol(data))){
-    stop("vector of samples_labels < the number of data columns.")
+  if (!all(length(sample_labels) == ncol(data))) {
+    stop("vector of sample_labels < the number of data columns.")
   }
-  sample_labels <- proteoDAstjude:::make_factor(as.character(sample_labels))
-  ## meta data
-  sample_group_info <- data.frame(ind = colnames(data), groups = groups,
-                                  labels = sample_labels)
-
-  ## top variable genes
+  sample_labels <- make_factor(as.character(sample_labels))
+  
+  # metadata for plotting
+  sample_group_info <- data.frame(
+    ind    = colnames(data),
+    groups = groups,
+    labels = sample_labels
+  )
+  
+  # top variable proteins
   data <- data[!apply(is.na(data), 1, any), ]
-  data <- data[order(proteoDAstjude:::rowVars(as.matrix(data)), decreasing = TRUE), ]
-
-  if(is.null(top)) { top <- nrow(data) }
+  data <- data[order(rowVars(as.matrix(data)), decreasing = TRUE), ]
+  
+  if (is.null(top)) top <- nrow(data)
   top2 <- ifelse(nrow(data) >= top, top, nrow(data))
   data <- data[1:top2, ]
-
-
-  ## center/scale rows (proteins) mean=0;stdev=1
+  
+  # center/scale rows (proteins)
   if (standardize) {
     data <- t(scale(x = t(data), center = TRUE, scale = TRUE))
   }
-
-  # Do clustering
-  hc <- stats::hclust(stats::dist(t(data), method = dist_metric), method = clust_method)
-
-
-  # Make plot
-  p <- ggtree::ggtree(hc) %<+% sample_group_info +
-        ggtree::layout_dendrogram() +
+  
+  # clustering
+  hc <- stats::hclust(stats::dist(t(data), method = dist_metric),
+                      method = clust_method)
+  
+  # dendrogram plot
+  p <- ggtree::ggtree(hc)
+  p <- ggtree::`%<+%`(p, sample_group_info) +
+    ggtree::layout_dendrogram() +
     ggtree::geom_tippoint(aes(color = .data$groups), size = point.size) +
-    ggtree::geom_tiplab(aes(color = .data$groups, label = .data$labels),
-                        size =text.sizes[2], ## cex leaf text
-                        angle=90, hjust = 1, offset = -0.3, show.legend=FALSE) +
-    scale_color_manual(values = colors[groups],#proteoDA:::colorGroup(groups),
-                       limits = levels(groups), name = NULL) +
-    ggtree::theme_dendrogram(plot.margin = margin(6,6,110,6)) +
-    theme(plot.title = element_text(hjust = 0, size = text.sizes[1])) +
-    theme(legend.position = legend.position,
-          legend.margin = margin(30,0,0,0),
-          legend.text = element_text(size = text.sizes[3])) +
-    # theme(legend.margin = margin(0.2,0.2,60,0.2))+#text.sizes[4])) +
+    ggtree::geom_tiplab(
+      aes(color = .data$groups, label = .data$labels),
+      size = text.sizes[2],
+      angle = 90,
+      hjust = 1,
+      offset = -0.3,
+      show.legend = FALSE
+    ) +
+    scale_color_manual(
+      values = colors[groups],
+      limits = levels(groups),
+      name   = NULL
+    ) +
+    ggtree::theme_dendrogram(plot.margin = margin(6, 6, 110, 6)) +
+    theme(
+      plot.title   = element_text(hjust = 0, size = text.sizes[1]),
+      legend.position = legend.position,
+      legend.margin   = margin(30, 0, 0, 0),
+      legend.text     = element_text(size = text.sizes[3])
+    ) +
     ggtitle(label = title, subtitle = subtitle)
-
-
-
-  ## increase point size of dots in legend
-  p <- p +   guides(colour = guide_legend(override.aes = list(size = point.size)))
-  if(show.plot){  plot(p) }
-
-
- invisible(list(p = p, hc = hc, data_na=data, sample_group_info=sample_group_info,
-       param = list(groups=groups, top = top, dist_metric=dist_metric,
-                    clust_method=clust_method)))
-
+  
+  # increase point size in legend
+  p <- p + guides(colour = guide_legend(override.aes = list(size = point.size)))
+  
+  if (show.plot) {
+    plot(p)
+  }
+  
+  invisible(list(
+    p    = p,
+    hc   = hc,
+    data_na = data,
+    sample_group_info = sample_group_info,
+    param = list(
+      groups       = groups,
+      top          = top,
+      dist_metric  = dist_metric,
+      clust_method = clust_method
+    )
+  ))
 }
 
 #' Dendrogram for QC Report with Subgroups
@@ -197,7 +210,6 @@ qc_dendrogram <- function(data,
 #' @return A list of dendrogram plots for each subgroup. 
 #'
 #' @importFrom ggplot2 aes theme element_text margin
-#' @importFrom ggtree %<+% ggtree layout_dendrogram geom_tippoint geom_tiplab theme_dendrogram
 #' @export
 #'
 #' @examples
@@ -238,7 +250,7 @@ qc_dendrogram_subgroups <- function(DAList,
 
 
   ## validate DAList
-  DAList <- proteoDAstjude:::validate_DAList(x = DAList)
+  DAList <- validate_DAList(x = DAList)
 
   ## check grouping column is a column in metadata. if not a factor make a factor
   ## then define groups vector
@@ -247,7 +259,7 @@ qc_dendrogram_subgroups <- function(DAList,
 
   ## make groups a factor and drop empty levels
   if(!is.factor(groups)){
-    groups <- proteoDAstjude:::make_factor(x = as.character(groups))
+    groups <- make_factor(x = as.character(groups))
   }
   groups <- droplevels(x = groups)
 
@@ -266,7 +278,7 @@ qc_dendrogram_subgroups <- function(DAList,
   ## if group color is not defined set as blueberry from binfcolors
   ## if defined check that a single value is provided if not error
   if(is.null(group_color)){
-    group_color <- proteoDAstjude:::binfcolors[1]
+    group_color <- binfcolors[1]
   }
   if((length(group_color) != 1L)){
     cli::cli_abort("The group_color argument should be one color.")

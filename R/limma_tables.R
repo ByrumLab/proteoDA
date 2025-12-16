@@ -8,7 +8,7 @@ DA_table_cols <- c("uniprot_id","Accession.Number","Protein.Description")  # DIA
 # Columns that are purely statistical results (subset of above)
 stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSD", "logFC_z_scores", "sig.PVal", "sig.FDR")
 
-# Default filter thresholds used for the “filter info” summary in Excel
+# Default filter thresholds used for the 'filter info' summary in Excel
 filt_min_reps   <- NA_integer_
 filt_min_groups <- NA_integer_
 
@@ -230,20 +230,44 @@ make_excel_hyperlinks <- function(data, url.col, url) {
   data
 }
 
-## new helper function to define stat columns in Excel file. 
-#' Build a cleaned statlist for export to Excel (renaming z_scores)
+## new helper function to define stat columns in Excel file.
+#' Build a cleaned statlist for export to Excel
 #'
-#' @param results A named list of data frames. Each element is a contrast result (e.g., DAList$results$contrast_name).
-#' @param movingSDs A named list of numeric vectors for each contrast (e.g., DAList$tags$movingSDs).
-#' @param z_scores A named list of numeric vectors for each contrast (e.g., DAList$tags$logFC_z_scores).
-#' @param stat_cols Character vector of column names to include from the results. Defaults include additional stats from tags.
+#' Constructs a per-contrast statistics list from a \code{DAList} object with
+#' full protein coverage. For each contrast, the function assembles a data
+#' frame with one row per protein in \code{DAList$data} and selected columns
+#' from the limma results plus optional moving standard deviations and
+#' z-scores stored in \code{DAList$tags}.
 #'
-#' @return A named list of filtered data frames per contrast.
+#' @param DAList A DAList object containing:
+#'   \itemize{
+#'     \item \code{$data}: matrix/data frame of log-intensities (rows = proteins).
+#'     \item \code{$results}: named list of per-contrast limma result tables.
+#'     \item \code{$tags$movingSDs}: optional named list of moving SD vectors
+#'           (one per contrast).
+#'     \item \code{$tags$logFC_z_scores}: optional named list of z-score vectors
+#'           (one per contrast).
+#'   }
+#' @param stat_cols Character vector of column names to include for each
+#'   contrast. Defaults to:
+#'   \code{c("logFC", "P.Value", "adj.P.Val", "sig.PVal", "sig.FDR",
+#'   "movingSDs", "logFC_z_scores")}.
+#'
+#' @return A named list of data frames, one per contrast, each with one row per
+#'   protein in \code{DAList$data} and columns given by \code{stat_cols}.
 #' @export
-# Updated helper to build statlist with full protein coverage
+#'
+#' @examples
+#' \dontrun{
+#' statlist <- build_statlist(DAList)
+#' names(statlist)
+#' head(statlist[[1]])
+#' }
 build_statlist <- function(DAList,
                            stat_cols = c("logFC", "P.Value", "adj.P.Val",
-                                         "sig.PVal", "sig.FDR", "movingSDs", "logFC_z_scores")) {
+                                         "sig.PVal", "sig.FDR",
+                                         "movingSDs", "logFC_z_scores")) {
+  
   all_proteins <- rownames(DAList$data)
   final_statlist <- list()
   
@@ -251,21 +275,8 @@ build_statlist <- function(DAList,
     stats_df <- data.frame(row.names = all_proteins)
     contrast_res <- DAList$results[[contrast]]
     msd <- DAList$tags$movingSDs[[contrast]]
-    zs <- DAList$tags$logFC_z_scores[[contrast]]
+    zs  <- DAList$tags$logFC_z_scores[[contrast]]
     
-    # for (col in stat_cols) {
-    #   vec <- rep(NA_real_, length(all_proteins))
-    #   names(vec) <- all_proteins
-    #   if (col %in% colnames(contrast_res)) {
-    #     vec[names(vec) %in% rownames(contrast_res)] <- contrast_res[rownames(contrast_res), col]
-    #   } else if (col == "movingSDs" && !is.null(msd)) {
-    #     vec[names(vec) %in% names(msd)] <- msd[names(msd)]
-    #   } else if (col == "logFC_z_scores" && !is.null(zs)) {
-    #  #   vec[names(vec) %in% names(zs)] <- zs[names(zs)]
-    #     vec[names(zs)] <- zs  # ensure 1-to-1 mapping to proteinIDs from DAList$data
-    #   }
-    #   stats_df[[col]] <- vec
-    # }
     for (col in stat_cols) {
       vec <- rep(NA_real_, length(all_proteins))
       names(vec) <- all_proteins
@@ -285,9 +296,15 @@ build_statlist <- function(DAList,
     
     final_statlist[[contrast]] <- stats_df
   }
-  return(final_statlist)
+  
+  final_statlist
 }
 
+# Define available normalization methods
+norm.methods <- c("Log2" = "log2",
+                  "Median" = "median",
+                  "Quantile" = "quantile",
+                  "DIANN" = "dian_quan")
 
 #' Write an .xlsx file of limma results
 #'
@@ -302,24 +319,19 @@ build_statlist <- function(DAList,
 #' @param lfc_thresh The log-fold change threshold for significance.
 #' @param add_filter Logical. Whether to add Excel filters to columns.
 #' @param color_palette A vector of colors for contrast sections (optional).
-#' @param annot_cols Character vector of annotation column names to include. If NULL, all columns are used.
-
+#' @param annot_cols Character vector of annotation column names to include.
+#'   If \code{NULL}, all columns are used.
 #'
 #' @return A list with filename and workbook object (invisibly).
 #' @keywords internal
-#' 
-
-# Define available normalization methods
-norm.methods <- c("Log2" = "log2", "Median" = "median", "Quantile" = "quantile", "DIANN" = "dian_quan")
-
 write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
                               pval_thresh, lfc_thresh, add_filter, 
                               color_palette = c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
                                 "#0072B2", "#D55E00", "#CC79A7", "#999999"),
                               annot_cols = NULL) {
-  # [Full body remains unchanged — from your original version]
+  # [Full body remains unchanged -- from your original version]
   # See previous uploads for the exact function implementation
-  # This placeholder is meant to conserve response length — paste full version here as needed
+  # This placeholder is meant to conserve response length -- paste full version here as needed
   # Maybe some argument processing
   normName <- names(norm.methods)[grep(norm.method,norm.methods)]
   row_order <- rownames(data)
@@ -346,8 +358,8 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   criteria_data <- data.frame(
     Criterion = c("Adjusted p-value threshold (FDR)", "Log2 fold-change threshold", "Significance definition"),
     Value = c(pval_thresh, lfc_thresh, paste0(
-      "Up: logFC ≥ ", lfc_thresh, " & adj.P.Val ≤ ", pval_thresh, "; ",
-      "Down: logFC ≤ -", lfc_thresh, " & adj.P.Val ≤ ", pval_thresh
+      "Up: logFC >= ", lfc_thresh, " & adj.P.Val <= ", pval_thresh, "; ",
+      "Down: logFC <= -", lfc_thresh, " & adj.P.Val <= ", pval_thresh
     ))
   )
   
@@ -429,26 +441,6 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
   title_row <- 3
   
   # Add annotation columns -----------------------------------------------------
-  
-  # Subset and rename
-  #annot <- annotation[row_order, , drop = F]
-    # colnames(annot) <- newNames
-  # annot <- make_excel_hyperlinks(data = annot,
-  #                                url.col = "UniProt ID",
-  #                                url = "https://www.uniprot.org/uniprot/")
-  # 
-  
-  # Subset and rename for hyperlinks 
-  # if (!is.null(annot_cols)) {
-  #   missing_cols <- setdiff(annot_cols, colnames(annotation))
-  #   if (length(missing_cols) > 0) {
-  #     stop(paste("The following annotation columns were not found:", paste(missing_cols, collapse = ", ")))
-  #   }
-  #   annot <- annotation[row_order, annot_cols, drop = FALSE]
-  # } else {
-  #   annot <- annotation[row_order, , drop = FALSE]
-  # }
-  
   # Subset and rename for hyperlinks 
   if (!is.null(annot_cols)) {
     missing_cols <- setdiff(annot_cols, colnames(annotation))
@@ -799,25 +791,54 @@ sanitize_sheet_names <- function(names, max_len = 31L) {
 
 #' Write tables of limma results
 #'
-#' Generates CSV and Excel summary tables from a limma differential analysis list.
-#' If DAList$tags$per_contrast[[label]]$contrast_info contains a usable group_col and non-empty involved_levels,
-#' those samples are selected for the per-contrast CSV; otherwise the old _vs_ parser is used. 
-#' If that also fails, all samples are included with a warning (same as before). write_limma_tables() 
-#' now passes the sidecar tags automatically and falls back to DAList$results when statlist is NULL.
+#' Generates CSV and Excel summary tables from a limma differential
+#' abundance analysis stored in a \code{DAList}.
 #'
-#' @param DAList A DAList object with statistical results.
-#' @param output_dir Directory to output tables. Defaults to working directory.
-#' @param overwrite Logical. Overwrite existing files?
-#' @param contrasts_subdir Subdirectory for per-contrast CSV files.
-#' @param summary_csv Filename for summary CSV.
-#' @param combined_file_csv Filename for combined results CSV.
-#' @param spreadsheet_xlsx Filename for Excel spreadsheet.
-#' @param add_filter Logical. Add filters to Excel columns?
-#' @param color_palette Optional color palette for Excel output.
-#' @param add_contrast_sheets Logical. Whether to add each per-contrast CSV as a worksheet in the Excel file.
-#' @param statlist Optional list of per-contrast result tables to use instead of \code{DAList$results}.
+#' @details
+#' For each contrast, per-contrast CSV files are written using
+#' \code{write_per_contrast_csvs()}, combining annotation, data, and
+#' statistics. If \code{DAList$tags$per_contrast[[label]]$contrast_info}
+#' contains a usable \code{group_col} and non-empty \code{involved_levels},
+#' those samples are selected for the per-contrast CSV. Otherwise the older
+#' \code{"_vs_"} label parser is used. If that also fails, all samples are
+#'  included with a warning.
 #'
-#' @return Invisibly returns the input DAList.
+#' The function then:
+#' \itemize{
+#'   \item writes a summary CSV of up/down/non-significant counts per contrast;
+#'   \item writes per-contrast CSV files into \code{contrasts_subdir};
+#'   \item writes a combined results CSV with all contrasts side by side;
+#'   \item writes an Excel workbook using \code{write_limma_excel()}, and
+#'         optionally adds each per-contrast CSV as a worksheet.
+#' }
+#'
+#' The columns included in the per-contrast and Excel tables are determined
+#' by internal settings such as \code{DA_table_cols} and \code{stat_cols},
+#' which are defined in the package configuration rather than as function
+#' arguments.
+#'
+#' @param DAList A DAList object with statistical results in \code{$results},
+#'   annotation in \code{$annotation}, data in \code{$data}, metadata in
+#'   \code{$metadata}, and optional tags in \code{$tags}.
+#' @param output_dir Directory to output tables. Defaults to the current
+#'   working directory if \code{NULL}.
+#' @param overwrite Logical; overwrite existing files if they are found in
+#'   \code{output_dir}? Default is \code{FALSE}.
+#' @param contrasts_subdir Subdirectory (within \code{output_dir}) for
+#'   per-contrast CSV files.
+#' @param summary_csv Filename for the summary CSV (per-contrast counts).
+#' @param combined_file_csv Filename for the combined results CSV.
+#' @param spreadsheet_xlsx Filename for the Excel spreadsheet.
+#' @param add_filter Logical; add Excel autofilters to columns in the main
+#'   worksheet produced by \code{write_limma_excel()}.
+#' @param color_palette Optional vector of colors used for conditional
+#'   formatting in the Excel output.
+#' @param add_contrast_sheets Logical; if \code{TRUE}, each per-contrast CSV
+#'   is added as a separate worksheet to the Excel workbook.
+#' @param statlist Optional list of per-contrast result tables to use instead
+#'   of \code{DAList$results}. If \code{NULL}, \code{DAList$results} is used.
+#'
+#' @return Invisibly returns the (validated) input \code{DAList}.
 #' @export
 write_limma_tables <- function(DAList,
                                output_dir = NULL,

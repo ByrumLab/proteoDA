@@ -30,11 +30,10 @@ run_filtered_limma_analysis(
 Each row should contain a full contrast statement of the form \code{Label = expression}.
 The label (left-hand side) may be any string; it does not need to encode group names.}
 
-\item{binsize}{Either an integer for the moving window size, or "auto" (default) to select automatically.}
+\item{binsize}{Either an integer for the moving window size, or
+\code{"auto"} (default) to select an appropriate bin size automatically.}
 
 \item{plot_movingSD}{Logical. If TRUE (default), plot moving SD curves for each contrast.}
-
-\item{binsize_range}{A numeric vector of candidate bin sizes to evaluate when \code{binsize = "auto"}.}
 }
 \value{
 The input DAList, updated with per-contrast model fits and results,
@@ -66,10 +65,14 @@ functions (e.g., \code{write_limma_tables()}) do not need to parse labels.
 }
 
 \examples{
+\dontrun{
 # Using default binsize auto-selection
 filtered_DAList <- run_filtered_limma_analysis(filtered_DAList)
 
 # With specified bin size and no plots
-filtered_DAList <- run_filtered_limma_analysis(filtered_DAList, binsize = 200, plot_movingSD = FALSE)
-
+filtered_DAList <- run_filtered_limma_analysis(
+    filtered_DAList, 
+    binsize = 200, 
+    plot_movingSD = FALSE)
+}
 }

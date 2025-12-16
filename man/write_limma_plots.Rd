@@ -53,6 +53,18 @@ Default is 1000.}
 
 \item{width}{The width of the interactive report objects, in pixels.
 Default is 1000.}
+
+\item{control_proteins}{Optional character vector of protein identifiers
+(e.g., UniProt IDs) to treat as control or reference proteins. These can
+be highlighted in static volcano and MD plots.}
+
+\item{highlight_by}{Optional column name in the results table or annotation
+used to select proteins for highlighting (for example, \code{"uniprot_id"}
+or a logical marker column such as \code{"is_marker"}).}
+
+\item{image_formats}{Character vector of file formats to write for the
+static plots, e.g. \code{c("pdf", "png")}. Passed on to
+\code{ggplot2::ggsave}.}
 }
 \value{
 Invisibly returns the input DAList.

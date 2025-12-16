@@ -42,8 +42,8 @@
 #'                          fix.empty.names = FALSE, stringsAsFactors = FALSE,
 #'                          row.names = paste0("protein_", 1:5))
 #'
-#' d <- proteoDA:::DAList(data = data, metadata = metadata, annotation = annotation)
-#' d <- proteoDA:::validate_DAList(x = d)
+#' d <- DAList(data = data, metadata = metadata, annotation = annotation)
+#' d <- validate_DAList(x = d)
 
 #'  ## rename samples
 #'  d2 <- rename_samples(DAList = d, label_column = "sample",
@@ -73,7 +73,7 @@ rename_samples <- function(DAList,
 
   ## validate DAList object i.e. data, metadata, annotation
   ## have same row/column names and in same order etc.
-  DAList <- proteoDAstjude:::validate_DAList(x = DAList)
+  DAList <- validate_DAList(x = DAList)
 
 
   ## CHANGE SAMPLE NAMES
@@ -110,7 +110,7 @@ rename_samples <- function(DAList,
     if(is.factor(DAList$metadata[, grouping_column])){
       DAList$metadata[, grouping_column] <- droplevels(x = DAList$metadata[, grouping_column])
     } else {
-      DAList$metadata[, grouping_column] <- proteoDAstjude:::make_factor(x = DAList$metadata[, grouping_column])
+      DAList$metadata[, grouping_column] <- make_factor(x = DAList$metadata[, grouping_column])
     }
 
 
@@ -136,7 +136,7 @@ rename_samples <- function(DAList,
 
   }
 
- DAList <- proteoDAstjude:::validate_DAList(x = DAList)
+ DAList <- validate_DAList(x = DAList)
 
   DAList
 

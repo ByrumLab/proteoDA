@@ -21,6 +21,15 @@
 #'   are already on the log2 scale for methods that expect log2 input. Default FALSE.
 #' @param contrasts Optional character vector: restrict report to these contrasts when
 #'   `data_per_contrast` is present. Default = all.
+#' @param sample_id_col Optional name of the metadata column whose values match
+#'   the matrix column names. If `NULL`, the function attempts to auto-detect a
+#'   suitable column (e.g., "sample").
+#' @param groups_override Optional named vector of group labels with names equal
+#'   to **matrix column names**. If supplied, this overrides the group labels
+#'   derived from `grouping_column` and `sample_id_col`.
+#' @param metrics_csv Optional path to a CSV file where per-sample normalization
+#'   metrics (PCV, PMAD, PEV, COR, mean intensity, etc.) will be written. If
+#'   `NULL`, metrics are not exported to CSV.
 #'
 #' @return Invisibly returns the input DAList.
 #' @export
@@ -47,7 +56,7 @@ write_norm_report <- function(DAList,
   on.exit(ggplot2::theme_set(old_theme), add = TRUE)
   ggplot2::theme_set(ggplot2::theme_gray())
   
-  # If data are already normalized, stop early — this report is meant for raw data.
+  # If data are already normalized, stop early -- this report is meant for raw data.
   if (!is.null(DAList$tags$normalized) && isTRUE(DAList$tags$normalized)) {
     cli::cli_abort(
       "Input data already normalized; {.fn write_norm_report} expects raw (unnormalized) data."
@@ -175,7 +184,7 @@ write_norm_report <- function(DAList,
     ###########################
     ## Compute metrics/plots  ##
     ###########################
-    cli::cli_inform("Starting per-contrast normalizations for {length(target_ct)} contrasts…")
+    cli::cli_inform("Starting per-contrast normalizations for {length(target_ct)} contrasts ...")
     
     plot_pages <- list()
     .norm_metrics_accum <- NULL
@@ -196,7 +205,7 @@ write_norm_report <- function(DAList,
       
       page_1 <- a + b + c + d + e + f +
         patchwork::plot_layout(ncol = 3) +
-        patchwork::plot_annotation(title = paste0("Normalization metrics — ", ct))
+        patchwork::plot_annotation(title = paste0("Normalization metrics -- ", ct))
       
       page_2 <- pn_plot_MD(normList, groups_map[[ct]], use_ggrastr)
       plot_pages[[length(plot_pages) + 1]] <- list(page_1 = page_1, page_2 = page_2)
@@ -341,7 +350,7 @@ apply_all_normalizations <- function(data, input_is_log2 = FALSE, groups = NULL)
 #'
 #' @param DAList A DAList containing already-normalized matrices (per-contrast or global).
 #' @param norm_label Character scalar used as the list name in plots (e.g., "cycloess").
-#' @param grouping_column Name of the metadata column giving sample groups. Must contain ≥2 groups.
+#' @param grouping_column Name of the metadata column giving sample groups. Must contain >= 2 groups.
 #' @param output_dir Directory to save the PDF (created if missing). Default: working directory.
 #' @param filename File name for the PDF (must end with `.pdf`). Default: "norm_eval_report.pdf".
 #' @param overwrite Overwrite existing file? Default FALSE.
@@ -354,7 +363,9 @@ apply_all_normalizations <- function(data, input_is_log2 = FALSE, groups = NULL)
 #'   If `NULL`, the function will try to auto-detect a suitable column.
 #' @param groups_override Optional named vector of group labels with names equal to **matrix column names**.
 #'   If supplied, overrides `grouping_column`/`sample_id_col` matching.
-#'
+#' @param metrics_csv Optional path to a CSV file where per-sample normalization
+#'   metrics (e.g., PCV, PMAD, PEV, COR, mean intensity) will be written. If
+#'   `NULL`, metrics are not exported to CSV.
 #' @return Invisibly returns `DAList`.
 #' @export
 write_norm_eval_report <- function(DAList,
@@ -453,7 +464,7 @@ write_norm_eval_report <- function(DAList,
       # Build a single-method normList for plotting helpers
      # normList <- list(); normList[[norm_label]] <- X
       
-      # NEW — always provide a 'log2' entry for plotting helpers
+      # always provide a 'log2' entry for plotting helpers
       X <- as.matrix(X)
       if (is.null(dim(X))) X <- matrix(X, nrow = length(X), ncol = 1)  # extra safety if ever 1-D
       normList <- list(log2 = X)
@@ -471,7 +482,7 @@ write_norm_eval_report <- function(DAList,
       e <- pn_plot_log2ratio(normList, g)
       f <- pn_plot_log2ratio(normList, g, zoom = TRUE, legend = !suppress_zoom_legend)
       page_1 <- a + b + c + d + e + f + patchwork::plot_layout(ncol = 3) +
-        patchwork::plot_annotation(title = paste0("Post-normalization metrics — ", ct, " (", norm_label, ")"))
+        patchwork::plot_annotation(title = paste0("Post-normalization metrics -- ", ct, " (", norm_label, ")"))
       
       page_2 <- pn_plot_MD(normList, g, use_ggrastr)
       
@@ -492,7 +503,7 @@ write_norm_eval_report <- function(DAList,
     
    # normList <- list(); normList[[norm_label]] <- X
     # some plotting functions expect normList$log2 to exist
-    # NEW — always provide a 'log2' entry for plotting helpers
+    # always provide a 'log2' entry for plotting helpers
     X <- as.matrix(X)
     if (is.null(dim(X))) X <- matrix(X, nrow = length(X), ncol = 1)  # extra safety if ever 1-D
     normList <- list(log2 = X)
@@ -540,7 +551,7 @@ write_norm_eval_report <- function(DAList,
 #' - PEV: pooled estimate of variance (log2 scale)
 #' - COR: mean pairwise Pearson correlation within groups (log2 scale)
 #'
-#' @param normList Named list of matrices (methods × samples). Names are method labels.
+#' @param normList Named list of matrices (methods x samples). Names are method labels.
 #' @param groups Character vector of group labels aligned to columns of matrices.
 #' @param contrast Character scalar to label the contrast in the output.
 #'

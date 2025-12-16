@@ -13,6 +13,7 @@ devtools::document()  # rebuild docs
 devtools::check(document = FALSE) # checks vignettes for R CMD check
 # document = FALSE tells devtools::check() to use the exisiting .Rd, NAMESPACE, do not re-run roxygen
 devtools::test(filter = "add_design")
+devtools::test(filter = "qc_boxplot")
 #######
 # load project parameters 
 source("proteoDA_params.R")
@@ -340,7 +341,7 @@ results <- run_filtered_limma_analysis(
 results <- write_movingSD_report(
   DAList         = results,
   out_dir        = "vignettes/images/movingSD", # "QC_report/movingSD",
-  binsize        = "auto",    # can use what was selected abover or let it choose it again
+  binsize        = "auto",    # can use what was selected above or let it choose it again
   contrasts_file = contrasts,
   device         = "png"  # pdf, png, or both
 )

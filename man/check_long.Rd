@@ -7,55 +7,55 @@
 check_long(x, char_thresh = 15, na.rm = FALSE)
 }
 \arguments{
-\item{x}{A vector of values. This parameter is typically a vector of column names,
-row names, or values in a particular metadata column.}
+\item{x}{A vector of values. Typically column names, row names, or metadata values.}
 
-\item{char_thresh}{A numeric value (greater than or equal to 0). This defines the
-maximum allowed character length for values in \code{x}. Any value exceeding this length
-will be returned.}
+\item{char_thresh}{A non-negative numeric value specifying the maximum allowed
+character length. Values exceeding this length are returned.}
 
-\item{na.rm}{A logical value indicating whether to remove \code{NA} values from \code{x}. Default is \code{FALSE}.}
+\item{na.rm}{Logical; if \code{TRUE}, \code{NA} values are removed before checking. If \code{FALSE},
+\code{NA} and \code{NaN} may appear in the output.}
 }
 \value{
-The function returns a vector of values in \code{x} that exceed the specified
-\code{char_thresh} character length. If no such values exist, it returns \code{NULL}. If
-\code{na.rm = FALSE}, \code{NA} and \code{NaN} values in \code{x} will be included in the output.
-\subsection{x(no NAs) + na.rm = TRUE/FALSE + all below ==> NULL}{
-}
-
-\subsection{x(NAs) + na.rm = TRUE + all below ==> NULL}{
-}
-
-\subsection{x(NAs) + na.rm = FALSE + all below ==> c(NA, NaN)}{
-}
-
-\subsection{x(no NAs) + na.rm = TRUE/FALSE + above == > c(values)}{
-}
-
-\subsection{x(NAs) + na.rm = TRUE + above ==> c(values)}{
-}
-
-\subsection{x(NAs) + na.rm = FALSE + above ==> c(values, NA, NaN)}{
-}
+A vector of values in \code{x} whose character lengths exceed \code{char_thresh}.
+Returns \code{NULL} if no values meet the criterion.
 }
 \description{
 This function identifies values in a vector that exceed a specified maximum number
 of characters. This is often used to identify long sample names or group labels that
 could cause issues in visualizations or presentations.
 }
+\details{
+Behavior under different combinations of \code{x} contents and \code{na.rm}:
+\itemize{
+\item \strong{No NAs in \code{x}}
+\itemize{
+\item \code{na.rm = TRUE} or \code{FALSE}, and \strong{all values are below} the threshold → returns \code{NULL}.
+\item \code{na.rm = TRUE} or \code{FALSE}, and \strong{some values exceed} the threshold → returns those values.
+}
+\item \strong{NAs present in \code{x}}
+\itemize{
+\item \code{na.rm = TRUE}: NAs are removed; behavior is based only on non-NA values.
+\item \code{na.rm = FALSE}:
+\itemize{
+\item If all non-NA values are below threshold → returns \code{c(NA, NaN)} if present.
+\item If some exceed threshold → returns the long values and any \code{NA}/\code{NaN} values.
+}
+}
+}
+}
 \examples{
 \dontrun{
-if(interactive()){
-  x <- c("Con_01", "Con_02", NA, "TAC_Treatment_01", "", Inf, NaN, "TAC_Treat_02")
-  y <- c("Con_01", "Con_02", "Treat_01", "Treat_101")
-  z <- c("Con_01", NA, "TAC_Treatment_01", "TAC_Treat_02", "", Inf)
- ## identify values with more than 15 characters
-  check_long(x = x, char_thresh = 15, na.rm = FALSE)
- ## identify values with more than 8 characters
-  check_long(x = y, char_thresh = 8)
- ## identify values with more than 6 characters
-  check_long(x = y, char_thresh = 6)
-}
-}
+x <- c("Con_01", "Con_02", NA, "TAC_Treatment_01", "", Inf, NaN, "TAC_Treat_02")
+y <- c("Con_01", "Con_02", "Treat_01", "Treat_101")
+z <- c("Con_01", NA, "TAC_Treatment_01", "TAC_Treat_02", "", Inf)
 
+# identify values with more than 15 characters
+check_long(x = x, char_thresh = 15, na.rm = FALSE)
+
+# identify values with more than 8 characters
+check_long(x = y, char_thresh = 8)
+
+# identify values with more than 6 characters
+check_long(x = y, char_thresh = 6)
+}
 }

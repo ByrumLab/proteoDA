@@ -2,7 +2,7 @@
 % Please edit documentation in R/limma_tables.R
 \name{build_statlist}
 \alias{build_statlist}
-\title{Build a cleaned statlist for export to Excel (renaming z_scores)}
+\title{Build a cleaned statlist for export to Excel}
 \usage{
 build_statlist(
   DAList,
@@ -11,17 +11,36 @@ build_statlist(
 )
 }
 \arguments{
-\item{stat_cols}{Character vector of column names to include from the results. Defaults include additional stats from tags.}
+\item{DAList}{A DAList object containing:
+\itemize{
+\item \code{$data}: matrix/data frame of log-intensities (rows = proteins).
+\item \code{$results}: named list of per-contrast limma result tables.
+\item \code{$tags$movingSDs}: optional named list of moving SD vectors
+(one per contrast).
+\item \code{$tags$logFC_z_scores}: optional named list of z-score vectors
+(one per contrast).
+}}
 
-\item{results}{A named list of data frames. Each element is a contrast result (e.g., DAList$results$contrast_name).}
-
-\item{movingSDs}{A named list of numeric vectors for each contrast (e.g., DAList$tags$movingSDs).}
-
-\item{z_scores}{A named list of numeric vectors for each contrast (e.g., DAList$tags$logFC_z_scores).}
+\item{stat_cols}{Character vector of column names to include for each
+contrast. Defaults to:
+\code{c("logFC", "P.Value", "adj.P.Val", "sig.PVal", "sig.FDR",
+  "movingSDs", "logFC_z_scores")}.}
 }
 \value{
-A named list of filtered data frames per contrast.
+A named list of data frames, one per contrast, each with one row per
+protein in \code{DAList$data} and columns given by \code{stat_cols}.
 }
 \description{
-Build a cleaned statlist for export to Excel (renaming z_scores)
+Constructs a per-contrast statistics list from a \code{DAList} object with
+full protein coverage. For each contrast, the function assembles a data
+frame with one row per protein in \code{DAList$data} and selected columns
+from the limma results plus optional moving standard deviations and
+z-scores stored in \code{DAList$tags}.
+}
+\examples{
+\dontrun{
+statlist <- build_statlist(DAList)
+names(statlist)
+head(statlist[[1]])
+}
 }

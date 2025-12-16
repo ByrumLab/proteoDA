@@ -143,7 +143,6 @@ qc_pca_plot <- function(data,
 #' @keywords internal
 #'
 #' @importFrom ggplot2 aes theme element_text margin
-#' @importFrom ggtree %<+%
 #'
 qc_dendro_plot <- function(data,
                            groups = NULL,
@@ -152,69 +151,86 @@ qc_dendro_plot <- function(data,
                            standardize = TRUE,
                            dist_metric = "euclidean",
                            clust_method = "complete") {
-
+  
   # Check arguments
   dist_metric <- rlang::arg_match(
-    arg = dist_metric,
-    values = c(
-      "euclidean", "maximum", "manhattan",
-      "canberra", "binary", "minkowski"
-    ),
+    arg    = dist_metric,
+    values = c("euclidean", "maximum", "manhattan",
+               "canberra", "binary", "minkowski"),
     multiple = FALSE
   )
-
+  
   clust_method <- rlang::arg_match(
-    arg = clust_method,
-    values = c(
-      "ward.D", "ward.D2", "single",
-      "complete", "average", "mcquitty",
-      "median", "centroid"
-    ), multiple = FALSE
+    arg    = clust_method,
+    values = c("ward.D", "ward.D2", "single",
+               "complete", "average", "mcquitty",
+               "median", "centroid"),
+    multiple = FALSE
   )
-
+  
   if (is.null(sample_labels)) {
-    sample_labels <- colnames(data) #nocov
+    sample_labels <- colnames(data) # nocov
   } else {
     colnames(data) <- sample_labels
   }
-
+  
   # Get top variable proteins
   o <- order(rowVars(as.matrix(data)), decreasing = TRUE)
   data <- data[o, ]
   top <- ifelse(nrow(data) >= top_proteins, top_proteins, nrow(data))
   data <- data[1:top, ]
-
-  ## center/scale rows (proteins) mean=0;stdev=1
+  
+  # center/scale rows (proteins) mean=0;stdev=1
   if (standardize) {
     data <- t(scale(x = t(data), center = TRUE, scale = TRUE))
   }
-
+  
   # Do clustering
-  hc <- stats::hclust(stats::dist(t(data), method = dist_metric), method = clust_method)
-
+  hc <- stats::hclust(stats::dist(t(data), method = dist_metric),
+                      method = clust_method)
+  
   # Get sample info for colors
-  sample_group_info <- data.frame(text = sample_labels,
-                                  group = groups)
-
-  # Make plot
-  # Adjust the bottom margin based on the length of the longest
-  # sample label, so labels don't go over plot edges
+  sample_group_info <- data.frame(
+    text  = sample_labels,
+    group = groups
+  )
+  
+  # Adjust bottom margin so labels don't get cut off
   longest_label <- max(stringr::str_length(sample_labels))
   # Only do it when > 50 samples
-  bottom_margin <- ifelse(length(sample_labels > 50), 12*longest_label, 80)
-
-  ggtree::ggtree(hc) %<+% sample_group_info +
+  bottom_margin <- ifelse(length(sample_labels) > 50, 12 * longest_label, 80)
+  
+  if (!requireNamespace("ggtree", quietly = TRUE)) {
+    cli::cli_abort(
+      "Package {.pkg ggtree} is required for {.fn qc_dendro_plot}. Please install it."
+    )
+  }
+  
+  p <- ggtree::ggtree(hc)
+  p <- ggtree::`%<+%`(p, sample_group_info) +
     ggtree::layout_dendrogram() +
     ggtree::geom_tippoint(aes(color = .data$group)) +
-    ggtree::geom_tiplab(aes(color = .data$group), angle=90, hjust=1, offset = -0.5, show.legend=FALSE) +
-    scale_color_manual(values = colorGroup(groups), limits = unique(groups), name = NULL) +
-    ggtree::theme_dendrogram(plot.margin=margin(6,6,bottom_margin,6)) +
-    theme(plot.title = element_text(hjust = 0.5),
-          legend.text = element_text(size = 14),
-          legend.title = element_text(size = 16))
-
+    ggtree::geom_tiplab(
+      aes(color = .data$group),
+      angle = 90,
+      hjust  = 1,
+      offset = -0.5,
+      show.legend = FALSE
+    ) +
+    scale_color_manual(
+      values = colorGroup(groups),
+      limits = unique(groups),
+      name   = NULL
+    ) +
+    ggtree::theme_dendrogram(plot.margin = margin(6, 6, bottom_margin, 6)) +
+    theme(
+      plot.title  = element_text(hjust = 0.5),
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 16)
+    )
+  
+  p
 }
-
 
 #' Correlation heatmap for QC report
 #'

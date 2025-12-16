@@ -24,7 +24,11 @@
 #'
 #' @examples
 #' \dontrun{
-#'   analyze_within_group_SDs(my_data$data, my_data$metadata, outlier_method = "z-score", z_thresh = 2.5)
+#'   analyze_within_group_SDs(
+#'   my_data$data, 
+#'   my_data$metadata, 
+#'   outlier_method = "z-score",
+#'   z_thresh = 2.5)
 #' }
 analyze_within_group_SDs <- function(count_data,
                                      sample_metadata,

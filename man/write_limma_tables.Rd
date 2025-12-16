@@ -19,35 +19,64 @@ write_limma_tables(
 )
 }
 \arguments{
-\item{DAList}{A DAList object with statistical results.}
+\item{DAList}{A DAList object with statistical results in \code{$results},
+annotation in \code{$annotation}, data in \code{$data}, metadata in
+\code{$metadata}, and optional tags in \code{$tags}.}
 
-\item{output_dir}{Directory to output tables. Defaults to working directory.}
+\item{output_dir}{Directory to output tables. Defaults to the current
+working directory if \code{NULL}.}
 
-\item{overwrite}{Logical. Overwrite existing files?}
+\item{overwrite}{Logical; overwrite existing files if they are found in
+\code{output_dir}? Default is \code{FALSE}.}
 
-\item{contrasts_subdir}{Subdirectory for per-contrast CSV files.}
+\item{contrasts_subdir}{Subdirectory (within \code{output_dir}) for
+per-contrast CSV files.}
 
-\item{summary_csv}{Filename for summary CSV.}
+\item{summary_csv}{Filename for the summary CSV (per-contrast counts).}
 
-\item{combined_file_csv}{Filename for combined results CSV.}
+\item{combined_file_csv}{Filename for the combined results CSV.}
 
-\item{spreadsheet_xlsx}{Filename for Excel spreadsheet.}
+\item{spreadsheet_xlsx}{Filename for the Excel spreadsheet.}
 
-\item{add_filter}{Logical. Add filters to Excel columns?}
+\item{add_filter}{Logical; add Excel autofilters to columns in the main
+worksheet produced by \code{write_limma_excel()}.}
 
-\item{color_palette}{Optional color palette for Excel output.}
+\item{color_palette}{Optional vector of colors used for conditional
+formatting in the Excel output.}
 
-\item{add_contrast_sheets}{Logical. Whether to add each per-contrast CSV as a worksheet in the Excel file.}
+\item{add_contrast_sheets}{Logical; if \code{TRUE}, each per-contrast CSV
+is added as a separate worksheet to the Excel workbook.}
 
-\item{statlist}{Optional list of per-contrast result tables to use instead of \code{DAList$results}.}
+\item{statlist}{Optional list of per-contrast result tables to use instead
+of \code{DAList$results}. If \code{NULL}, \code{DAList$results} is used.}
 }
 \value{
-Invisibly returns the input DAList.
+Invisibly returns the (validated) input \code{DAList}.
 }
 \description{
-Generates CSV and Excel summary tables from a limma differential analysis list.
-If DAList$tags$per_contrast[\link{label}]$contrast_info contains a usable group_col and non-empty involved_levels,
-those samples are selected for the per-contrast CSV; otherwise the old \emph{vs} parser is used.
-If that also fails, all samples are included with a warning (same as before). write_limma_tables()
-now passes the sidecar tags automatically and falls back to DAList$results when statlist is NULL.
+Generates CSV and Excel summary tables from a limma differential
+abundance analysis stored in a \code{DAList}.
+}
+\details{
+For each contrast, per-contrast CSV files are written using
+\code{write_per_contrast_csvs()}, combining annotation, data, and
+statistics. If \code{DAList$tags$per_contrast[[label]]$contrast_info}
+contains a usable \code{group_col} and non-empty \code{involved_levels},
+those samples are selected for the per-contrast CSV. Otherwise the older
+\code{"_vs_"} label parser is used. If that also fails, all samples are
+included with a warning.
+
+The function then:
+\itemize{
+\item writes a summary CSV of up/down/non-significant counts per contrast;
+\item writes per-contrast CSV files into \code{contrasts_subdir};
+\item writes a combined results CSV with all contrasts side by side;
+\item writes an Excel workbook using \code{write_limma_excel()}, and
+optionally adds each per-contrast CSV as a worksheet.
+}
+
+The columns included in the per-contrast and Excel tables are determined
+by internal settings such as \code{DA_table_cols} and \code{stat_cols},
+which are defined in the package configuration rather than as function
+arguments.
 }

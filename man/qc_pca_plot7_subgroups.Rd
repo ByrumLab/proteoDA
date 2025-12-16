@@ -47,21 +47,15 @@ qc_pca_plot7_subgroups(
 \item{legend.position}{Position of the legend in the plot. Default: 'right'}
 
 \item{show.plot}{Logical indicating whether to display the plot. Default: TRUE}
+
+\item{max_pc}{Optional integer giving the maximum principal component
+index to display in accompanying scree plots. Passed to
+\code{qc_pca_plot7()} and \code{qc_pca_scree_plot7()}. Default: NULL
+(shows all PCs).}
 }
 \value{
 A list containing PCA plots for each subgroup and the PCA analysis results.
 }
 \description{
 Generates PCA plots for different subgroups based on provided metadata.
-}
-\details{
-This function allows users to visualize the PCA results for different subgroups in the dataset, providing insights into the variance and structure of the data.
-}
-\examples{
-\dontrun{
-if(interactive()){
- # Example usage
- qc_pca_plot7_subgroups(DAList, "group", "sample_label")
- }
-}
 }

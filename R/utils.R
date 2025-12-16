@@ -13,6 +13,8 @@ remove_commas <- function(x) {
 }
 
 
+#' @importFrom utils modifyList read.csv tail write.csv
+NULL
 
 
 
