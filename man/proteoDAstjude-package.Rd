@@ -10,17 +10,16 @@ A package for the differential proteomics analysis with DIA data. To learn more,
 start with the tutorial vignette: \code{browseVignettes(package = "proteoDA")}
 }
 \author{
-\strong{Maintainer}: Timothy Thurman \email{tthurman@uams.edu}
+\strong{Maintainer}: Stephanie Byrum \email{sbyrum@stjude.org}
 
 Authors:
 \itemize{
   \item Charity Washam \email{cwasham@uams.edu}
-  \item Stephanie Byrum \email{sbyrum@uams.edu}
 }
 
 Other contributors:
 \itemize{
-  \item Jordan Bird \email{jtbird@uams.edu} [contributor]
+  \item Zuo-Fei Yuan \email{zuo-fei.yuan@stjude.org} [contributor]
 }
 
 }

@@ -55,8 +55,8 @@ annotation <- data.frame(uniprot_id = paste0("protein_", 1:5),
                          fix.empty.names = FALSE, stringsAsFactors = FALSE,
                          row.names = paste0("protein_", 1:5))
 
-d <- proteoDA:::DAList(data = data, metadata = metadata, annotation = annotation)
-d <- proteoDA:::validate_DAList(x = d)
+d <- DAList(data = data, metadata = metadata, annotation = annotation)
+d <- validate_DAList(x = d)
  ## rename samples
  d2 <- rename_samples(DAList = d, label_column = "sample",
                       grouping_column = NULL, sort = FALSE)

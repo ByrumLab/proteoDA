@@ -496,7 +496,7 @@ filter_proteins_per_contrast <- function(DAList,
     }
     
     if (sum(keep_protein) == 0) {
-      cli::cli_warn("No proteins retained for contrast {.val {contrast}} — skipping.")
+      cli::cli_warn("No proteins retained for contrast {.val {contrast}} -- skipping.")
       next
     }
     

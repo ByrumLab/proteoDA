@@ -25,7 +25,7 @@ write_norm_eval_report(
 
 \item{norm_label}{Character scalar used as the list name in plots (e.g., "cycloess").}
 
-\item{grouping_column}{Name of the metadata column giving sample groups. Must contain ≥2 groups.}
+\item{grouping_column}{Name of the metadata column giving sample groups. Must contain >= 2 groups.}
 
 \item{output_dir}{Directory to save the PDF (created if missing). Default: working directory.}
 
@@ -47,6 +47,10 @@ If \code{NULL}, the function will try to auto-detect a suitable column.}
 
 \item{groups_override}{Optional named vector of group labels with names equal to \strong{matrix column names}.
 If supplied, overrides \code{grouping_column}/\code{sample_id_col} matching.}
+
+\item{metrics_csv}{Optional path to a CSV file where per-sample normalization
+metrics (e.g., PCV, PMAD, PEV, COR, mean intensity) will be written. If
+\code{NULL}, metrics are not exported to CSV.}
 }
 \value{
 Invisibly returns \code{DAList}.

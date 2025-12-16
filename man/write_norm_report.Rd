@@ -40,6 +40,18 @@ are already on the log2 scale for methods that expect log2 input. Default FALSE.
 
 \item{contrasts}{Optional character vector: restrict report to these contrasts when
 \code{data_per_contrast} is present. Default = all.}
+
+\item{sample_id_col}{Optional name of the metadata column whose values match
+the matrix column names. If \code{NULL}, the function attempts to auto-detect a
+suitable column (e.g., "sample").}
+
+\item{groups_override}{Optional named vector of group labels with names equal
+to \strong{matrix column names}. If supplied, this overrides the group labels
+derived from \code{grouping_column} and \code{sample_id_col}.}
+
+\item{metrics_csv}{Optional path to a CSV file where per-sample normalization
+metrics (PCV, PMAD, PEV, COR, mean intensity, etc.) will be written. If
+\code{NULL}, metrics are not exported to CSV.}
 }
 \value{
 Invisibly returns the input DAList.

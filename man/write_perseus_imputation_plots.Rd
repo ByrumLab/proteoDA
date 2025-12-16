@@ -19,38 +19,39 @@ write_perseus_imputation_plots(
 )
 }
 \arguments{
-\item{DAList}{a DAList with \code{imputation_per_contrast} diagnostics.}
+\item{DAList}{A DAList with \code{imputation_per_contrast} diagnostics.}
 
-\item{out_dir}{directory to save plots (created if missing). If NULL, do
-not save plots to disk.}
+\item{out_dir}{Directory to save plots (created if missing). If
+\code{NULL}, plots are not written to disk.}
 
-\item{contrasts}{character vector of contrast names to plot; default = all
-available contrasts in \code{imputation_per_contrast}.}
+\item{contrasts}{Character vector of contrast names to plot; default is
+all available contrasts in \code{DAList$imputation_per_contrast}.}
 
-\item{samples}{subset of sample columns to plot (names or indices);
-default = all samples.}
+\item{samples}{Optional subset of sample columns to plot (names or
+indices); default is all samples.}
 
-\item{bins}{number of histogram bins.}
+\item{bins}{Number of histogram bins.}
 
-\item{facet_ncol}{number of columns in facet layout.}
+\item{facet_ncol}{Number of columns in the facet layout.}
 
-\item{overlay}{logical; TRUE = overlay observed & imputed in same panel,
-FALSE = stacked.}
+\item{overlay}{Logical; if \code{TRUE}, overlay observed and imputed
+intensities in the same panel; if \code{FALSE}, use stacked facets.}
 
-\item{width, height}{plot size (inches) for saving.}
+\item{width, height}{Plot size (inches) when saving.}
 
-\item{dpi}{dpi for saving.}
+\item{dpi}{Resolution (dots per inch) when saving.}
 
-\item{device}{graphics device for \code{ggplot2::ggsave}, e.g. "png".}
+\item{device}{Graphics device for \code{ggplot2::ggsave}, e.g.
+\code{"png"}.}
 }
 \value{
-A named list of \code{ggplot} objects (invisible if you only inspect
-the written files).
+A named list of \code{ggplot} objects (returned invisibly).
 }
 \description{
-Uses DAList$imputation_per_contrast[\link{contrast}]$before_log2 / after_log2
-(created by \code{perseus_impute(..., save_before_after = TRUE)}) to generate
-diagnostic plots for each contrast.
+Uses \code{DAList$imputation_per_contrast[[ct]]$before_log2} and
+\code{DAList$imputation_per_contrast[[ct]]$after_log2}
+(created by \code{perseus_impute(..., save_before_after = TRUE)})
+to generate diagnostic plots for each contrast.
 }
 \details{
 Each plot is a faceted histogram per sample, comparing observed vs imputed

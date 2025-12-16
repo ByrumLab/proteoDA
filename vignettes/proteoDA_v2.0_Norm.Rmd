@@ -328,7 +328,7 @@ Here we show the call; you can plug in your own object.
 
 1. convert `0` values to `NA` and generate the normalization report
 
-```{r normreport}
+```{r normreport, eval=FALSE}
 
 # Assume DAList_raw is constructed from your peptide/protein matrix
 # and sample metadata

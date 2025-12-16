@@ -308,7 +308,7 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
 # What changed (and why)
 # No _vs_ splitting or sample subsetting. We no longer assume the label encodes two groups. This lets you use labels like Diff_in_effect_CHLA_SKNF1 freely.
 # Contrast expressions drive everything. Each loop pulls the full "Label = ..." expression and passes it to add_contrasts(). As long as the RHS uses valid design column names (e.g., group-level columns from your ~ 0 + group design, or whatever your design_formula yields), the label on the LHS can be any descriptive string.
-# Per-contrast rows (proteins) still supported. If you’ve precomputed DAList$data_per_contrast[[label]] or DAList$filtered_proteins_per_contrast[[label]], the function uses them. It does not drop samples based on label guesses.
+# Per-contrast rows (proteins) still supported. If you've precomputed DAList$data_per_contrast[[label]] or DAList$filtered_proteins_per_contrast[[label]], the function uses them. It does not drop samples based on label guesses.
 # This should resolve the error you hit and let you define interaction contrasts like:
 #  contrast_info$involved_levels is conservative: it only includes values from metadata[[group_col]] whose exact strings also appear as design columns and in the RHS expression. This avoids false positives and works for both simple contrasts and interaction-type expressions whose terms are design columns.
 #  If your add_design() stores the design matrix under a different field than $design$X or tracks group_col elsewhere, adjust the two lookups accordingly.
@@ -330,8 +330,8 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
 #' @param contrasts_file Optional CSV file with contrast definitions if not present in the DAList.
 #'   Each row should contain a full contrast statement of the form `Label = expression`.
 #'   The label (left-hand side) may be any string; it does not need to encode group names.
-#' @param binsize Either an integer for the moving window size, or "auto" (default) to select automatically.
-#' @param binsize_range A numeric vector of candidate bin sizes to evaluate when `binsize = "auto"`.
+#' @param binsize Either an integer for the moving window size, or
+#'   \code{"auto"} (default) to select an appropriate bin size automatically.
 #' @param plot_movingSD Logical. If TRUE (default), plot moving SD curves for each contrast.
 #'
 #' @return The input DAList, updated with per-contrast model fits and results,
@@ -359,7 +359,10 @@ check_DA_perc <- function(DA_outcomes_table, DA_warn_threshold = 0.2, pval_thres
 #' filtered_DAList <- run_filtered_limma_analysis(filtered_DAList)
 #'
 #' # With specified bin size and no plots
-#' filtered_DAList <- run_filtered_limma_analysis(filtered_DAList, binsize = 200, plot_movingSD = FALSE)
+#' filtered_DAList <- run_filtered_limma_analysis(
+#'     filtered_DAList, 
+#'     binsize = 200, 
+#'     plot_movingSD = FALSE)
 #'}
 #' @export
 run_filtered_limma_analysis <- function(
@@ -457,7 +460,7 @@ run_filtered_limma_analysis <- function(
     # rebuild design for the current sample set
     sub_DAList <- add_design(DAList = sub_DAList, design_formula = design_formula)
     
-    # robust token → design-column translation for 2-factor interactions
+    # robust token -- design-column translation for 2-factor interactions
     X <- tryCatch(sub_DAList$design$X, error = function(e) NULL)
     if (!is.null(X)) sub_DAList$design$design_matrix <- X  # ensure slot for add_contrasts()
     dcols <- if (!is.null(sub_DAList$design$design_matrix)) colnames(sub_DAList$design$design_matrix) else character(0)
@@ -573,7 +576,7 @@ run_filtered_limma_analysis <- function(
         )
       )
     } else {
-      cli::cli_alert_warning("No results found for contrast '{label}' — skipping.")
+      cli::cli_alert_warning("No results found for contrast '{label}' -- skipping.")
     }
   }
   

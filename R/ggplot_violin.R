@@ -10,7 +10,7 @@
 #'
 #' @return A ggplot object representing the violin plot.
 #'
-#' @import ggplot2 testthat utils
+#' @import ggplot2
 #'
 #' @examples
 #' \dontrun{
@@ -45,7 +45,7 @@ qc_violin <- function(data,
 
   # Prepare arguments
   if (is.null(groups)) groups <- rep("1", ncol(data))
-  groups <- proteoDA:::make_factor(as.character(groups), prefix = NULL)
+  groups <- make_factor(as.character(groups), prefix = NULL)
 
   if (is.null(sample_labels)) sample_labels <- colnames(data)
 
@@ -61,8 +61,8 @@ qc_violin <- function(data,
 
   # Prepare metadata for plotting
   plot.meta <- data.frame(
-    ind = proteoDA:::make_factor(colnames(data)),
-    labels = proteoDA:::make_factor(sample_labels),
+    ind = make_factor(colnames(data)),
+    labels = make_factor(sample_labels),
     group = groups
   )
 

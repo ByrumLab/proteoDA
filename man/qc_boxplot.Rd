@@ -24,7 +24,7 @@ qc_boxplot(
 
 \item{sample_labels}{A vector of names to display on the plot (character or NULL).}
 
-\item{title}{A character string for the plot title (numeric, integer, character, or NULL).}
+\item{title}{A character string for the plot title.}
 
 \item{text.sizes}{A numeric vector specifying text sizes for title, x-axis, y-axis, and legend.}
 
@@ -32,21 +32,15 @@ qc_boxplot(
 
 \item{boxplot_width}{A numeric value specifying the width of the boxplots (default: dynamic based on groups).}
 
-\item{boxplot_alpha}{A numeric value specifying the transparency level of the boxplots (default: dynamic based on groups).}
+\item{boxplot_alpha}{A numeric value specifying the transparency level of the boxplots (default: dynamic).}
 
 \item{plot_margin}{A grid unit object specifying the plot margins (default: dynamic based on groups).}
 
-\item{colorblind_palette}{A character vector specifying colorblind-friendly colors to use (default: predefined palette).}
+\item{colorblind_palette}{A character vector specifying colorblind-friendly colors to use.}
 }
 \value{
 A ggplot2 object displaying the QC boxplot.
 }
 \description{
 Generate a QC Boxplot
-}
-\examples{
-\dontrun{
-# example of boxplot
-
-}
 }

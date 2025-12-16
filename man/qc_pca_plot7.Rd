@@ -47,6 +47,10 @@ qc_pca_plot7(
 
 \item{title}{Title for the plot. Default: NULL}
 
+\item{max_pc}{Optional integer giving the maximum principal component
+index to include in the scree plot produced by
+\code{qc_pca_scree_plot7()}. Default: NULL (shows all PCs).}
+
 \item{legend.position}{Position of the legend in the plot. Default: 'right'}
 
 \item{show.plot}{Logical indicating whether to display the plot. Default: TRUE}

@@ -32,11 +32,11 @@ whether the baseline contrast is \emph{near zero}. Default \code{1}.}
 \value{
 A \code{data.frame} with columns:
 \itemize{
-\item \code{id} — protein ID,
-\item \code{class} — assigned class label,
-\item \code{base_logFC}, \code{base_q} — baseline contrast statistics,
-\item \code{treat_logFC}, \code{treat_q} — average treatment statistics,
-\item \code{int_logFC}, \code{int_q} — interaction statistics.
+\item \code{id} - protein ID,
+\item \code{class} - assigned class label,
+\item \code{base_logFC}, \code{base_q} - baseline contrast statistics,
+\item \code{treat_logFC}, \code{treat_q} - average treatment statistics,
+\item \code{int_logFC}, \code{int_q} - interaction statistics.
 }
 }
 \description{
@@ -48,15 +48,15 @@ and baseline (between-cell) contrasts.
 \details{
 Classes returned include (non-exhaustive):
 \itemize{
-\item \code{"Shared_Tx"} — significant average treatment effect; non-significant interaction.
-\item \code{"WTPreferential_Tx"} — significant average treatment; interaction significantly
+\item \code{"Shared_Tx"} - significant average treatment effect; non-significant interaction.
+\item \code{"WTPreferential_Tx"} - significant average treatment; interaction significantly
 negative; baseline near zero.
-\item \code{"WTPreferential_Tx_withBaselineShift"} — as above but with significant baseline shift.
-\item \code{"TruncationGain"} — significant average treatment; interaction significantly
+\item \code{"WTPreferential_Tx_withBaselineShift"} - as above but with significant baseline shift.
+\item \code{"TruncationGain"} - significant average treatment; interaction significantly
 positive; baseline near zero.
-\item \code{"TruncationGain_withBaselineShift"} — as above but with significant baseline shift.
-\item \code{"BaselineDifferenceOnly"} — significant baseline difference; average treatment not significant.
-\item \code{"Unclassified"} — none of the above rules matched.
+\item \code{"TruncationGain_withBaselineShift"} - as above but with significant baseline shift.
+\item \code{"BaselineDifferenceOnly"} - significant baseline difference; average treatment not significant.
+\item \code{"Unclassified"} - none of the above rules matched.
 }
 }
 \examples{

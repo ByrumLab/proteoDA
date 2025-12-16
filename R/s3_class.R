@@ -230,7 +230,7 @@ validate_DAList <- function(x) {
   if (!identical(rownames(x$data), x$annotation$uniprot_id))
     cli::cli_abort("Rownames for 'data'/'annotation' must equal the 'uniprot_id' column")
   
-  # metadata ↔ data samples
+  # metadata to data samples
   if (nrow(x$metadata) != ncol(x$data)) {
     cli::cli_abort("Sample count mismatch: metadata rows = {nrow(x$metadata)}, data columns = {ncol(x$data)}")
   }
@@ -238,7 +238,7 @@ validate_DAList <- function(x) {
     miss_in_md  <- setdiff(colnames(x$data), rownames(x$metadata))
     miss_in_dat <- setdiff(rownames(x$metadata), colnames(x$data))
     same_set    <- setequal(colnames(x$data), rownames(x$metadata))
-    hint <- if (same_set) " (same samples, different order — reorder metadata to match data columns)" else ""
+    hint <- if (same_set) " (same samples, different order -- reorder metadata to match data columns)" else ""
     det <- c(
       if (length(miss_in_md))  paste0("Missing in metadata: ", paste(miss_in_md, collapse = ", ")),
       if (length(miss_in_dat)) paste0("Missing in data: ",     paste(miss_in_dat, collapse = ", "))
@@ -262,7 +262,7 @@ validate_DAList <- function(x) {
       cli::cli_warn("'design_matrix' has no 'assign' attribute; recommended to build via model.matrix.")
     }
     
-    # design_matrix ↔ metadata alignment
+    # design_matrix to metadata alignment
     X  <- x$design$design_matrix
     md <- x$metadata
     if (nrow(X) != nrow(md)) {
@@ -272,7 +272,7 @@ validate_DAList <- function(x) {
       miss_in_X  <- setdiff(rownames(md), rownames(X))
       miss_in_md <- setdiff(rownames(X), rownames(md))
       same_set   <- setequal(rownames(X), rownames(md))
-      hint <- if (same_set) " (same samples, different order — reorder design_matrix to match metadata)" else ""
+      hint <- if (same_set) " (same samples, different order -- reorder design_matrix to match metadata)" else ""
       det <- c(
         if (length(miss_in_X))  paste0("Missing in design_matrix: ", paste(miss_in_X,  collapse = ", ")),
         if (length(miss_in_md)) paste0("Missing in metadata: ",      paste(miss_in_md, collapse = ", "))
@@ -303,14 +303,14 @@ validate_DAList <- function(x) {
       cli::cli_abort("If contrast information is included, you must have  both 'contrast_matrix' and 'contrast_vector' slots")
     }
     
-    # contrast_matrix ↔ design_matrix columns
+    # contrast_matrix to design_matrix columns
     if ("contrast_matrix" %in% names(x$design)) {
       cm <- x$design$contrast_matrix
       if (!identical(rownames(cm), colnames(X))) {
         miss_in_cm <- setdiff(colnames(X), rownames(cm))
         miss_in_X  <- setdiff(rownames(cm), colnames(X))
         same_set   <- setequal(rownames(cm), colnames(X))
-        hint <- if (same_set) " (same terms, different order — reorder contrast_matrix rows to match design_matrix columns)" else ""
+        hint <- if (same_set) " (same terms, different order -- reorder contrast_matrix rows to match design_matrix columns)" else ""
         det <- c(
           if (length(miss_in_cm)) paste0("Missing in contrast_matrix rows: ", paste(miss_in_cm, collapse = ", ")),
           if (length(miss_in_X))  paste0("Missing in design_matrix cols: ",  paste(miss_in_X,  collapse = ", "))

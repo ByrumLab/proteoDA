@@ -7,7 +7,7 @@
 collect_norm_metrics(normList, groups, contrast = NA_character_)
 }
 \arguments{
-\item{normList}{Named list of matrices (methods × samples). Names are method labels.}
+\item{normList}{Named list of matrices (methods x samples). Names are method labels.}
 
 \item{groups}{Character vector of group labels aligned to columns of matrices.}
 

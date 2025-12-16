@@ -172,7 +172,7 @@ rescale_contrast_logFC <- function(x, label, factor = 0.5, new_label = NULL) {
 #' @noRd
 .effect_label <- function(logFC, adjp, alpha = 0.05) {
   if (is.na(logFC)) return("NA")
-  dir <- if (logFC > 0) "↑" else if (logFC < 0) "↓" else "0"
+  dir <- if (logFC > 0) "\u2191" else if (logFC < 0) "\u2193" else "0"
   sig <- if (!is.na(adjp) && adjp < alpha) "*" else ""
   paste0(dir, sig)
 }
@@ -221,7 +221,7 @@ rescale_contrast_logFC <- function(x, label, factor = 0.5, new_label = NULL) {
     }
   }
   
-  # Case C: last resort—look for an ID column inside res_tab
+  # Case C: last resort. look for an ID column inside res_tab
   possible_cols <- intersect(c("uniprot_id","Protein","Gene","Accession"), colnames(res_tab))
   for (col in possible_cols) {
     hit <- which(res_tab[[col]] == protein)
@@ -246,9 +246,10 @@ rescale_contrast_logFC <- function(x, label, factor = 0.5, new_label = NULL) {
 #'         \code{annotation$uniprot_id} if available).
 #' }
 #'
-#' The returned table includes an \code{effect} label indicating direction
-#' (↑/↓) and significance (\code{"*"} if \code{adj.P.Val < alpha}).
 #'
+#' The returned table includes an \code{effect} label indicating direction
+#' (up/down) and significance (\code{"*"} if \code{adj.P.Val < alpha}).
+#' 
 #' @param DA_results A DAList-like object with \code{$results} (per-contrast
 #'   result tables) and optionally \code{$annotation}.
 #' @param protein Character. Protein identifier (e.g., UniProt ID) to look up.
@@ -318,7 +319,7 @@ interpret_protein_factorial <- function(
   .effect_label <- function(lfc, q, alpha = 0.05) {
     if (is.na(lfc) || is.na(q)) return("NA")
     if (q >= alpha) return("NS")
-    if (lfc > 0) "↑*" else if (lfc < 0) "↓*" else "NS"
+    if (lfc > 0) "\u2191*" else if (lfc < 0) "\u2193*" else "NS"
   }
   
   tab$effect <- mapply(.effect_label, tab$logFC, tab$adj.P.Val, MoreArgs = list(alpha = alpha))
@@ -352,17 +353,17 @@ interpret_protein_factorial <- function(
       int_dir <- if (int$logFC[1] > 0) "stronger in CHLA90"
       else if (int$logFC[1] < 0) "stronger in SKNF1"
       else "similar across cells"
-      sprintf("Interaction (CHLA90–SKNF1): log2FC=%.2f (%s; adjP=%s)",
+      sprintf("Interaction (CHLA90-SKNF1): log2FC=%.2f (%s; adjP=%s)",
               int$logFC[1], int_dir, fmtp(int$adj.P.Val[1]))
     } else "Interaction: NA"
   }
   
   ch_txt <- if (!is.na(ch$logFC[1])) {
-    sprintf("CHLA90 Bio–DMSO: log2FC=%.2f (adjP=%s)", ch$logFC[1], fmtp(ch$adj.P.Val[1]))
+    sprintf("CHLA90 Bio-DMSO: log2FC=%.2f (adjP=%s)", ch$logFC[1], fmtp(ch$adj.P.Val[1]))
   } else "CHLA90: NA"
   
   sk_txt <- if (!is.na(sk$logFC[1])) {
-    sprintf("SKNF1  Bio–DMSO: log2FC=%.2f (adjP=%s)", sk$logFC[1], fmtp(sk$adj.P.Val[1]))
+    sprintf("SKNF1  Bio-DMSO: log2FC=%.2f (adjP=%s)", sk$logFC[1], fmtp(sk$adj.P.Val[1]))
   } else "SKNF1: NA"
   
   summary <- paste(sprintf("[%s] %s.", protein, avg_txt), ch_txt, sk_txt, int_txt, sep = " ")
@@ -381,15 +382,15 @@ interpret_protein_factorial <- function(
 #'
 #' Classes returned include (non-exhaustive):
 #' \itemize{
-#'   \item \code{"Shared_Tx"} — significant average treatment effect; non-significant interaction.
-#'   \item \code{"WTPreferential_Tx"} — significant average treatment; interaction significantly
+#'   \item \code{"Shared_Tx"} - significant average treatment effect; non-significant interaction.
+#'   \item \code{"WTPreferential_Tx"} - significant average treatment; interaction significantly
 #'         negative; baseline near zero.
-#'   \item \code{"WTPreferential_Tx_withBaselineShift"} — as above but with significant baseline shift.
-#'   \item \code{"TruncationGain"} — significant average treatment; interaction significantly
+#'   \item \code{"WTPreferential_Tx_withBaselineShift"} - as above but with significant baseline shift.
+#'   \item \code{"TruncationGain"} - significant average treatment; interaction significantly
 #'         positive; baseline near zero.
-#'   \item \code{"TruncationGain_withBaselineShift"} — as above but with significant baseline shift.
-#'   \item \code{"BaselineDifferenceOnly"} — significant baseline difference; average treatment not significant.
-#'   \item \code{"Unclassified"} — none of the above rules matched.
+#'   \item \code{"TruncationGain_withBaselineShift"} - as above but with significant baseline shift.
+#'   \item \code{"BaselineDifferenceOnly"} - significant baseline difference; average treatment not significant.
+#'   \item \code{"Unclassified"} - none of the above rules matched.
 #' }
 #'
 #' @param DA_results A DAList-like object with \code{$results} and optionally
@@ -404,11 +405,11 @@ interpret_protein_factorial <- function(
 #'
 #' @return A \code{data.frame} with columns:
 #' \itemize{
-#'   \item \code{id} — protein ID,
-#'   \item \code{class} — assigned class label,
-#'   \item \code{base_logFC}, \code{base_q} — baseline contrast statistics,
-#'   \item \code{treat_logFC}, \code{treat_q} — average treatment statistics,
-#'   \item \code{int_logFC}, \code{int_q} — interaction statistics.
+#'   \item \code{id} - protein ID,
+#'   \item \code{class} - assigned class label,
+#'   \item \code{base_logFC}, \code{base_q} - baseline contrast statistics,
+#'   \item \code{treat_logFC}, \code{treat_q} - average treatment statistics,
+#'   \item \code{int_logFC}, \code{int_q} - interaction statistics.
 #' }
 #'
 #' @examples

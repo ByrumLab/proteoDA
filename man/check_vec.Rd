@@ -22,7 +22,7 @@ The function ensures that \code{x} has the same or greater length than \code{ref
 Both \code{x} and \code{ref} must follow R's syntax rules for valid variable names (e.g., column names and row names).
 }
 \details{
-See \code{\link{base::make.names}} for naming rules.
+See \code{\link[base]{make.names}} for details on syntactic names.
 }
 \examples{
 \dontrun{
