@@ -7,7 +7,6 @@ date: "`r format(Sys.Date(), '%Y %b %d')`"
 format:
   pptx:
     reference-doc: StJude_template.pptx
-    output-file: Summary
 ---
 
 ## Overview of Project
@@ -200,3 +199,4 @@ res <- purrr::map_chr(index, \(index) {
 #res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
+
