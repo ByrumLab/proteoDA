@@ -205,9 +205,12 @@ write_norm_report(
   suppress_zoom_legend = FALSE,
   use_ggrastr       = FALSE,
   input_is_log2     = FALSE,    # NEW
-  contrasts         = NULL,     # NEW — restrict to selected contrasts
+  per_contrast      = TRUE,
+  contrasts         = c("M1Y1_vs_Ref", "M2Y1_vs_Ref"), # NEW — restrict to selected contrasts
   sample_id_col     = "sample",  # NEW <— set this to the metadata column that equals colnames()
-  metrics_csv     = file.path("QC_report", "metrics_PRE.csv"))
+  metrics_csv     = file.path("QC_report", "metrics_PRE.csv"),
+  include_MD_plots  = FALSE   # <- turn off MA/MD page
+  )
 
 ######
 ## Evaluation ----

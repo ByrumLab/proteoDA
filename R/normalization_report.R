@@ -2,34 +2,51 @@
 ## normalization_metrics.R contains functions for numerically evaluating normalization methods
 ## normalization_plotting.R contains functions to plot these metrics
 
-#' Create a normalization report (contrast-aware)
+#' Create a normalization report (optionally contrast-aware)
 #'
 #' Saves a PDF report containing plots/metrics to compare normalization methods.
-#' If `DAList$data_per_contrast` exists, evaluates normalization **for each contrast**
-#' using the matrices in that slot (leaving `DAList$data` untouched). Otherwise,
-#' evaluates on `DAList$data` (legacy behavior).
+#'
+#' By default, normalization is evaluated **globally** on `DAList$data`, which
+#' is typically the raw (unnormalized) expression matrix.
+#'
+#' If `per_contrast = TRUE` and `DAList$data_per_contrast` exists, the function
+#' instead evaluates normalization **separately for each contrast**, using the
+#' matrices in that slot (leaving `DAList$data` untouched).
 #'
 #' @param DAList A DAList.
 #' @param grouping_column Name of the metadata column that gives sample groups
 #'   (used by within-group cyclic loess). Must contain at least two groups.
-#' @param output_dir Directory to save the report (created if missing). Defaults to cwd.
-#' @param filename File name of the report (must end with .pdf). Default "normalization_report.pdf".
-#' @param overwrite Overwrite if the report already exists? Default FALSE.
-#' @param suppress_zoom_legend Remove the legend from the zoomed log2ratio plot? Default FALSE.
-#' @param use_ggrastr Use ggrastr in MD plots to reduce size (if installed)? Default FALSE.
-#' @param input_is_log2 Logical. If TRUE, indicates per-contrast (or global) input matrices
-#'   are already on the log2 scale for methods that expect log2 input. Default FALSE.
-#' @param contrasts Optional character vector: restrict report to these contrasts when
-#'   `data_per_contrast` is present. Default = all.
+#' @param output_dir Directory to save the report (created if missing).
+#'   Defaults to the current working directory.
+#' @param filename File name of the report (must end with `.pdf`).
+#'   Default `"normalization_report.pdf"`.
+#' @param overwrite Overwrite if the report already exists? Default `FALSE`.
+#' @param suppress_zoom_legend Remove the legend from the zoomed log2-ratio
+#'   plot? Default `FALSE`.
+#' @param use_ggrastr Use ggrastr in MD plots to reduce size (if installed)?
+#'   Default `FALSE`.
+#' @param input_is_log2 Logical. If `TRUE`, indicates per-contrast (or global)
+#'   input matrices are already on the log2 scale for methods that expect log2
+#'   input. Default `FALSE`.
+#' @param contrasts Optional character vector: when `per_contrast = TRUE` and
+#'   `data_per_contrast` is present, restrict the report to these contrasts.
+#'   Default = all contrasts in `data_per_contrast`.
 #' @param sample_id_col Optional name of the metadata column whose values match
 #'   the matrix column names. If `NULL`, the function attempts to auto-detect a
-#'   suitable column (e.g., "sample").
+#'   suitable column (e.g., `"sample"`).
 #' @param groups_override Optional named vector of group labels with names equal
 #'   to **matrix column names**. If supplied, this overrides the group labels
 #'   derived from `grouping_column` and `sample_id_col`.
 #' @param metrics_csv Optional path to a CSV file where per-sample normalization
 #'   metrics (PCV, PMAD, PEV, COR, mean intensity, etc.) will be written. If
 #'   `NULL`, metrics are not exported to CSV.
+#' @param per_contrast Logical. If `TRUE` and `DAList$data_per_contrast` is
+#'   present, produce a separate set of normalization plots per contrast. If
+#'   `FALSE` (default), ignore `data_per_contrast` and evaluate normalization
+#'   globally using `DAList$data`.
+#' @param include_MD_plots Logical. If `TRUE` (default), include MA/MD plots as
+#'   a second page for each contrast (or global). Set to `FALSE` to omit these
+#'   plots, which can substantially reduce the PDF file size.
 #'
 #' @return Invisibly returns the input DAList.
 #' @export
@@ -44,7 +61,9 @@ write_norm_report <- function(DAList,
                               contrasts = NULL,
                               sample_id_col = NULL,
                               groups_override = NULL,
-                              metrics_csv = NULL) {
+                              metrics_csv = NULL,
+                              per_contrast = FALSE,
+                              include_MD_plots = TRUE) {
   
   #################################
   ## Check args and set defaults ##
@@ -88,7 +107,11 @@ write_norm_report <- function(DAList,
   }
   if (is.null(filename)) {
     filename <- "normalization_report.pdf"
-    cli::cli_inform(cli::col_yellow("{.arg filename} argument is empty. Saving report to: {.path {file.path(output_dir, filename)}}"))
+    cli::cli_inform(
+      cli::col_yellow(
+        "{.arg filename} argument is empty. Saving report to: {.path {file.path(output_dir, filename)}}"
+      )
+    )
   }
   
   # Ensure dir / filename
@@ -105,10 +128,20 @@ write_norm_report <- function(DAList,
     }
   }
   
+  # If user supplied contrasts but per_contrast = FALSE, let them know we're ignoring it
+  if (!per_contrast && !is.null(contrasts)) {
+    cli::cli_warn(
+      "{.arg contrasts} is ignored because {.arg per_contrast} is FALSE; ",
+      "using global {.code DAList$data} for normalization."
+    )
+  }
+  
   ########################################
   ## Resolve matrices (per-contrast/global)
   ########################################
-  has_dpc <- !is.null(DAList$data_per_contrast) && length(DAList$data_per_contrast) > 0
+  has_dpc <- per_contrast &&
+    !is.null(DAList$data_per_contrast) &&
+    length(DAList$data_per_contrast) > 0
   
   # ------------------------------------------------
   # PER-CONTRAST BRANCH (data_per_contrast present)
@@ -122,7 +155,8 @@ write_norm_report <- function(DAList,
     if (!length(target_ct)) cli::cli_abort("No matching contrasts in DAList$data_per_contrast.")
     
     # Build list of per-contrast matrices and aligned group vectors
-    mats <- list(); groups_map <- list()
+    mats <- list()
+    groups_map <- list()
     
     # Resolve sample identifier column / group mapping
     if (!is.null(groups_override)) {
@@ -150,7 +184,8 @@ write_norm_report <- function(DAList,
         if (length(scores) && max(scores, na.rm = TRUE) > 0) {
           id_col <- names(which.max(scores))
         } else {
-          id_col <- intersect(c("sample_id","Raw.file","file","sample"), colnames(DAList$metadata))[1]
+          id_col <- intersect(c("sample_id", "Raw.file", "file", "sample"),
+                              colnames(DAList$metadata))[1]
           if (is.na(id_col)) id_col <- colnames(DAList$metadata)[1]
         }
       }
@@ -159,32 +194,91 @@ write_norm_report <- function(DAList,
     
     extract_mat <- function(x) {
       if (is.matrix(x) || is.data.frame(x)) return(as.matrix(x))
-      if (is.list(x) && "log2" %in% names(x) && (is.matrix(x$log2) || is.data.frame(x$log2))) {
+      if (is.list(x) && "log2" %in% names(x) &&
+          (is.matrix(x$log2) || is.data.frame(x$log2))) {
         return(as.matrix(x$log2))
       }
       stop("Unsupported per-contrast structure. Expected matrix/data.frame or list with $log2.")
     }
-    
+    # 
+    # for (ct in target_ct) {
+    #   X <- extract_mat(DAList$data_per_contrast[[ct]])
+    #   # Align groups by matrix columns (names in id_map)
+    #   if (!is.null(colnames(X))) {
+    #     g <- id_map[colnames(X)]
+    #   } else {
+    #     cli::cli_abort(sprintf("Per-contrast matrix for '%s' lacks column names; cannot align groups.", ct))
+    #   }
+    #   if (anyNA(g)) {
+    #     missing <- colnames(X)[is.na(g)]
+    #     cli::cli_abort(sprintf("Group labels missing for samples in contrast '%s': %s",
+    #                            ct, paste(missing, collapse = ", ")))
+    #   }
+    #   mats[[ct]]       <- X
+    #   groups_map[[ct]] <- as.character(g)
+    # }
     for (ct in target_ct) {
       X <- extract_mat(DAList$data_per_contrast[[ct]])
-      # Align groups by matrix columns (names in id_map)
-      if (!is.null(colnames(X))) {
-        g <- id_map[colnames(X)]
+      
+      # Group labels from metadata for each column
+      if (is.null(colnames(X))) {
+        cli::cli_abort(
+          "Per-contrast matrix for '{ct}' lacks column names; cannot align groups."
+        )
+      }
+      sample_groups <- id_map[colnames(X)]
+      
+      if (anyNA(sample_groups)) {
+        missing <- colnames(X)[is.na(sample_groups)]
+        cli::cli_abort(
+          "Group labels missing for samples in contrast '{ct}': {paste(missing, collapse = ', ')}"
+        )
+      }
+      
+      ## --- NEW: restrict to groups actually involved in this contrast, if we can ---
+      groups_in_ct <- NULL
+      
+      # 1) Prefer contrast_info tags if available
+      if (!is.null(DAList$tags$per_contrast) &&
+          !is.null(DAList$tags$per_contrast[[ct]]$contrast_info) &&
+          !is.null(DAList$tags$per_contrast[[ct]]$contrast_info$involved_levels)) {
+        
+        groups_in_ct <- as.character(
+          DAList$tags$per_contrast[[ct]]$contrast_info$involved_levels
+        )
+        
       } else {
-        cli::cli_abort(sprintf("Per-contrast matrix for '%s' lacks column names; cannot align groups.", ct))
+        # 2) Fallback: simple "_vs_" parser, e.g. "M1Y1_vs_Ref"
+        parts <- strsplit(ct, "_vs_")[[1]]
+        if (length(parts) == 2L) {
+          groups_in_ct <- parts
+        }
       }
-      if (anyNA(g)) {
-        missing <- colnames(X)[is.na(g)]
-        cli::cli_abort(sprintf("Group labels missing for samples in contrast '%s': %s", ct, paste(missing, collapse=", ")))
+      
+      if (!is.null(groups_in_ct)) {
+        keep <- sample_groups %in% groups_in_ct
+        if (any(keep)) {
+          X            <- X[, keep, drop = FALSE]
+          sample_groups <- sample_groups[keep]
+        } else {
+          cli::cli_warn(
+            "No samples found for groups {paste(groups_in_ct, collapse = ', ')} ",
+            "in contrast '{ct}'; using all samples for normalization QC."
+          )
+        }
       }
+      ## --- end NEW bit ---
+      
       mats[[ct]]       <- X
-      groups_map[[ct]] <- as.character(g)
+      groups_map[[ct]] <- as.character(sample_groups)
     }
     
     ###########################
     ## Compute metrics/plots  ##
     ###########################
-    cli::cli_inform("Starting per-contrast normalizations for {length(target_ct)} contrasts ...")
+    cli::cli_inform(
+      "Starting per-contrast normalizations for {length(target_ct)} contrasts ..."
+    )
     
     plot_pages <- list()
     .norm_metrics_accum <- NULL
@@ -201,24 +295,41 @@ write_norm_report <- function(DAList,
       c <- pn_plot_PEV(normList, groups_map[[ct]])
       d <- pn_plot_COR(normList, groups_map[[ct]])
       e <- pn_plot_log2ratio(normList, groups_map[[ct]])
-      f <- pn_plot_log2ratio(normList, groups_map[[ct]], zoom = TRUE, legend = !suppress_zoom_legend)
+      f <- pn_plot_log2ratio(normList, groups_map[[ct]],
+                             zoom = TRUE, legend = !suppress_zoom_legend)
       
-      # page_1 <- a + b + c + d + e + f +
-      #   patchwork::plot_layout(ncol = 3) +
-      #   patchwork::plot_annotation(title = paste0("Normalization metrics -- ", ct))
-      # 
+      # Summary of samples per group for caption
+      sample_ids_ct <- colnames(mats[[ct]])
+      group_tab_ct  <- sort(table(groups_map[[ct]]))
+      caption_text_ct <- sprintf(
+        "Samples included (N = %d): %s",
+        length(sample_ids_ct),
+        paste(sprintf("%s (n = %d)", names(group_tab_ct), as.integer(group_tab_ct)),
+              collapse = ", ")
+      )
+      
       # Use wrap_plots to avoid chaining raw ggplots with '+'
       page_1 <- patchwork::wrap_plots(
         list(a, b, c, d, e, f),
         ncol = 3
       ) +
-        patchwork::plot_annotation(title = paste0("Normalization metrics -- ", ct))
+        patchwork::plot_annotation(
+          title   = paste0("Normalization metrics -- ", ct),
+          caption = caption_text_ct
+        )
       
-      page_2 <- pn_plot_MD(normList, groups_map[[ct]], use_ggrastr)
-      plot_pages[[length(plot_pages) + 1]] <- list(page_1 = page_1, page_2 = page_2)
+      page_2 <- NULL
+      if (include_MD_plots) {
+        page_2 <- pn_plot_MD(normList, groups_map[[ct]], use_ggrastr)
+      }
+      
+      plot_pages[[length(plot_pages) + 1]] <- list(page_1 = page_1,
+                                                   page_2 = page_2)
       
       if (!is.null(metrics_csv)) {
-        metrics_tbl <- collect_norm_metrics(normList, groups_map[[ct]], contrast = ct)
+        metrics_tbl <- collect_norm_metrics(normList,
+                                            groups_map[[ct]],
+                                            contrast = ct)
         .norm_metrics_accum <- rbind(.norm_metrics_accum, metrics_tbl)
       }
     }
@@ -236,11 +347,14 @@ write_norm_report <- function(DAList,
     
     cli::cli_inform("Saving report to: {.path {report_path}}")
     
-    # Multi-page PDF: each contrast has two pages (metrics + MD)
-    grDevices::pdf(report_path, height = 8.5, width = 11, useDingbats = TRUE)
+    # Multi-page PDF: for each contrast, metrics page (+ optional MD page)
+    grDevices::pdf(report_path, height = 8.5, width = 11,
+                   useDingbats = TRUE)
     for (pg in plot_pages) {
       if (inherits(pg$page_1, "ggplot")) print(pg$page_1) else grid::grid.draw(pg$page_1)
-      if (inherits(pg$page_2, "ggplot")) print(pg$page_2) else grid::grid.draw(pg$page_2)
+      if (!is.null(pg$page_2)) {
+        if (inherits(pg$page_2, "ggplot")) print(pg$page_2) else grid::grid.draw(pg$page_2)
+      }
     }
     grDevices::dev.off()
     
@@ -252,7 +366,7 @@ write_norm_report <- function(DAList,
   }
   
   ############################
-  ## Legacy global behavior ##
+  ## Global (default) view  ##
   ############################
   cli::cli_inform("Starting normalizations (global)")
   normList <- apply_all_normalizations_contrast(
@@ -263,7 +377,9 @@ write_norm_report <- function(DAList,
   cli::cli_inform("Normalizations finished")
   
   if (!is.null(metrics_csv)) {
-    metrics_tbl <- collect_norm_metrics(normList, groups_vec, contrast = "GLOBAL")
+    metrics_tbl <- collect_norm_metrics(normList,
+                                        groups_vec,
+                                        contrast = "GLOBAL")
     utils::write.csv(metrics_tbl, metrics_csv, row.names = FALSE)
   }
   
@@ -272,22 +388,43 @@ write_norm_report <- function(DAList,
   c <- pn_plot_PEV(normList, groups_vec)
   d <- pn_plot_COR(normList, groups_vec)
   e <- pn_plot_log2ratio(normList, groups_vec)
-  f <- pn_plot_log2ratio(normList, groups_vec, zoom = TRUE, legend = !suppress_zoom_legend)
- 
-# page_1 <- a + b + c + d + e + f + patchwork::plot_layout(ncol = 3)
-  # Same wrap_plots pattern for the global case
+  f <- pn_plot_log2ratio(normList, groups_vec,
+                         zoom = TRUE, legend = !suppress_zoom_legend)
+  
+  # Summary of samples per group for caption (global)
+  sample_ids_global <- colnames(DAList$data)
+  group_tab_global  <- sort(table(groups_vec))
+  caption_text_global <- sprintf(
+    "Samples included (N = %d): %s",
+    length(sample_ids_global),
+    paste(sprintf("%s (n = %d)", names(group_tab_global), as.integer(group_tab_global)),
+          collapse = ", ")
+  )
+  
+  # Use wrap_plots for the global case as well
   page_1 <- patchwork::wrap_plots(
     list(a, b, c, d, e, f),
     ncol = 3
-  )
-  page_2 <- pn_plot_MD(normList, groups_vec, use_ggrastr)
+  ) +
+    patchwork::plot_annotation(
+      caption = caption_text_global
+    )
+  
+  
+  page_2 <- NULL
+  if (include_MD_plots) {
+    page_2 <- pn_plot_MD(normList, groups_vec, use_ggrastr)
+  }
   
   cli::cli_inform("Saving report to: {.path {report_path}}")
   
-  # Two-page PDF: metrics grid + MD plots
-  grDevices::pdf(report_path, height = 8.5, width = 11, useDingbats = TRUE)
+  # PDF: metrics page + optional MD page
+  grDevices::pdf(report_path, height = 8.5, width = 11,
+                 useDingbats = TRUE)
   if (inherits(page_1, "ggplot")) print(page_1) else grid::grid.draw(page_1)
-  if (inherits(page_2, "ggplot")) print(page_2) else grid::grid.draw(page_2)
+  if (!is.null(page_2)) {
+    if (inherits(page_2, "ggplot")) print(page_2) else grid::grid.draw(page_2)
+  }
   grDevices::dev.off()
   
   if (!file.exists(report_path)) {
