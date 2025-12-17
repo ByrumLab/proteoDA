@@ -23,6 +23,6 @@ log2 fold change (M) per feature and normalization method.
 \details{
 For per-contrast mode, \code{groups} is already restricted to the two levels
 involved in the contrast. If more than two groups are supplied (global
-mode), the first two levels are used with a warning.
+mode), the first two levels are used (with a warning).
 }
 \keyword{internal}

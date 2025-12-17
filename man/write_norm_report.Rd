@@ -91,7 +91,7 @@ shows a \emph{set} of MD/MA-style diagnostics for each normalization method:
 \item classic MD plots (points + loess trend)
 \item trend-only MD plots (no points, to compare bias across methods)
 \item 2D-binned (heatmap-style) MD plots
-\item Δ-trend curves: difference between each method's loess fit and the raw
+\item Delta-trend curves: difference between each method's loess fit and the raw
 log2 trend, highlighting over-/under-correction relative to the input
 \item residual plots: distributions of loess residuals per method
 \item log2FC distribution plots (per method), to visualize how normalization

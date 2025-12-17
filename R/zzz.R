@@ -4,3 +4,7 @@ utils::globalVariables(c(
   "setNames", "sig.FDR.fct", "sig.pval.fct", "status", "terms", "tot.int",
   "tot.num", "value", "values"
 ))
+
+if (getRversion() >= "2.15.1") {
+  utils::globalVariables(c("A", "M", "deltaM", "method", "residual"))
+}
