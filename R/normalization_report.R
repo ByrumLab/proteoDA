@@ -203,8 +203,15 @@ write_norm_report <- function(DAList,
       e <- pn_plot_log2ratio(normList, groups_map[[ct]])
       f <- pn_plot_log2ratio(normList, groups_map[[ct]], zoom = TRUE, legend = !suppress_zoom_legend)
       
-      page_1 <- a + b + c + d + e + f +
-        patchwork::plot_layout(ncol = 3) +
+      # page_1 <- a + b + c + d + e + f +
+      #   patchwork::plot_layout(ncol = 3) +
+      #   patchwork::plot_annotation(title = paste0("Normalization metrics -- ", ct))
+      # 
+      # Use wrap_plots to avoid chaining raw ggplots with '+'
+      page_1 <- patchwork::wrap_plots(
+        list(a, b, c, d, e, f),
+        ncol = 3
+      ) +
         patchwork::plot_annotation(title = paste0("Normalization metrics -- ", ct))
       
       page_2 <- pn_plot_MD(normList, groups_map[[ct]], use_ggrastr)
@@ -266,8 +273,13 @@ write_norm_report <- function(DAList,
   d <- pn_plot_COR(normList, groups_vec)
   e <- pn_plot_log2ratio(normList, groups_vec)
   f <- pn_plot_log2ratio(normList, groups_vec, zoom = TRUE, legend = !suppress_zoom_legend)
-  page_1 <- a + b + c + d + e + f + patchwork::plot_layout(ncol = 3)
-  
+ 
+# page_1 <- a + b + c + d + e + f + patchwork::plot_layout(ncol = 3)
+  # Same wrap_plots pattern for the global case
+  page_1 <- patchwork::wrap_plots(
+    list(a, b, c, d, e, f),
+    ncol = 3
+  )
   page_2 <- pn_plot_MD(normList, groups_vec, use_ggrastr)
   
   cli::cli_inform("Saving report to: {.path {report_path}}")
