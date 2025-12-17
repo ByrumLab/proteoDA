@@ -28,7 +28,7 @@ ggplot objects with different MD-style diagnostics:
 \item classic MD (points + loess trend)
 \item trend-only MD (no points, SE band)
 \item 2D-binned MD (heatmap-like density + trend)
-\item Δ-trend curves vs raw log2
+\item Delta-trend curves vs raw log2
 \item residual distributions (density of loess residuals per method)
 \item log2FC distribution per method (violin)
 }

@@ -20,7 +20,7 @@
 #' - classic MD plots (points + loess trend)
 #' - trend-only MD plots (no points, to compare bias across methods)
 #' - 2D-binned (heatmap-style) MD plots
-#' - Δ-trend curves: difference between each method's loess fit and the raw
+#' - Delta-trend curves: difference between each method's loess fit and the raw
 #'   log2 trend, highlighting over-/under-correction relative to the input
 #' - residual plots: distributions of loess residuals per method
 #' - log2FC distribution plots (per method), to visualize how normalization
@@ -471,7 +471,7 @@ compute_MD_long <- function(normList, groups) {
   }
   
   # If more than two groups, just use the first two levels but DO NOT
-  # subset the vector – we still need length(groups) == ncol(X).
+  # subset the vector -- we still need length(groups) == ncol(X).
   if (nlevels(groups) > 2L) {
     lvl_used <- levels(groups)[1:2]
     cli::cli_warn(
@@ -496,7 +496,7 @@ compute_MD_long <- function(normList, groups) {
     }
     
     if (!all(c(sum(g1), sum(g2)) > 0)) {
-      # one of the two groups missing in this matrix – skip this method
+      # one of the two groups missing in this matrix -- skip this method
       return(NULL)
     }
     
@@ -531,7 +531,7 @@ compute_MD_long <- function(normList, groups) {
 #' 1. classic MD (points + loess trend)
 #' 2. trend-only MD (no points, SE band)
 #' 3. 2D-binned MD (heatmap-like density + trend)
-#' 4. Δ-trend curves vs raw log2
+#' 4. Delta-trend curves vs raw log2
 #' 5. residual distributions (density of loess residuals per method)
 #' 6. log2FC distribution per method (violin)
 #'
@@ -567,8 +567,10 @@ build_MD_pages <- function(normList,
     ggplot2::labs(
       x = "mean intensity (log2)",
       y = "log2FC",
-      title = paste0("MD plots (points + trend)",
-                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+      title = paste0(
+        "MD plots (points + trend)",
+        if (!is.null(contrast_label)) paste0(" - ", contrast_label) else ""
+      )
     )
   
   ## 2. Trend-only MD
@@ -579,8 +581,10 @@ build_MD_pages <- function(normList,
     ggplot2::labs(
       x = "mean intensity (log2)",
       y = "log2FC",
-      title = paste0("MD trend-only (loess fits)",
-                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+      title = paste0(
+        "MD trend-only (loess fits)",
+        if (!is.null(contrast_label)) paste0(" - ", contrast_label) else ""
+      )
     )
   
   ## 3. 2D-binned MD (heatmap style)
@@ -592,18 +596,22 @@ build_MD_pages <- function(normList,
     ggplot2::labs(
       x = "mean intensity (log2)",
       y = "log2FC",
-      title = paste0("MD plots (2D-binned density + trend)",
-                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+      title = paste0(
+        "MD plots (2D-binned density + trend)",
+        if (!is.null(contrast_label)) paste0(" - ", contrast_label) else ""
+      )
     )
   
-  ## Prepare loess fits per method for Δ-trend and residuals
+  ## Prepare loess fits per method for Delta-trend and residuals
   methods <- levels(md_df$method)
   if (length(methods) == 0L) methods <- unique(md_df$method)
   
   # grid for predictions
-  grid_A <- seq(min(md_df$A, na.rm = TRUE),
-                max(md_df$A, na.rm = TRUE),
-                length.out = 200)
+  grid_A <- seq(
+    min(md_df$A, na.rm = TRUE),
+    max(md_df$A, na.rm = TRUE),
+    length.out = 200
+  )
   
   loess_fits <- lapply(methods, function(m) {
     dfm <- md_df[md_df$method == m, , drop = FALSE]
@@ -615,7 +623,7 @@ build_MD_pages <- function(normList,
   names(loess_fits) <- methods
   loess_fits <- loess_fits[!vapply(loess_fits, is.null, logical(1))]
   
-  ## 4. Δ-trend vs raw log2
+  ## 4. Delta-trend vs raw log2
   raw_name <- intersect(c("log2", "raw", "none"), names(loess_fits))[1]
   if (is.na(raw_name)) raw_name <- names(loess_fits)[1]
   
@@ -629,15 +637,19 @@ build_MD_pages <- function(normList,
     )
   }))
   
-  p_delta <- ggplot2::ggplot(delta_df,
-                             ggplot2::aes(x = A, y = deltaM, colour = method)) +
+  p_delta <- ggplot2::ggplot(
+    delta_df,
+    ggplot2::aes(x = A, y = deltaM, colour = method)
+  ) +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed") +
     ggplot2::geom_line() +
     ggplot2::labs(
       x = "mean intensity (log2)",
-      y = paste0("Δ loess(M) vs ", raw_name),
-      title = paste0("Δ-trend vs raw log2 (over-/under-correction)",
-                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+      y = paste0("Delta loess(M) vs ", raw_name),
+      title = paste0(
+        "Delta-trend vs raw log2 (over-/under-correction)",
+        if (!is.null(contrast_label)) paste0(" - ", contrast_label) else ""
+      )
     )
   
   ## 5. Residual distributions
@@ -651,28 +663,36 @@ build_MD_pages <- function(normList,
     )
   }))
   
-  p_resid <- ggplot2::ggplot(resid_df,
-                             ggplot2::aes(x = residual)) +
+  p_resid <- ggplot2::ggplot(
+    resid_df,
+    ggplot2::aes(x = residual)
+  ) +
     ggplot2::geom_density() +
     ggplot2::geom_vline(xintercept = 0, linetype = "dashed") +
     ggplot2::facet_wrap(~ method, scales = "free_y") +
     ggplot2::labs(
       x = "loess residual (M - M_hat)",
       y = "Density",
-      title = paste0("MD residual distributions by method",
-                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+      title = paste0(
+        "MD residual distributions by method",
+        if (!is.null(contrast_label)) paste0(" - ", contrast_label) else ""
+      )
     )
   
   ## 6. log2FC distribution per method (violin)
-  p_violin <- ggplot2::ggplot(md_df,
-                              ggplot2::aes(x = method, y = M)) +
+  p_violin <- ggplot2::ggplot(
+    md_df,
+    ggplot2::aes(x = method, y = M)
+  ) +
     ggplot2::geom_violin(trim = FALSE) +
     ggplot2::geom_hline(yintercept = 0, linetype = "dashed") +
     ggplot2::labs(
       x = "Normalization method",
       y = "log2FC",
-      title = paste0("log2FC distributions by normalization",
-                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+      title = paste0(
+        "log2FC distributions by normalization",
+        if (!is.null(contrast_label)) paste0(" - ", contrast_label) else ""
+      )
     ) +
     ggplot2::coord_flip()
   
@@ -685,7 +705,6 @@ build_MD_pages <- function(normList,
     md_violin = p_violin
   )
 }
-
 
 #' Apply all normalization methods to a matrix (contrast-aware helper)
 #'
