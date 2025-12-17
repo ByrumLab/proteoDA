@@ -33,7 +33,8 @@ in around 0? Default is FALSE.}
 
 \item{legend}{Should the plot include the legend? Default is TRUE.}
 
-\item{use_ggrastr}{Use ggrastr in MD plots to reduce size (if installed)? Default FALSE.}
+\item{use_ggrastr}{Use ggrastr in MD plots to reduce size (if installed)?
+Default \code{FALSE}.}
 }
 \value{
 A ggplot object of the plot.

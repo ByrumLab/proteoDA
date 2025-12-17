@@ -2,7 +2,7 @@
 % Please edit documentation in R/normalization_report.R
 \name{write_norm_report}
 \alias{write_norm_report}
-\title{Create a normalization report (contrast-aware)}
+\title{Create a normalization report (optionally contrast-aware)}
 \usage{
 write_norm_report(
   DAList,
@@ -16,7 +16,9 @@ write_norm_report(
   contrasts = NULL,
   sample_id_col = NULL,
   groups_override = NULL,
-  metrics_csv = NULL
+  metrics_csv = NULL,
+  per_contrast = FALSE,
+  include_MD_plots = TRUE
 )
 }
 \arguments{
@@ -25,25 +27,31 @@ write_norm_report(
 \item{grouping_column}{Name of the metadata column that gives sample groups
 (used by within-group cyclic loess). Must contain at least two groups.}
 
-\item{output_dir}{Directory to save the report (created if missing). Defaults to cwd.}
+\item{output_dir}{Directory to save the report (created if missing).
+Defaults to the current working directory.}
 
-\item{filename}{File name of the report (must end with .pdf). Default "normalization_report.pdf".}
+\item{filename}{File name of the report (must end with \code{.pdf}).
+Default \code{"normalization_report.pdf"}.}
 
-\item{overwrite}{Overwrite if the report already exists? Default FALSE.}
+\item{overwrite}{Overwrite if the report already exists? Default \code{FALSE}.}
 
-\item{suppress_zoom_legend}{Remove the legend from the zoomed log2ratio plot? Default FALSE.}
+\item{suppress_zoom_legend}{Remove the legend from the zoomed log2-ratio
+plot? Default \code{FALSE}.}
 
-\item{use_ggrastr}{Use ggrastr in MD plots to reduce size (if installed)? Default FALSE.}
+\item{use_ggrastr}{Use ggrastr in MD plots to reduce size (if installed)?
+Default \code{FALSE}.}
 
-\item{input_is_log2}{Logical. If TRUE, indicates per-contrast (or global) input matrices
-are already on the log2 scale for methods that expect log2 input. Default FALSE.}
+\item{input_is_log2}{Logical. If \code{TRUE}, indicates per-contrast (or global)
+input matrices are already on the log2 scale for methods that expect log2
+input. Default \code{FALSE}.}
 
-\item{contrasts}{Optional character vector: restrict report to these contrasts when
-\code{data_per_contrast} is present. Default = all.}
+\item{contrasts}{Optional character vector: when \code{per_contrast = TRUE} and
+\code{data_per_contrast} is present, restrict the report to these contrasts.
+Default = all contrasts in \code{data_per_contrast}.}
 
 \item{sample_id_col}{Optional name of the metadata column whose values match
 the matrix column names. If \code{NULL}, the function attempts to auto-detect a
-suitable column (e.g., "sample").}
+suitable column (e.g., \code{"sample"}).}
 
 \item{groups_override}{Optional named vector of group labels with names equal
 to \strong{matrix column names}. If supplied, this overrides the group labels
@@ -52,13 +60,41 @@ derived from \code{grouping_column} and \code{sample_id_col}.}
 \item{metrics_csv}{Optional path to a CSV file where per-sample normalization
 metrics (PCV, PMAD, PEV, COR, mean intensity, etc.) will be written. If
 \code{NULL}, metrics are not exported to CSV.}
+
+\item{per_contrast}{Logical. If \code{TRUE} and \code{DAList$data_per_contrast} is
+present, produce a separate set of normalization plots per contrast. If
+\code{FALSE} (default), ignore \code{data_per_contrast} and evaluate normalization
+globally using \code{DAList$data}.}
+
+\item{include_MD_plots}{Logical. If \code{TRUE} (default), include the extended
+MD/MA diagnostic pages for each contrast (or global). Set to \code{FALSE} to
+omit these plots, which can substantially reduce the PDF file size.}
 }
 \value{
 Invisibly returns the input DAList.
 }
 \description{
 Saves a PDF report containing plots/metrics to compare normalization methods.
-If \code{DAList$data_per_contrast} exists, evaluates normalization \strong{for each contrast}
-using the matrices in that slot (leaving \code{DAList$data} untouched). Otherwise,
-evaluates on \code{DAList$data} (legacy behavior).
+}
+\details{
+By default, normalization is evaluated \strong{globally} on \code{DAList$data}, which
+is typically the raw (unnormalized) expression matrix.
+
+If \code{per_contrast = TRUE} and \code{DAList$data_per_contrast} exists, the function
+instead evaluates normalization \strong{separately for each contrast}, using the
+matrices in that slot (leaving \code{DAList$data} untouched).
+
+The report always includes per-sample normalization metrics (PCV, PMAD, PEV,
+COR, mean intensity, etc.). When \code{include_MD_plots = TRUE}, it additionally
+shows a \emph{set} of MD/MA-style diagnostics for each normalization method:
+\itemize{
+\item classic MD plots (points + loess trend)
+\item trend-only MD plots (no points, to compare bias across methods)
+\item 2D-binned (heatmap-style) MD plots
+\item Δ-trend curves: difference between each method's loess fit and the raw
+log2 trend, highlighting over-/under-correction relative to the input
+\item residual plots: distributions of loess residuals per method
+\item log2FC distribution plots (per method), to visualize how normalization
+compresses or preserves fold-change variation
+}
 }

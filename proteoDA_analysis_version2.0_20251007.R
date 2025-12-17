@@ -200,7 +200,7 @@ write_norm_report(
   filtered_DALists,
   grouping_column   = group,
   output_dir        = "QC_report",
-  filename          = "normalization_new.pdf",
+  filename          = "normalization_MD.pdf",
   overwrite         = TRUE,
   suppress_zoom_legend = FALSE,
   use_ggrastr       = FALSE,
@@ -209,7 +209,7 @@ write_norm_report(
   contrasts         = c("M1Y1_vs_Ref", "M2Y1_vs_Ref"), # NEW — restrict to selected contrasts
   sample_id_col     = "sample",  # NEW <— set this to the metadata column that equals colnames()
   metrics_csv     = file.path("QC_report", "metrics_PRE.csv"),
-  include_MD_plots  = FALSE   # <- turn off MA/MD page
+  include_MD_plots  = TRUE   # <- turn off MA/MD page
   )
 
 ######
