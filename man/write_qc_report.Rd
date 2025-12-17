@@ -32,12 +32,13 @@ defaults to using the column names of the data in processed_data. To ensure
 good plot formatting, sample labels will be truncated to 20 characters, and
 the function will give an error if the sample labels are not unique.}
 
-\item{output_dir}{Directory to save the report (created if missing). Defaults to cwd.}
+\item{output_dir}{Directory to save the report (created if missing).
+Defaults to the current working directory.}
 
 \item{filename}{The file name of the report to be saved. Must end in .pdf. Will
 default to "QC_Report.pdf" if no filename is provided.}
 
-\item{overwrite}{Overwrite if the report already exists? Default FALSE.}
+\item{overwrite}{Overwrite if the report already exists? Default \code{FALSE}.}
 
 \item{top_proteins}{The number of most variable proteins to use
 for the PCA and dendrogram clustering. Default is 500.}

@@ -13,6 +13,19 @@
 #' instead evaluates normalization **separately for each contrast**, using the
 #' matrices in that slot (leaving `DAList$data` untouched).
 #'
+#' The report always includes per-sample normalization metrics (PCV, PMAD, PEV,
+#' COR, mean intensity, etc.). When `include_MD_plots = TRUE`, it additionally
+#' shows a *set* of MD/MA-style diagnostics for each normalization method:
+#'
+#' - classic MD plots (points + loess trend)
+#' - trend-only MD plots (no points, to compare bias across methods)
+#' - 2D-binned (heatmap-style) MD plots
+#' - Δ-trend curves: difference between each method's loess fit and the raw
+#'   log2 trend, highlighting over-/under-correction relative to the input
+#' - residual plots: distributions of loess residuals per method
+#' - log2FC distribution plots (per method), to visualize how normalization
+#'   compresses or preserves fold-change variation
+#'
 #' @param DAList A DAList.
 #' @param grouping_column Name of the metadata column that gives sample groups
 #'   (used by within-group cyclic loess). Must contain at least two groups.
@@ -44,9 +57,9 @@
 #'   present, produce a separate set of normalization plots per contrast. If
 #'   `FALSE` (default), ignore `data_per_contrast` and evaluate normalization
 #'   globally using `DAList$data`.
-#' @param include_MD_plots Logical. If `TRUE` (default), include MA/MD plots as
-#'   a second page for each contrast (or global). Set to `FALSE` to omit these
-#'   plots, which can substantially reduce the PDF file size.
+#' @param include_MD_plots Logical. If `TRUE` (default), include the extended
+#'   MD/MA diagnostic pages for each contrast (or global). Set to `FALSE` to
+#'   omit these plots, which can substantially reduce the PDF file size.
 #'
 #' @return Invisibly returns the input DAList.
 #' @export
@@ -200,23 +213,7 @@ write_norm_report <- function(DAList,
       }
       stop("Unsupported per-contrast structure. Expected matrix/data.frame or list with $log2.")
     }
-    # 
-    # for (ct in target_ct) {
-    #   X <- extract_mat(DAList$data_per_contrast[[ct]])
-    #   # Align groups by matrix columns (names in id_map)
-    #   if (!is.null(colnames(X))) {
-    #     g <- id_map[colnames(X)]
-    #   } else {
-    #     cli::cli_abort(sprintf("Per-contrast matrix for '%s' lacks column names; cannot align groups.", ct))
-    #   }
-    #   if (anyNA(g)) {
-    #     missing <- colnames(X)[is.na(g)]
-    #     cli::cli_abort(sprintf("Group labels missing for samples in contrast '%s': %s",
-    #                            ct, paste(missing, collapse = ", ")))
-    #   }
-    #   mats[[ct]]       <- X
-    #   groups_map[[ct]] <- as.character(g)
-    # }
+    
     for (ct in target_ct) {
       X <- extract_mat(DAList$data_per_contrast[[ct]])
       
@@ -235,7 +232,7 @@ write_norm_report <- function(DAList,
         )
       }
       
-      ## --- NEW: restrict to groups actually involved in this contrast, if we can ---
+      ## --- restrict to groups actually involved in this contrast, if we can ---
       groups_in_ct <- NULL
       
       # 1) Prefer contrast_info tags if available
@@ -258,7 +255,7 @@ write_norm_report <- function(DAList,
       if (!is.null(groups_in_ct)) {
         keep <- sample_groups %in% groups_in_ct
         if (any(keep)) {
-          X            <- X[, keep, drop = FALSE]
+          X             <- X[, keep, drop = FALSE]
           sample_groups <- sample_groups[keep]
         } else {
           cli::cli_warn(
@@ -267,7 +264,7 @@ write_norm_report <- function(DAList,
           )
         }
       }
-      ## --- end NEW bit ---
+      ## --- end group restriction ---
       
       mats[[ct]]       <- X
       groups_map[[ct]] <- as.character(sample_groups)
@@ -308,7 +305,7 @@ write_norm_report <- function(DAList,
               collapse = ", ")
       )
       
-      # Use wrap_plots to avoid chaining raw ggplots with '+'
+      # Metrics page
       page_1 <- patchwork::wrap_plots(
         list(a, b, c, d, e, f),
         ncol = 3
@@ -318,13 +315,18 @@ write_norm_report <- function(DAList,
           caption = caption_text_ct
         )
       
-      page_2 <- NULL
+      md_pages <- NULL
       if (include_MD_plots) {
-        page_2 <- pn_plot_MD(normList, groups_map[[ct]], use_ggrastr)
+        md_pages <- build_MD_pages(normList,
+                                   groups = groups_map[[ct]],
+                                   use_ggrastr = use_ggrastr,
+                                   contrast_label = ct)
       }
       
-      plot_pages[[length(plot_pages) + 1]] <- list(page_1 = page_1,
-                                                   page_2 = page_2)
+      plot_pages[[length(plot_pages) + 1]] <- list(
+        page_1   = page_1,
+        md_pages = md_pages
+      )
       
       if (!is.null(metrics_csv)) {
         metrics_tbl <- collect_norm_metrics(normList,
@@ -347,13 +349,15 @@ write_norm_report <- function(DAList,
     
     cli::cli_inform("Saving report to: {.path {report_path}}")
     
-    # Multi-page PDF: for each contrast, metrics page (+ optional MD page)
     grDevices::pdf(report_path, height = 8.5, width = 11,
                    useDingbats = TRUE)
     for (pg in plot_pages) {
       if (inherits(pg$page_1, "ggplot")) print(pg$page_1) else grid::grid.draw(pg$page_1)
-      if (!is.null(pg$page_2)) {
-        if (inherits(pg$page_2, "ggplot")) print(pg$page_2) else grid::grid.draw(pg$page_2)
+      
+      if (!is.null(pg$md_pages)) {
+        for (p in pg$md_pages) {
+          if (inherits(p, "ggplot")) print(p) else grid::grid.draw(p)
+        }
       }
     }
     grDevices::dev.off()
@@ -401,7 +405,6 @@ write_norm_report <- function(DAList,
           collapse = ", ")
   )
   
-  # Use wrap_plots for the global case as well
   page_1 <- patchwork::wrap_plots(
     list(a, b, c, d, e, f),
     ncol = 3
@@ -410,20 +413,23 @@ write_norm_report <- function(DAList,
       caption = caption_text_global
     )
   
-  
-  page_2 <- NULL
+  md_pages <- NULL
   if (include_MD_plots) {
-    page_2 <- pn_plot_MD(normList, groups_vec, use_ggrastr)
+    md_pages <- build_MD_pages(normList,
+                               groups = groups_vec,
+                               use_ggrastr = use_ggrastr,
+                               contrast_label = "GLOBAL")
   }
   
   cli::cli_inform("Saving report to: {.path {report_path}}")
   
-  # PDF: metrics page + optional MD page
   grDevices::pdf(report_path, height = 8.5, width = 11,
                  useDingbats = TRUE)
   if (inherits(page_1, "ggplot")) print(page_1) else grid::grid.draw(page_1)
-  if (!is.null(page_2)) {
-    if (inherits(page_2, "ggplot")) print(page_2) else grid::grid.draw(page_2)
+  if (!is.null(md_pages)) {
+    for (p in md_pages) {
+      if (inherits(p, "ggplot")) print(p) else grid::grid.draw(p)
+    }
   }
   grDevices::dev.off()
   
@@ -433,6 +439,253 @@ write_norm_report <- function(DAList,
   
   invisible(input_DAList)
 }
+
+###########
+### new internal helpers for MD plots 
+###########
+
+#' Compute MD data for all normalization methods
+#'
+#' Internal helper: builds a long data.frame with mean intensity (A) and
+#' log2 fold change (M) per feature and normalization method.
+#'
+#' For per-contrast mode, `groups` is already restricted to the two levels
+#' involved in the contrast. If more than two groups are supplied (global
+#' mode), the first two levels are used (with a warning).
+#'
+#' @param normList List of normalized expression matrices (rows = features,
+#'   columns = samples), as returned by `apply_all_normalizations_contrast()`.
+#' @param groups Character or factor vector of group labels, length equal to
+#'   the number of columns in each matrix in `normList`.
+#'
+#' @return A data.frame with columns `A`, `M`, `method`.
+#' @keywords internal
+compute_MD_long <- function(normList, groups) {
+  if (is.null(normList) || !length(normList)) {
+    cli::cli_abort("normList is empty; cannot compute MD plots.")
+  }
+  
+  groups <- as.factor(groups)
+  if (nlevels(groups) < 2L) {
+    cli::cli_abort("At least two groups are required to compute MD plots.")
+  }
+  
+  # If more than two groups, just use the first two levels but DO NOT
+  # subset the vector – we still need length(groups) == ncol(X).
+  if (nlevels(groups) > 2L) {
+    lvl_used <- levels(groups)[1:2]
+    cli::cli_warn(
+      "More than two groups supplied; MD plots will use the first two levels: {paste(lvl_used, collapse = ' vs ')}."
+    )
+  }
+  lvl <- levels(groups)[1:2]
+  g1  <- groups == lvl[1]
+  g2  <- groups == lvl[2]
+  
+  out <- lapply(names(normList), function(m) {
+    X <- normList[[m]]
+    if (is.list(X) && "log2" %in% names(X)) {
+      X <- X$log2
+    }
+    X <- as.matrix(X)
+    
+    if (ncol(X) != length(groups)) {
+      cli::cli_abort(
+        "Number of columns in matrix for method '{m}' ({ncol(X)}) does not match length of 'groups' ({length(groups)})."
+      )
+    }
+    
+    if (!all(c(sum(g1), sum(g2)) > 0)) {
+      # one of the two groups missing in this matrix – skip this method
+      return(NULL)
+    }
+    
+    m1 <- rowMeans(X[, g1, drop = FALSE], na.rm = TRUE)
+    m2 <- rowMeans(X[, g2, drop = FALSE], na.rm = TRUE)
+    
+    A  <- (m1 + m2) / 2
+    M  <- (m2 - m1)
+    
+    df <- data.frame(
+      A      = as.numeric(A),
+      M      = as.numeric(M),
+      method = m,
+      stringsAsFactors = FALSE
+    )
+    df[stats::complete.cases(df$A, df$M), , drop = FALSE]
+  })
+  
+  out <- out[!vapply(out, is.null, logical(1))]
+  if (!length(out)) {
+    cli::cli_abort("Failed to construct MD data; no valid methods in normList.")
+  }
+  
+  do.call(rbind, out)
+}
+
+#' Build extended MD/MA pages for normalization report
+#'
+#' Internal helper: given a `normList` and `groups`, constructs a list of
+#' ggplot objects with different MD-style diagnostics:
+#'
+#' 1. classic MD (points + loess trend)
+#' 2. trend-only MD (no points, SE band)
+#' 3. 2D-binned MD (heatmap-like density + trend)
+#' 4. Δ-trend curves vs raw log2
+#' 5. residual distributions (density of loess residuals per method)
+#' 6. log2FC distribution per method (violin)
+#'
+#' @param normList List of normalized matrices from
+#'   `apply_all_normalizations_contrast()`.
+#' @param groups Group labels used to compute log2FC.
+#' @param use_ggrastr Logical, whether to use ggrastr for point-heavy plots.
+#' @param contrast_label Optional label used in plot titles.
+#'
+#' @return A list of ggplot objects.
+#' @keywords internal
+build_MD_pages <- function(normList,
+                           groups,
+                           use_ggrastr = FALSE,
+                           contrast_label = NULL) {
+  
+  md_df <- compute_MD_long(normList, groups)
+  md_df$method <- factor(md_df$method,
+                         levels = names(normList))
+  
+  ## 1. Classic MD: points + loess
+  point_layer <- if (use_ggrastr && requireNamespace("ggrastr", quietly = TRUE)) {
+    ggrastr::geom_point_rast(alpha = 0.3, size = 0.3)
+  } else {
+    ggplot2::geom_point(alpha = 0.3, size = 0.3)
+  }
+  
+  p_md_points <- ggplot2::ggplot(md_df, ggplot2::aes(x = A, y = M)) +
+    point_layer +
+    ggplot2::geom_smooth(se = FALSE, color = "orange") +
+    ggplot2::geom_hline(yintercept = 0, colour = "steelblue") +
+    ggplot2::facet_wrap(~ method, scales = "fixed") +
+    ggplot2::labs(
+      x = "mean intensity (log2)",
+      y = "log2FC",
+      title = paste0("MD plots (points + trend)",
+                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+    )
+  
+  ## 2. Trend-only MD
+  p_md_trend <- ggplot2::ggplot(md_df, ggplot2::aes(x = A, y = M)) +
+    ggplot2::geom_smooth(se = TRUE) +
+    ggplot2::geom_hline(yintercept = 0, colour = "steelblue") +
+    ggplot2::facet_wrap(~ method, scales = "fixed") +
+    ggplot2::labs(
+      x = "mean intensity (log2)",
+      y = "log2FC",
+      title = paste0("MD trend-only (loess fits)",
+                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+    )
+  
+  ## 3. 2D-binned MD (heatmap style)
+  p_md_bin2d <- ggplot2::ggplot(md_df, ggplot2::aes(x = A, y = M)) +
+    ggplot2::stat_bin2d() +
+    ggplot2::geom_smooth(se = FALSE, colour = "orange") +
+    ggplot2::geom_hline(yintercept = 0, colour = "steelblue") +
+    ggplot2::facet_wrap(~ method, scales = "fixed") +
+    ggplot2::labs(
+      x = "mean intensity (log2)",
+      y = "log2FC",
+      title = paste0("MD plots (2D-binned density + trend)",
+                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+    )
+  
+  ## Prepare loess fits per method for Δ-trend and residuals
+  methods <- levels(md_df$method)
+  if (length(methods) == 0L) methods <- unique(md_df$method)
+  
+  # grid for predictions
+  grid_A <- seq(min(md_df$A, na.rm = TRUE),
+                max(md_df$A, na.rm = TRUE),
+                length.out = 200)
+  
+  loess_fits <- lapply(methods, function(m) {
+    dfm <- md_df[md_df$method == m, , drop = FALSE]
+    if (nrow(dfm) < 20L) return(NULL)
+    fit <- stats::loess(M ~ A, data = dfm)
+    preds <- stats::predict(fit, newdata = data.frame(A = grid_A))
+    list(method = m, A = grid_A, M_hat = preds, fit = fit)
+  })
+  names(loess_fits) <- methods
+  loess_fits <- loess_fits[!vapply(loess_fits, is.null, logical(1))]
+  
+  ## 4. Δ-trend vs raw log2
+  raw_name <- intersect(c("log2", "raw", "none"), names(loess_fits))[1]
+  if (is.na(raw_name)) raw_name <- names(loess_fits)[1]
+  
+  base_fit <- loess_fits[[raw_name]]
+  delta_df <- do.call(rbind, lapply(loess_fits, function(obj) {
+    data.frame(
+      A      = obj$A,
+      deltaM = obj$M_hat - base_fit$M_hat,
+      method = obj$method,
+      stringsAsFactors = FALSE
+    )
+  }))
+  
+  p_delta <- ggplot2::ggplot(delta_df,
+                             ggplot2::aes(x = A, y = deltaM, colour = method)) +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed") +
+    ggplot2::geom_line() +
+    ggplot2::labs(
+      x = "mean intensity (log2)",
+      y = paste0("Δ loess(M) vs ", raw_name),
+      title = paste0("Δ-trend vs raw log2 (over-/under-correction)",
+                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+    )
+  
+  ## 5. Residual distributions
+  resid_df <- do.call(rbind, lapply(loess_fits, function(obj) {
+    dfm <- md_df[md_df$method == obj$method, , drop = FALSE]
+    pred <- stats::predict(obj$fit, newdata = data.frame(A = dfm$A))
+    data.frame(
+      residual = dfm$M - pred,
+      method   = obj$method,
+      stringsAsFactors = FALSE
+    )
+  }))
+  
+  p_resid <- ggplot2::ggplot(resid_df,
+                             ggplot2::aes(x = residual)) +
+    ggplot2::geom_density() +
+    ggplot2::geom_vline(xintercept = 0, linetype = "dashed") +
+    ggplot2::facet_wrap(~ method, scales = "free_y") +
+    ggplot2::labs(
+      x = "loess residual (M - M_hat)",
+      y = "Density",
+      title = paste0("MD residual distributions by method",
+                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+    )
+  
+  ## 6. log2FC distribution per method (violin)
+  p_violin <- ggplot2::ggplot(md_df,
+                              ggplot2::aes(x = method, y = M)) +
+    ggplot2::geom_violin(trim = FALSE) +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed") +
+    ggplot2::labs(
+      x = "Normalization method",
+      y = "log2FC",
+      title = paste0("log2FC distributions by normalization",
+                     if (!is.null(contrast_label)) paste0(" — ", contrast_label) else "")
+    ) +
+    ggplot2::coord_flip()
+  
+  list(
+    md_points = p_md_points,
+    md_trend  = p_md_trend,
+    md_bin2d  = p_md_bin2d,
+    md_delta  = p_delta,
+    md_resid  = p_resid,
+    md_violin = p_violin
+  )
+}
+
 
 #' Apply all normalization methods to a matrix (contrast-aware helper)
 #'
