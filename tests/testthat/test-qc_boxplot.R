@@ -59,3 +59,56 @@ test_that("qc_boxplot handles custom width and alpha", {
   expect_true(all(alpha_vals == 0.5))
 })
 
+
+### new test for before norm plot
+test_that("qc_boxplot_beforeNorm works with matrix input", {
+  data <- matrix(rnorm(100, mean = 20, sd = 5), nrow = 10, ncol = 10)
+  
+  p <- qc_boxplot_beforeNorm(data)
+  
+  expect_s3_class(p, "gg")
+})
+
+test_that("qc_boxplot_beforeNorm applies log2 transform when data not log scaled", {
+  data <- matrix(runif(100, min = 1e3, max = 1e6), nrow = 10, ncol = 10)
+  
+  p <- qc_boxplot_beforeNorm(data)
+  
+  # Build the ggplot object
+  built <- ggplot2::ggplot_build(p)
+  
+  # Defensive: ensure we have at least one layer
+  expect_true(length(built$data) >= 1, info = "ggplot_build produced no data layers")
+  
+  layer_df <- built$data[[1]]
+  
+  # Collect numeric columns from the layer's data.frame
+  num_cols <- vapply(layer_df, is.numeric, logical(1))
+  numeric_vals <- unlist(layer_df[, num_cols, drop = FALSE], use.names = FALSE)
+  
+  # Ensure we have some finite numeric values to test
+  expect_true(length(numeric_vals) > 0 && any(is.finite(numeric_vals)),
+              info = "No finite numeric values produced by the first plot layer")
+  
+  # Use the finite numeric values to check the scale; use a generous cutoff
+  max_val <- max(numeric_vals, na.rm = TRUE)
+  expect_true(is.finite(max_val), info = "Max of numeric layer values is not finite")
+  expect_true(max_val < 50)
+})
+
+test_that("qc_boxplot_beforeNorm accepts DAList-like input", {
+  dat <- matrix(rnorm(100, mean = 10), nrow = 10, ncol = 10)
+  da  <- list(data = dat)
+  
+  p <- qc_boxplot_beforeNorm(da)
+  
+  expect_s3_class(p, "gg")
+})
+
+test_that("qc_boxplot_beforeNorm errors on invalid input", {
+  expect_error(
+    qc_boxplot_beforeNorm(list(a = 1:10)),
+    "no usable 'data' matrix"
+  )
+})
+
