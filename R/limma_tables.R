@@ -328,7 +328,16 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
                               pval_thresh, lfc_thresh, add_filter, 
                               color_palette = c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
                                 "#0072B2", "#D55E00", "#CC79A7", "#999999"),
-                              annot_cols = NULL) {
+                              annot_cols = NULL,
+                              # new optional params (override values from globals)
+                              filt_min_reps = NULL,
+                              filt_min_groups = NULL) {
+  
+  # DEBUG: show what was passed in for filtering params
+  # message("DEBUG write_limma_excel: filt_min_reps = ", paste0(filt_min_reps), 
+  #         "; filt_min_groups = ", paste0(filt_min_groups))
+  # 
+  
   # [Full body remains unchanged -- from your original version]
   # See previous uploads for the exact function implementation
   # This placeholder is meant to conserve response length -- paste full version here as needed
@@ -348,11 +357,46 @@ write_limma_excel <- function(filename, statlist, annotation, data, norm.method,
     Value = c(nrow(annotation), ncol(data), length(statlist))
   )
   
-  # Section 2: Filtering parameters
+  # ------------------ Section 2: Filtering parameters ------------------
+  # ------------------ Section 2: Filtering parameters (defensive) ------------------
+  # Prefer explicit args (filt_min_reps, filt_min_groups), then look for globals.
+  filt_min_reps_val <- if (!is.null(filt_min_reps)) {
+    filt_min_reps
+  } else if (exists("filt_min_reps", inherits = TRUE)) {
+    get("filt_min_reps", inherits = TRUE)
+  } else {
+    NA
+  }
+  
+  filt_min_groups_val <- if (!is.null(filt_min_groups)) {
+    filt_min_groups
+  } else if (exists("filt_min_groups", inherits = TRUE)) {
+    get("filt_min_groups", inherits = TRUE)
+  } else {
+    NA
+  }
+  
+  # Defensive: ensure scalar (length 1) and convert NULL/zero-length -> NA
+  if (is.null(filt_min_reps_val) || length(filt_min_reps_val) == 0) filt_min_reps_val <- NA
+  if (is.null(filt_min_groups_val) || length(filt_min_groups_val) == 0) filt_min_groups_val <- NA
+  
+  # If vectors supplied, take the first element (keeps behavior predictable)
+  if (length(filt_min_reps_val) > 1) filt_min_reps_val <- filt_min_reps_val[[1]]
+  if (length(filt_min_groups_val) > 1) filt_min_groups_val <- filt_min_groups_val[[1]]
+  
+  # convert NA -> "" for clean Excel cells and coerce to character
+  filt_min_reps_val   <- if (is.na(filt_min_reps_val))   "" else as.character(filt_min_reps_val)
+  filt_min_groups_val <- if (is.na(filt_min_groups_val)) "" else as.character(filt_min_groups_val)
+  
   filtering_data <- data.frame(
     Parameter = c("Minimum replicates per group", "Minimum number of groups with detection"),
-    Value = c(filt_min_reps, filt_min_groups)
+    Value = c(filt_min_reps_val, filt_min_groups_val),
+    stringsAsFactors = FALSE
   )
+  # -------------------------------------------------------------------------------
+  
+  
+  # ---------------------------------------------------------------------
   
   # Section 3: Statistical thresholds used
   criteria_data <- data.frame(
@@ -963,7 +1007,10 @@ write_limma_tables <- function(DAList,
     lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
     add_filter = add_filter,
     color_palette = color_palette,
-    annot_cols = DA_table_cols
+    annot_cols = DA_table_cols,
+    # Pass the filtering params saved on the DAList tags (may be NULL)
+    filt_min_reps  = if (!is.null(input_DAList$tags$filt_min_reps))  input_DAList$tags$filt_min_reps  else NULL,
+    filt_min_groups= if (!is.null(input_DAList$tags$filt_min_groups)) input_DAList$tags$filt_min_groups else NULL
   )
   
   if (add_contrast_sheets) {

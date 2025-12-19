@@ -14,6 +14,9 @@ devtools::check(document = FALSE) # checks vignettes for R CMD check
 # document = FALSE tells devtools::check() to use the exisiting .Rd, NAMESPACE, do not re-run roxygen
 devtools::test(filter = "add_design")
 devtools::test(filter = "qc_boxplot")
+devtools::test(filter = "limma_tables")
+testthat::snapshot_accept("limma_tables")
+
 #######
 # load project parameters 
 source("proteoDA_params.R")

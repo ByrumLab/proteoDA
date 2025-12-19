@@ -521,6 +521,17 @@ filter_proteins_per_contrast <- function(DAList,
   )
   DAList$tags$retention_summary <- retention_table
   
+  # ---- NEW: persist the filtering parameters into DAList$tags ----
+  # Store the numeric minimum reps
+  DAList$tags$filt_min_reps <- min_reps
+  # Convert logical require_both_groups into "min groups with detection" semantics:
+  # If require_both_groups == TRUE then min groups is 2, else 1.
+  DAList$tags$filt_min_groups <- if (isTRUE(require_both_groups)) 2L else 1L
+  # Also store the boolean and grouping column for provenance
+  DAList$tags$filt_require_both_groups <- isTRUE(require_both_groups)
+  DAList$tags$filt_grouping_column <- grouping_column
+  # ----------------------------------------------------------------
+  
   cli::cli_inform("Added filtered protein lists and per-contrast data/annotation to DAList")
   return(new_DAList(DAList))
 }
