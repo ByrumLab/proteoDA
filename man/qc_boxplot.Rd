@@ -6,6 +6,7 @@
 \usage{
 qc_boxplot(
   data,
+  contrast = NULL,
   groups = NULL,
   sample_labels = NULL,
   title = NULL,
@@ -18,29 +19,47 @@ qc_boxplot(
 )
 }
 \arguments{
-\item{data}{A matrix or data frame of intensities.}
+\item{data}{A matrix or data.frame of intensities, or a DAList object.}
 
-\item{groups}{A vector indicating class membership (numeric, integer, character, factor, or NULL).}
+\item{contrast}{Optional character string naming the contrast to use when
+a DAList is provided. If NULL and data_per_contrast has exactly one
+element, that element is used.}
 
-\item{sample_labels}{A vector of names to display on the plot (character or NULL).}
+\item{groups}{A vector indicating class membership (numeric, integer,
+character, factor, or NULL). Length must match number of samples.}
+
+\item{sample_labels}{A character vector of names to display on the plot,
+or NULL to use column names from the data.}
 
 \item{title}{A character string for the plot title.}
 
-\item{text.sizes}{A numeric vector specifying text sizes for title, x-axis, y-axis, and legend.}
+\item{text.sizes}{Numeric vector of length 4 specifying text sizes for
+title, y-axis, x-axis labels, and legend text, in that order.}
 
-\item{legend.position}{A character string specifying the legend position (default: "right").}
+\item{legend.position}{Character string specifying legend position
+(default: \"right\").}
 
-\item{boxplot_width}{A numeric value specifying the width of the boxplots (default: dynamic based on groups).}
+\item{boxplot_width}{Numeric width for the boxplots. If NULL a dynamic
+value based on number of groups is used.}
 
-\item{boxplot_alpha}{A numeric value specifying the transparency level of the boxplots (default: dynamic).}
+\item{boxplot_alpha}{Numeric transparency for the boxplots. If NULL a
+dynamic value based on number of groups is used.}
 
-\item{plot_margin}{A grid unit object specifying the plot margins (default: dynamic based on groups).}
+\item{plot_margin}{A grid::unit object specifying the plot margins. If
+NULL a dynamic margin is used.}
 
-\item{colorblind_palette}{A character vector specifying colorblind-friendly colors to use.}
+\item{colorblind_palette}{Character vector of color values to use for
+group fills. If NULL a default colorblind friendly palette is used.}
 }
 \value{
 A ggplot2 object displaying the QC boxplot.
 }
 \description{
-Generate a QC Boxplot
+This function draws a boxplot of sample intensities for quality control.
+The \code{data} argument may be a numeric matrix or data.frame of intensities,
+or a DAList object produced by the proteoDA pipeline. If a DAList is
+supplied, the function will prefer the normalized data stored in
+DAList$data_per_contrast[\link{contrast}] when that element exists. If
+'contrast' is NULL and data_per_contrast has exactly one element, that
+element will be used. Otherwise DAList$data is used.
 }

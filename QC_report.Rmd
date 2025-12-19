@@ -27,7 +27,7 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 
 
 ```{r logo, fig.align="left", out.width="50%"}
-knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_apps/proteomics_apps/proteoDA2/CPM_Hz.png", rel_path = F)
+knitr::include_graphics(system.file("report_templates", "CPM_Hz.png", package= "proteoDAstjude"))
 ```
 
 
@@ -128,32 +128,83 @@ if (!dir.exists(QC_dir)) {dir.create(QC_dir)}
 
 ```
 
-```{r boxplot, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 1. Protein Intensities for each sample', include = T}
 
+```{r qc_boxplots_generate, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 1. Protein Intensities for each sample', include = T}
+# Prefer per-contrast data when available
+if (!is.null(results$data_per_contrast) &&
+    is.list(results$data_per_contrast) &&
+    length(results$data_per_contrast) > 0) {
 
-boxplot5 <- qc_boxplot(data = results$data,
-                                  groups = results$metadata$group,
-                                  sample_labels = results$metadata$sample,
-                                  title = NULL,
-                                  text.sizes = c(12,10,10,10),
-                                  legend.position = "right",
-                                  boxplot_alpha = NULL,
-                                  boxplot_width = NULL,
-                                  plot_margin = NULL,
-                                  colorblind_palette = all_colors2$group)
+  contrast_list  <- results$data_per_contrast
+  contrast_names <- names(contrast_list)
+  if (is.null(contrast_names)) {
+    contrast_names <- paste0("contrast_", seq_along(contrast_list))
+  }
 
+} else {
+  # Fallback to single matrix
+  contrast_list  <- list(results$data)
+  contrast_names <- "all_samples"
+}
 
-boxplot5
+# Container to store plots
+qc_boxplots <- vector("list", length(contrast_list))
+names(qc_boxplots) <- contrast_names
+
+# Generate plots (use element, not hard-coded name)
+for (i in seq_along(contrast_list)) {
+  mat <- contrast_list[[i]]
+
+  if (is.null(mat) || !(is.matrix(mat) || is.data.frame(mat))) {
+    message("Skipping contrast ", contrast_names[i], " (not a matrix/data.frame).")
+    next
+  }
+
+  qc_boxplots[[i]] <- qc_boxplot(
+    data = mat,
+    groups = results$metadata$group,
+    sample_labels = results$metadata$sample,
+    title = paste("QC boxplot —", contrast_names[i]),
+    text.sizes = c(12, 10, 10, 10),
+    legend.position = "right",
+    boxplot_alpha = NULL,
+    boxplot_width = NULL,
+    plot_margin = NULL,
+    colorblind_palette = all_colors2$group
+  )
+
+  # Print for the report
+  print(qc_boxplots[[i]])
+}
 ```
 
-```{r}
-ggsave(file = file.path(QC_dir,"Boxplot_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
-       plot = boxplot5, 
-       path = NULL, 
-       width = 10, 
-       height = 6, 
-       units = c("in"), 
-       dpi = 300)
+
+```{r qc_boxplots_save, message=FALSE, warning=FALSE}
+## Save all QC boxplots
+# This replaces your single-plot `ggsave()` call and saves **one file per contrast**.
+
+# Ensure output directory exists
+if (!dir.exists(QC_dir)) {
+  dir.create(QC_dir, recursive = TRUE)
+}
+
+# Save each plot
+for (i in seq_along(qc_boxplots)) {
+  p <- qc_boxplots[[i]]
+  if (is.null(p)) next
+
+  ct <- names(qc_boxplots)[i]
+  ct_safe <- gsub("[^A-Za-z0-9_-]", "_", ct)
+
+  ggsave(
+    file   = file.path(QC_dir, paste0("Boxplot_", ct_safe, ".png")),
+    plot   = p,
+    width  = 10,
+    height = 6,
+    units  = "in",
+    dpi    = 300
+  )
+}
 
 ```
 
