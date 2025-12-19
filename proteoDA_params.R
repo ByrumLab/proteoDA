@@ -78,5 +78,5 @@ ctrl_proteins <-  NULL # c( "P46100")        # c( "P58004", "Q12766", "MDM2") hi
 #### QC plot options - Must match sample Metadata columns!!!!!!!!!
 plot_labels = "sample"
 barplot_grouping_columns <- c("group")
-pca_grouping_columns <- c("group", "sample","batch")
-den_grouping_columns <- c("group", "sample","batch")
+pca_grouping_columns <- c("group","batch")
+den_grouping_columns <- c("group", "batch")

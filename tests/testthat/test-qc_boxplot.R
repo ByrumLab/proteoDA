@@ -6,12 +6,19 @@ test_that("qc_boxplot works with default arguments", {
   expect_equal(p$labels$title, " ")
 })
 
+
 test_that("qc_boxplot validates input", {
-  expect_error(qc_boxplot(list(a = 1:10)), "is.matrix")
+  # If a list is passed that looks like a DAList but lacks data slots,
+  # the function should error with an informative message.
+  expect_error(
+    qc_boxplot(list(a = 1:10)),
+    "no usable data found in data_per_contrast or data"
+  )
   
   data <- matrix(rnorm(100), nrow = 10, ncol = 10)
   expect_error(qc_boxplot(data, groups = rep(1, 5)))
 })
+
 
 test_that("qc_boxplot applies colorblind palette", {
   data   <- matrix(rnorm(100), nrow = 10, ncol = 10)
