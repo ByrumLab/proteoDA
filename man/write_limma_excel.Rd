@@ -15,7 +15,9 @@ write_limma_excel(
   add_filter,
   color_palette = c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00",
     "#CC79A7", "#999999"),
-  annot_cols = NULL
+  annot_cols = NULL,
+  filt_min_reps = NULL,
+  filt_min_groups = NULL
 )
 }
 \arguments{
