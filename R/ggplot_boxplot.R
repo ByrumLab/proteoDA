@@ -159,3 +159,98 @@ qc_boxplot <- function(data,
   
   return(p1)
 }
+
+#' QC boxplot for data before normalization
+#'
+#' Generate a QC boxplot from raw intensity data prior to normalization.
+#' The input may be a numeric matrix or data.frame, or a DAList-like object
+#' containing a top-level element named 'data'. If the data do not appear to
+#' be on the log2 scale, a log2 transform is applied before plotting.
+#'
+#' Log2 scale detection uses a conservative heuristic based on data range and
+#' value distribution. When the scale is ambiguous, the function will apply
+#' a log2 transform to ensure comparable distributions.
+#'
+#' @param data A numeric matrix or data.frame of intensities, or a DAList-like
+#'   object (list) containing a 'data' matrix.
+#' @param groups Optional vector indicating class membership. Length must match
+#'   the number of samples (columns).
+#' @param sample_labels Optional character vector of sample labels. Length must
+#'   match the number of samples (columns).
+#' @param pseudo Optional positive numeric value added before log2 transform to
+#'   avoid log2(0). If NULL, a small data-driven constant is chosen.
+#' @param ... Additional arguments passed to qc_boxplot.
+#'
+#' @return A ggplot2 object displaying the QC boxplot of log2-scaled raw data.
+#' @export
+qc_boxplot_beforeNorm <- function(data,
+                                  groups = NULL,
+                                  sample_labels = NULL,
+                                  pseudo = NULL,
+                                  ...) {
+  
+  # Resolve DAList-like objects
+  if (is.list(data) && !is.data.frame(data)) {
+    if (!is.null(data$data) &&
+        (is.matrix(data$data) || is.data.frame(data$data))) {
+      mat <- as.matrix(data$data)
+    } else {
+      stop("DAList provided but no usable 'data' matrix found.")
+    }
+  } else {
+    if (!(is.matrix(data) || is.data.frame(data))) {
+      stop("data must be a matrix, data.frame, or a DAList-like object containing 'data'.")
+    }
+    mat <- as.matrix(data)
+  }
+  
+  # Basic validation
+  if (nrow(mat) < 1 || ncol(mat) < 1) {
+    stop("data must have at least one row and one column.")
+  }
+  
+  # Detect log2 scale using a conservative heuristic
+  vals <- as.numeric(mat)
+  vals <- vals[is.finite(vals)]
+  if (length(vals) == 0) {
+    stop("data contains no finite values.")
+  }
+  
+  q <- stats::quantile(vals, probs = c(0.01, 0.99), na.rm = TRUE)
+  
+  is_log2 <- TRUE
+  if (any(vals <= 0, na.rm = TRUE)) {
+    is_log2 <- FALSE
+  } else if ((q[2] - q[1]) > 50) {
+    is_log2 <- FALSE
+  } else if (q[2] > 50) {
+    is_log2 <- FALSE
+  }
+  
+  # Apply log2 transform if needed
+  if (!is_log2) {
+    if (is.null(pseudo)) {
+      pos_vals <- vals[vals > 0]
+      if (length(pos_vals) > 0) {
+        pseudo <- min(pos_vals, na.rm = TRUE) / 10
+        pseudo <- max(pseudo, 1e-6)
+      } else {
+        pseudo <- 1
+      }
+    } else {
+      if (!is.numeric(pseudo) || length(pseudo) != 1 || pseudo <= 0) {
+        stop("pseudo must be a single positive numeric value.")
+      }
+    }
+    mat <- log2(mat + pseudo)
+  }
+  
+  # Delegate plotting to qc_boxplot
+  qc_boxplot(
+    data = mat,
+    groups = groups,
+    sample_labels = sample_labels,
+    ...
+  )
+}
+

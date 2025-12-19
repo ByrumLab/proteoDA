@@ -128,85 +128,148 @@ if (!dir.exists(QC_dir)) {dir.create(QC_dir)}
 
 ```
 
+#### Boxplot of sample intensities prior to normalization. 
 
-```{r qc_boxplots_generate, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 1. Protein Intensities for each sample', include = T}
-# Prefer per-contrast data when available
-if (!is.null(results$data_per_contrast) &&
-    is.list(results$data_per_contrast) &&
+NOTE: if the data was already normalized upon importing into proteoDA, then this plot should be the same as the after normalization plot. 
+
+```{r qc_boxplot_before, message=FALSE, echo=FALSE, warning=FALSE, fig.width=10, fig.height=6,fig.align='center', fig.cap='Figure 1. Protein Intensities for each sample before normalization', include = T}
+# Create the BEFORE-normalization plot once (uses results$data)
+# Defensive checks
+if (!exists("results")) stop("results object not found in this environment.")
+
+# Try to build a before plot using qc_boxplot_beforeNorm (reads results$data)
+qc_boxplot_before <- tryCatch(
+  qc_boxplot_beforeNorm(
+    data = results,
+    groups = if (!is.null(results$metadata$group)) results$metadata$group else NULL,
+    sample_labels = if (!is.null(results$metadata$sample)) results$metadata$sample else NULL,
+    title = "Before normalization",
+    text.sizes = c(12, 10, 8, 8),
+    colorblind_palette = if (exists("all_colors2") && !is.null(all_colors2$group)) all_colors2$group else NULL
+  ),
+  error = function(e) {
+    message("qc_boxplot_beforeNorm error: ", e$message)
+    NULL
+  }
+)
+
+if (is.null(qc_boxplot_before)) {
+  message("Before-normalization plot not produced (see messages).")
+} else {
+  print(qc_boxplot_before)
+}
+```
+
+***
+
+#### Sample intensities After-normalization (one per contrast, stacked)
+
+```{r qc_boxplots_after, message=FALSE, warning=FALSE, echo=FALSE, fig.width=10, fig.height=6, fig.align='center', fig.cap='Figure 2. Protein Intensities for each sample after normalization', include = T}
+# Build contrast list (prefer results$data_per_contrast)
+if (!is.null(results$data_per_contrast) && is.list(results$data_per_contrast) &&
     length(results$data_per_contrast) > 0) {
-
   contrast_list  <- results$data_per_contrast
   contrast_names <- names(contrast_list)
-  if (is.null(contrast_names)) {
-    contrast_names <- paste0("contrast_", seq_along(contrast_list))
-  }
-
+  if (is.null(contrast_names)) contrast_names <- paste0("contrast_", seq_along(contrast_list))
 } else {
-  # Fallback to single matrix
   contrast_list  <- list(results$data)
   contrast_names <- "all_samples"
 }
 
-# Container to store plots
-qc_boxplots <- vector("list", length(contrast_list))
-names(qc_boxplots) <- contrast_names
+# Defensive metadata defaults
+default_mat <- contrast_list[[1]]
+if (is.null(default_mat)) stop("No contrast matrices found in results$data_per_contrast and results$data is NULL.")
+groups <- if (!is.null(results$metadata$group)) results$metadata$group else rep(1, ncol(default_mat))
+sample_labels <- if (!is.null(results$metadata$sample)) results$metadata$sample else colnames(default_mat)
 
-# Generate plots (use element, not hard-coded name)
+# Helper to abbreviate labels when many samples
+abbrev_labels_if_needed <- function(labels, max_labels = 30) {
+  if (length(labels) > max_labels) paste0("S", seq_along(labels)) else labels
+}
+
+# Container for after plots (for saving later)
+qc_boxplots_after <- vector("list", length(contrast_list))
+names(qc_boxplots_after) <- contrast_names
+
+# Loop and print stacked one-by-one
 for (i in seq_along(contrast_list)) {
   mat <- contrast_list[[i]]
+  ct  <- contrast_names[i]
 
   if (is.null(mat) || !(is.matrix(mat) || is.data.frame(mat))) {
-    message("Skipping contrast ", contrast_names[i], " (not a matrix/data.frame).")
+    message("Skipping contrast ", ct, " (not a matrix/data.frame).")
     next
   }
 
-  qc_boxplots[[i]] <- qc_boxplot(
-    data = mat,
-    groups = results$metadata$group,
-    sample_labels = results$metadata$sample,
-    title = paste("QC boxplot —", contrast_names[i]),
-    text.sizes = c(12, 10, 10, 10),
-    legend.position = "right",
-    boxplot_alpha = NULL,
-    boxplot_width = NULL,
-    plot_margin = NULL,
-    colorblind_palette = all_colors2$group
+  slabels <- sample_labels
+  text_sizes <- c(12, 10, 8, 8)
+  if (ncol(mat) > 30) {
+    slabels <- abbrev_labels_if_needed(slabels, max_labels = 30)
+    text_sizes <- c(12, 10, 6, 6)
+  }
+
+  p_after <- tryCatch(
+    qc_boxplot(
+      data = mat,
+      groups = groups,
+      sample_labels = slabels,
+      title = paste("After normalization —", ct),
+      text.sizes = text_sizes,
+      legend.position = "right",
+      boxplot_alpha = NULL,
+      boxplot_width = NULL,
+      plot_margin = NULL,
+      colorblind_palette = if (exists("all_colors2") && !is.null(all_colors2$group)) all_colors2$group else NULL
+    ),
+    error = function(e) {
+      message("qc_boxplot error for ", ct, ": ", e$message)
+      NULL
+    }
   )
 
-  # Print for the report
-  print(qc_boxplots[[i]])
+  qc_boxplots_after[[i]] <- p_after
+
+  if (!is.null(p_after)) {
+    print(p_after)
+  } else {
+    message("No after-normalization plot for contrast ", ct)
+  }
 }
 ```
 
 
-```{r qc_boxplots_save, message=FALSE, warning=FALSE}
-## Save all QC boxplots
-# This replaces your single-plot `ggsave()` call and saves **one file per contrast**.
+```{r qc_boxplots_save, message=FALSE, warning=FALSE, echo=FALSE}
+# Ensure QC_dir exists; set a default if it doesn't
+if (!exists("QC_dir")) QC_dir <- "QC_figures"
+if (!dir.exists(QC_dir)) dir.create(QC_dir, recursive = TRUE)
 
-# Ensure output directory exists
-if (!dir.exists(QC_dir)) {
-  dir.create(QC_dir, recursive = TRUE)
+# Safe filename helper
+safe_name <- function(x) gsub("[^A-Za-z0-9_-]", "_", x)
+
+# Save BEFORE plot (if available)
+if (exists("qc_boxplot_before") && !is.null(qc_boxplot_before)) {
+  out_before <- file.path(QC_dir, paste0("Boxplot_before_normalization.png"))
+  ggplot2::ggsave(filename = out_before, plot = qc_boxplot_before, width = 10, height = 6, units = "in", dpi = 300)
+  message("Saved: ", out_before)
+} else {
+  message("qc_boxplot_before not available; skipping save.")
 }
 
-# Save each plot
-for (i in seq_along(qc_boxplots)) {
-  p <- qc_boxplots[[i]]
-  if (is.null(p)) next
-
-  ct <- names(qc_boxplots)[i]
-  ct_safe <- gsub("[^A-Za-z0-9_-]", "_", ct)
-
-  ggsave(
-    file   = file.path(QC_dir, paste0("Boxplot_", ct_safe, ".png")),
-    plot   = p,
-    width  = 10,
-    height = 6,
-    units  = "in",
-    dpi    = 300
-  )
+# Save AFTER plots
+if (exists("qc_boxplots_after")) {
+  for (i in seq_along(qc_boxplots_after)) {
+    p <- qc_boxplots_after[[i]]
+    if (is.null(p)) next
+    ct <- names(qc_boxplots_after)[i]
+    fname <- file.path(QC_dir, paste0("Boxplot_after_normalization_", safe_name(ct), ".png"))
+    ggplot2::ggsave(filename = fname, plot = p, width = 10, height = 6, units = "in", dpi = 300)
+    message("Saved: ", fname)
+  }
+} else {
+  message("No after-normalization plots found to save.")
 }
-
 ```
+
 
 ### **Total intensities for each sample**
 
