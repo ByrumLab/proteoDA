@@ -3,10 +3,10 @@
 ## ------------------------------------------------------------------
 
 # Columns to use in the main DA table sheets (if present in results/annotation)
-DA_table_cols <- c("uniprot_id","Accession.Number","Protein.Description")  # DIANN
+#DA_table_cols <- c("uniprot_id","Accession.Number","Protein.Description")  # DIANN
 
 # Columns that are purely statistical results (subset of above)
-stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSD", "logFC_z_scores", "sig.PVal", "sig.FDR")
+#stat_cols = c("logFC", "P.Value", "adj.P.Val", "movingSD", "logFC_z_scores", "sig.PVal", "sig.FDR")
 
 # Default filter thresholds used for the 'filter info' summary in Excel
 filt_min_reps   <- NA_integer_
