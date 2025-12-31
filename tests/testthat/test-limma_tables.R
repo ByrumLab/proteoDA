@@ -260,6 +260,107 @@ test_that("write_limma_tables creates output files when more than 12 stat result
 })
 
 
+test_that("write_limma_tables overwrite cleans per-contrast dir and uses data_per_contrast intensities", {
+  
+  input <- readRDS(test_path("fixtures", "final_output_input.rds"))
+  
+  # --- Create a synthetic 'normalized' data_per_contrast that differs from input$data ---
+  # Make it obvious (add a constant), and also make row sets differ per contrast.
+  stopifnot(all(c("control", "treatment") %in% names(input$results)))
+  
+  d_raw <- input$data
+  
+  # pick two overlapping subsets to mimic your real scenario
+  n <- nrow(d_raw)
+  idx1 <- seq_len(max(1, floor(n * 0.6)))
+  idx2 <- seq.int(max(1, floor(n * 0.4)), n)
+  
+  d_control   <- d_raw[idx1, , drop = FALSE] + 1000
+  d_treatment <- d_raw[idx2, , drop = FALSE] + 2000
+  
+  # --- NEW: make the overlap identical so get_export_data does not warn ---
+  overlap <- intersect(rownames(d_control), rownames(d_treatment))
+  if (length(overlap) > 0) {
+    d_treatment[overlap, ] <- d_control[overlap, , drop = FALSE]
+  }
+  
+  input$data_per_contrast <- list(
+    control   = d_control,
+    treatment = d_treatment
+  )
+  
+  # Ensure norm.method is scalar to avoid grep warning
+  if (length(input$tags$norm_method) > 1) input$tags$norm_method <- input$tags$norm_method[1]
+  
+  # --- Run in a temp output directory ---
+  outdir <- file.path(tempdir(), "limma_tables_overwrite_regression")
+  on.exit(unlink(outdir, recursive = TRUE, force = TRUE), add = TRUE)
+  
+  # 1) First run creates outputs
+  suppressMessages(
+    write_limma_tables(input, output_dir = outdir, overwrite = TRUE)
+  )
+  
+  # Create a stale file that should NOT survive overwrite, and should NOT become an Excel sheet
+  stale_csv <- file.path(outdir, "per_contrast_results", "stale.csv")
+  dir.create(dirname(stale_csv), recursive = TRUE, showWarnings = FALSE)
+  utils::write.csv(data.frame(a = 1), stale_csv, row.names = FALSE)
+  expect_true(file.exists(stale_csv))
+  
+  # 2) Second run with overwrite should wipe stale artifacts
+  suppressMessages(
+    write_limma_tables(input, output_dir = outdir, overwrite = TRUE)
+  )
+  
+  # stale CSV must be gone (this is the core regression fix)
+  expect_false(file.exists(stale_csv))
+  
+  # Excel should not have a "stale" worksheet
+  xlsx_file <- file.path(outdir, "results.xlsx")
+  sheets <- openxlsx::getSheetNames(xlsx_file)
+  expect_false("stale" %in% sheets)
+  
+  # Basic expected tabs should exist
+  expect_true(all(c("Overview", "Protein Results") %in% sheets))
+  
+  # --- Check exported intensities come from data_per_contrast (normalized) not raw ---
+  # Pick a protein that exists ONLY in control subset to avoid "first non-NA wins" ambiguity.
+  prot_only_control <- setdiff(rownames(d_control), rownames(d_treatment))
+  if (length(prot_only_control) == 0) {
+    # fallback: choose any protein in control; still usually ok if it filled from control first
+    prot_only_control <- rownames(d_control)[1]
+  } else {
+    prot_only_control <- prot_only_control[1]
+  }
+  
+  combined_csv <- file.path(outdir, "combined_results.csv")
+  combo <- utils::read.csv(combined_csv, check.names = FALSE)
+  
+  # Find the sample columns (they should match colnames(input$data))
+  sample_cols <- intersect(colnames(d_raw), colnames(combo))
+  expect_true(length(sample_cols) > 0)
+  
+  # Locate row for the chosen protein.
+  # create_combined_results uses rownames(data) as ordering, and the first column in combo
+  # isn't guaranteed to be the rowname. So we match by annotation key if possible.
+  # Prefer uniprot_id if present, else use row position match via annotation rownames.
+  if ("uniprot_id" %in% colnames(input$annotation) && "uniprot_id" %in% colnames(combo)) {
+    id_val <- input$annotation[prot_only_control, "uniprot_id"]
+    row_i <- which(combo$uniprot_id == id_val)[1]
+  } else {
+    # fallback: use rownames alignment assumption (works if annotation rownames were preserved)
+    row_i <- match(prot_only_control, rownames(input$annotation))
+  }
+  
+  expect_true(!is.na(row_i))
+  
+  # Compare one value (first sample) to ensure it's the normalized (control) value.
+  s1 <- sample_cols[1]
+  exported_val  <- as.numeric(combo[row_i, s1])
+  expected_norm <- as.numeric(d_control[prot_only_control, s1])
+  
+  expect_equal(exported_val, expected_norm)
+})
 
 
 

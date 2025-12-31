@@ -32,6 +32,106 @@ summarize_contrast_DA <- function(contrast_name, contrast_res_list) {
                          colSums(tmp == 1, na.rm = TRUE))))
 }
 
+#' Choose the best intensity matrix for export (prefer normalized per-contrast)
+#' @keywords internal
+get_export_data <- function(DAList, prefer = c("data_per_contrast", "data")) {
+  prefer <- match.arg(prefer)
+  
+  # Determine canonical sample order
+  sample_ids <- colnames(DAList$data)
+  if (!is.null(DAList$metadata) && all(rownames(DAList$metadata) %in% sample_ids)) {
+    # keep DAList$data column order as the canonical order (safer)
+    sample_ids <- colnames(DAList$data)
+  }
+  
+  # Determine full protein universe (best = annotation)
+  all_proteins <- NULL
+  if (!is.null(DAList$annotation) && !is.null(rownames(DAList$annotation))) {
+    all_proteins <- rownames(DAList$annotation)
+  }
+  
+  # Collect per-contrast matrices if available
+  dpc <- DAList$data_per_contrast
+  has_dpc <- !is.null(dpc) && length(dpc) > 0 && any(vapply(dpc, is.data.frame, logical(1)) | vapply(dpc, is.matrix, logical(1)))
+  
+  if (prefer == "data_per_contrast" && has_dpc) {
+    # union proteins from dpc (+ fallback to DAList$data and annotation)
+    dpc_rows <- unique(unlist(lapply(dpc, rownames)))
+    if (is.null(all_proteins)) {
+      all_proteins <- unique(c(rownames(DAList$data), dpc_rows))
+    } else {
+      all_proteins <- unique(c(all_proteins, dpc_rows))
+    }
+    
+    # initialize export matrix (data.frame to preserve colnames + types)
+    export <- as.data.frame(matrix(NA_real_, nrow = length(all_proteins), ncol = length(sample_ids)),
+                            stringsAsFactors = FALSE)
+    rownames(export) <- all_proteins
+    colnames(export) <- sample_ids
+    
+    warned <- FALSE
+    
+    for (nm in names(dpc)) {
+      x <- dpc[[nm]]
+      if (is.null(x)) next
+      x <- as.data.frame(x, stringsAsFactors = FALSE)
+      
+      # align columns to canonical samples (drop extras, keep order)
+      common_samples <- intersect(sample_ids, colnames(x))
+      if (length(common_samples) == 0) next
+      x <- x[, common_samples, drop = FALSE]
+      
+      # restrict to proteins we track
+      common_prots <- intersect(all_proteins, rownames(x))
+      if (length(common_prots) == 0) next
+      
+      # Fill: only overwrite NAs; detect conflicts if non-NA differs
+      cur <- export[common_prots, common_samples, drop = FALSE]
+      new <- x[common_prots, common_samples, drop = FALSE]
+      
+      # conflict check: both non-NA and different
+      if (!warned) {
+        both <- !is.na(cur) & !is.na(new)
+        if (any(both)) {
+          dif <- abs(as.matrix(cur[both]) - as.matrix(new[both])) > 1e-8
+          if (any(dif, na.rm = TRUE)) {
+            warning("Normalized values in data_per_contrast differ across contrasts for some protein/sample cells. Using first encountered values.",
+                    call. = FALSE)
+            warned <- TRUE
+          }
+        }
+      }
+      
+      # overwrite only where export is NA and new is non-NA
+      fill_idx <- is.na(cur) & !is.na(new)
+      if (any(fill_idx)) {
+        cur[fill_idx] <- new[fill_idx]
+        export[common_prots, common_samples] <- cur
+      }
+    }
+    
+    return(export)
+  }
+  
+  # Fallback: just use DAList$data (raw or normalized depending on pipeline)
+  x <- as.data.frame(DAList$data, stringsAsFactors = FALSE)
+  # align to canonical sample order
+  x <- x[, sample_ids, drop = FALSE]
+  
+  # if annotation exists, expand to full protein universe
+  if (!is.null(all_proteins)) {
+    out <- as.data.frame(matrix(NA_real_, nrow = length(all_proteins), ncol = length(sample_ids)),
+                         stringsAsFactors = FALSE)
+    rownames(out) <- all_proteins
+    colnames(out) <- sample_ids
+    common <- intersect(all_proteins, rownames(x))
+    out[common, ] <- x[common, , drop = FALSE]
+    return(out)
+  }
+  
+  x
+}
+
 # now aware of contrast names in the design matrix
 
 #' Write per-contrast results csvs
@@ -909,6 +1009,9 @@ write_limma_tables <- function(DAList,
                      "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
   }
   
+  # Choose best intensities for export (prefer normalized per-contrast)
+  export_data <- get_export_data(input_DAList, prefer = "data_per_contrast")
+  
   # results to use
   results_statlist <- statlist %||% DAList$results
   
@@ -963,14 +1066,21 @@ write_limma_tables <- function(DAList,
   }
   
   # Per-contrast CSVs
+ # per_contrast_dir <- file.path(output_dir, contrasts_subdir)
+ # if (!dir.exists(per_contrast_dir)) dir.create(per_contrast_dir, recursive = TRUE)
+  
   per_contrast_dir <- file.path(output_dir, contrasts_subdir)
-  if (!dir.exists(per_contrast_dir)) dir.create(per_contrast_dir, recursive = TRUE)
+  
+  if (overwrite && dir.exists(per_contrast_dir)) {
+    unlink(per_contrast_dir, recursive = TRUE, force = TRUE)
+  }
+  dir.create(per_contrast_dir, recursive = TRUE, showWarnings = FALSE)
   
   cli::cli_inform("Writing per-contrast results {.path .csv} files to {.path {per_contrast_dir}}")
   
   contrast_csv_success <- write_per_contrast_csvs(
     annotation_df = DAList$annotation,
-    data = DAList$data,
+    data = export_data,                     #DAList$data,
     results_statlist = results_statlist,
     output_dir = per_contrast_dir,
     annotation_cols = DA_table_cols,      # from your params file
@@ -988,7 +1098,9 @@ write_limma_tables <- function(DAList,
   
   # Combined CSV
   cli::cli_inform("Writing combined results table to {.path {combined_output_file}}")
-  combined_results <- create_combined_results(DAList$annotation, DAList$data, results_statlist)
+  combined_results <- create_combined_results(DAList$annotation,
+                                              export_data,  # DAList$data, 
+                                              results_statlist)
   if ("gene_symbol" %in% colnames(combined_results)) {
     combined_results$gene_symbol <- paste0('"=""', combined_results$gene_symbol, '"""')
   }
@@ -1001,7 +1113,7 @@ write_limma_tables <- function(DAList,
     filename = excel_output_file,
     statlist = results_statlist,
     annotation = DAList$annotation,
-    data = DAList$data,
+    data = export_data,                      #DAList$data,
     norm.method = DAList$tags$norm_method,
     pval_thresh = DAList$tags$DA_criteria$pval_thresh,
     lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
