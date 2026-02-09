@@ -1,6 +1,6 @@
 Package: proteoDAstjude
 Title: Streamlined Differential Abundance Analysis of Proteomic Data
-Version: 1.0.1
+Version: 2.0.1
 Authors@R: 
     c(
       person(given = "Charity", family = "Washam", email = "cwasham@uams.edu", role = "aut"),
