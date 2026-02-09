@@ -17,6 +17,17 @@ devtools::test(filter = "qc_boxplot")
 devtools::test(filter = "limma_tables")
 testthat::snapshot_accept("limma_tables")
 
+## -----build tar file for others to install locally ---
+## --- DO NOT RUN devtools::load_all() ---------
+# bump the version in DESCRIPTION
+.rs.restartR()
+devtools::check()
+devtools::build()
+
+# install on other machine with
+install.packages("mypkg_0.1.0.tar.gz", repos = NULL, type = "source")
+
+
 #######
 # load project parameters 
 source("proteoDA_params.R")
