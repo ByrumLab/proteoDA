@@ -80,23 +80,25 @@ devtools::install_github("ByrumLab/proteoDA",
                          dependencies = TRUE,
                          build_vignettes = TRUE,
                          force = TRUE)
-
+ # or
+remotes::install_github("ByrumLab/proteoDA@v2.0.0",
+                        dependencies = TRUE,
+                        build_vignettes = TRUE,
+                        force = TRUE)
 ```
 
 # Load Packages and Parameters
 
 ```{r load_package, eval=TRUE}
-library(proteoDAstjude)
+library(proteoDA)
 ```
 
 ```{r}
 ## Locate the Lou 2023 benchmark directory
 
 # 1) Try the installed-package location (works after install/build_vignettes)
-bench_dir <- system.file("extdata/lou2023_benchmark", package = "proteoDAstjude")
+bench_dir <- system.file("extdata/lou2023_benchmark", package = "proteoDA")
 
-# 2) During development with devtools::load_all(), system.file() may be ""
-#    so fall back to the source tree: ../inst/extdata/lou2023_benchmark
 if (bench_dir == "") {
   bench_dir <- normalizePath(
     file.path("..", "inst", "extdata", "lou2023_benchmark"),

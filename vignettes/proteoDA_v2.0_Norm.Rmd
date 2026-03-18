@@ -80,10 +80,10 @@ Thus, it is preferable to convert zeros to `NA` before modeling.
 `missing_to_zero()` — optional post-analysis conversion. Used if a downstream tool requires a fully numeric matrix, such as PCA. 
 
 ```{r load_raw}
-library(proteoDAstjude)
+library(proteoDA)
 ## Locate the Lou 2023 benchmark directory
 # 1) Try the installed-package location (works after install/build_vignettes)
-bench_dir <- system.file("extdata/lou2023_benchmark", package = "proteoDAstjude")
+bench_dir <- system.file("extdata/lou2023_benchmark", package = "proteoDA")
 
 # 2) During development with devtools::load_all(), system.file() may be ""
 #    so fall back to the source tree: ../inst/extdata/lou2023_benchmark

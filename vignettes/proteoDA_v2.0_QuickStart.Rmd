@@ -29,11 +29,8 @@ input_quan, metadata, contrasts, anno_start, anno_end, design, group, p.val, log
 
 # 1. Load packages & parameters
 ```{r load_pkg, echo=TRUE, eval=FALSE}
-library(proteoDAstjude)
+library(proteoDA)
 library(yaml)
-
-#source("P:/projects/CPM_publications/03_proteoDA2_Steph/code/proteoDA_params.R")
-#source("/Users/sbyrum/Documents/github/proteoDAstjude/proteoDA_params.R")
 
 # Common args from proteoDA_params.R
 common_args <- list(
@@ -48,11 +45,11 @@ contrasts_file  = contrasts
 ```
 
 ```{r loadsystempkg, include=FALSE, , echo=TRUE, eval=FALSE}
-library(proteoDAstjude)
+library(proteoDA)
 library(yaml)
 
 param_file <- system.file("scripts", "proteoDA_params.R",
-                          package = "proteoDAstjude")
+                          package = "proteoDA")
 source(param_file, local = knitr::knit_global())  # explicit: put objects in knit env
 
 

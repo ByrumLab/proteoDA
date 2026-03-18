@@ -111,7 +111,7 @@ uams_glimmaXY <- function(model_data,
   widget <- htmlwidgets::createWidget(
     name = "glimmaXY",
     xData,
-    package = "proteoDAstjude",
+    package = "proteoDA",
     width = width,
     height = height,
     elementId = NULL,

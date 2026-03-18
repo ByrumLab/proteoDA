@@ -1,8 +1,24 @@
 ---
 #title: "QC_report"
 #pagetitle: "PI_DATE"
-author: Center For Proteomics and Metabolomics
-output: html_document
+author: "Center For Proteomics and Metabolomics"
+date: "`r format(Sys.time(), '%Y %b %d')`"
+output: 
+  html_document:
+    theme: cerulean
+    highlight: pygments
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+    df_print: tibble # switch from paged to default or tibble
+    chunk_output_type: inline
+    self_contained: true
+    css: style.css
+  
 ---
 
 ```{r setup, message=FALSE, warning=FALSE, echo = F, include = F}
@@ -10,56 +26,78 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 ```
 
 
-```{r logo, fig.align="center", out.width="40%"}
-knitr::include_graphics(path = "C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/inst/report_templates/CPM_Hz.png", rel_path = F)
+```{r logo, fig.align="left", out.width="50%"}
+knitr::include_graphics(system.file("report_templates", "proteoDA_logo.png", package= "proteoDA"))
 ```
 
 
 ```{r}
 
 ## GENERATE QC PLOTS
-source("C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/proteoDA_params.R")
-# DiaNN quan output
+source("proteoDA_params.R")
 setwd(working_dir)
 
-library(devtools) # nocov start
-library(tidyverse)
-
-devtools::load_all() # run local functions without installing
-
-results <- readRDS("results.rds")
-DA_sum <- read.csv(file=file.path(DA_dir, "DA_summary.csv"))
-
-## LOAD PACKAGES AND SOURCE FUNCGIONS
-## devtools::load_all(path = "C:/Users/washamcharityl/Documents/GitHub/repos/rnaseqDA/")
-
+library(proteoDA)
 library(ggplot2)
 library(gridExtra)
 
-## load functions for QC plots
-source("R/ggplot2_plots/checks_2.R")
-source("R/ggplot2_plots/split_by_groups.R")
-source("R/ggplot2_plots/rename_samples_2.R")
-source("R/ggplot2_plots/get_colors.R")
-source("R/ggplot2_plots/qc_pvca_ggplot_7.R")
-source("R/ggplot2_plots/qc_totInt_barplot_by_group_9.R")
-source("R/ggplot2_plots/qc_pca_ggplot_subgroups_8.R")
-source("R/ggplot2_plots/qc_dendrogram_ggplot_3.R")
-source("R/ggplot2_plots/qc_violin_ggplot_4.R")
-source("R/ggplot2_plots/qc_boxplot_ggplot_5.R")
 
-## PLOT COLORS
-#install.packages('Polychrome')
+# DiaNN quan output
+results <- readRDS("results.rds")
+results_NA <- readRDS("results_NA.rds")
+DA_sum <- read.csv(file=file.path(DA_dir, "DA_summary.csv"))
 
+# project info from methods variables 
+design <- deparse1(design)
+project_info <- data.frame(project_name, instrument, search_engine, organism, database, db_version, design)
+project_info <- t(project_info)
+colnames(project_info) <- "Parameters"
 ```
 
-##  QC report for `r methods_filename` 
+##  **QC report for `r project_name`** 
 
 Quality control plots for the evaluation of sample quality include total intensity for each sample, missing value heatmap indicating the overall percentage of proteins with missing values in each sample, PCA of sample similarity in the first two principle components, and a clustered dendrogram indicating sample similarity by sample group. 
 
-### insert sample list as table here? 
+### **Project Information** 
+
+Software used in the proteomics analysis 
+
+```{r project_info, results = 'asis'}
+library(kableExtra)
+
+knitr::kable(project_info, format = "html") %>%
+  kable_styling(
+    full_width = FALSE, 
+    bootstrap_options = c("striped", "hover", "condensed", "responsive")
+  )
+
+```
+
+### **Sample Information** 
+
+```{r Sample_metadata}
+
+knitr::kable(results$metadata, format = "html", row.names = FALSE) %>%
+  kable_styling(
+    full_width = FALSE, 
+    bootstrap_options = c("striped", "hover", "condensed", "responsive")
+  )
+
+```
 
 ### **Differential Abundance Summary** 
+
+```{r DAsummary}
+
+knitr::kable(DA_sum, format = "html") %>%
+  kable_styling(
+    full_width = FALSE, 
+    bootstrap_options = c("striped", "hover", "condensed", "responsive")
+  )
+
+```
+
+Summary of Differential Abundance. The column descriptions are as follows: 
 
 1. **"contrast"** is the sample group comparison
 2. **"type"** indicates the number of proteins that were up-regulated, down-regulated, or not significant
@@ -69,12 +107,11 @@ Quality control plots for the evaluation of sample quality include total intensi
 6. **"lfc_thresh"** is the log2 fold change significance threshold
 7. **"p_adj_method"** is the multiple test correction method. **"BH"** indicates Benjamini-Hochberg, or FDR, adjustment. 
 
-```{r DAsummary}
+## **Quality Control Visualization**
 
-knitr::kable(DA_sum)
+### **Intensity Distribution Plot for Each Sample**
 
-```
-
+The boxplot represents the quantitative log2 normalized intensity distributions for each sample in the analysis. Each sample group is highlighted in a different color. You can examine the number of proteins with high abundant or low abundant values and decide if proteins or samples should be removed as outliers. 
 
 ```{r colors, message=FALSE, warning=FALSE, echo = F, include = F}
 # using the "results" object
@@ -91,41 +128,163 @@ if (!dir.exists(QC_dir)) {dir.create(QC_dir)}
 
 ```
 
-```{r boxplot, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 1. Protein Intensities for each sample', include = T}
+#### Boxplot of sample intensities prior to normalization. 
 
+NOTE: if the data was already normalized upon importing into proteoDA, then this plot should be the same as the after normalization plot. 
 
-boxplot5 <- qc_boxplot_plot5(data = results$data,
-                                  groups = results$metadata$group,
-                                  sample_labels = results$metadata$sample,
-                                  title = NULL,
-                                  text.sizes = c(12,10,10,10),
-                                  legend.position = "right")
+```{r qc_boxplot_before, message=FALSE, echo=FALSE, warning=FALSE, fig.width=10, fig.height=6,fig.align='center', fig.cap='Figure 1. Protein Intensities for each sample before normalization', include = T}
+# Create the BEFORE-normalization plot once (uses results$data)
+# Defensive checks
+if (!exists("results")) stop("results object not found in this environment.")
 
+# Try to build a before plot using qc_boxplot_beforeNorm (reads results$data)
+qc_boxplot_before <- tryCatch(
+  qc_boxplot_beforeNorm(
+    data = results,
+    groups = if (!is.null(results$metadata$group)) results$metadata$group else NULL,
+    sample_labels = if (!is.null(results$metadata$sample)) results$metadata$sample else NULL,
+    title = "Before normalization",
+    text.sizes = c(12, 10, 8, 8),
+    colorblind_palette = if (exists("all_colors2") && !is.null(all_colors2$group)) all_colors2$group else NULL
+  ),
+  error = function(e) {
+    message("qc_boxplot_beforeNorm error: ", e$message)
+    NULL
+  }
+)
 
-boxplot5
+if (is.null(qc_boxplot_before)) {
+  message("Before-normalization plot not produced (see messages).")
+} else {
+  print(qc_boxplot_before)
+}
 ```
 
-```{r}
-ggsave(file = file.path(QC_dir,"Boxplot_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
-       plot = boxplot5, 
-       path = NULL, 
-       width = 10, 
-       height = 6, 
-       units = c("in"), 
-       dpi = 300)
+***
 
+#### Sample intensities After-normalization (one per contrast, stacked)
+
+```{r qc_boxplots_after, message=FALSE, warning=FALSE, echo=FALSE, fig.width=10, fig.height=6, fig.align='center', fig.cap='Figure 2. Protein Intensities for each sample after normalization', include = T}
+# Build contrast list (prefer results$data_per_contrast)
+if (!is.null(results$data_per_contrast) && is.list(results$data_per_contrast) &&
+    length(results$data_per_contrast) > 0) {
+  contrast_list  <- results$data_per_contrast
+  contrast_names <- names(contrast_list)
+  if (is.null(contrast_names)) contrast_names <- paste0("contrast_", seq_along(contrast_list))
+} else {
+  contrast_list  <- list(results$data)
+  contrast_names <- "all_samples"
+}
+
+# Defensive metadata defaults
+default_mat <- contrast_list[[1]]
+if (is.null(default_mat)) stop("No contrast matrices found in results$data_per_contrast and results$data is NULL.")
+groups <- if (!is.null(results$metadata$group)) results$metadata$group else rep(1, ncol(default_mat))
+sample_labels <- if (!is.null(results$metadata$sample)) results$metadata$sample else colnames(default_mat)
+
+# Helper to abbreviate labels when many samples
+abbrev_labels_if_needed <- function(labels, max_labels = 30) {
+  if (length(labels) > max_labels) paste0("S", seq_along(labels)) else labels
+}
+
+# Container for after plots (for saving later)
+qc_boxplots_after <- vector("list", length(contrast_list))
+names(qc_boxplots_after) <- contrast_names
+
+# Loop and print stacked one-by-one
+for (i in seq_along(contrast_list)) {
+  mat <- contrast_list[[i]]
+  ct  <- contrast_names[i]
+
+  if (is.null(mat) || !(is.matrix(mat) || is.data.frame(mat))) {
+    message("Skipping contrast ", ct, " (not a matrix/data.frame).")
+    next
+  }
+
+  slabels <- sample_labels
+  text_sizes <- c(12, 10, 8, 8)
+  if (ncol(mat) > 30) {
+    slabels <- abbrev_labels_if_needed(slabels, max_labels = 30)
+    text_sizes <- c(12, 10, 6, 6)
+  }
+
+  p_after <- tryCatch(
+    qc_boxplot(
+      data = mat,
+      groups = groups,
+      sample_labels = slabels,
+      title = paste("After normalization —", ct),
+      text.sizes = text_sizes,
+      legend.position = "right",
+      boxplot_alpha = NULL,
+      boxplot_width = NULL,
+      plot_margin = NULL,
+      colorblind_palette = if (exists("all_colors2") && !is.null(all_colors2$group)) all_colors2$group else NULL
+    ),
+    error = function(e) {
+      message("qc_boxplot error for ", ct, ": ", e$message)
+      NULL
+    }
+  )
+
+  qc_boxplots_after[[i]] <- p_after
+
+  if (!is.null(p_after)) {
+    print(p_after)
+  } else {
+    message("No after-normalization plot for contrast ", ct)
+  }
+}
 ```
+
+
+```{r qc_boxplots_save, message=FALSE, warning=FALSE, echo=FALSE}
+# Ensure QC_dir exists; set a default if it doesn't
+if (!exists("QC_dir")) QC_dir <- "QC_figures"
+if (!dir.exists(QC_dir)) dir.create(QC_dir, recursive = TRUE)
+
+# Safe filename helper
+safe_name <- function(x) gsub("[^A-Za-z0-9_-]", "_", x)
+
+# Save BEFORE plot (if available)
+if (exists("qc_boxplot_before") && !is.null(qc_boxplot_before)) {
+  out_before <- file.path(QC_dir, paste0("Boxplot_before_normalization.png"))
+  ggplot2::ggsave(filename = out_before, plot = qc_boxplot_before, width = 10, height = 6, units = "in", dpi = 300)
+  message("Saved: ", out_before)
+} else {
+  message("qc_boxplot_before not available; skipping save.")
+}
+
+# Save AFTER plots
+if (exists("qc_boxplots_after")) {
+  for (i in seq_along(qc_boxplots_after)) {
+    p <- qc_boxplots_after[[i]]
+    if (is.null(p)) next
+    ct <- names(qc_boxplots_after)[i]
+    fname <- file.path(QC_dir, paste0("Boxplot_after_normalization_", safe_name(ct), ".png"))
+    ggplot2::ggsave(filename = fname, plot = p, width = 10, height = 6, units = "in", dpi = 300)
+    message("Saved: ", fname)
+  }
+} else {
+  message("No after-normalization plots found to save.")
+}
+```
+
+
+### **Total intensities for each sample**
+
+The barplot indicates the sum of proteins intensities in each sample.This plot allows us to examine samples that may have not sequenced as well. 
 
 ```{r barplot, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 1. Total Protein Intensities for each sample', include = T}
 
 my_grouping_columns <- barplot_grouping_columns
 
 bar1 <- lapply(my_grouping_columns, function(x){
-  b <- qc_totInt_ggplot7(DAList          = results,
+  b <- qc_totInt(DAList          = results,
                          label_column    = plot_labels,
                          grouping_column = x,
                          percentile      = 0,
-                         colors          = all_colors2$x,
+                         colors          = all_colors2$x,  # set colorblind friendly colors instead of using "get_colors()" with all_colors2$x
                          # title           = x,
                          legend.position = "none")
  # b$p <- b$p + labs(title = "total norm intensity")
@@ -150,63 +309,51 @@ ggsave(file = file.path(QC_dir,"Barplot_allsamples.png"), # use .extension such 
 
 ```
 
-### **Figure 1.** Total Protein Intensities for each sample
+### **Total Protein Intensities for each sample split by sample groups**
 
-```{r barplotsplit, message=FALSE, warning=FALSE, results='hide', echo = F, fig.align='center', fig.cap='Figure 2. Total Intensities of samples split by group', include = T}
+The barplot indicates the sum of intensities of proteins in each sample.The sample groups are separated and colored uniquely. The number on top of each sample is the total number of proteins quantified within the sample. Inversely, you can identify samples with larger missing values. 
+
+
+```{r barplotsplit, message=FALSE, warning=FALSE, echo = F, fig.align='center', fig.width=10, fig.height=10, fig.cap='Figure 2. Total Intensities of samples split by group', include = T}
 
 ## TOTAL INTENSITY BAR PLOT BY GROUP
 my_grouping_columns <- barplot_grouping_columns
 
 bar2 <- lapply(my_grouping_columns, function(x){
-  bar2_group <- qc_totInt_by_group_ggplot7(DAList          = results,
-                                           label_column    = plot_labels,
-                                           grouping_column = x,
-                                           percentile      = 0,
-                                           colors          = all_colors2$x,
-                                           ncol            = 6,
-                                           legend.position = "bottom"
-  )
+     bar2_group <- qc_totInt_by_group(
+                  DAList = results_NA,
+                  label_column = plot_labels,
+                  grouping_column = x,
+                  percentile = 0,
+                  colors = NULL,   
+                  legend.position = "bottom",
+                  plot_size = c(10,10),
+                  save_path = file.path(QC_dir, "Barplot2_Intensity_byGroup.png")
+)
 })
-
 names(bar2) <- "group"
-## 1 column 3 rows, legends collected and placed at bottom
-## of plot. plot title added to the first plot at the top
-
-p3 <- lapply(my_grouping_columns, function(x){
-  ((bar2$group$tot.int +
-      labs(title = "total intensity barplot by group",
-           subtitle = "median normalized with 15%"))
-  ) +
-    patchwork::plot_layout(ncol    = 1,
-                           nrow    = 1,
-                           widths  = c(1), ## rel. w/h of plots
-                           heights = c(1), ## c(1,5,1) middle taller
-                           guides  = 'collect', ## collects legend
-                           tag_level = "keep" ## keeps tags A-Z seq. order
-    ) & theme(legend.position = "bottom", ## use & to add theme stuff
-              axis.title.x    = element_blank(),
-              plot.title      = element_text(size = 16)
-              
-    )
-})
-names(p3) <- "group"
-
-p3 
+bar2$group$plot
 ```
+
 
 ```{r}
 ggsave(file = file.path(QC_dir,"Barplot_split_allsamples.png"), # use .extension such as .png, .pdf, .jpeg
-       plot = p3$group, 
+       plot = bar2$group$plot, 
        path = NULL, 
-       width = 10, 
-       height = 6, 
+       width = 25, 
+       height = 15, 
        units = c("in"), 
        dpi = 600)
 
 ```
 
-### **Figure 1.** Total Protein Intensities for each sample
+### **Missing Value Heatmap** 
 
+**Missing Values** are proteins with a zero abundance indicating the protein was not identified in the sample. It does not mean the protein is not present in the sample but only that it was not identified. The proteins with missing values are highlighted in black and the percentage of missing proteins is reported for each sample.  
+
+Missing values are trimmed by 15 percent using trimmed mean. Remaining missing values are handled by limma as follows: 
+
+When fitting protein-wise linear models in limma using lmFit(), missing values are removed from the response vector of the log-ratios, and the corresponding row/s of the design matrix are removed before the linear model is fitted to each protein. Missing values in limma are treated the same as the lm() function with "na.action = na.omit". The model can handle NAs, but corrects the degrees of freedom depending on the number of missing values for each protein.  
 
 ```{r missingheatmap, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 3. Total Intensities of samples', include = F}
 ## MISSING VALUE HEATMAP BY GROUP (BLACK INDICATES MISSING VALUES)
@@ -241,6 +388,11 @@ for(i in 1:length(h3)){
     theme(plot.title = element_text(size=16))
 }
 h3
+
+pdf(file=file.path(QC_dir, "missing_value_heatmaps_by_group.pdf"),#height=10, width=8,
+     paper="USr")
+h3
+dev.off()
 ```
 
 ```{r missingAll, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 3. Heatmap of proteins with missing values in each sample', include = T}
@@ -274,34 +426,38 @@ ggsave(file = file.path(QC_dir,"Heatmap_MissingVal_allsamples.png"), # use .exte
 
 ```
 
+### **Principal Component Analysis** 
+
+The PCA plot visualizes the distribution of selected groups. This plot helps in identifying patterns and trends in the dataset by reducing the dimensionality and highlighting the differences and similarities between sample groups. Each point in the plot represents a sample and the position of the points indicates their relative similarity or difference based on the principal components. The axes represent the first two principal components, which capture the most variance in the data, and the percent variance. This visualization can be useful for identifying outliers, clusters, and potential relationships between groups. 
+
 ```{r pcaPCs, message=FALSE, warning=FALSE, echo = F, include = F}
 
 ## PCA PLOTS (COLORED BY OUTLIERS)
 
-tmp <- results
-#tmp <- missing_to_zero(tmp)
+ tmp <- results
+ #tmp <- missing_to_zero(tmp)
+# top = min(500, sum(apply(tmp$data, 1, function(row) var(row, na.rm = TRUE) > 0)))
 
-pc5 <- lapply(list(c(1,2),c(3,4),c(5,6)), function(x){
-  
-  qc_pca_plot7(data          = tmp$data,
-               groups        = tmp$metadata$group,
-               sample_labels = tmp$metadata$sample,
-               text.sizes    = c(14,14,14,11),
-               point.size    = 3,
-               label.size    = 2.5,
-               max.labels    = 1000,
-               top           = nrow(tmp$data),
-               standardize   = TRUE,
-               pca_axes      = x,
-               colors        = all_colors2$group,
-               title         = "",
-               max_pc        = 20,
-               legend.position = "right",
-               show.plot     = FALSE)
-  
-})
-names(pc5) <- c("pc12","pc34","pc56")
+ pc5 <- lapply(list(c(1,2),c(3,4),c(5,6)), function(x){
 
+   qc_pca_plot7(data          = tmp$data,
+                groups        = tmp$metadata$group,
+                sample_labels = tmp$metadata$sample,
+                text.sizes    = c(14,14,14,11),
+                point.size    = 3,
+                label.size    = 2.5,
+                max.labels    = 1000,
+                top           = 500,
+                standardize   = TRUE,
+                pca_axes      = x,
+                colors        = all_colors2$group,
+                title         = "",
+                max_pc        = 20,
+                legend.position = "right",
+                show.plot     = FALSE)
+
+ })
+ names(pc5) <- c("pc12","pc34","pc56")
 pc5
 ```
 
@@ -314,27 +470,27 @@ ggsave(file = file.path(QC_dir,"PCA_PC12.png"), # use .extension such as .png, .
        units = c("in"), 
        dpi = 600)
 
-ggsave(file = file.path(QC_dir,"PCA_PC34.png"), # use .extension such as .png, .pdf, .jpeg
-       plot = pc5$pc34$p, 
-       path = NULL, 
-       width = 10, 
-       height = 6, 
-       units = c("in"), 
-       dpi = 600)
-
-ggsave(file = file.path(QC_dir,"PCA_PC56.png"), # use .extension such as .png, .pdf, .jpeg
-       plot = pc5$pc56$p, 
-       path = NULL, 
-       width = 10, 
-       height = 6, 
-       units = c("in"), 
-       dpi = 600)
+ ggsave(file = file.path(QC_dir,"PCA_PC34.png"), # use .extension such as .png, .pdf, .jpeg
+        plot = pc5$pc34$p, 
+        path = NULL, 
+        width = 10, 
+        height = 6, 
+        units = c("in"), 
+        dpi = 600)
+ 
+ ggsave(file = file.path(QC_dir,"PCA_PC56.png"), # use .extension such as .png, .pdf, .jpeg
+        plot = pc5$pc56$p, 
+        path = NULL, 
+        width = 10, 
+        height = 6, 
+        units = c("in"), 
+        dpi = 600)
 
 ```
 
-```{r pcaPC12_groups, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 4. PCA Principle Components 1 and 2', include = T}
+```{r pcaPC12_groups, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', include = T}
 
-# my_grouping_columns <- c("plate", "group_survive", "group_survive_time_cor", "time_cor")
+#  my_grouping_columns <- c("plate", "group_survive", "group_survive_time_cor", "time_cor")
 my_grouping_columns <- pca_grouping_columns
 
 pc7 <- lapply(my_grouping_columns, function(x){
@@ -346,10 +502,10 @@ pc7 <- lapply(my_grouping_columns, function(x){
                     point.size    = 3,
                     label.size    = 2.5,
                     max.labels    = 1000,
-                    top           = nrow(tmp$data),
+                    top           = 500, # nrow(tmp$data)
                     standardize   = TRUE,
                     pca_axes      = c(1,2),
-                    colors        = all_colors2$x,
+                    colors        = all_colors2[[x]],
                     title         = x,
                     max_pc        = 20,
                     legend.position = "bottom",
@@ -359,6 +515,9 @@ pc7 <- lapply(my_grouping_columns, function(x){
 names(pc7) <- my_grouping_columns
 pc7
 
+pdf(file=file.path(QC_dir, "PCA_groups.pdf"), height=10,width=10)
+pc7
+dev.off()
 ```
 
 ```{r}
@@ -371,6 +530,10 @@ ggsave(file = file.path(QC_dir,"PCA_byGroup.png"), # use .extension such as .png
        dpi = 600)
 
 ```
+
+### **Dendrogram of Sample Similarity** 
+
+The clustered dendrogram organizes samples into a hieararchical tree based on their similarity or dissimilarity using the euclidean distance metric and the complete clustering method. The samples are colored based on sample groups, which helps highlight variability within sample groups. It is a valuable tool for understanding the relationships and structure within the data set. 
 
 ```{r dendrogram, message=FALSE, warning=FALSE, echo = F, results='hide', fig.align='center', fig.cap='Figure 5. Clustered dendrogram', include = T}
 ## DENDROGRAM (COLORED BY NA OUTLIERS)
@@ -385,7 +548,7 @@ den1 <- lapply(my_grouping_columns, function(x) {
                        standardize   = TRUE,
                        dist_metric   = "euclidean",
                        clust_method  = "complete",
-                       colors        = all_colors2$x,
+                       colors        = all_colors2[[x]],
                        point.size    = 3,
                        text.sizes    = c(14,3,9),
                        legend.position = "right",
@@ -397,6 +560,10 @@ den1 <- lapply(my_grouping_columns, function(x) {
 
 names(den1) <- my_grouping_columns
 den1
+
+pdf(file=file.path(QC_dir, "Dendrogram_groups.pdf"), height=10,width=10)
+den1
+dev.off()
 
 ```
 
@@ -410,3 +577,35 @@ ggsave(file = file.path(QC_dir,"Dendrogram_byGroup.png"), # use .extension such 
        dpi = 600)
 
 ```
+
+## **Differential Abundance Analysis** 
+
+### Steps for Analysis 
+
+1. The normalized protein intensities are analyzed using LIMMA linear models. 
+2. The model includes the sample group and any additional factors such as batch effects or experimental factors (age, sex, dose). 
+3. A "contrast" matrix defines the sample group comparisons. 
+4. limma::lmFit() creates a linear model of the data
+5. eBayes() smooths the data to the standard errors. 
+
+### Key terms 
+
+**Missing Values:** A protein with a zero abundance indicates the protein was not detected in the sample. 
+
+**Batch effect:** Occurs when non-biological factors (e.g., using two TMT batches) in an experiment cause changes in the data produced by the experiment. Such effects can lead to inaccurate conclusions. 
+
+**logFC:** The log2 fold change. 
+
+**FDR p-value:** False discovery rate adjusted p-value for multiple test correction. A p-value of 0.05 implies that 5% of all **tests** will result in false positives. An FDR adjusted p-value of 0.05 implies that 5% of **significant tests** will result in false positives. The latter will result in fewer false positives. 
+
+**limma design matrix:** Encodes which coefficients will be fit in the model and the inter-relationship between the samples.
+
+**limma::lmFit():** Is the linear model fit for each protein given a series of arrays. The main function for model fitting is with lmFit(), which produces a fitted model object of class MArrayLM containing coefficients, standard errors, and residual standard errors for each protein. 
+
+**limma::eBayes():** Given a linear model fit from lmFit(), compute moderated t-statistics, moderated F-statistic, and log-odds of differential expression by empirical Bayes moderation of the standard errors towards a global value. 
+
+**Assessing Differential Abundance:** After fitting a linear model, the standard errors are moderated using a simple empirical Bayes model using the **limma::eBayes()** function. A moderated t-statistic and a log-odds of differential expression is computed for each contrast for each protein. 
+
+These functions are used to rank proteins in order of evidence for differential expression. They use an empirical Bayes method to squeeze the protein-wise residual variances towards a common value (Smyth 2004; Phipson et al. 2016). The degrees of freedom for the individual variances are increased to reflect the extra information gained from the empirical Bayes moderation, resulting in increased statistical power to detect differences. 
+
+ 

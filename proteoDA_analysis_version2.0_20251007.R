@@ -1,5 +1,4 @@
-# updated proteoDAstjude package May 27, 2025 - fixed logFC_zscore
-library(proteoDAstjude)
+library(proteoDA)
 library(yaml)
 
 # Load required packages to convert DIANN quan to proteoDA format
@@ -7,27 +6,24 @@ library(readr)
 library(stringr)
 
 # for testing locally 
+devtools::document()
 devtools::load_all()
-devtools::build_vignettes()
-devtools::document()  # rebuild docs
-devtools::check(document = FALSE) # checks vignettes for R CMD check
-# document = FALSE tells devtools::check() to use the exisiting .Rd, NAMESPACE, do not re-run roxygen
-devtools::test(filter = "add_design")
-devtools::test(filter = "qc_boxplot")
-devtools::test(filter = "limma_tables")
-testthat::snapshot_accept("limma_tables")
+packageVersion("proteoDA")
+devtools::check(vignettes = TRUE) # is the real package validation step
 
-## -----build tar file for others to install locally ---
-## --- DO NOT RUN devtools::load_all() ---------
-# bump the version in DESCRIPTION
+
+dir.create("~/R/proteoDA_test_lib", showWarnings = FALSE, recursive = TRUE)
+.libPaths(c("~/R/proteoDA_test_lib", .libPaths()))
+.libPaths()
+remotes::install_local(".", force = TRUE, build_vignettes = TRUE)
 .rs.restartR()
-devtools::check()
-devtools::build()
 
-# install on other machine with
-install.packages("mypkg_0.1.0.tar.gz", repos = NULL, type = "source")
-
-
+.libPaths(c("~/R/proteoDA_test_lib", .libPaths()))
+library(proteoDA)
+packageVersion("proteoDA")
+find.package("proteoDA")
+citation("proteoDA")
+browseVignettes("proteoDA")
 #######
 # load project parameters 
 source("proteoDA_params.R")
@@ -43,9 +39,9 @@ source("proteoDA_params.R")
 input_data <- read.csv(input_quan)
 
 # argument passed from bash 
- args <- commandArgs(trailingOnly = TRUE)
- diann_quan <- args[1]
- input_data <- read.csv(diann_quan)
+ # args <- commandArgs(trailingOnly = TRUE)
+ # diann_quan <- args[1]
+ # input_data <- read.csv(diann_quan)
 
 # ----Step 1: Create 'uniprot_id' by extracting the first ID from 'Protein.Group'------
 # Create 'uniprot_id' as the first column

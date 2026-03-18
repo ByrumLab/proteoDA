@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r logo, fig.align="left", out.width="40%"}
-knitr::include_graphics(system.file("report_templates", "CPM_Hz.png", package = "proteoDAstjude"))
+knitr::include_graphics(system.file("report_templates", "proteoDA_logo.png", package = "proteoDA"))
 ```
 
 ### `r stringr::str_replace(contrast, "_vs_", " vs ")` 

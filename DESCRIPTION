@@ -1,10 +1,10 @@
-Package: proteoDAstjude
+Package: proteoDA
 Title: Streamlined Differential Abundance Analysis of Proteomic Data
-Version: 2.0.1
+Version: 2.0.0
 Authors@R: 
     c(
-      person(given = "Charity", family = "Washam", email = "cwasham@uams.edu", role = "aut"),
       person(given = "Zuo-Fei", family = "Yuan", email = "zuo-fei.yuan@stjude.org", role = "ctb"),
+      person(given = "Yingxue", family = "Fu", email = "Yingxue.Fu@stjude.org", role = "ctb"),
       person(given = "Stephanie", family = "Byrum", email = "sbyrum@stjude.org", role = c("aut", "cre"))
     )
 Description: Functions for performing differential abundance analysis of proteomic data.
@@ -40,8 +40,7 @@ Suggests:
     tibble,
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown,
-    proteoDA
+    rmarkdown
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)

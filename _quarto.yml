@@ -5,5 +5,5 @@ author:
 date: "`r format(Sys.Date(), '%Y %b %d')`"
 format:
   pptx:
-    reference-doc: StJude_template.pptx
+    reference-doc: proteoDA_template.pptx
     output-file: Project_Summary

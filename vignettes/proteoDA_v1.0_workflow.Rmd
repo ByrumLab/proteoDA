@@ -25,10 +25,12 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 To install proteoDA v1.0 from GitHub (with dependencies and vignettes built):
 
 ```{r install, eval=FALSE}
-devtools::install_github("ByrumLab/proteoDA",
-                         dependencies = TRUE,
-                         build_vignettes = TRUE,
-                         force = TRUE)
+# Install proteoDA version 1.0.0
+# install.packages("remotes")
+remotes::install_github("ByrumLab/proteoDA@v1.0.0",
+                        dependencies = TRUE,
+                        build_vignettes = TRUE,
+                        force = TRUE)
 
 ```
 
@@ -53,8 +55,8 @@ library(proteoDA)
 2. The sample metadata csv file should have a column labeled `sample` that matches the colnames of the samples in the protein intensity dataframe. 
 
 ```{r package_data}
-input_data <- read.csv(system.file("extdata/DIA_data.csv.gz", package = "proteoDAstjude"))
-sample_metadata <- read.csv(system.file("extdata/metafile.csv", package = "proteoDAstjude"))
+input_data <- read.csv(system.file("extdata/DIA_data.csv.gz", package = "proteoDA"))
+sample_metadata <- read.csv(system.file("extdata/metafile.csv", package = "proteoDA"))
 
 head(input_data)
 head(sample_metadata)

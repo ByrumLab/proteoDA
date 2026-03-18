@@ -38,9 +38,9 @@ This vignette focuses on preprocessing functions that operate on a `DAList`:
 
 Normalization, imputation, and limma designs/statistical thresholds are covered in separate vignettes:
 
-- **Overall workflow:** `vignette("proteoDA_v2.0_workflow", package = "proteoDAstjude")`
-- **Normalization and imputation:** `vignette("proteoDA_v2.0_Norm_Impute", package = "proteoDAstjude")`
-- **Limma designs and statistical thresholds:** `vignette("proteoDA_v2.0_design", package = "proteoDAstjude")`
+- **Overall workflow:** `vignette("proteoDA_v2.0_workflow", package = "proteoDA")`
+- **Normalization and imputation:** `vignette("proteoDA_v2.0_Norm_Impute", package = "proteoDA")`
+- **Limma designs and statistical thresholds:** `vignette("proteoDA_v2.0_design", package = "proteoDA")`
 
 Typical `proteoDA` preprocessing flow:
 
@@ -51,7 +51,7 @@ Typical `proteoDA` preprocessing flow:
 5. Optional contrast-specific filtering (`filter_proteins_per_contrast()`)
 6. Normalize / impute → fit limma models 
  See the normalization vignette for details on available normalization strategies and diagnostics:
- `vignette("proteoDA_v2.0_Norm_Impute", package = "proteoDAstjude")`
+ `vignette("proteoDA_v2.0_Norm_Impute", package = "proteoDA")`
 7. Write tables and plots → `write_limma_tables()` and `write_limma_plots()`
 
 ***
@@ -118,7 +118,7 @@ knitr::kable(opts, caption = "Preprocessing options in proteoDA v2.0")
 All preprocessing functions accept and return a `DAList`, allowing you to chain them:
 
 ```{r 2_usage, eval=FALSE}
-library(proteoDAstjude)
+library(proteoDA)
 
 DAList_clean <- DAList_raw |>
             zero_to_missing() |>
@@ -661,10 +661,10 @@ A typical (recommended) order:
 7. Fit limma models (see design/statistics vignettes)
 
 See the normalization vignette for details on available normalization strategies and diagnostics:
-`vignette("proteoDA_v2.0_Norm_Impute", package = "proteoDAstjude")`
+`vignette("proteoDA_v2.0_Norm_Impute", package = "proteoDA")`
 
 The choice of limma design and contrasts is described in more detail in:
-`vignette("proteoDA_v2.0_design", package = "proteoDAstjude")`
+`vignette("proteoDA_v2.0_design", package = "proteoDA")`
 
 
 Consistency is key: once you decide on a pipeline, keep the same sequence for all datasets and document thresholds in the project reports.

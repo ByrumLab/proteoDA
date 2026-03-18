@@ -1,7 +1,7 @@
 ---
 #title: "DIA Methods"
 #pagetitle: "PI_DATE"
-author: Center For Proteomics and Metabolomics
+author: Author
 output: html_document
 ---
 
@@ -11,38 +11,39 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 
 
 ```{r logo, fig.align="center", out.width="40%"}
-knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_apps/proteomics_apps/proteoDA/inst/report_templates/CPM_Hz.png", rel_path = F)
+knitr::include_graphics(system.file("report_templates","proteoDA_logo.png", package="proteoDA"))
 ```
 
 [add variables for text]::
 
 ```{r}
 instrument = instrument
-SearchEngine = SearchEngine
+SearchEngine = search_engine
 database = database
 db_version = db_version
+filt_min_reps = filt_min_reps
+filt_min_groups = filt_min_groups
 
 ```
 
 ##  **DIA Methods** 
 
-### **DIA sample processing and data acquisition**
-
-CD34+ enriched cells (25k, around 2ug) were lysed in 50 mM HEPES (pH 8.5), 8 M urea buffer. The lysates were digested with Lys-C (Lys-C : protein ratio of 1:10) for 30 minutes at room temperature. Following Lys-C digestion, the samples were diluted to 2M with 50MM HEPES and further digested with trypsin (Trypsin : protein ratio of 1:10)  for 3 hours at room temperature. The digests were acidified with 5% formic acid and 25% of the digests were loaded on Evotips following the manufacturer recommendations.
-
-The samples were analyzed on a `r instrument` instrument coupled to EvosepOne (Evosep Biosystems) using a 60 samples per day method.  Evosep endurance column (8 cm x 100 μm, C18, 3 μm particle size) was used for peptide separation. Data was acquired using the dia-PASEF mode with an MS1 scan range of 100–1700 m/z. 21 isocratic m/z and ion mobility windows were selected for serial MS2 fragmentation ranging from 475 to 1000 m/z and 0.85 to 1.27 1/K0 respectively.
-
 ### **Data Analysis** 
 
-The raw timsTOF data (.d folders) were imported into `r SearchEngine` [1,2] and analyzed with the library-free mode. Human protein sequences (`r database`) were downloaded from UniProt database (`r db_version`). The protein FASTA file was then used for in silico library generation with the following settings: Trypsin/P with maximum 2 missed cleavage; Oxidation on Methionine as variable modification; maximum number of variable modifications set to 2; peptide length from 7 to 30; precursor charge 1–4; precursor m/z from 400 to 1200; fragment m/z from 200 to 1800. The search parameters of DIA-NN were set as follows: precursor FDR 1%; mass accuracy at MS1 and MS2 both set to 10 ppm; scan window set to 0 (automatic inference); isotopologues and MBR (Match-Between-Run) turned on; No shared spectra enabled; protein inference at gene level; heuristic protein inference enabled; quantification strategy set to Robust LC (high precision); neural network classifier single-pass mode; cross-run normalization turned off; Library generation set to smart profiling; Speed and RAM usage set to optimal results. The search results were further filtered with precursor q value <0.01 and protein group q value <0.01 at the library level. For quantification, DIA-NN first obtained precursor quantities by summing the intensities of the top six fragments (ranked by their library intensities) for each precursor. Precursors corresponding to unique proteins were then used for protein-level quantification and intensities of protein groups were obtained using the MaxLFQ algorithm implemented in the iq r package [3]. Proteins with more than 50% missing values in either the Healthy or MDS group were excluded from further analysis. Cross-run normalization was then performed based on the median protein intensity of each sample.
+The raw mass spectrometry data from the `r instrument` were searched with `r SearchEngine` [1,2] using the library-free mode. Protein sequences were downloaded from the `r paste(database, organism)` database (`r db_version`). The protein FASTA file was used to build an in silico library with the following settings: digestion enzyme Trypsin/P with maximum 2 missed cleavage; Oxidation on Methionine as variable modification;carbamidomethylated (+57) as fixed modification; maximum number of variable modifications set to 2; peptide length from 7 to 30; precursor charge 1–4; precursor m/z from 400 to 1200; fragment m/z from 200 to 1800. 
+
+The search parameters of `r SearchEngine` were set as follows: precursor FDR 1%; mass accuracy at MS1 and MS2 both set to 10 ppm; scan window set to 0 (automatic inference); isotopologues and MBR (Match-Between-Run) turned on; No shared spectra enabled; protein inference at gene level; heuristic protein inference enabled; quantification strategy set to Robust LC (high precision); neural network classifier single-pass mode; cross-run normalization turned off; Library generation set to smart profiling; Speed and RAM usage set to optimal results. 
+
+The search results were further filtered with precursor q value <0.01 and protein group q value <0.01 at the library level. For quantification, DIA-NN first obtained precursor quantities by summing the intensities of the top six fragments (ranked by their library intensities) for each precursor. Precursors corresponding to unique proteins were then used for protein-level quantification and intensities of protein groups were obtained using the MaxLFQ algorithm implemented in the iq r package [3]. Missing values were filtered so that proteins required `r filt_min_reps` replicates to have values in `r filt_min_groups` sample groups. Statistical analysis was performed using proteoDA which performs linear models for microarray data (limma) with empirical Bayes (eBayes) smoothing to the standard errors [4,5]. P-values were adjusted using the false discovery rate by the Benjamini-Hochberg procedure. Proteins with an FDR adjusted p-value < 0.05 and a fold change > 2 were considered significant. 
 
 ## **Acknowledgements**
 
-#### Center of Proteomics and Metabolomics at St. Jude Children’s Research Hospital
+#### The authors would like to thank ...
 
 ## **References** 
 
 1. https://pubmed.ncbi.nlm.nih.gov/31768060/
 2. https://pubmed.ncbi.nlm.nih.gov/35803928/
 3. https://pubmed.ncbi.nlm.nih.gov/31909781/
-
+4. https://pubmed.ncbi.nlm.nih.gov/24753412/
+5. proteoDA DOI: 10.21105/joss.05184 

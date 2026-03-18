@@ -59,7 +59,7 @@ This function draws a boxplot of sample intensities for quality control.
 The \code{data} argument may be a numeric matrix or data.frame of intensities,
 or a DAList object produced by the proteoDA pipeline. If a DAList is
 supplied, the function will prefer the normalized data stored in
-DAList$data_per_contrast[\link{contrast}] when that element exists. If
+\code{DAList$data_per_contrast[[contrast]]} when that element exists. If
 'contrast' is NULL and data_per_contrast has exactly one element, that
 element will be used. Otherwise DAList$data is used.
 }

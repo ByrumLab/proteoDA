@@ -6,7 +6,7 @@ author:
 date: "`r format(Sys.Date(), '%Y %b %d')`"
 format:
   pptx:
-    reference-doc: StJude_template.pptx
+    reference-doc: proteoDA_template.pptx
     output-file: Quarto_test3
 ---
 
@@ -18,7 +18,7 @@ format:
 #| warnings: false
 
 ## GENERATE QC PLOTS
-source("C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/proteoDA_params.R")
+source("proteoDA_params.R")
 # DiaNN quan output
 setwd(working_dir)
 
@@ -41,27 +41,27 @@ cat(paste('-', "Comparison:",comparisons),sep='\n')
 
 ## Protein Intensities Across Samples
 
-![](C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/01_QC/Boxplot_allsamples.png)
+![](figures/Boxplot_allsamples.png)
 
 ## Total Protein Intensities
 
-![](C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/01_QC/Barplot_split_allsamples.png)
+![](figures/Barplot_split_allsamples.png)
 
 ## Principal Component Analysis PC1 and PC2
 
-![](C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/01_QC/PCA_PC12.png)
+![](figures/PCA_PC12.png)
 
 ## Principal Component Analysis PC3 and PC4
 
-![](C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/01_QC/PCA_PC34.png)
+![](figures/PCA_PC34.png)
 
 ## Clustered Dendrogram 
 
-![](C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/01_QC/Dendrogram_byGroup.png)
+![](figures/Dendrogram_byGroup.png)
 
 ## Proteins with Missing Values
 
-![](C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/01_QC/Heatmap_MissingVal_allsamples.png)
+![](figures/Heatmap_MissingVal_allsamples.png)
 
 ## Differential Abundance Summary
 
@@ -70,7 +70,7 @@ cat(paste('-', "Comparison:",comparisons),sep='\n')
 #| echo: false
 #| warnings: false
 
-source("C:/Users/sbyrum/OneDrive - St. Jude Children's Research Hospital/Documents/Development/DIANN/proteoDA/proteoDA_params.R")
+source("proteoDA_params.R")
 # DiaNN quan output
 setwd(working_dir)
 

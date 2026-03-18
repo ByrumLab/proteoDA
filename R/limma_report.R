@@ -257,7 +257,7 @@ write_limma_plots <- function(DAList = NULL,
   if (!is.null(DAList$tags$uams_internal)) {
     template_package <- "proteoDAuams" # nocov
   } else {
-    template_package <- "proteoDAstjude"
+    template_package <- "proteoDA"
   }
   
   file.copy(

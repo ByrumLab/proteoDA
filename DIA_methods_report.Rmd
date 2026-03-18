@@ -1,7 +1,7 @@
 ---
 #title: "DIA Methods"
 #pagetitle: "PI_DATE"
-author: Center For Proteomics and Metabolomics
+author: Author
 output: html_document
 ---
 
@@ -11,7 +11,7 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 
 
 ```{r logo, fig.align="center", out.width="40%"}
-knitr::include_graphics(path = "/research/rgs01/applications/hpcf/authorized_apps/proteomics_apps/proteoDA2/CPM_Hz.png", rel_path = F)
+knitr::include_graphics(system.file("report_templates","proteoDA_logo.png", package="proteoDA"))
 ```
 
 [add variables for text]::
@@ -38,7 +38,7 @@ The search results were further filtered with precursor q value <0.01 and protei
 
 ## **Acknowledgements**
 
-#### Center of Proteomics and Metabolomics at St. Jude Children’s Research Hospital
+#### The authors would like to thank ...
 
 ## **References** 
 
