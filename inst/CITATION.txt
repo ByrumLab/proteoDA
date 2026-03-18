@@ -1,0 +1,14 @@
+citHeader("To cite proteoDA in publications:")
+
+bibentry(
+  bibtype = "Manual",
+  title = "proteoDA: Streamlined Differential Abundance Analysis of Proteomic Data",
+  author = c(
+    person("Stephanie", "Byrum"),
+    person("Zuo-Fei", "Yuan"),
+    person("Yingxue", "Fu")
+  ),
+  year = "2026",
+  note = "R package version 2.0.0",
+  url = "https://github.com/ByrumLab/proteoDA"
+)
