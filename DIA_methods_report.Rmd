@@ -10,7 +10,7 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 ```
 
 
-```{r logo, fig.align="center", out.width="40%"}
+```{r logo, fig.align="center", fig.width=2, fig.height=2}
 knitr::include_graphics(system.file("report_templates","proteoDA_logo.png", package="proteoDA"))
 ```
 

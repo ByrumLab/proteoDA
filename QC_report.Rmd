@@ -26,7 +26,7 @@ knitr::opts_chunk$set(warning = F, message = F, fig.align = "center", echo = F, 
 ```
 
 
-```{r logo, fig.align="left", out.width="50%"}
+```{r logo, fig.align="left", out.width = "25%"}
 knitr::include_graphics(system.file("report_templates", "proteoDA_logo.png", package= "proteoDA"))
 ```
 
@@ -40,7 +40,6 @@ setwd(working_dir)
 library(proteoDA)
 library(ggplot2)
 library(gridExtra)
-
 
 # DiaNN quan output
 results <- readRDS("results.rds")

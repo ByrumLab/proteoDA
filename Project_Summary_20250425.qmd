@@ -6,91 +6,69 @@ author:
 date: "`r format(Sys.Date(), '%Y %b %d')`"
 format:
   pptx:
-    reference-doc: StJude_template.pptx
+    reference-doc: proteoDA_template.pptx
 ---
 
 ## Overview of Project
 
-```{r results='asis'}
+```{r, results='asis'}
 #| eval: true
 #| echo: false
-#| warnings: false
-#| results: 'asis'
+#| warning: false
+#| results: asis
 
-## GENERATE QC PLOTS
+.libPaths(c("~/R/proteoDA_test_lib", .libPaths()))
+library(proteoDA)
 source("proteoDA_params.R")
-# DiaNN quan output
-setwd(working_dir)
 
-results <- readRDS("results.rds")
+check_file <- function(path, label = NULL) {
+  if (is.null(label)) label <- path
+  if (!file.exists(path)) stop("Missing file: ", path, call. = FALSE)
+  path
+}
 
-# imports contrast file
-contrast_table <- read.csv(contrasts,stringsAsFactors = F, header = F)
+results_file   <- check_file(file.path(working_dir, "results.rds"), "results file")
+contrasts_file <- check_file(contrasts, "contrasts file")
+
+results <- readRDS(results_file)
+contrast_table <- read.csv(contrasts, stringsAsFactors = FALSE, header = FALSE)
 
 num_prot_samples <- dim(results$data)
 num_prot <- num_prot_samples[1]
 num_samples <- num_prot_samples[2]
-num_groups <- unique(results$metadata$group)
 
-# Extract the part before '='
 comparisons <- trimws(sub("=.*", "", contrast_table[[1]]))
 
-# Extract just the part after '=' for each comparison
-#comparisons <- trimws(sub(".*=\\s*", "", contrast_table[[1]]))
-#comparisons <- contrast_table[[1]]
-
-#numbers <- list(num_prot, num_samples, num_groups, comparisons)
-#cat(paste('-', numbers), sep='\n')
-#cat(paste('-', "Number of samples =",num_samples),sep='\n')
-#cat(paste('-', "Group =",num_groups),sep='\n')
-#cat(paste('-', "Number of quantified proteins =",num_prot),sep='\n')
-#cat(paste('-', "Comparison:",comparisons),sep='\n')
-
-output <- paste0(
-  "::: {.tiny}\n",
-  "- **Number of samples** = ", num_samples, "\n",
-  "- **Number of quantified proteins** = ", num_prot, "\n",
-  "- **Comparisons:**\n"
-)
-
-# Add each comparison as its own bullet
-comparison_lines <- paste0("  - ", comparisons, collapse = "\n")
-
-# Close block
-end <- "\n:::"
-
-# Output the final content
-cat(paste0(output, comparison_lines, end))
-
+cat(paste0("- **Number of samples** = ", num_samples, "\n"))
+cat(paste0("- **Number of quantified proteins** = ", num_prot, "\n"))
+cat("- **Comparisons:**\n")
+cat(paste0("  - ", comparisons, collapse = "\n"))
+cat("\n")
 ```
 
-## Protein Intensities for All Samples
-
-![](figures/Boxplot_allsamples.png)
-
 ## Total Protein Intensities
 
-![](figures/Barplot_allsamples.png)
+![](QC_report/Barplot_allsamples.png)
 
-## Total Protein Intensities
+## Total Protein Intensities split by group
 
-![](figures/Barplot_split_allsamples.png)
+![](QC_report/Barplot_split_allsamples.png)
 
 ## Principal Component Analysis PC1 and PC2
 
-![](figures/PCA_PC12.png)
+![](QC_report/PCA_PC12.png)
 
 ## Principal Component Analysis PC3 and PC4
 
-![](figures/PCA_PC34.png)
+![](QC_report/PCA_PC34.png)
 
 ## Clustered Dendrogram 
 
-![](figures/Dendrogram_byGroup.png)
+![](QC_report/Dendrogram_byGroup.png)
 
 ## Proteins with Missing Values
 
-![](figures/Heatmap_MissingVal_allsamples.png)
+![](QC_report/Heatmap_MissingVal_allsamples.png)
 
 ## Differential Abundance Summary
 
@@ -121,7 +99,7 @@ myplots1 <- list()
 for (i in 1:length(results$results)){
   png_file <- file.path(names(results$results)[i], "-volcano-adjusted-pval", fsep="")
   png_file2 <- file.path(DA_dir, "static_plots", png_file, fsep = "/")
-  png_file3 <- file.path(png_file2, "_1.png", fsep="")  
+  png_file3 <- file.path(png_file2, ".png", fsep="")  
   
  #png_file3 <- file.path(DA_dir, "static_plots", names(results$results)[i], "-volcano-adjusted-pval", "_1.png")
   #print(png_file2)
@@ -166,7 +144,7 @@ myplots <- list()
 for (i in 1:length(results$results)){
   png_file <- file.path(names(results$results)[i], "-volcano-raw-pval", fsep="")
   png_file2 <- file.path(DA_dir, "static_plots", png_file, fsep = "/")
-  png_file3 <- file.path(png_file2, "_1.png", fsep="")  
+  png_file3 <- file.path(png_file2, ".png", fsep="")  
   #print(png_file2)
   print(png_file3)
   

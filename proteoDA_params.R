@@ -41,7 +41,7 @@ group = "group"             # defines the sample metadata column containing grou
 require_both_groups = FALSE  # if filtering_per_contrasts, are the biological reps with values > 0 required in both groups
 
 ## report directories. For now don't change these or you must update the Project_Summary.qmd
-QC_dir = "figures"               # can change this in the GenerateReports.R so doesn't mess up Project_Summary?
+QC_dir = "QC_report"               # can change this in the GenerateReports.R so doesn't mess up Project_Summary?
 DA_dir = "interactive_results"
 
 ### limma design and group comparisons
