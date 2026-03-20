@@ -1,7 +1,38 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+
+# Package build internals
 ^doc$
 ^Meta$
-^vignettes/.+\.html$
-^vignettes/.+\.pdf$
+
+# Vignettes (exclude entirely for CI stability)
+^vignettes$
+
+# GitHub / CI
 ^\.github$
+
+# Quarto / project config
+^_quarto\.yml$
+^_variables\.yml$
+
+# Non-package analysis + reports
+^data-raw$
+^for_testing$
+^paper$
+
+# Standalone scripts / reports
+^DIA_methods_report\.Rmd$
+^QC_report\.Rmd$
+^GenerateReports\.R$
+^Project_Summary_.*\.qmd$
+^proteoDA_analysis_.*\.R$
+^proteoDA_params\.R$
+
+# Assets not needed in package build
+^proteoDA_template\.pptx$
+^style\.css$
+
+# GitHub / repo metadata
+^CITATION\.cff$
+^CODE_OF_CONDUCT\.md$
+^LICENSE\.md$
