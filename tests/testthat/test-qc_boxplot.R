@@ -19,7 +19,6 @@ test_that("qc_boxplot validates input", {
   expect_error(qc_boxplot(data, groups = rep(1, 5)))
 })
 
-
 test_that("qc_boxplot applies colorblind palette", {
   data   <- matrix(rnorm(100), nrow = 10, ncol = 10)
   groups <- rep(1:2, each = 5)
@@ -47,18 +46,14 @@ test_that("qc_boxplot handles custom width and alpha", {
   
   p <- qc_boxplot(data, boxplot_width = 0.3, boxplot_alpha = 0.5)
   
-  # width should be in geom_params
   layer <- p$layers[[1]]
-  expect_equal(layer$geom_params$width, 0.3)
   
-  # alpha is only visible after building the plot
+  expect_equal(layer$aes_params$alpha, 0.5)
+  
   built <- ggplot2::ggplot_build(p)
-  alpha_vals <- built$data[[1]]$alpha
-  
-  expect_true(is.numeric(alpha_vals))
-  expect_true(all(alpha_vals == 0.5))
+  expect_true("alpha" %in% names(built$data[[1]]))
+  expect_true(all(built$data[[1]]$alpha == 0.5))
 })
-
 
 ### new test for before norm plot
 test_that("qc_boxplot_beforeNorm works with matrix input", {

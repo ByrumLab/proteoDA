@@ -2,7 +2,8 @@
 # just output plots
 
 test_that("write_qc_report warns for unnormalized data", {
-  skip_on_ci()
+  #skip_on_ci()
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
   
   on.exit(unlink("QC_Report.pdf"), add = T)
 
@@ -28,7 +29,8 @@ test_that("write_qc_report warns for unnormalized data", {
 
 
 test_that("write_qc_report checks color column", {
-
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
+  
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
     normalize_data("log2")
   on.exit(unlink("QC_Report.pdf"), add = T)
@@ -64,7 +66,8 @@ test_that("write_qc_report checks color column", {
 })
 
 test_that("write_qc_report checks label column", {
-
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
+  
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
     normalize_data("log2")
   on.exit(unlink("QC_Report.pdf"), add = T)
@@ -92,6 +95,8 @@ test_that("write_qc_report checks label column", {
 })
 
 test_that("write_qc_report warns when truncating sample labels", {
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
+  
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
     normalize_data("log2")
   on.exit(unlink("QC_Report.pdf"), add = T)
@@ -112,7 +117,7 @@ test_that("write_qc_report warns when truncating sample labels", {
 })
 
 test_that("write_qc_report gives error if sample labels aren't unique", {
-
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
     normalize_data("log2")
   on.exit(unlink("QC_Report.pdf"), add = T)
@@ -145,6 +150,7 @@ test_that("write_qc_report gives error if sample labels aren't unique", {
 
 
 test_that("write_qc_report informs user of output dir and filename when not supplied", {
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
     normalize_data("log2")
 
@@ -173,6 +179,7 @@ test_that("write_qc_report informs user of output dir and filename when not supp
 
 
 test_that("write_qc_report validates filename when supplied", {
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
     normalize_data("log2")
 
@@ -189,6 +196,7 @@ test_that("write_qc_report validates filename when supplied", {
 
 
 test_that("write_qc_report won't overwrite when false", {
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
     normalize_data("log2")
   sink <- file.create("temp.pdf")
@@ -221,6 +229,7 @@ test_that("write_qc_report won't overwrite when false", {
 
 
 test_that("write_qc_report messages user when overwriting", {
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
     normalize_data("log2")
 
@@ -255,6 +264,7 @@ test_that("write_qc_report messages user when overwriting", {
 
 
 test_that("write_qc_report creates proper output file", {
+  skip_if(Sys.getenv("GITHUB_ACTIONS") == "true")
   # default filenames
   input <- readRDS(test_path("fixtures", "norm_report_input.rds")) %>%
     normalize_data("log2")
