@@ -1,0 +1,64 @@
+# Identify ID Column
+
+This function identifies the first column in a data frame `x` that
+contains all the values specified in the `ref` vector. The `ref` values
+should typically represent sample or gene IDs, and the function checks
+for the presence of these reference values in the columns of `x`.
+
+## Usage
+
+``` r
+find_id_column(x, ref)
+```
+
+## Arguments
+
+- x:
+
+  A data frame. The columns in `x` will be queried against the reference
+  values provided in `ref`. `x` is typically a data frame of metadata or
+  annotation.
+
+- ref:
+
+  A character vector of reference values. The values in `ref` must be
+  unique, and should not contain any `NA` or blank values. The values in
+  `ref` are typically the column or row names of a counts matrix (e.g.,
+  sample IDs or gene IDs).
+
+## Value
+
+The function returns the name of the first column in `x` that contains
+all the reference values. If no matching column is found, the function
+will return an error.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+if(interactive()){
+
+metadata <- data.frame(sample = c("C1","C2","T1","T2"),
+                       sample_id = c("C 100","C 202","T 303","T 100"),
+                       condition = c("Control","Control","Treatment",
+                                     "Treatment"))
+
+counts <- data.frame(C.100 = c(0,10,21,3,4),
+                     C.202 = c(0,0,0,2,1),
+                     T.100 = c(15,33,21,55,42),
+                     T.303 = c(12,22,54,33,33),
+                     row.names = paste0("gene_",1:5))
+
+annotation <- data.frame(gene_id = c("gene_2","gene_3","gene_4",
+                                     "gene_1","gene_5"),
+                         gene_name = c("SNP","CRC","POP","RCE","CSP"),
+                         description = c("Snap","crackle","pop","rice",
+                                         "crispies"))
+
+## rsyntax error
+find_id_column(x = metadata, ref = colnames(counts))
+find_id_column(x = annotation, ref = row.names(counts))
+
+  }
+} # }
+```

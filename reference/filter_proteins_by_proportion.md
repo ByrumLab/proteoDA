@@ -1,0 +1,85 @@
+# Filter protein data by proportion of quantified samples in group
+
+This function is used to remove proteins from a DAList, filtering out
+proteins based on levels of missing data in the "data" data frame of the
+DAList. The grouping_column must be a column in the metadata of the
+DAList which lists the group membership for each sample. Proteins must
+have a non-missing intensity value in at least min_prop of samples
+within each group in order to be retained. When min_prop leads to a
+non-integer value for a given group, it is rounded up: e.g., with 10
+samples in a group and a min_prop of 0.75, a protein must be present in
+at least 8 samples to be retained. This function assumes that all
+missing values are encoded as NA. See
+[`zero_to_missing`](https://byrumlab.github.io/proteoDA/reference/missing_data.md)
+and
+[`missing_to_zero`](https://byrumlab.github.io/proteoDA/reference/missing_data.md)
+for helper functions to convert missing values to and from 0.
+
+## Usage
+
+``` r
+filter_proteins_by_proportion(
+  DAList,
+  min_prop = NULL,
+  grouping_column = "group"
+)
+```
+
+## Arguments
+
+- DAList:
+
+  A DAList object to be filtered.
+
+- min_prop:
+
+  The minimum proportion of samples within a group in which a protein
+  must be found for it to be retained. Must be a numeric value from 0 to
+  1.
+
+- grouping_column:
+
+  The name of the column in the metadata which provides the group
+  membership for each sample. Default is "group".
+
+## Value
+
+A DAList, with proteins that are not present in sufficient samples
+removed.
+
+## Details
+
+`filter_proteins_by_proportion()` is useful when sample sizes are not
+constant across groups, allowing similar levels of missingness across
+groups even when sample sizes are imbalanced.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+  # Suppose the DAList contains data from 40 samples across 2
+  # experimental groups, with 15 samples in one group and 25 in the other.
+  # and group membership listed in a column names "group"
+
+  # Strict filtering:
+  # no missing data
+  # Proteins must be present in all samples in all groups
+  filtered <- filter_proteins_by_proportion(DAList,
+                                            min_prop = 1,
+                                            grouping_column = "group")
+  # moderate filtering:
+  # protein must be present in at 50% of samples within each group.
+  # That is, 8 samples in the group of 15 and 13 samples in the group of 25.
+  filtered <- filter_proteins_by_proportion(DAList,
+                                            min_prop = 0.5,
+                                            grouping_column = "group")
+
+  # Filtering functions can be chained together
+  filtered <- DAList |>
+    filter_proteins_by_annotation(!grepl(pattern = "keratin",
+                                         x = protein_name)) |>
+    filter_proteins_by_proportion(min_prop = 0.5,
+                                  grouping_column = "group")
+} # }
+
+```

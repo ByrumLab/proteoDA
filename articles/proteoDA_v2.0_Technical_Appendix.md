@@ -1,0 +1,985 @@
+# proteoDA v2.0 Technical Appendix
+
+## Technical Appendix. Normalization metrics and methods
+
+*(This section is for users who want the mathematical details. It can be
+skipped on a first read.)*
+
+Normalization metrics Used in
+[`write_norm_report()`](https://byrumlab.github.io/proteoDA/reference/write_norm_report.md)
+(PCV, PEV, PMAD, correlations, log2-ratios)
+
+This appendix provides additional technical details for the
+normalization diagnostics used by
+[`write_norm_report()`](https://byrumlab.github.io/proteoDA/reference/write_norm_report.md)
+in **proteoDA v2.0**. The definitions and evaluation criteria are based
+on the `proteiNorm` framework described in Graw et al., 2020[¹](#fn1).
+
+## Mathematical Definitions of Normalization Metrics
+
+### Total intensity per sample
+
+For each sample $j$, the **total intensity** is
+
+$$T_{j} = \sum\limits_{i = 1}^{p}x_{ij},$$
+
+where
+
+- $i$ indexes proteins (features),
+- $x_{ij}$ is the (raw or normalized) intensity of protein $i$ in sample
+  $j$,
+- $p$ is the number of proteins.
+
+Large differences across $T_{j}$ indicate unequal global scaling or
+technical loading bias. Effective normalization reduces these
+differences (analogous to the total intensity plots in `proteiNorm`).
+
+------------------------------------------------------------------------
+
+### Principal Component Analysis (PCA)
+
+PCA is applied to the protein × sample matrix after centering (and
+optionally scaling) features. It is used to visualize:
+
+- clustering by biological group,  
+- batch effects,  
+- sample outliers, and  
+- the proportion of variance captured by leading components.
+
+If normalization is successful, samples tend to cluster by biology
+rather than batch, and replicate groups become tighter. Strong batch
+separation or large dispersion of replicates after normalization
+suggests that normalization has not fully corrected non-biological
+variation.
+
+------------------------------------------------------------------------
+
+### Missing value heatmap (MAR vs MNAR)
+
+We define a missingness indicator matrix
+
+$$M_{ij} = \begin{cases}
+1 & {{\text{if}\mspace{6mu}}x_{ij} = \text{NA},} \\
+0 & {\text{otherwise}.}
+\end{cases}$$
+
+A sample-clustered heatmap is created by applying hierarchical
+clustering to both rows (proteins) and columns (samples). Visual
+patterns in this heatmap help infer:
+
+- **MAR** (Missing At Random): missingness is diffuse and not obviously
+  associated with specific groups or batches.
+- **MNAR** (Missing Not At Random): structured blocks of missingness
+  associated with certain groups, batches, or intensity ranges.
+
+These patterns guide the choice of imputation strategy and whether
+imputation is appropriate at all.
+
+------------------------------------------------------------------------
+
+### Pooled Coefficient of Variation (PCV)
+
+For each protein $i$ within group $g$, the **coefficient of variation**
+is
+
+$$CV_{ig} = \frac{\sigma_{ig}}{\mu_{ig}},$$
+
+where
+
+- $\mu_{ig}$ is the mean intensity of protein $i$ across replicates in
+  group $g$,
+- $\sigma_{ig}$ is the standard deviation across those replicates.
+
+The **pooled coefficient of variation** (PCV) is then
+
+$$PCV = \text{median}_{i,g}\left( CV_{ig} \right).$$
+
+Lower PCV implies better agreement among replicates under a given
+normalization method.
+
+------------------------------------------------------------------------
+
+### Pooled Estimate of Variance (PEV)
+
+For each protein $i$ within group $g$,
+
+$$Var_{ig} = \sigma_{ig}^{2}.$$
+
+The **pooled estimate of variance** is
+
+$$PEV = \text{median}_{i,g}\left( Var_{ig} \right).$$
+
+PEV is sensitive to changes in scale introduced by normalization and
+complements PCV.
+
+------------------------------------------------------------------------
+
+### Pooled Median Absolute Deviation (PMAD)
+
+A robust alternative to variance uses the **median absolute deviation
+(MAD)**. For protein $i$ in group $g$,
+
+$$MAD_{ig} = \text{median}\left( \left| x_{ij} - \text{median}\left( x_{i \cdot} \right) \right| \right),$$
+
+where $x_{i \cdot}$ denotes intensities for protein $i$ across all
+samples in the group.
+
+The **pooled MAD** is
+
+$$PMAD = \text{median}_{i,g}\left( MAD_{ig} \right).$$
+
+PMAD is robust to outliers and reflects the typical spread of replicate
+intensities. Lower PMAD reflects reduced spread of replicate intensities
+and improved consistency within groups.
+
+------------------------------------------------------------------------
+
+### Intragroup correlation
+
+For samples $j$ and $k$ within the same group $g$, we compute the
+Pearson correlation
+
+$$r_{jk} = \text{cor}\left( x_{\cdot j},x_{\cdot k} \right),$$
+
+where $x_{\cdot j}$ is the vector of intensities for sample $j$ across
+all proteins. The distribution of all intragroup correlations (for all
+$j,k,g$) is summarized per normalization method.
+
+High intragroup correlations indicate that replicates are more similar
+after normalization.
+
+------------------------------------------------------------------------
+
+### Correlation heatmap
+
+All pairwise Pearson correlations between samples are computed to form a
+correlation matrix
+
+$$R = \left\lbrack r_{jk} \right\rbrack.$$
+
+Hierarchical clustering is applied to rows and columns of $R$ to produce
+a correlation heatmap. This heatmap highlights:
+
+- separation of experimental groups,
+- presence of batch effects,
+- increased similarity of replicates after normalization.
+
+------------------------------------------------------------------------
+
+### Log2-ratio distributions
+
+For each pair of samples $j \neq k$, define
+
+$$LR_{ijk} = \log_{2}\left( \frac{x_{ij}}{x_{ik}} \right).$$
+
+The log2-ratio distributions pool all pairwise sample comparisons and
+all proteins. Under a well-behaved normalization and in the absence of
+strong global shifts, the distribution of these log2-ratios should be:
+
+- approximately centered at zero,
+- without strong skew toward up- or down-regulation.
+
+Systematic deviation from zero can indicate residual bias introduced or
+not removed by the normalization procedure.
+
+------------------------------------------------------------------------
+
+## Normalization Methods Implemented
+
+This section consolidates the mathematical and conceptual details for
+each normalization method implemented in `proteoDA` and evaluated by
+[`write_norm_report()`](https://byrumlab.github.io/proteoDA/reference/write_norm_report.md),
+which evaluates eight normalization strategies, mirroring the methods
+described in Section 5.2 of *Graw et al., 2020*.
+
+### Log2 transformation
+
+**Goal:** stabilize variance and compress dynamic range.
+
+For intensity $x_{ij}$,
+
+$$y_{ij} = \log_{2}\left( x_{ij} + \epsilon \right),$$
+
+with small offset $\epsilon$ to avoid $\log(0)$.
+
+- High intensities are compressed.  
+- Low intensities may become noisy and sensitive to $\epsilon$.  
+- Values of $- \infty$ (from exact zeros) are typically set to `NA` in
+  proteoDA.
+
+`Log2` alone does not remove between-sample scaling or nonlinear bias;
+it primarily prepares data for methods like limma.
+
+------------------------------------------------------------------------
+
+### Median and Mean normalization
+
+**Goal:** simple global scaling to reduce loading effects.
+
+For each sample $j$, compute:
+
+- median $m_{j} = \text{median}_{i}\left( y_{ij} \right)$, or  
+- mean $u_{j} = \text{mean}_{i}\left( y_{ij} \right)$,
+
+on the log2 scale. Then adjust:
+
+$$y_{ij}^{*} = y_{ij} - \left( m_{j} - \bar{m} \right),\quad\bar{m} = \text{mean}_{j}\left( m_{j} \right),$$
+
+or analogously for means $u_{j}$.
+
+Assumptions:
+
+- The majority of proteins are not strongly differentially abundant.  
+- Global differences between samples are approximately multiplicative.
+
+Pros:
+
+- Easy to interpret, inexpensive to compute.
+
+Limitations:
+
+- Does not correct intensity-dependent bias.  
+- Can be misled if a large fraction of proteins truly change in one
+  direction.
+
+------------------------------------------------------------------------
+
+### Global Intensity normalization (GI)
+
+**Goal:** scale by total intensity or another global summary.
+
+On the original scale, define for sample $j$:
+
+$$S_{j} = \sum\limits_{i}x_{ij},$$
+
+or use another global summary (mean or median). Then,
+
+$$x_{ij}^{*} = \frac{x_{ij}}{S_{j}} \cdot \bar{S},$$
+
+with $\bar{S}$ a reference summary (e.g. mean over samples), followed by
+log2 transformation.
+
+Assumptions:
+
+- Total signal is comparable across samples, i.e. most proteins are
+  unchanged.
+
+`GI` is useful when there are clear load differences but little
+intensity-dependent distortion.
+
+------------------------------------------------------------------------
+
+### Quantile normalization
+
+**Goal:** force all samples to have identical empirical distributions.
+
+For each sample, sort intensities to obtain order statistics
+$x_{{(1)}j},\ldots,x_{{(p)}j}$. For rank $k$,
+
+$${\bar{x}}_{(k)} = \text{mean}_{j}x_{{(k)}j},$$
+
+and each sample’s $k$-th ordered value is replaced with
+${\bar{x}}_{(k)}$. The inverse sorting restores per-feature order.
+
+Characteristics:
+
+- Removes both scale and shape differences in distributions.  
+- Can handle `NA` values under MAR assumptions (as in
+  [`preprocessCore::normalize.quantiles`](https://rdrr.io/pkg/preprocessCore/man/normalize.quantiles.html)).
+
+Pros:
+
+- Very effective at reducing technical variation.
+
+Limitations:
+
+- Aggressive: may suppress real global shifts between biological
+  groups.  
+- Assumes most features are not differentially regulated and that
+  samples should share a common distribution.
+
+Summary:
+
+For each sample, intensities are sorted, and each ranked position is
+replaced with the across-sample mean of that rank. This enforces
+identical empirical distributions for all samples.
+
+- Utilizes the
+  [`preprocessCore::normalize.quantiles()`](https://rdrr.io/pkg/preprocessCore/man/normalize.quantiles.html)
+  function
+- This method is based upon the concept of a quantile-quantile plot
+  extended to n dimensions.
+- No special allowances are made for outliers.
+- This function will handle missing data (ie NA values), based on the
+  assumption that the data is missing at random.
+
+Key references: Bolstad (2001); Bolstad et al. (2003).
+
+------------------------------------------------------------------------
+
+### Cyclic loess normalization
+
+**Goal:** remove smooth, intensity-dependent biases between samples.
+
+#### M–A representation
+
+For arrays $i$ and $j$ with log2 intensities $x_{ki},x_{kj}$,
+
+$$M_{k} = x_{ki} - x_{kj},\quad A_{k} = \frac{1}{2}\left( x_{ki} + x_{kj} \right).$$
+
+In the absence of intensity-dependent bias, the M–A plot should be
+symmetric around $M = 0$ with no obvious trend across $A$.
+
+#### Loess-based adjustment
+
+Fit a smooth curve ${\widehat{M}}_{k} = f\left( A_{k} \right)$ using
+loess. The bias-corrected M-values are
+
+$$M_{k}^{*} = M_{k} - {\widehat{M}}_{k}.$$
+
+Reconstruct adjusted log2 intensities:
+
+$$x_{ki}^{*} = A_{k} + \frac{M_{k}^{*}}{2},\quad x_{kj}^{*} = A_{k} - \frac{M_{k}^{*}}{2}.$$
+
+This forces the loess curve for the pair toward $M = 0$, removing smooth
+intensity-dependent differences.
+
+#### Cycling over all arrays
+
+For $n$ arrays:
+
+1.  Consider all pairs (or an efficient subset).  
+2.  Perform the pairwise loess adjustment.  
+3.  Accumulate adjustments per array.  
+4.  Average and update intensities.  
+5.  Iterate until convergence.
+
+Variants (as in
+[`limma::normalizeCyclicLoess`](https://rdrr.io/pkg/limma/man/normalizeCyclicLoess.html)):
+
+- `method = "pairs"` – standard pairwise cyclic loess.  
+- `method = "affy"` – updates arrays only after a full cycle.  
+- `method = "fast"` – each array normalized to the average array (linear
+  complexity).
+
+Advantages:
+
+- Corrects nonlinear intensity-dependent bias.  
+- Order-invariant options are available.
+
+Limitations:
+
+- Computationally more intensive than VSN or quantile normalization.  
+- Requires log2-scale input.  
+- Overcorrection is possible if strong biological signals masquerade as
+  bias.
+
+Summary: - Cyclic loess is a normalization method that fixes smooth,
+intensity-dependent biases between samples. - Sometimes, one sample
+looks consistently higher than another at low intensities but lower at
+high intensities. - This creates curved “smile/frown” patterns when
+comparing samples. - Cyclic loess fits a smooth curve to these patterns
+and removes the unwanted trend, making the samples comparable across the
+full intensity range. - It does this by repeatedly comparing every
+sample to every other sample (“cyclic”), correcting each pair by
+removing the curved trend (“loess”), and stopping when all samples look
+consistent.
+
+What is it good for:
+
+- When samples have nonlinear differences (e.g., one sample is boosted
+  at low intensity and compressed at high intensity).
+- When there are batch or run effects that are not just simple scale
+  differences.
+- When M–A plots show curved shapes.
+
+Key references: Bolstad et al. (2003); Ballman et al. (2004).
+
+------------------------------------------------------------------------
+
+### Variance Stabilizing Normalization (VSN)
+
+**Goal:** transform intensities so that variance is approximately
+constant across the entire dynamic range.
+
+#### Mean–variance model
+
+Empirical observations from microarray and proteomics data show a
+quadratic relationship:
+
+$${Var}(Y) \approx \left( c_{1}\mu + c_{2} \right)^{2} + c_{3},$$
+
+with mean $\mu$ and constants $c_{1},c_{2},c_{3}$. Log2 transformation
+only partially addresses this dependence and can inflate noise at low
+intensities.
+
+#### VSN transformation
+
+Huber et al. (2002) derive a family of variance-stabilizing transforms
+of the form
+
+$$h(y) = \gamma\,{arsinh}(a + by),$$
+
+with parameters estimated from the data.
+
+Properties:
+
+- For large $y$, ${arsinh}(a + by) \approx \log(2by)$; behaves like a
+  log.  
+- For small $y$, behaves approximately linearly, avoiding extreme ratios
+  and log(0) issues.
+
+The result is:
+
+- Nearly constant variance across intensities.  
+- Symmetric, non-skewed residuals.  
+- Improved detection of differential expression, especially for
+  low-intensity features.
+
+#### Suitability for proteomics
+
+Proteomics LC–MS/MS intensities exhibit:
+
+- Combined additive and multiplicative noise,  
+- High relative variance at low abundance,  
+- Detection limits and background subtraction issues.
+
+VSN is well matched to this structure:
+
+- Stabilizes variance without arbitrary pseudocounts.  
+- Often reduces PCV/PEV/PMAD in practice.  
+- Produces centered log2-ratio distributions with minimal intensity
+  dependence.
+
+VSN is particularly useful for:
+
+- Label-free datasets with many low-abundance proteins.  
+- TMT data with channel-specific background noise.  
+- Experiments with large dynamic ranges and zeros/near-zeros.
+
+Reference: Huber et al. (2002).
+
+------------------------------------------------------------------------
+
+### Robust Linear Regression normalization (RLR)
+
+**Goal:** correct linear biases while down-weighting outliers.
+
+For sample $j$, model log2 intensities:
+
+$$y_{ij} = \beta_{0j} + \beta_{1j}r_{i} + \epsilon_{ij},$$
+
+where $r_{i}$ is a reference abundance (e.g. row median across samples).
+A robust regression (e.g. M-estimation) is used to estimate
+$\beta_{0j},\beta_{1j}$. Normalized values are residuals or
+appropriately rescaled fits.
+
+Characteristics:
+
+- Can correct both additive and multiplicative biases.  
+- Reduces influence of outlier proteins or technical artifacts.
+
+RLR is helpful when distributional assumptions of quantile normalization
+are too strong but some samples have clear linear distortions relative
+to a reference.
+
+------------------------------------------------------------------------
+
+### Upstream/external normalization
+
+In some workflows (e.g. DIA-NN, MaxQuant), intensities may already be
+normalized. In proteoDA:
+
+- Users may flag such data with a tag (e.g. `diann_quan`).  
+- [`write_norm_report()`](https://byrumlab.github.io/proteoDA/reference/write_norm_report.md)
+  can still evaluate variance, correlation, and MA plot behavior.  
+- Additional normalization is typically skipped to avoid
+  double-correction.
+
+------------------------------------------------------------------------
+
+## Normalization vs Imputation
+
+Normalization and imputation address **distinct** issues:
+
+- **Normalization**: corrects systematic differences across samples
+  (scale, shape, intensity-dependent effects).  
+- **Imputation**: fills in missing entries to satisfy methods that
+  require complete matrices.
+
+Key points:
+
+- [`write_norm_report()`](https://byrumlab.github.io/proteoDA/reference/write_norm_report.md)
+  evaluates normalization on data with missing values intact.  
+- Normalization methods should be evaluated *before* imputation using
+  PCV, PEV, PMAD, correlation measures, PCA, and log2-ratio diagnostics.
+- The missing-value heatmap is used to infer whether missingness is more
+  consistent with MAR or MNAR patterns.
+- Imputation is only necessary for downstream tools that cannot handle
+  missingness (e.g. some machine-learning frameworks, DAtest).
+- Statistical frameworks such as limma can fit linear models directly
+  with missing values, so imputation is optional for limma-based
+  workflows but required for methods (e.g., DAtest) that demand a
+  complete matrix.
+
+Best practice:
+
+1.  Choose and apply normalization.  
+2.  Evaluate using variance, correlation, PCA, and log2-ratio
+    diagnostics.  
+3.  Decide whether imputation is necessary and, if so, use a method
+    consistent with the inferred missingness mechanism (MAR vs MNAR).
+
+------------------------------------------------------------------------
+
+## Suggested Best Practices
+
+- Compare multiple normalization methods using the same metrics.  
+- Prefer methods that:
+  - lower PCV/PEV/PMAD,  
+  - increase intragroup correlation,  
+  - preserve expected grouping in PCA,  
+  - yield balanced log2-ratio distributions.  
+- Use MA plots to distinguish **technical bias** (curvature, tilting)
+  from **biological signal** (symmetric broadening, group shifts).  
+- In many proteomics datasets:
+  - **VSN** and **cyclic loess** perform robustly, but address different
+    problems
+    - VSN → unequal variance across intensities  
+    - Cyclic loess → nonlinear intensity-dependent bias  
+- No single method is universally optimal; diagnostic plots and metrics
+  should guide the choice.
+- Consistent with *Graw et al., 2020*, VSN and cyclic loess often
+  perform robustly across diverse proteomics datasets, but each
+  experiment should be evaluated individually using the above criteria.
+
+------------------------------------------------------------------------
+
+## References
+
+1.  Ballman, K. V., Grill, D. E., Oberg, A. L., & Therneau, T. M.
+    (2004). Faster cyclic loess: normalizing RNA arrays via linear
+    models. *Bioinformatics*, 20(18), 2778–2786.
+
+2.  Bolstad, B. M. (2001). *Probe Level Quantile Normalization of High
+    Density Oligonucleotide Array Data* (Unpublished manuscript).
+    <http://bmbolstad.com/stuff/qnorm.pdf>
+
+3.  Bolstad, B. M., Irizarry, R. A., Astrand, M., & Speed, T. P. (2003).
+    A comparison of normalization methods for high density
+    oligonucleotide array data based on variance and bias.
+    *Bioinformatics*, 19(2), 185–193.
+    [http://bmbolstad.com/misc/normalize/normalize.html](http://bmbolstad.com/misc/normalize/normalize.md)
+
+4.  Graw, S., Tang, J., Zafar, M. K., Byrd, A. K., Bolden, C.,
+    Peterson, E. C., & Byrum, S. D. (2020). proteiNorm – A User-Friendly
+    Tool for Normalization and Analysis of TMT and Label-Free Protein
+    Quantification. *ACS Omega*, 5(40), 25625–25633.
+    <https://doi.org/10.1021/acsomega.0c02564>
+
+5.  Huber, W., von Heydebreck, A., Sültmann, H., Poustka, A., &
+    Vingron, M. (2002). Variance stabilization applied to microarray
+    data calibration and to the quantification of differential
+    expression. *Bioinformatics*, 18(suppl_1), S96–S104.
+    <https://doi.org/10.1093/bioinformatics/18.suppl_1.S96>
+
+------------------------------------------------------------------------
+
+## Further details for Cyclic Loess and VSN
+
+### Cyclic Loess Normalization:
+
+**References**
+
+1.  Bolstad BM, Irizarry RA, Astrand M, Speed TP (2003). A comparison of
+    normalization methods for high density oligonucleotide array data
+    based on bias and variance. Bioinformatics 19, 185-193.
+
+2.  Ballman KV, Grill DE, Oberg AL, Therneau TM (2004). Faster cyclic
+    loess: normalizing RNA arrays via linear models. Bioinformatics 20,
+    2778-2786.
+
+This function included in
+[`limma::normalizeCyclicLoess()`](https://rdrr.io/pkg/limma/man/normalizeCyclicLoess.html)
+is intended to normalize single channel or A-value microarray
+intensities between arrays. Cyclic loess normalization is similar in
+effect and intention to quantile normalization, but with some
+advantages, in particular the ability to incorporate probe weights.
+
+A number of variants of cylic loess have been suggested. method=“pairs”
+implements the intuitive idea that each pair of arrays is subjected to
+loess normalization as for two-color arrays. This process is simply
+cycled through all possible pairs of arrays, then repeated for several
+iterations. This is the method described by Ballman et al (2004) as
+ordinary cyclic loess normalization.
+
+method=“affy” implements a method similar to normalize.loess in the affy
+package, except that here we call lowess instead of loess and avoid the
+use of probe subsets and the predict function. In this approach, no
+array is modified until a complete cycle of all pairs has been
+completed. The adjustments are stored for a complete iteration, then
+averaged, and finally used to modify the arrays. The “affy” method is
+invariant to the order of the columns of x, whereas the “pairs” method
+is not. The affy approach is presumably that used by Bolstad et al
+(2003), although the algorithm was not explicitly described in that
+article.
+
+method=“fast”, default in `proteoDA`, implements the “fast linear loess”
+method of Ballman et al (2004), whereby each array is simply normalized
+to a reference array, the reference array being the average of all the
+arrays. This method is relatively fast because computational time is
+linear in the number of arrays, whereas “pairs” and “affy” are quadratic
+in the number of arrays. “fast” requires n lowess fits per iteration,
+where n is the number of arrays, whereas “pairs” and “affy” require
+n\*(n-1)/2 lowess fits per iteration.
+
+#### Cyclic loess normalization: intensity-dependent bias correction
+
+Cyclic loess normalization is a non-linear, intensity-dependent
+normalization originally developed for high-density oligonucleotide
+arrays, but it is also very useful for proteomics data when there are
+systematic, intensity-dependent differences between samples. The method
+is described in detail by *Bolstad et al.* (2003)[²](#fn2)
+:contentReferenceoaicite:1.
+
+In proteomics, these intensity-dependent effects can arise from:
+
+- differences in labeling efficiency or ionization efficiency across
+  runs,  
+- detector nonlinearity at high intensities,  
+- sample loading differences that are not purely multiplicative,  
+- channel-specific or run-specific artifacts in TMT or label-free
+  experiments.
+
+Cyclic loess directly targets these smooth, non-linear trends in log
+fold-change versus average intensity.
+
+#### M–A representation between arrays
+
+Following the microarray convention, cyclic loess operates on pairwise
+comparisons between arrays using an M–A plot:
+
+For two arrays $i$ and $j$ with probe (or feature) intensities $x_{ki}$
+and $x_{kj}$ for feature $k = 1,\ldots,p$,
+
+$$M_{k} = \log_{2}\left( \frac{x_{ki}}{x_{kj}} \right),\qquad A_{k} = \frac{1}{2}\log_{2}\left( x_{ki}x_{kj} \right).$$
+
+- $M_{k}$ is the log2 fold-change (difference in log2 intensity).  
+- $A_{k}$ is the average log2 intensity.
+
+For perfectly normalized data with no systematic bias between arrays $i$
+and $j$, the **M–A scatter** should be a symmetric cloud centered around
+$M = 0$ with no obvious trend across the intensity range (see Figures 2
+and 3 on page 188 for pre/post normalization examples)
+:contentReferenceoaicite:2.
+
+In practice, we often observe:
+
+- curvature in the M–A plot (“smiles” or “frowns”),  
+- shifts where $M$ is non-zero over large portions of the intensity
+  range,  
+- trends where low or high intensities are systematically biased.
+
+These patterns indicate *intensity-dependent biases* that simple global
+scaling cannot remove.
+
+#### Loess smoothing and adjustment
+
+For a given pair of arrays $i,j$, cyclic loess fits a local regression
+curve to the M–A relationship:
+
+$${\widehat{M}}_{k} = f\left( A_{k} \right),$$
+
+where $f$ is a loess smoother (locally weighted regression; Cleveland &
+Devlin, 1988) fitted to $\left( A_{k},M_{k} \right)$ points. This curve
+captures the smooth, intensity-dependent bias between arrays.
+
+The **bias-corrected** M-values are:
+
+$$M_{k}^{*} = M_{k} - {\widehat{M}}_{k}.$$
+
+From these adjusted M-values and the original A-values, new intensities
+are reconstructed:
+
+$$x_{ki}^{*} = 2^{A_{k} + M_{k}^{*}/2},\qquad x_{kj}^{*} = 2^{A_{k} - M_{k}^{*}/2}.$$
+
+By construction, the adjusted M–A plot for this pair has a loess curve
+essentially aligned with $M = 0$, meaning that intensity-dependent bias
+between arrays $i$ and $j$ has been removed.
+
+In practice, *Bolstad et al.* recommend fitting the loess curve on a
+rank-invariant set of probes/features (i.e., those whose ranks are
+stable between arrays) to avoid over-correcting truly differential
+features :contentReferenceoaicite:3.
+
+#### Extending to multiple arrays: the “cyclic” component
+
+For more than two arrays ($n$ arrays total), cyclic loess proceeds by:
+
+1.  Considering all pairwise combinations of arrays.  
+2.  For each pair, applying the pairwise loess-based adjustment as
+    above.  
+3.  Recording the per-array adjustments across all pairs.  
+4.  Combining (averaging) these adjustments for each array.  
+5.  Updating the intensities for all arrays.  
+6.  Repeating the cycle until changes become negligible (usually only
+    1–2 full cycles are needed).
+
+This iterative, “cyclic” procedure ensures that the normalization is
+“complete-data” based:  
+all arrays contribute to the normalization relations, and no single
+array is designated as a baseline. This is in contrast to baseline
+methods that map every array to one chosen reference array and can be
+highly sensitive to that choice (see baseline comparison and Figure 7 on
+page 191) :contentReferenceoaicite:4.
+
+#### Why cyclic loess is useful for proteomics
+
+Cyclic loess is particularly attractive in proteomics when:
+
+- there are non-linear M–A trends between runs (e.g., label-free or TMT
+  experiments with systematic intensity-dependent differences),  
+- technical variation is not adequately modeled by a simple scaling
+  factor,  
+- we want a data-driven, symmetric correction without defining a special
+  “reference” sample.
+
+Key advantages, supported by *Bolstad et al.’s* evaluations on spike-in
+and dilution microarray datasets :contentReferenceoaicite:5:
+
+- **Reduces variance across arrays** at nearly all intensity levels
+  compared to unnormalized data.  
+- Performs comparably to quantile and contrast normalization in terms of
+  variance and bias.  
+- **Improves pairwise comparisons**: M–A plots after cyclic loess show
+  point clouds centered near $M = 0$ and reduced array-to-array
+  trends.  
+- Avoids the **baseline-choice problem** inherent to scaling/non-linear
+  baseline methods, which can distort overall means and variance
+  depending on which array is chosen as reference
+  :contentReferenceoaicite:6.
+
+In proteoDA, these properties translate to:
+
+- more stable **per-group variance metrics** (PCV, PEV, PMAD) after
+  normalization,  
+- improved **intragroup correlations** and clearer group separation in
+  PCA,  
+- more reliable **log2 fold-changes** that are not distorted by
+  intensity-dependent artifacts, particularly useful in complex
+  experimental designs (e.g., multi-batch TMT or label-free series).
+
+#### Practical considerations
+
+- **Computation**: cyclic loess is more computationally intensive than
+  VSN or quantile normalization because it involves multiple pairwise
+  loess fits and iterative cycles. *Bolstad et al.* note it is the most
+  time-consuming of the three complete-data methods (quantile, contrast,
+  cyclic loess) :contentReferenceoaicite:7.
+- **Rank-invariant features**: using rank-invariant features for fitting
+  $f(A)$ helps protect truly changing proteins from being “normalized
+  away”.  
+- **Scale of input**: cyclic loess is usually applied on the log2 scale;
+  proteoDA follows this convention when evaluating M–A relationships for
+  normalization diagnostics.
+
+In summary, cyclic loess is a robust, non-linear normalization method
+that directly corrects intensity-dependent biases between samples using
+local regression on M–A plots, and is particularly valuable for
+proteomics experiments where such biases are evident across the dynamic
+range.
+
+### Variance Stabilizing Normalization (VSN): Technical Details and Relevance for Proteomics
+
+*Reference:* Huber, W., von Heydebreck, A., Sültmann, H., Poustka, A., &
+Vingron, M. (2002). Variance stabilization applied to microarray data
+calibration and to the quantification of differential expression.
+Bioinformatics, 18(suppl_1), S96-S104.
+<https://doi.org/10.1093/bioinformatics/18.suppl_1.S96>
+
+**Variance Stabilizing Normalization (VSN)** is a model-based
+transformation originally developed for microarray intensity data, but
+it is particularly well-suited to proteomics datasets where the variance
+of intensities depends strongly on the mean—especially in the
+low-abundance regime. These properties are discussed in depth in Huber
+et al. (2002)[³](#fn3) :contentReferenceoaicite:1.
+
+#### Motivation: Proteomics data violate log-scale assumptions
+
+Proteomics intensities often exhibit:
+
+- **Strong mean–variance dependence**, especially among low-intensity
+  proteins  
+- **Large heteroscedasticity** in the low end (small absolute signal →
+  disproportionately large variance)  
+- **Zero, near-zero, or negative background-subtracted intensities**  
+- **Instrument detection limits** that distort ratios for low-abundance
+  proteins
+
+These features cause classical **log2 transformation** to behave poorly:
+
+- The log compresses high intensities but **explodes variance** at the
+  low end.
+- Zero/negative intensities need artificial offsets or truncation.
+- Log-ratios produce “banana-shaped” intensity–ratio plots (see Figure
+  3b–3d on page S100) :contentReferenceoaicite:2.
+
+Huber et al. demonstrated that real intensity data do not follow a
+simple multiplicative error model; instead, the variance structure has
+both additive and multiplicative components and is best approximated by
+a **quadratic mean–variance relationship** (Figure 2, page S98)
+:contentReferenceoaicite:3:
+
+$${Var}(Y) = \left( c_{1}\,\mu + c_{2} \right)^{2} + c_{3}.$$
+
+Proteomics data exhibit the same characteristic shape:  
+high relative variance at low intensities, flattening only in the high
+range.
+
+#### The VSN transformation
+
+Using the quadratic mean–variance model, Huber et al. derive a
+variance-stabilizing transformation:
+
+$$h(y) = \gamma\,{arsinh}(a + by).$$
+
+Key properties:
+
+- For **large y**,  
+  $${arsinh}(a + by) \approx \log(2by),$$ so the transformation behaves
+  like a log2 (up to scaling).
+- For **small y**, the arsinh is **linear**, not logarithmic.  
+  This prevents extreme ratios, avoids undefined log(0), and stabilizes
+  variance where log2 fails.
+
+Figures 1 and 3f in the paper (pages S97 & S100) illustrate how the
+VSN-transformed data show:
+
+- **Constant variance across the entire intensity range**  
+- **Symmetric, non-skewed residuals**  
+- **No artifacts for low-intensity signals**
+
+This is extremely beneficial for proteomics datasets where a large
+fraction of proteins sit near the detection limit.
+
+#### Why VSN works well for proteomics
+
+Proteomics LC-MS/MS intensities exhibit the same quadratic variance–mean
+behavior described in Huber et al.:
+
+- MS1 and reporter ion intensities have additive noise from background +
+  multiplicative noise from ion counting statistics.  
+- The low-abundance region is dominated by additive error, producing
+  high variance and unstable fold-changes.
+- The mid/high range approximates multiplicative noise, where log2 works
+  reasonably well.
+
+Thus, VSN’s piecewise behavior — approximately linear for low
+intensities, log-like for high intensities — matches the biological and
+instrumental error distribution.
+
+This results in:
+
+1.  **Stabilized variance across proteins**  
+    → critical when thousands of low-abundance peptides inflate
+    downstream variance metrics.
+
+2.  **Higher intragroup correlation** (PCV/PEV/PMAD decrease)  
+    → shown consistently across datasets in proteiNorm and in Huber et
+    al.’s evaluations.
+
+3.  **Improved fold-change interpretability**  
+    → especially when one condition has many low-intensity values.
+
+4.  **No need for adding pseudocounts**  
+    → avoids arbitrary decisions about offsets.
+
+5.  **Improved power in differential abundance testing**  
+    → The VSN difference statistic (h) detects more truly regulated
+    features (Figure 4, pages S101–S102) than log-ratios.
+
+Huber et al. show that, across multiple platforms, the VSN-transformed
+difference statistic uniformly achieves the highest detection power
+compared to log-ratios (Figure 4).  
+This aligns with proteomics datasets where low-intensity proteins
+contribute disproportionately to false positives.
+
+#### Practical implications in proteoDA normalization
+
+Within proteoDA’s
+[`write_norm_report()`](https://byrumlab.github.io/proteoDA/reference/write_norm_report.md)
+evaluation:
+
+- **VSN often yields the lowest PCV, PEV, and PMAD**  
+  (mirroring the proteiNorm results for mouse and spike-in data).
+- **VSN minimizes batch effects** in PCA space due to better global
+  scaling.
+- **VSN produces centered log2-ratio distributions** without
+  intensity-dependent skew.
+- **VSN is robust to missing values when combined with
+  zero_to_missing()**, because the linear region gracefully handles
+  near-zero intensities.
+
+Best cases for VSN in proteomics:
+
+- Label-free datasets with many low-abundance proteins  
+- TMT datasets with channel-wise background noise  
+- Experiments where overall signal levels differ between runs  
+- Data with many zeros or values near the detection limit
+
+In summary, VSN is often the most **statistically principled and
+performance-consistent** normalization choice when proteomics datasets
+exhibit strong heteroscedasticity across the dynamic range.
+
+## VSN vs. Cyclic Loess — When to Choose Each
+
+### Choose `VSN` when:
+
+- Your dataset has many low-abundance proteins with high noise.
+- You see strong mean–variance dependence, especially in low
+  intensities.
+- You want variance to be stabilized across all intensities.
+- Values include zeros or near-zeros, and log2 transformations
+  misbehave.
+- You want a method that performs well without much tuning across many
+  proteomics designs.
+
+VSN is often the most robust choice for label-free proteomics or
+datasets with strong dynamic range differences.
+
+### Choose `Cyclic Loess` when:
+
+- M–A plots show curved trends (nonlinear biases) between samples.
+- Some samples seem systematically high in one part of the intensity
+  range and low in another.
+- You expect intensity-dependent dye effects, MS drift, or instrument
+  nonlinearity.
+- You want a data-driven correction that aligns all samples without
+  choosing a reference sample.
+
+Cyclic loess works especially well for TMT experiments, multi-batch
+comparisons, or cases where the primary issue is systematic shape
+differences, not merely variance differences.
+
+- `VSN` fixes the problem of unequal variance across intensities
+
+- `Cyclic loess` fixes the problem of nonlinear intensity-dependent bias
+  between samples
+
+Both methods can be excellent choices; the right one depends on whether
+your main problem is variance instability (`VSN`) or curved
+sample-to-sample bias (`cyclic loess`).
+
+------------------------------------------------------------------------
+
+1.  *Graw S et al.* proteiNorm – A User-Friendly Tool for Normalization
+    and Analysis of TMT and Label-Free Protein Quantification. ACS Omega
+    2020;5:25625–25633.
+
+2.  Bolstad BM et al. A comparison of normalization methods for high
+    density oligonucleotide array data based on variance and bias.
+    Bioinformatics. 2003;19(2):185–193.
+
+3.  *Huber W et al.* Variance stabilization applied to microarray data
+    calibration and to the quantification of differential expression.
+    Bioinformatics. 2002;18(Suppl 1):S96–S104.

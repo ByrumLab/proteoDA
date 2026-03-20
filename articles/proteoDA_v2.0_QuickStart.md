@@ -1,0 +1,308 @@
+# proteoDA v2.0 - Quick Start
+
+## Quick Start
+
+This Quick Start runs `proteoDA v2.0` on DIANN protein quant data
+without and with Perseus-style imputation, then writes per-contrast
+results, combined tables, and interactive plots.
+
+Assumes your `proteoDA_params.R` defines: input_quan, metadata,
+contrasts, anno_start, anno_end, design, group, p.val, logFC, bin_size,
+filt_min_reps, require_both_groups, stat_cols, DA_dir, DA_table_cols,
+DA_title_col, ctrl_proteins, project_name, author, author2.
+
+## 1. Load packages & parameters
+
+``` r
+library(proteoDA)
+library(yaml)
+
+# Common args from proteoDA_params.R
+common_args <- list(
+design_formula  = design,
+pval_thresh     = p.val,
+lfc_thresh      = logFC,
+adj_method      = "BH",
+binsize         = bin_size,
+plot_movingSD   = TRUE,
+contrasts_file  = contrasts
+)
+```
+
+## 2. Read DIANN input and prepare IDS
+
+``` r
+stopifnot(file.exists(input_quan))
+x <- read.csv(input_quan, stringsAsFactors = FALSE, check.names = FALSE)
+
+if (!("Protein.Group" %in% colnames(x))) stop("Missing 'Protein.Group' in DIANN input.")
+
+# Make uniprot_id from first entry of Protein.Group
+u <- strsplit(x$Protein.Group, ";", fixed = TRUE)
+uniprot_id <- vapply(u, function(z) if (length(z)) z[[1]] else NA_character_, "")
+x <- cbind(uniprot_id = uniprot_id, x)
+
+# Numeric NAs -> 0; character NAs/blanks -> "0"
+for (nm in names(x)) {
+  col <- x[[nm]]
+if (is.numeric(col)) {
+  col[is.na(col)] <- 0
+} else {
+  col[is.na(col) | col == ""] <- "0"
+}
+  x[[nm]] <- col
+}
+```
+
+## 3. Metadata & annotation slice
+
+``` r
+stopifnot(file.exists(metadata))
+md <- read.csv(metadata, stringsAsFactors = FALSE, check.names = FALSE)
+
+if (!exists("anno_start") || !exists("anno_end")) stop("Define anno_start and anno_end in params.")
+anno <- x[, anno_start:anno_end, drop = FALSE]
+```
+
+## 4. Align data to metadata
+
+``` r
+# Rename DIANN 'file' columns to 'sample' names where present
+req <- c("file","sample")
+mis <- req[!(req %in% colnames(md))]
+if (length(mis)) stop(paste("Metadata missing:", paste(mis, collapse=", ")))
+
+rename_map <- setNames(md$sample, md$file)
+present <- intersect(names(rename_map), colnames(x))
+if (length(present)) {
+  idx <- match(present, colnames(x))
+  colnames(x)[idx] <- rename_map[present]
+}
+
+# Keep sample columns in data that appear in metadata
+keep <- colnames(x)[colnames(x) %in% md$sample]
+intensity <- x[, keep, drop = FALSE]
+
+# Trim metadata to those samples; rownames = sample
+md <- md[md$sample %in% keep, , drop = FALSE]
+rownames(md) <- md$sample
+
+# Auto-align and validate
+aln <- align_data_and_metadata(
+    data                = intensity,
+    metadata            = md,
+    sample_col          = "sample",
+    group_col           = "group",
+    prefer_group_blocks = FALSE,
+    strict              = FALSE
+)
+aln$changes  # optional preview of any reordering
+
+intensity <- aln$data
+md        <- aln$metadata
+```
+
+## 5. Build DAList and convert zeros → NA
+
+``` r
+raw <- DAList(
+  data       = intensity,
+  annotation = anno,
+  metadata   = md,
+  design     = NULL,
+  eBayes_fit = NULL,
+  results    = NULL,
+  tags       = NULL
+)
+
+d0 <- zero_to_missing(raw)  # convert embedded zeros to NA for missing-aware ops
+table(d0$metadata$group)
+```
+
+## 6. Filter per contrast (recommended)
+
+``` r
+stopifnot(file.exists(contrasts))
+flt <- filter_proteins_per_contrast(
+    DAList              = d0,
+    contrasts_file      = contrasts,
+    min_reps            = filt_min_reps,
+    require_both_groups = require_both_groups,
+    grouping_column     = group
+)
+
+# Tag that we're using DIANN log2 normalized data
+norm <- flt
+norm$tags$norm_method <- "diann_quan"
+
+# (Optional) quick counts to CSV
+summary_df <- data.frame(
+  contrast = names(flt$filtered_proteins_per_contrast),
+  filtered_proteins = vapply(flt$filtered_proteins_per_contrast, length, 1L)
+)
+write.csv(summary_df, "filtered_protein_counts.csv", row.names = FALSE)
+```
+
+## 7. (Optional) Perseus-style imputation
+
+``` r
+set.seed(1)
+imp <- perseus_impute(
+    norm,
+    shift = 1.8,
+    width = 0.3,
+    robust = TRUE,
+    save_before_after = TRUE,
+    seed = 1
+)
+
+# Save imputation diagnostics
+
+invisible(write_perseus_imputation_plots(
+    DAList     = imp,
+    out_dir    = "PerseusPlots",
+    bins       = 30,
+    facet_ncol = 4,
+    overlay    = TRUE,
+    width      = 7,
+    height     = 7,
+    dpi        = 300,
+    device     = "png"
+))
+```
+
+## 8. Quick design sanity (full rank)
+
+``` r
+if (!exists("design")) stop("Define 'design' (e.g., ~0 + group) in params.")
+mf <- model.frame(design, data = norm$metadata, drop.unused.levels = TRUE)
+mm <- model.matrix(attr(mf, "terms"), data = mf)
+
+cat("Columns:", ncol(mm), " Rank:", qr(mm)$rank, " Full rank?:", qr(mm)$rank == ncol(mm), "\n")
+```
+
+## 9. Run limma (no impute vs. Perseus)
+
+``` r
+common <- list(
+  design_formula = design,
+  pval_thresh    = p.val,
+  lfc_thresh     = logFC,
+  adj_method     = "BH",
+  binsize        = bin_size,
+  plot_movingSD  = TRUE,
+  contrasts_file = contrasts
+)
+
+res_noimp <- do.call(run_filtered_limma_analysis, c(list(DAList = norm), common))
+res_imp  <- do.call(run_filtered_limma_analysis, c(list(DAList = imp),  common))
+```
+
+## 10. Write tables & interactive plots
+
+``` r
+# Build statlists
+
+sl_noimp <- build_statlist(DAList = res_noimp, stat_cols = stat_cols)
+sl_imp   <- build_statlist(DAList = res_imp,   stat_cols = stat_cols)
+
+# Tables (CSV + Excel with per-contrast sheets)
+dir.create(DA_dir, showWarnings = FALSE, recursive = TRUE)
+write_limma_tables(
+    res_noimp,
+    output_dir          = DA_dir,
+    overwrite           = TRUE,
+    contrasts_subdir    = NULL,
+    summary_csv         = NULL,
+    combined_file_csv   = NULL,
+    spreadsheet_xlsx    = NULL,
+    add_filter          = TRUE,
+    color_palette       = NULL,
+    add_contrast_sheets = TRUE, 
+    statlist            = sl_noimp
+)
+
+dir.create("impute_out", showWarnings = FALSE, recursive = TRUE)
+write_limma_tables(
+    res_imp,
+    output_dir             = "impute_out",
+    overwrite              = TRUE,
+    contrasts_subdir       = NULL,
+    summary_csv            = NULL,
+    combined_file_csv      = NULL,
+    spreadsheet_xlsx       = NULL,
+    add_filter             = TRUE,
+    color_palette          = NULL,
+    add_contrast_sheets    = TRUE,
+    statlist               = sl_imp
+)
+
+# Interactive per-contrast HTML + static images
+
+write_limma_plots(
+    DAList           = res_noimp,
+    grouping_column  = group,
+    table_columns    = DA_table_cols,
+    title_column     = DA_title_col,
+    height           = 1000, width = 1000,
+    output_dir       = DA_dir, overwrite = TRUE,
+    control_proteins = ctrl_proteins,
+    highlight_by     = "uniprot_id",
+    image_formats    = c("pdf","png")
+)
+
+write_limma_plots(
+    DAList           = res_imp,
+    grouping_column  = group,
+    table_columns    = DA_table_cols,
+    title_column     = DA_title_col,
+    height           = 1000, width = 1000,
+    output_dir       = "impute_out", overwrite = TRUE,
+    control_proteins = ctrl_proteins,
+    highlight_by     = "uniprot_id",
+    image_formats    = c("pdf","png")
+)
+```
+
+## 11. Save `DAList` Objects for QC and Analysis Reports
+
+``` r
+# Without imputation (NAs)
+saveRDS(res_noimp, "results_NA.rds")
+
+# With Perseus imputation
+saveRDS(res_imp, "results_NA_imputed.rds")
+
+# Also provide a zero-filled version for certain QC/PCA utilities that require no NAs
+results0 <- missing_to_zero(res_noimp)
+saveRDS(results0, "results.rds")
+
+results0_imputed <- missing_to_zero(res_imp)
+saveRDS(results0_imputed, "results_imputed.rds")
+```
+
+## 12. Update `_variables.yml` for generation of PowerPoint summary
+
+#### Update title/authors/project for downstream report generators
+
+``` r
+stopifnot(file.exists("_variables.yml"))
+variables <- yaml.load_file("_variables.yml")
+
+variables$title   <- project_name
+variables$author  <- author
+variables$author2 <- author2
+variables$project <- project_name
+
+write_yaml(variables, "_variables.yml")
+
+# save R Session info
+sink("sessionInfo.txt")
+print(sessionInfo())
+sink()
+sessionInfo()
+```
+
+- Results without imputation are under DA_dir/.
+- Results with Perseus imputation are under impute_out/.
+- Standalone per-contrast HTML reports are created in those folders.

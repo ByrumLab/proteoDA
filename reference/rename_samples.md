@@ -1,0 +1,89 @@
+# Rename samples and/or reorganize DGEList by group levels
+
+internal function. NEED TO UPDATE DECRIPTION
+
+## Usage
+
+``` r
+rename_samples(
+  DAList,
+  label_column = NULL,
+  grouping_column = NULL,
+  sort = FALSE
+)
+```
+
+## Arguments
+
+- DAList:
+
+  a DAList object with metadata
+
+- label_column:
+
+  Optional. The name of column or column number within the metadata data
+  frame which contains labels to use for each sample. When not supplied,
+  defaults to using the column names of the data. Default: NULL
+
+- grouping_column:
+
+  Optional. The name of the column or column number in the metadata
+  which gives information on how to group the samples. Default: NULL
+
+- sort:
+
+  logical. Should the samples in the DAList object be sorted according
+  to the group levels of the metadata grouping_column? If
+  grouping_column is NULL sort is ignored (ie set as FALSE) Default:
+  FALSE
+
+## Value
+
+returns a DAList object with updated sample names if label_column is
+defined and updated sample order based on group levels of input
+grouping_column if supplied and sort is TRUE.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+if(interactive()){
+
+ data <- matrix(rnbinom(5 * 8, mu = 5, size = 10), 5, 8)
+ rownames(data) <- paste0("protein_", 1:5);
+ colnames(data) <- paste0("S000_", 1:8)
+
+ metadata <- data.frame(sample = paste0("S",1:8),
+                        sample_id = paste0("S000_",1:8),
+                        condition = c("S","S","P","P","A","A","N","N"),
+                        batch = c(1, 2, 1, 2, 1, 2, 1, 2),
+                        row.names = paste0("S000_",1:8))
+
+annotation <- data.frame(uniprot_id = paste0("protein_", 1:5),
+                         check.names = FALSE, check.rows = FALSE,
+                         fix.empty.names = FALSE, stringsAsFactors = FALSE,
+                         row.names = paste0("protein_", 1:5))
+
+d <- DAList(data = data, metadata = metadata, annotation = annotation)
+d <- validate_DAList(x = d)
+ ## rename samples
+ d2 <- rename_samples(DAList = d, label_column = "sample",
+                      grouping_column = NULL, sort = FALSE)
+
+
+ ## group levels = unique values i.e. make_factor()
+ d2$metadata$condition <- as.character(d2$metadata$condition)
+ unique(d2$metadata$condition)
+ d3 <- rename_samples(DAList = d2, label_column = NULL, grouping_column = "condition",
+                      sort = TRUE)
+
+ ## group levels = group levels i.e. group order defined by user
+ d3$metadata$condition <- factor(d3$metadata$condition, levels = c("S","N","A","P"))
+ levels(d3$metadata$condition)
+ d4 <- rename_samples(DAList = d3, label_column = NULL, grouping_column = "condition",
+                      sort = TRUE)
+
+
+ }
+} # }
+```

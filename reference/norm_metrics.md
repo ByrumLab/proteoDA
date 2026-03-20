@@ -1,0 +1,64 @@
+# Metrics to evaluate normalization methods
+
+A set of functions that take in normalized sample data and a grouping
+factor and calculate some metric of of variability, error, etc., that we
+can use to evaluate normalization methods. The functions/metrics:
+
+- PCV- Calculated the pooled coefficient of variation (CV, standard
+  deviation divided by the mean) for all proteins within a group. That
+  is, the average (mean) of the per-protein CVs.
+
+- PMAD- Calculate the pooled median absolute deviation. The MAD is the
+  median of the absolute deviations of each sample from the group
+  median. The pooled MAD is the group mean of the per-protein PMADs.
+
+- PEV- Calculates the pooled estimate of variance for each group. Uses
+  the weighted average method to account for unequal sample sizes (see
+  <https://en.wikipedia.org/wiki/Pooled_variance>).
+
+- COR- Calculates all within-group pairwise correlations in intensity
+  between samples.
+
+- log2ratio- Calculates all possible between-group ratios of average
+  log2-normalized intensity for each protein.
+
+## Usage
+
+``` r
+PCV(data, groups)
+
+PMAD(data, groups)
+
+PEV(data, groups)
+
+COR(data, groups)
+
+log2ratio(data, groups, keep_protein_ID = F)
+```
+
+## Arguments
+
+- data:
+
+  A numeric data frame, where each row is a protein and columns are
+  densities. For most uses, these are probably normalized data.
+
+- groups:
+
+  A character or factor vector, listing the group(s) the samples belong
+  to.
+
+- keep_protein_ID:
+
+  Should protein ID information be retained? Default is FALSE.
+
+## Value
+
+For PCV, PMAD, and PEV: a named vector, with length equal to the number
+of groups, giving the metric for each group. For COR, a named vector
+giving all within-group pairwise correlations between samples. For
+log2ratio with keep_protein_ID = FALSE (the default), a non-named vector
+giving all possible between-group log2 ratios for each protein. For
+log2ratio with keep_protein_ID = TRUE, a data frame in which rows are
+proteins, columns are are the log2ratio for a pairwise comparisons, and
+rownames give protein ID.
