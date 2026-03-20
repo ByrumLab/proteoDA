@@ -46,9 +46,7 @@ package.
 ``` r
 install.packages("remotes")
 remotes::install_github("ByrumLab/proteoDA@v1.0.0",
-                        dependencies = TRUE,
-                        build_vignettes = TRUE,
-                        force = TRUE)
+                        dependencies = TRUE)
 ```
 
 ### Install proteoDA version 2.0.0
@@ -58,21 +56,13 @@ remotes::install_github("ByrumLab/proteoDA@v1.0.0",
 install.packages("devtools")
 devtools::install_github("ByrumLab/proteoDA",
                          dependencies = TRUE,
-                         build_vignettes = TRUE,
-                         force = TRUE)
+                         )
  # or
 install.packages("remotes")
 remotes::install_github("ByrumLab/proteoDA@v2.0.0",
                         dependencies = TRUE,
-                        build_vignettes = TRUE,
-                        force = TRUE)
+                        )
 ```
-
-Using the `build_vignettes = TRUE` argument will build the tutorial
-vignettes when you install, which you can access by running
-`browseVignettes(package = "proteoDA")`. However, building the vignettes
-requires some additional software dependencies. If you run into issues
-when installing the vignettes, you can set `build_vignettes = FALSE`.
 
 Once `proteoDA` is installed, load it into R:
 
@@ -99,13 +89,10 @@ For a detailed explanation of the pipeline, check out the
 
 ## Getting help
 
-For general help on using `proteoDA`, check out the vignettes by running
-`browseVignettes(package = "proteoDA")`. If you did not build the
-vignette upon install, you can find a pre-built `.html` version of the
-vignette in the `vignettes` folder on
-[GitHub](https://github.com/ByrumLab/proteoDA) in the `release/1.0`
-branch. Additional information can be found in the documentation for
-each function. If you need further assistance, [file an issue on
+Documentation and tutorials are available on the package website:
+<https://byrumlab.github.io/proteoDA> Additional information can be
+found in the documentation for each function. If you need further
+assistance, [file an issue on
 GitHub](https://github.com/ByrumLab/proteoDA/issues).
 
 ## Reporting issues
