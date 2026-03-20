@@ -1,4 +1,4 @@
-url: https://ByrumLab.github.io/proteoDA
+url: https://byrumlab.github.io/proteoDA
 
 template:
   bootstrap: 5
@@ -6,46 +6,5 @@ template:
 home:
   title: proteoDA
   description: Quantitative proteomics data preprocessing and differential abundance analysis in R
-
-navbar:
-  structure:
-    left: [intro, reference, articles, news]
-    right: [github]
-  components:
-    intro:
-      text: Home
-      href: index.html
-    articles:
-      text: Tutorials
-      menu:
-        - text: Quick Start
-          href: articles/proteoDA_v2.0_QuickStart.html
-        - text: Preprocessing
-          href: articles/proteoDA_v2.0_PreProcessing.html
-        - text: Normalization
-          href: articles/proteoDA_v2.0_Norm.html
-        - text: Design
-          href: articles/proteoDA_v2.0_design.html
-        - text: Workflow
-          href: articles/proteoDA_v2.0_workflow.html
-        - text: Technical Appendix
-          href: articles/proteoDA_v2.0_Technical_Appendix.html
-    github:
-      icon: fab fa-github
-      href: https://github.com/ByrumLab/proteoDA
-
-reference:
-  - title: Data import and setup
-    contents:
-      - align_data_and_metadata
-      - normalize_data
-  - title: Filtering and imputation
-    contents:
-      - filter_proteins_per_contrast
-      - perseus_impute
-  - title: Statistics and outputs
-    contents:
-      - run_filtered_limma_analysis
-      - write_limma_tables
-      - write_limma_plots
-      - write_norm_report
+  
+  
