@@ -5,7 +5,7 @@ on:
     branches: [main, master, public-prep-v2.0.0]
   pull_request:
 
-name: R-CMD-check.yaml
+name: R-CMD-check
 
 permissions: read-all
 
