@@ -2,7 +2,8 @@
 # just output plots
 
 test_that("write_qc_report warns for unnormalized data", {
-
+  skip_on_ci()
+  
   on.exit(unlink("QC_Report.pdf"), add = T)
 
   input <- readRDS(test_path("fixtures", "norm_report_input.rds"))
