@@ -45,9 +45,7 @@ proteoDA version 2.0 extends the previous version with additional features such 
 ``` {r, eval = F}
 install.packages("remotes")
 remotes::install_github("ByrumLab/proteoDA@v1.0.0",
-                        dependencies = TRUE,
-                        build_vignettes = TRUE,
-                        force = TRUE)
+                        dependencies = TRUE)
 ```
 
 ### Install proteoDA version 2.0.0
@@ -67,7 +65,8 @@ remotes::install_github("ByrumLab/proteoDA@v2.0.0",
                         force = TRUE)
 ```
 
-Using the `build_vignettes = TRUE` argument will build the tutorial vignettes when you install, which you can access by running `browseVignettes(package = "proteoDA")`. However, building the vignettes requires some additional software dependencies. If you run into issues when installing the vignettes, you can set `build_vignettes = FALSE`.
+Documentation and tutorials are available on the package website:
+https://byrumlab.github.io/proteoDA
 
 Once `proteoDA` is installed, load it into R:
 
