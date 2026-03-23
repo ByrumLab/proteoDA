@@ -404,7 +404,9 @@ write_limma_tables(results,
                    add_filter = T,             # Excel filter on columns
                    color_palette = NULL,       # change color scheme
                    add_contrast_sheets = TRUE, # for large number of contrasts, turn off
-                   statlist = statlist)
+                   statlist = statlist,
+                   annot_cols = DA_table_cols   # from params.R or c("uniprot_id", "Genes")
+                   )
 
 # imputed data 
 write_limma_tables(results2,
@@ -417,7 +419,8 @@ write_limma_tables(results2,
                    add_filter = T,
                    color_palette = NULL,
                    add_contrast_sheets = TRUE,
-                   statlist = statlist2)
+                   statlist = statlist2,
+                   annot_cols = DA_table_cols)
 
 ##========================
 # WRITE PLOTS
