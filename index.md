@@ -46,13 +46,11 @@ remotes::install_github("ByrumLab/proteoDA@v1.0.0",
 
 install.packages("devtools")
 devtools::install_github("ByrumLab/proteoDA",
-                         dependencies = TRUE,
-                         )
+                         dependencies = TRUE)
  # or
 install.packages("remotes")
 remotes::install_github("ByrumLab/proteoDA@v2.0.0",
-                        dependencies = TRUE,
-                        )
+                        dependencies = TRUE)
 ```
 
 Once `proteoDA` is installed, load it into R:
