@@ -63,7 +63,8 @@ abundance analysis stored in a <code>DAList</code>.</p>
 <span>  add_filter <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  color_palette <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  add_contrast_sheets <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  statlist <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  statlist <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  annot_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"uniprot_id"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -123,6 +124,11 @@ is added as a separate worksheet to the Excel workbook.</p></dd>
 <dd><p>Optional list of per-contrast result tables to use instead
 of <code>DAList$results</code>. If <code>NULL</code>, <code>DAList$results</code> is used.</p></dd>
 
+
+<dt id="arg-annot-cols">annot_cols<a class="anchor" aria-label="anchor" href="#arg-annot-cols"></a></dt>
+<dd><p>Character vector of annotation column names to include in
+per-contrast CSV and Excel outputs. Defaults to <code>"uniprot_id"</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -142,10 +148,10 @@ included with a warning.</p>
 <li><p>writes a combined results CSV with all contrasts side by side;</p></li>
 <li><p>writes an Excel workbook using <code><a href="write_limma_excel.html">write_limma_excel()</a></code>, and
 optionally adds each per-contrast CSV as a worksheet.</p></li>
-</ul><p>The columns included in the per-contrast and Excel tables are determined
-by internal settings such as <code>DA_table_cols</code> and <code>stat_cols</code>,
-which are defined in the package configuration rather than as function
-arguments.</p>
+</ul><p>The annotation columns included in the per-contrast CSV and Excel tables
+are controlled by the <code>annot_cols</code> argument. These columns must exist
+in <code>DAList$annotation</code>. Missing columns will be skipped with an
+informative message.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

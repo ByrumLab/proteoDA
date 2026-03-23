@@ -17,7 +17,8 @@ write_limma_tables(
   add_filter = TRUE,
   color_palette = NULL,
   add_contrast_sheets = TRUE,
-  statlist = NULL
+  statlist = NULL,
+  annot_cols = c("uniprot_id")
 )
 ```
 
@@ -76,6 +77,11 @@ write_limma_tables(
   Optional list of per-contrast result tables to use instead of
   `DAList$results`. If `NULL`, `DAList$results` is used.
 
+- annot_cols:
+
+  Character vector of annotation column names to include in per-contrast
+  CSV and Excel outputs. Defaults to `"uniprot_id"`.
+
 ## Value
 
 Invisibly returns the (validated) input `DAList`.
@@ -102,6 +108,7 @@ The function then:
   [`write_limma_excel()`](https://byrumlab.github.io/proteoDA/reference/write_limma_excel.md),
   and optionally adds each per-contrast CSV as a worksheet.
 
-The columns included in the per-contrast and Excel tables are determined
-by internal settings such as `DA_table_cols` and `stat_cols`, which are
-defined in the package configuration rather than as function arguments.
+The annotation columns included in the per-contrast CSV and Excel tables
+are controlled by the `annot_cols` argument. These columns must exist in
+`DAList$annotation`. Missing columns will be skipped with an informative
+message.
