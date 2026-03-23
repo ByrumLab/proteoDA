@@ -15,7 +15,8 @@ write_limma_tables(
   add_filter = TRUE,
   color_palette = NULL,
   add_contrast_sheets = TRUE,
-  statlist = NULL
+  statlist = NULL,
+  annot_cols = c("uniprot_id")
 )
 }
 \arguments{
@@ -49,6 +50,9 @@ is added as a separate worksheet to the Excel workbook.}
 
 \item{statlist}{Optional list of per-contrast result tables to use instead
 of \code{DAList$results}. If \code{NULL}, \code{DAList$results} is used.}
+
+\item{annot_cols}{Character vector of annotation column names to include in
+per-contrast CSV and Excel outputs. Defaults to \code{"uniprot_id"}.}
 }
 \value{
 Invisibly returns the (validated) input \code{DAList}.
@@ -75,8 +79,8 @@ The function then:
 optionally adds each per-contrast CSV as a worksheet.
 }
 
-The columns included in the per-contrast and Excel tables are determined
-by internal settings such as \code{DA_table_cols} and \code{stat_cols},
-which are defined in the package configuration rather than as function
-arguments.
+The annotation columns included in the per-contrast CSV and Excel tables
+are controlled by the \code{annot_cols} argument. These columns must exist
+in \code{DAList$annotation}. Missing columns will be skipped with an
+informative message.
 }
