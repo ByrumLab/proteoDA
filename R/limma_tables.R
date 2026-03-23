@@ -956,10 +956,10 @@ sanitize_sheet_names <- function(names, max_len = 31L) {
 #'         optionally adds each per-contrast CSV as a worksheet.
 #' }
 #'
-#' The columns included in the per-contrast and Excel tables are determined
-#' by internal settings such as \code{DA_table_cols} and \code{stat_cols},
-#' which are defined in the package configuration rather than as function
-#' arguments.
+#' The annotation columns included in the per-contrast CSV and Excel tables
+#' are controlled by the \code{annot_cols} argument. These columns must exist
+#' in \code{DAList$annotation}. Missing columns will be skipped with an
+#' informative message.
 #'
 #' @param DAList A DAList object with statistical results in \code{$results},
 #'   annotation in \code{$annotation}, data in \code{$data}, metadata in
@@ -981,6 +981,8 @@ sanitize_sheet_names <- function(names, max_len = 31L) {
 #'   is added as a separate worksheet to the Excel workbook.
 #' @param statlist Optional list of per-contrast result tables to use instead
 #'   of \code{DAList$results}. If \code{NULL}, \code{DAList$results} is used.
+#' @param annot_cols Character vector of annotation column names to include in
+#'   per-contrast CSV and Excel outputs. Defaults to \code{"uniprot_id"}.
 #'
 #' @return Invisibly returns the (validated) input \code{DAList}.
 #' @export
@@ -994,7 +996,8 @@ write_limma_tables <- function(DAList,
                                add_filter = TRUE,
                                color_palette = NULL,
                                add_contrast_sheets = TRUE,
-                               statlist = NULL) {
+                               statlist = NULL,
+                               annot_cols = c("uniprot_id")) {
   `%||%` <- function(x, y) if (is.null(x)) y else x
   
   if (is.null(color_palette)) {
@@ -1007,6 +1010,10 @@ write_limma_tables <- function(DAList,
   if (is.null(DAList$results) && is.null(statlist)) {
     cli::cli_abort(c("Input DAList does not have results",
                      "i" = "Run {.code DAList <- extract_DA_results(DAList, ~ formula)}"))
+  }
+  
+  if (!is.character(annot_cols) || length(annot_cols) < 1) {
+    cli::cli_abort("{.arg annot_cols} must be a non-empty character vector")
   }
   
   # Choose best intensities for export (prefer normalized per-contrast)
@@ -1066,8 +1073,8 @@ write_limma_tables <- function(DAList,
   }
   
   # Per-contrast CSVs
- # per_contrast_dir <- file.path(output_dir, contrasts_subdir)
- # if (!dir.exists(per_contrast_dir)) dir.create(per_contrast_dir, recursive = TRUE)
+  # per_contrast_dir <- file.path(output_dir, contrasts_subdir)
+  # if (!dir.exists(per_contrast_dir)) dir.create(per_contrast_dir, recursive = TRUE)
   
   per_contrast_dir <- file.path(output_dir, contrasts_subdir)
   
@@ -1083,7 +1090,7 @@ write_limma_tables <- function(DAList,
     data = export_data,                     #DAList$data,
     results_statlist = results_statlist,
     output_dir = per_contrast_dir,
-    annotation_cols = DA_table_cols,      # from your params file
+    annotation_cols = annot_cols,   #DA_table_cols, from your params file
     metadata = DAList$metadata,
     group_col = "group",
     stat_cols = stat_cols,                # from your params file
@@ -1119,7 +1126,7 @@ write_limma_tables <- function(DAList,
     lfc_thresh = DAList$tags$DA_criteria$lfc_thresh,
     add_filter = add_filter,
     color_palette = color_palette,
-    annot_cols = DA_table_cols,
+    annot_cols = annot_cols,   #DA_table_cols,
     # Pass the filtering params saved on the DAList tags (may be NULL)
     filt_min_reps  = if (!is.null(input_DAList$tags$filt_min_reps))  input_DAList$tags$filt_min_reps  else NULL,
     filt_min_groups= if (!is.null(input_DAList$tags$filt_min_groups)) input_DAList$tags$filt_min_groups else NULL
