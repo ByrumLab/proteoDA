@@ -34,6 +34,13 @@ vars <- yaml::read_yaml("_variables.yml")
 # Define output file path (adjust the path as needed)
 output_path <- paste0(vars$project, ".pptx")
 
+# copy template file to .qmd directory so pandoc can render
+file.copy(
+  from = system.file("report_templates", "proteoDA_template.pptx", package = "proteoDA"),
+  to = "proteoDA_template.pptx",
+  overwrite = TRUE
+)
+
 # Render the Quarto document with a dynamic output filename
 quarto_render(
   input = "Project_Summary_20250425.qmd", # Change to your actual .qmd file
