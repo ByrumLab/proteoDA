@@ -184,20 +184,22 @@ log2Norm <- function(dat) {
 #' @rdname norm_functions
 #' @keywords internal
 medianNorm <- function(logDat) {
+  logDat <- as.matrix(logDat)
   sampleMed <- apply(logDat, 2, stats::median, na.rm = TRUE)
   meanMed <- mean(sampleMed, na.rm = TRUE)
-  out <- t(t(logDat) / sampleMed)
-  out <- out * meanMed
+  out <- sweep(logDat, 2, sampleMed, FUN = "-")
+  out <- out + meanMed
   return(as.matrix(out))
 }
 
 #' @rdname norm_functions
 #' @keywords internal
 meanNorm <- function(logDat) {
+  logDat <- as.matrix(logDat)
   sampleMean <- apply(logDat, 2, mean, na.rm = TRUE)
   meanMean <- mean(sampleMean, na.rm = TRUE)
-  out <- t(t(logDat) / sampleMean)
-  out <- out * meanMean
+  out <- sweep(logDat, 2, sampleMean, FUN = "-")
+  out <- out + meanMean
   return(as.matrix(out))
 }
 
