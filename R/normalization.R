@@ -88,44 +88,84 @@ normalize_data <- function(DAList,
       X  <- wb$mat
       
       # Build method call arguments
-      do_log_methods <- c("median","mean","quantile","cycloess","rlr")
-      if (norm_method %in% c("log2","vsn","gi")) {
-        call_args <- c(list(dat = X), dots)
-        normalized <- do.call(paste0(norm_method, "Norm"), call_args)
-      } else if (norm_method %in% do_log_methods) {
+    #  do_log_methods <- c("median","mean","quantile","cycloess","rlr")
+    #  if (norm_method %in% c("log2","vsn","gi")) {
+    #    call_args <- c(list(dat = X), dots)
+    #    normalized <- do.call(paste0(norm_method, "Norm"), call_args)
+    #  } else if (norm_method %in% do_log_methods) {
         # Optional groups subsetting
-        local_dots <- dots
-        if (has_groups_arg) {
-          g <- dots$groups
-          if (!is.null(colnames(X)) && !is.null(names(g))) {
+    #    local_dots <- dots
+    #    if (has_groups_arg) {
+    #      g <- dots$groups
+    #      if (!is.null(colnames(X)) && !is.null(names(g))) {
             # Reorder by column names if named
-            g <- g[colnames(X)]
-          } else if (length(g) != ncol(X)) {
-            stop(sprintf("Length of 'groups' (%d) must match ncol(X) (%d) for contrast '%s'.", length(g), ncol(X), ct))
-          }
-          local_dots$groups <- g
-        }
-        log2_X <- if (input_is_log2) X else log2Norm(dat = X)
-        call_args <- c(list(logDat = log2_X), local_dots)
-        normalized <- do.call(paste0(norm_method, "Norm"), call_args)
-      } else {
-        stop(sprintf("%s is not a valid normalization method", norm_method))
-      }
+    #        g <- g[colnames(X)]
+    #      } else if (length(g) != ncol(X)) {
+    #        stop(sprintf("Length of 'groups' (%d) must match ncol(X) (%d) for contrast '%s'.", length(g), ncol(X), ct))
+    #      }
+    #      local_dots$groups <- g
+    #    }
+    #    log2_X <- if (input_is_log2) X else log2Norm(dat = X)
+    #    call_args <- c(list(logDat = log2_X), local_dots)
+    #    normalized <- do.call(paste0(norm_method, "Norm"), call_args)
+    #  } else {
+    #    stop(sprintf("%s is not a valid normalization method", norm_method))
+    #  }
       
       # Diagnostics (before/after per-sample summaries)
-      diag <- list(
-        before = list(
-          sample_median = apply(if (exists("log2_X")) log2_X else (if (norm_method == "log2") log2Norm(dat = X) else X), 2, stats::median, na.rm = TRUE),
-          sample_mean   = apply(if (exists("log2_X")) log2_X else (if (norm_method == "log2") log2Norm(dat = X) else X), 2, mean, na.rm = TRUE)
-        ),
-        after = list(
-          sample_median = apply(as.matrix(normalized), 2, stats::median, na.rm = TRUE),
-          sample_mean   = apply(as.matrix(normalized), 2, mean, na.rm = TRUE)
-        ),
-        method = norm_method,
-        input_is_log2 = input_is_log2
-      )
-      
+    #  diag <- list(
+    #    before = list(
+    #      sample_median = apply(if (exists("log2_X")) log2_X else (if (norm_method == "log2") log2Norm(dat = X) else X), 2, stats::median, na.rm = TRUE),
+    #      sample_mean   = apply(if (exists("log2_X")) log2_X else (if (norm_method == "log2") log2Norm(dat = X) else X), 2, mean, na.rm = TRUE)
+    #    ),
+    #    after = list(
+    #      sample_median = apply(as.matrix(normalized), 2, stats::median, na.rm = TRUE),
+    #      sample_mean   = apply(as.matrix(normalized), 2, mean, na.rm = TRUE)
+    #    ),
+    #    method = norm_method,
+    #    input_is_log2 = input_is_log2
+    #  )
+      # Build method call arguments and define before_mat for diagnostics
+do_log_methods <- c("median","mean","quantile","cycloess","rlr")
+
+if (norm_method %in% do_log_methods) {
+  before_mat <- if (input_is_log2) as.matrix(X) else log2Norm(dat = X)
+
+  local_dots <- dots
+  if (has_groups_arg) {
+    g <- dots$groups
+    if (!is.null(colnames(X)) && !is.null(names(g))) {
+      g <- g[colnames(X)]
+    } else if (length(g) != ncol(X)) {
+      stop(sprintf("Length of 'groups' (%d) must match ncol(X) (%d) for contrast '%s'.", length(g), ncol(X), ct))
+    }
+    local_dots$groups <- g
+  }
+
+  call_args <- c(list(logDat = before_mat), local_dots)
+  normalized <- do.call(paste0(norm_method, "Norm"), call_args)
+
+} else if (norm_method %in% c("log2","vsn","gi")) {
+  before_mat <- if (norm_method == "log2") log2Norm(dat = X) else as.matrix(X)
+  call_args <- c(list(dat = X), dots)
+  normalized <- do.call(paste0(norm_method, "Norm"), call_args)
+
+} else {
+  stop(sprintf("%s is not a valid normalization method", norm_method))
+}
+
+diag <- list(
+  before = list(
+    sample_median = apply(before_mat, 2, stats::median, na.rm = TRUE),
+    sample_mean   = apply(before_mat, 2, mean, na.rm = TRUE)
+  ),
+  after = list(
+    sample_median = apply(as.matrix(normalized), 2, stats::median, na.rm = TRUE),
+    sample_mean   = apply(as.matrix(normalized), 2, mean, na.rm = TRUE)
+  ),
+  method = norm_method,
+  input_is_log2 = input_is_log2
+)
       # Write back preserving structure
       out_obj <- wb$write_back(normalized)
       DAList$data_per_contrast[[ct]] <- out_obj
